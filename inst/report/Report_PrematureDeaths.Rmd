@@ -46,9 +46,7 @@ nFlagged <- sum(
   na.rm = TRUE
 )
 if (nFlagged != nPremature) {
-  cli::cli_alert_warning(
-    "Report window ({nWindowDays}d) disagrees with the window used to produce dfResults: {nPremature} premature death(s) in Mapped_Death vs {nFlagged} flagged pat0015 row(s). Pass the same nWindowDays used at analysis time (meta.WindowDays)."
-  )
+  pd_CheckWindowConsistency(nWindowDays, nPremature, nFlagged)
 }
 ```
 

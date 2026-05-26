@@ -1,4 +1,32 @@
-#' Premature-death patient listing data
+#' Check premature-death window consistency
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#'
+#' Emits a warning when the report's `nWindowDays` disagrees with the window
+#' used to produce `dfResults` (detected by comparing the live premature-death
+#' count in `Mapped_Death` against the number of `pat0015` `Flag == 2` rows).
+#'
+#' @param nWindowDays `numeric` Window days passed to the report.
+#' @param nPremature `integer` Count of premature deaths in `Mapped_Death`.
+#' @param nFlagged `integer` Count of flagged `pat0015` rows in `dfResults`.
+#'
+#' @return Called for its side-effect (warning); returns `NULL` invisibly.
+#' @export
+pd_CheckWindowConsistency <- function(nWindowDays, nPremature, nFlagged) {
+  warning(
+    "Report window (",
+    nWindowDays,
+    "d) disagrees with the window used to produce dfResults: ",
+    nPremature,
+    " premature death(s) in Mapped_Death vs ",
+    nFlagged,
+    " flagged pat0015 row(s). Pass the same nWindowDays used at analysis time (meta.WindowDays).",
+    call. = FALSE
+  )
+  invisible(NULL)
+}
+
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`

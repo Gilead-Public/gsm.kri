@@ -47,3 +47,11 @@ test_that("pd_PatientListing validates inputs {#59}", {
     "dfDeath is not a data.frame"
   )
 })
+
+test_that("pd_CheckWindowConsistency warns on mismatch {#59}", {
+  expect_warning(
+    pd_CheckWindowConsistency(10, 0, 2),
+    "disagrees with the window used to produce dfResults"
+  )
+  expect_null(suppressWarnings(pd_CheckWindowConsistency(10, 0, 2)))
+})
