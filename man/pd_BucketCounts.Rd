@@ -22,5 +22,5 @@ A `data.frame` with `GroupID`, `Bucket`, and `n` columns.
 `r lifecycle::badge("experimental")`
 
 Categorizes every enrolled subject into a premature-death bucket
-(`<=30d`, `31-{window}d`, or `Alive at {window}d`) grouped by `strGroupCol`.
+(`<=30d`, `31-Wd`, or `Alive at Wd`, where `W` is `nWindowDays`) grouped by `strGroupCol`.
 }

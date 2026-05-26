@@ -4,7 +4,7 @@
 #' `r lifecycle::badge("experimental")`
 #'
 #' Categorizes every enrolled subject into a premature-death bucket
-#' (`<=30d`, `31-{window}d`, or `Alive at {window}d`) grouped by `strGroupCol`.
+#' (`<=30d`, `31-Wd`, or `Alive at Wd`, where `W` is `nWindowDays`) grouped by `strGroupCol`.
 #'
 #' @param dfDeath `data.frame` Mapped death data with `subjid` and `death_dy`.
 #' @param dfSubjects `data.frame` Mapped subject data with `subjid` and `strGroupCol`.
