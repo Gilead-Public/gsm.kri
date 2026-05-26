@@ -106,5 +106,13 @@ pd_PatientListing <- function(dfResults, dfDeath) {
       "Treatment Related" = "treatment_related"
     ),
     options = list(order = list(list(3, "asc")))
-  )
+  ) %>%
+    DT::formatStyle(
+      "Flag",
+      target = "row",
+      backgroundColor = DT::styleEqual(
+        2,
+        paste0(colorScheme("red", "dark"), "80")
+      )
+    )
 }

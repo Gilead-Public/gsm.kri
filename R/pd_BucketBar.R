@@ -76,11 +76,21 @@ pd_BucketBar <- function(
 
   dfCounts <- pd_BucketCounts(dfDeath, dfSubjects, nWindowDays, strGroupCol)
 
+  upper_label <- paste0("31-", nWindowDays, "d")
+  alive_label <- paste0("Alive at ", nWindowDays, "d")
+  rag_colors <- c(
+    colorScheme("red", "dark"),
+    colorScheme("amber", "dark"),
+    colorScheme("green", "dark")
+  )
+  names(rag_colors) <- c("<=30d", upper_label, alive_label)
+
   plotly::plot_ly(
     dfCounts,
     x = ~GroupID,
     y = ~n,
     color = ~Bucket,
+    colors = rag_colors,
     type = "bar"
   ) %>%
     plotly::layout(

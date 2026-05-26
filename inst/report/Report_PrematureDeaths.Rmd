@@ -60,6 +60,16 @@ date: "Snapshot Date: `r latest_snapshot`"
 
 ## Overview
 
+::: flag-container
+::: {.flag .flag-red}
+<div> `r nPremature` Premature Death(s) </div>
+:::
+
+::: {.flag .flag-green}
+<div> `r nEnrolled - nPremature` Alive at Window </div>
+:::
+:::
+
 ```{r overview, echo=FALSE, results='asis'}
 cat(sprintf(
   "- **Configured window:** %d days\n- **Total enrolled:** %d\n- **Premature deaths (within window):** %d\n- **Premature death rate:** %.1f%%\n",
