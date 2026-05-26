@@ -47,6 +47,7 @@ Suggests:
     here,
     knitr,
     lubridate,
+    plotly,
     qcthat,
     testthat (>= 3.0.0),
     withr,
