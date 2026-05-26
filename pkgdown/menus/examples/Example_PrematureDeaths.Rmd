@@ -1,0 +1,185 @@
+---
+title: "Premature Deaths Report"
+author: "[gsm.kri](https://gilead-biostats.github.io/gsm.kri) Example"
+description: "Example Premature Deaths report generated with gsm.kri"
+index: 4
+date: "`r format(Sys.time(), '%B %d, %Y %H:%M:%S %Z')`"
+output:
+  html_document:
+    mathjax: null
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    css: ../report/styles.css
+---
+# Set Up
+This page provides a sample Premature Deaths Report generated using the `gsm.kri` package. Expand the "Setup" section below to see the code used to generate the report. Or scroll down for the standard report output.
+
+<!-- TODO: the Setup block below MOCKS the unmerged gsm.mapping PR1
+(complete_death() AE-match extension). Once PR1 merges, drop
+MockCompleteDeathExtension() and read death_reason / treatment_related /
+ae_pt_at_death straight off Mapped_Death. -->
+
+<details>
+<summary>Setup</summary>
+
+```{r}
+# Load libraries
+library(gsm.core)
+library(gsm.mapping)
+library(gsm.kri)
+library(gsm.reporting)
+library(dplyr)
+
+window_days <- 90 # must match meta.WindowDays on kri0015 / cou0015 / pat0015
+
+# --- Step 1: Map raw data (real gsm.mapping pipeline, per run_kri_report.R) ---
+core_mappings <- c(
+  "AE",
+  "COUNTRY",
+  "DATACHG",
+  "DATAENT",
+  "ENROLL",
+  "LB",
+  "PD",
+  "QUERY",
+  "STUDY",
+  "STUDCOMP",
+  "SDRGCOMP",
+  "SITE",
+  "SUBJ",
+  # Death + its mapping dependencies (needed to derive death_dy)
+  "Death",
+  "OverallResponse",
+  "Randomization"
+)
+
+mappings_wf <- MakeWorkflowList(
+  strNames = core_mappings,
+  strPath = "workflow/1_mappings",
+  strPackage = "gsm.mapping"
+)
+lRaw <- Ingest(gsm.core::lSource, CombineSpecs(mappings_wf))
+lMapped <- RunWorkflows(mappings_wf, lRaw)
+
+# --- Step 2: MOCK gsm.mapping PR1 (complete_death() AE-match extension) ------
+# Enrich Mapped_Death with death_reason / treatment_related / ae_pt_at_death,
+# reproducing spec section 7.1. This stands in for the unmerged PR1.
+MockCompleteDeathExtension <- function(dfDeath, dfAE, dfStudComp) {
+  # Match each death to its most likely fatal AE: CTCAE Grade 5, OR an AE that
+  # ended within +/-1 day of death. Highest grade wins; ties -> earliest start.
+  fatal_ae <- dfAE %>%
+    dplyr::inner_join(
+      dfDeath %>% dplyr::select("subjid", "death_dt"),
+      by = "subjid"
+    ) %>%
+    dplyr::filter(
+      .data$aetoxgr == 5 |
+        (!is.na(.data$aeen_dt) &
+          abs(as.numeric(.data$aeen_dt - .data$death_dt)) <= 1)
+    ) %>%
+    dplyr::group_by(.data$subjid) %>%
+    dplyr::arrange(dplyr::desc(.data$aetoxgr), .data$aest_dt) %>%
+    dplyr::slice(1) %>%
+    dplyr::ungroup() %>%
+    dplyr::transmute(
+      subjid = .data$subjid,
+      ae_pt_at_death = .data$mdrpt_nsv,
+      ae_rel = .data$aerel
+    )
+
+  dfStudCompReason <- dfStudComp %>%
+    dplyr::select("subjid", "compreas") %>%
+    dplyr::distinct(.data$subjid, .keep_all = TRUE)
+
+  dfDeath %>%
+    dplyr::left_join(fatal_ae, by = "subjid") %>%
+    dplyr::left_join(dfStudCompReason, by = "subjid") %>%
+    dplyr::mutate(
+      treatment_related = .data$ae_rel %in% "Y", # aerel Y/N; related = "Y"
+      death_reason = dplyr::coalesce(
+        .data$ae_pt_at_death,
+        .data$compreas,
+        "Unknown"
+      )
+    ) %>%
+    # Illustrative relabel of clindata's synthetic AE preferred-term codes
+    # (term1 / term2) so the sample report's reason chart reads sensibly.
+    # Mock presentation only.
+    dplyr::mutate(
+      death_reason = dplyr::recode(
+        .data$death_reason,
+        term1 = "Cardiac arrest",
+        term2 = "Sepsis"
+      )
+    ) %>%
+    dplyr::select(-"ae_rel")
+}
+
+lMapped$Mapped_Death <- MockCompleteDeathExtension(
+  dfDeath = lMapped$Mapped_Death,
+  dfAE = lMapped$Mapped_AE,
+  dfStudComp = lMapped$Mapped_STUDCOMP
+)
+
+# Keep only deaths for enrolled subjects. pat0015 (and the report's charts)
+# define the cohort as enrolled subjects (Mapped_SUBJ); a death for a
+# non-enrolled subject would make the Overview count disagree with the charts
+# and patient listing and trip the report's window-consistency guard.
+lMapped$Mapped_Death <- lMapped$Mapped_Death %>%
+  dplyr::filter(.data$subjid %in% lMapped$Mapped_SUBJ$subjid)
+
+# --- Step 3: Run the site / country / patient premature-death metrics --------
+metric_names <- c("kri0015", "cou0015", "pat0015")
+metrics_wf <- MakeWorkflowList(
+  strNames = metric_names,
+  strPath = "workflow/2_metrics",
+  strPackage = "gsm.kri"
+)
+lAnalyzed <- RunWorkflows(metrics_wf, c(lMapped, list(lWorkflows = metrics_wf)))
+
+# --- Step 4: Build reporting frames (real gsm.reporting pipeline) ------------
+reporting_wf <- MakeWorkflowList(
+  strNames = c("Results", "Metrics", "Bounds", "Groups"),
+  strPath = "workflow/3_reporting",
+  strPackage = "gsm.reporting"
+)
+lReporting <- RunWorkflows(
+  reporting_wf,
+  c(lMapped, list(lAnalyzed = lAnalyzed, lWorkflows = metrics_wf))
+)
+
+dfResults <- lReporting$Reporting_Results |>
+  FilterByLatestSnapshotDate()
+
+# --- Step 5: Assemble the listings consumed by the report --------------------
+lListings <- list(
+  Mapped_SUBJ = lMapped$Mapped_SUBJ,
+  Mapped_Death = lMapped$Mapped_Death
+)
+```
+
+</details>
+
+```{r, echo=FALSE, results='asis'}
+## Render example report inline using knit_child
+child_env <- list2env(
+  list(
+    params = list(
+      dfResults = dfResults,
+      dfMetrics = lReporting$Reporting_Metrics,
+      dfGroups = lReporting$Reporting_Groups,
+      lListings = lListings,
+      nWindowDays = window_days
+    )
+  ),
+  parent = environment()
+)
+report_premature_deaths <- knitr::knit_child(
+  system.file("report", "Report_PrematureDeaths.Rmd", package = "gsm.kri"),
+  envir = child_env,
+  quiet = TRUE
+)
+cat(report_premature_deaths, sep = "\n")
+```
