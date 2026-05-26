@@ -1,17 +1,17 @@
 meta:
   Type: Analysis
-  ID: cou0015
-  GroupLevel: Country
+  ID: pat0015
+  GroupLevel: Patient
   Abbreviation: DTH90
-  Metric: Premature Death Rate
-  Numerator: Deaths in First 90 Days
-  Denominator: Enrolled Subjects
+  Metric: Premature Death (Patient)
+  Numerator: Premature Death in Window
+  Denominator: Enrolled Subject
   Model: Identity
   Score: Numerator
   AnalysisType: identity
-  Threshold: "1,2"
-  Flag: "0,1,2"
-  RiskScoreWeight: "0,8,16"
+  Threshold: "1"
+  Flag: "0,2"
+  RiskScoreWeight: "0,16"
   AccrualThreshold: 1
   AccrualMetric: Denominator
   WindowDays: 90
@@ -23,8 +23,6 @@ spec:
       type: numeric
   Mapped_SUBJ:
     subjid:
-      type: character
-    country:
       type: character
 steps:
   - output: vThreshold
@@ -46,7 +44,7 @@ steps:
     params:
       strPrefix: "SELECT * FROM df WHERE death_dy <= "
       nWindow: WindowDays
-  - output: Temp_Death90
+  - output: Temp_DeathWindow
     name: RunQuery
     params:
       df: Mapped_Death
@@ -55,10 +53,10 @@ steps:
     name: gsm.core::Input_Rate
     params:
       dfSubjects: Mapped_SUBJ
-      dfNumerator: Temp_Death90
+      dfNumerator: Temp_DeathWindow
       dfDenominator: Mapped_SUBJ
       strSubjectCol: subjid
-      strGroupCol: country
+      strGroupCol: subjid
       strGroupLevel: GroupLevel
       strNumeratorMethod: Count
       strDenominatorMethod: Count
