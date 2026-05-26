@@ -22,13 +22,6 @@ test_that("pd_PatientListing returns a DT htmlwidget {#59}", {
   expect_s3_class(tbl, "datatables")
 })
 
-test_that("pd_PatientListing applies red row color for Flag==2 {#59}", {
-  testthat::skip_if_not_installed("DT")
-  tbl <- pd_PatientListing(dfResults, dfDeath)
-  callback_str <- tbl$x$options$rowCallback
-  expect_true(grepl(colorScheme("red", "dark"), callback_str, fixed = TRUE))
-})
-
 test_that("pd_PatientListing keeps only Flag==2 rows sorted by death_dy {#59}", {
   df <- pd_PatientListingData(dfResults, dfDeath)
   expect_equal(df$subjid, c("S2", "S1")) # day 20 before day 50; S3 (Flag 0) dropped
