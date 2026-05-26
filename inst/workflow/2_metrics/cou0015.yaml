@@ -11,8 +11,10 @@ meta:
   AnalysisType: identity
   Threshold: "1,2"
   Flag: "0,1,2"
+  RiskScoreWeight: "0,8,16"
   AccrualThreshold: 1
   AccrualMetric: Denominator
+  WindowDays: 90
 spec:
   Mapped_Death:
     subjid:
@@ -39,11 +41,16 @@ steps:
     params:
       strThreshold: Flag
       bSort: false
+  - output: strDeathQuery
+    name: paste0
+    params:
+      strPrefix: "SELECT * FROM df WHERE death_dy <= "
+      nWindow: WindowDays
   - output: Temp_Death90
     name: RunQuery
     params:
       df: Mapped_Death
-      strQuery: "SELECT * FROM df WHERE death_dy <= 90"
+      strQuery: strDeathQuery
   - output: Analysis_Input
     name: gsm.core::Input_Rate
     params:
