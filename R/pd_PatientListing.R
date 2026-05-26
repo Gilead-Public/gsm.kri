@@ -27,6 +27,7 @@ pd_CheckWindowConsistency <- function(nWindowDays, nPremature, nFlagged) {
   invisible(NULL)
 }
 
+#' Premature-death patient listing data
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`
