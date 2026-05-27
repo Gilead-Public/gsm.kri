@@ -22,6 +22,7 @@ library(plotly)
 library(DT)
 library(htmltools)
 library(knitr)
+library(jsonlite)
 
 knitr::opts_chunk$set(warning = FALSE, message = FALSE)
 
@@ -31,6 +32,17 @@ nWindowDays <- params$nWindowDays
 
 Mapped_Death <- lListings$Mapped_Death
 Mapped_SUBJ <- lListings$Mapped_SUBJ
+
+# Country → site lookup for JS filtering
+country_site_map <- Mapped_SUBJ %>%
+  dplyr::distinct(country, invid) %>%
+  dplyr::group_by(country) %>%
+  dplyr::summarise(sites = list(invid), .groups = "drop") %>%
+  tibble::deframe() %>%
+  jsonlite::toJSON(auto_unbox = FALSE)
+
+# 0-indexed column position of invid in the DT widget (for JS filtering)
+invid_col_idx <- 6L
 
 nEnrolled <- nrow(Mapped_SUBJ)
 nPremature <- sum(!is.na(Mapped_Death$death_dy) & Mapped_Death$death_dy <= nWindowDays)
@@ -103,7 +115,10 @@ pd_ReasonDist(Mapped_Death, nWindowDays)
 
 ### Buckets
 ```{r country-buckets, echo=FALSE, eval=has_premature}
-pd_BucketBar(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "country", strGroupLabel = "Country")
+htmltools::div(
+  id = "pd-country-buckets",
+  pd_BucketBar(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "country", strGroupLabel = "Country")
+)
 ```
 
 ### Rand -> Death
@@ -113,17 +128,28 @@ pd_RandToDeathScatter(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "cou
 
 ## Site {.tabset .tabset-pills}
 
+<div id="pd-filter-banner" style="display:none; background:#e3f2fd; border:1px solid #90caf9; border-radius:6px; padding:10px 16px; margin:16px 0; align-items:center; justify-content:space-between;">
+  <span id="pd-filter-text" style="font-size:13px; color:#1565c0;"></span>
+  <button id="pd-filter-reset" onclick="pdResetFilter()" style="background:#1a73e8; color:white; border:none; border-radius:4px; padding:4px 12px; cursor:pointer; font-size:12px;">✕ Show All Sites</button>
+</div>
+
 ### Buckets
 ```{r site-buckets, echo=FALSE, eval=has_premature}
-pd_BucketBar(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "invid", strGroupLabel = "Site")
+htmltools::div(
+  id = "pd-site-buckets",
+  pd_BucketBar(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "invid", strGroupLabel = "Site")
+)
 ```
 
 ### Rand -> Death
 ```{r site-scatter, echo=FALSE, eval=has_premature}
-pd_RandToDeathScatter(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "invid", strGroupLabel = "Site")
+htmltools::div(
+  id = "pd-site-scatter",
+  pd_RandToDeathScatter(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "invid", strGroupLabel = "Site")
+)
 ```
 
 ## Patient Listing
 ```{r patient-listing, echo=FALSE}
-pd_PatientListing(dfResults, Mapped_Death)
+pd_PatientListing(dfResults, Mapped_Death, Mapped_SUBJ)
 ```
