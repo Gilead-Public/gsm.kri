@@ -232,7 +232,7 @@ cat(sprintf('
   // Store original trace data for each chart on first filter
   var originalData = {};
 
-  function filterPlotlyChart(containerId, sites) {
+  function filterPlotlyChart(containerId, allowedValues) {
     var el = getPlotlyDiv(containerId);
     if (!el) return;
     // Cache original data on first call
@@ -241,15 +241,29 @@ cat(sprintf('
     }
     var orig = originalData[containerId];
     var filtered = orig.map(function(trace) {
-      if (!trace.x) return trace;
-      var newTrace = Object.assign({}, trace);
+      // Determine which axis has categorical group values (strings)
+      var matchAxis = null;
+      if (trace.x && trace.x.length > 0 && typeof trace.x[0] === "string") {
+        matchAxis = "x";
+      } else if (trace.y && trace.y.length > 0 && typeof trace.y[0] === "string") {
+        matchAxis = "y";
+      }
+      if (!matchAxis) return trace;
+
+      var axisData = trace[matchAxis];
       var indices = [];
-      trace.x.forEach(function(x, idx) {
-        if (sites.indexOf(x) >= 0) indices.push(idx);
+      axisData.forEach(function(val, idx) {
+        if (allowedValues.indexOf(val) >= 0) indices.push(idx);
       });
+
+      var newTrace = Object.assign({}, trace);
       newTrace.x = indices.map(function(i) { return trace.x[i]; });
       if (trace.y) newTrace.y = indices.map(function(i) { return trace.y[i]; });
       if (trace.text) newTrace.text = indices.map(function(i) { return trace.text[i]; });
+      if (trace.marker && trace.marker.color && Array.isArray(trace.marker.color)) {
+        newTrace.marker = Object.assign({}, trace.marker);
+        newTrace.marker.color = indices.map(function(i) { return trace.marker.color[i]; });
+      }
       return newTrace;
     });
     Plotly.react(el, filtered, el.layout);
