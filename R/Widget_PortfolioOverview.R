@@ -9,7 +9,7 @@
 #' numerator / denominator / rate. Includes a filter bar (D2) and expandable
 #' drill-down rows that reveal per-study contributions (D4).
 #'
-#' For a working example see inst/examples/Example_PortfolioOverview.Rmd.
+#' For a working example see the [Portfolio Overview Report](https://gilead-biostats.github.io/gsm.kri/examples/Example_PortfolioOverview.html).
 #'
 #' @param dfResults `data.frame` Cross-study KRI results.
 #' @param dfMetrics `data.frame` Metadata about metrics/KRIs.

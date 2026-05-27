@@ -40,7 +40,7 @@
 #'
 #' @examples
 #' \dontrun{
-#' # See inst/examples/Example_PortfolioOverview.Rmd
+#' # See pkgdown/menus/examples/Example_PortfolioOverview.Rmd
 #' }
 #' @export
 SummarizePortfolioOverview <- function(
