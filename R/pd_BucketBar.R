@@ -1,3 +1,41 @@
+#' Premature-death bucket labels
+#'
+#' @description
+#' The three bucket labels (`<=30d`, `31-Wd`, `Alive at Wd`, where `W` is
+#' `nWindowDays`), in RAG order. Shared by the bucket bar and the
+#' randomization-to-death scatter so labels and colors stay in lockstep.
+#'
+#' @param nWindowDays `numeric` Premature-death window in days.
+#'
+#' @return A length-3 `character` vector of bucket labels.
+#' @noRd
+pd_BucketLabels <- function(nWindowDays) {
+  c(
+    "<=30d",
+    paste0("31-", nWindowDays, "d"),
+    paste0("Alive at ", nWindowDays, "d")
+  )
+}
+
+#' Premature-death bucket RAG colors
+#'
+#' @description
+#' Named (red / amber / green) color vector keyed by [pd_BucketLabels()].
+#'
+#' @param nWindowDays `numeric` Premature-death window in days.
+#'
+#' @return A length-3 named `character` vector of hex colors.
+#' @noRd
+pd_RagColors <- function(nWindowDays) {
+  rag_colors <- c(
+    colorScheme("red", "dark"),
+    colorScheme("amber", "dark"),
+    colorScheme("green", "dark")
+  )
+  names(rag_colors) <- pd_BucketLabels(nWindowDays)
+  rag_colors
+}
+
 #' Premature-death bucket counts
 #'
 #' @description
@@ -19,17 +57,15 @@ pd_BucketCounts <- function(
   nWindowDays = 90,
   strGroupCol = "studyid"
 ) {
-  upper_label <- paste0("31-", nWindowDays, "d")
-  alive_label <- paste0("Alive at ", nWindowDays, "d")
-  bucket_levels <- c("<=30d", upper_label, alive_label)
+  bucket_levels <- pd_BucketLabels(nWindowDays)
 
   death_dy <- dfDeath$death_dy[match(dfSubjects$subjid, dfDeath$subjid)]
   premature <- !is.na(death_dy) & death_dy <= nWindowDays
 
   bucket <- dplyr::case_when(
-    premature & death_dy <= 30 ~ "<=30d",
-    premature ~ upper_label,
-    TRUE ~ alive_label
+    premature & death_dy <= 30 ~ bucket_levels[1],
+    premature ~ bucket_levels[2],
+    TRUE ~ bucket_levels[3]
   )
 
   tibble::tibble(
@@ -76,14 +112,7 @@ pd_BucketBar <- function(
 
   dfCounts <- pd_BucketCounts(dfDeath, dfSubjects, nWindowDays, strGroupCol)
 
-  upper_label <- paste0("31-", nWindowDays, "d")
-  alive_label <- paste0("Alive at ", nWindowDays, "d")
-  rag_colors <- c(
-    colorScheme("red", "dark"),
-    colorScheme("amber", "dark"),
-    colorScheme("green", "dark")
-  )
-  names(rag_colors) <- c("<=30d", upper_label, alive_label)
+  rag_colors <- pd_RagColors(nWindowDays)
 
   plotly::plot_ly(
     dfCounts,

@@ -91,7 +91,7 @@ pd_BucketBar(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "studyid", st
 
 ### Rand -> Death
 ```{r study-scatter, echo=FALSE, eval=has_premature}
-pd_RandToDeathScatter(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "studyid", strGroupLabel = "Study")
+pd_RandToDeathScatter(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "studyid", strGroupLabel = "Study", dSnapshotDate = latest_snapshot)
 ```
 
 ### Reasons

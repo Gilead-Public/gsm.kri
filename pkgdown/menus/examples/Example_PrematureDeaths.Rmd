@@ -130,6 +130,72 @@ lMapped$Mapped_Death <- MockCompleteDeathExtension(
 lMapped$Mapped_Death <- lMapped$Mapped_Death %>%
   dplyr::filter(.data$subjid %in% lMapped$Mapped_SUBJ$subjid)
 
+# --- Step 2b: Simulate a realistic premature-death cohort (example only) -----
+# clindata's real randomization dates sit ~a decade before Sys.Date(), so the
+# handful of real premature deaths land >10 years out and off-scale on the study
+# scatter. Rather than place points on an (artificial-looking) even grid, we
+# simulate the trial dynamics that actually shape this scatter:
+#
+#   * Accrual (-> y-axis): each enrolled subject gets a randomization date drawn
+#     from an accelerating-then-steady accrual curve over a 5-year window ending
+#     at the snapshot. Time-on-study (SnapshotDate - randomization) IS the
+#     scatter's y, so y spans 0-5 years and is denser for recent enrollees.
+#   * Mortality (-> x-axis): time from randomization to death ~ Weibull with a
+#     slightly decreasing hazard (early-death emphasis), calibrated to a ~6%
+#     in-window death rate.
+#   * Censoring (-> shape): a death is observed only if it occurred before the
+#     snapshot (death_dy <= time-on-study). This empties the lower-right of the
+#     scatter -- you cannot yet observe a day-80 death in a subject randomized 30
+#     days ago -- giving the characteristic wedge along y >= x.
+#
+# SnapshotDate == Sys.Date() (the gsm.reporting BindResults default). The study
+# scatter plots y = SnapshotDate - death_dt + death_dy, and death_dt =
+# randomization_date + death_dy, so y reduces exactly to time-on-study.
+set.seed(2026)
+snapshot_date <- Sys.Date()
+study_duration <- 5 * 365 # max time-on-study / accrual window (days)
+
+subj <- lMapped$Mapped_SUBJ %>% dplyr::distinct(.data$subjid, .keep_all = TRUE)
+n_subj <- nrow(subj)
+
+# Accrual: accelerating (concave) enrolment over the window -> more subjects
+# randomized recently -> shorter time-on-study.
+accrual_time <- study_duration * runif(n_subj)^(1 / 1.6)
+time_on_study <- study_duration - accrual_time # = SnapshotDate - randomization
+rand_date <- snapshot_date - round(time_on_study)
+
+# Mortality: Weibull time-to-death (shape < 1 => early-death emphasis), scaled
+# so ~6% of subjects die within the 90-day window.
+wb_shape <- 0.9
+wb_scale <- window_days / (-log(1 - 0.06))^(1 / wb_shape)
+death_time <- round(rweibull(n_subj, shape = wb_shape, scale = wb_scale))
+
+# Censoring: observe a death only if it happened before the snapshot.
+observed <- death_time >= 1 & death_time <= time_on_study
+n_obs <- sum(observed)
+
+reasons <- c("Cardiac arrest", "Sepsis", "Disease progression", "Unknown")
+sim_death <- tibble::tibble(
+  studyid = subj$studyid[observed],
+  subjid = subj$subjid[observed],
+  death_dt = rand_date[observed] + death_time[observed],
+  death_dy = death_time[observed],
+  death = TRUE,
+  pd_date = as.Date(NA),
+  ae_pt_at_death = NA_character_,
+  compreas = NA_character_,
+  treatment_related = runif(n_obs) < 0.35,
+  death_reason = sample(
+    reasons,
+    n_obs,
+    replace = TRUE,
+    prob = c(0.30, 0.25, 0.30, 0.15)
+  )
+)
+
+# Replace Mapped_Death with the simulated deaths, preserving its column schema.
+lMapped$Mapped_Death <- dplyr::bind_rows(lMapped$Mapped_Death[0, ], sim_death)
+
 # --- Step 3: Run the site / country / patient premature-death metrics --------
 metric_names <- c("kri0015", "cou0015", "pat0015")
 metrics_wf <- MakeWorkflowList(
