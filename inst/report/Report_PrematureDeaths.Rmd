@@ -153,3 +153,153 @@ htmltools::div(
 ```{r patient-listing, echo=FALSE}
 pd_PatientListing(dfResults, Mapped_Death, Mapped_SUBJ)
 ```
+
+```{r filter-js, echo=FALSE, results='asis', eval=has_premature}
+cat(sprintf('
+<script>
+(function() {
+  var countrySiteMap = %s;
+  var invidColIdx = %d;
+  var activeCountry = null;
+
+  // Find the plotly div inside a container
+  function getPlotlyDiv(containerId) {
+    var container = document.getElementById(containerId);
+    if (!container) return null;
+    return container.querySelector(".plotly");
+  }
+
+  // Attach click handler to country buckets chart (max 5 retries)
+  var attachRetries = 0;
+  function attachCountryClick() {
+    var el = getPlotlyDiv("pd-country-buckets");
+    if (!el) {
+      if (++attachRetries < 5) setTimeout(attachCountryClick, 500);
+      return;
+    }
+    el.on("plotly_click", function(data) {
+      var country = data.points[0].x;
+      if (country === activeCountry) {
+        pdResetFilter();
+      } else {
+        applyFilter(country);
+      }
+    });
+  }
+
+  function applyFilter(country) {
+    activeCountry = country;
+    var sites = countrySiteMap[country] || [];
+
+    // Show banner
+    var banner = document.getElementById("pd-filter-banner");
+    banner.style.display = "flex";
+    document.getElementById("pd-filter-text").innerHTML =
+      "\\ud83d\\udd0d <strong>Filtered:</strong> Showing sites for <strong>" +
+      country + "</strong> (" + sites.length + " site" + (sites.length !== 1 ? "s" : "") + ")";
+
+    // Highlight country bar: dim non-selected
+    highlightCountryBar(country);
+
+    // Filter site buckets
+    filterPlotlyChart("pd-site-buckets", sites);
+
+    // Filter site scatter
+    filterPlotlyChart("pd-site-scatter", sites);
+
+    // Filter patient listing
+    filterPatientListing(sites);
+  }
+
+  function highlightCountryBar(country) {
+    var el = getPlotlyDiv("pd-country-buckets");
+    if (!el) return;
+    var data = el.data;
+    for (var i = 0; i < data.length; i++) {
+      var opacities = data[i].x.map(function(x) {
+        return x === country ? 1.0 : 0.3;
+      });
+      Plotly.restyle(el, {"marker.opacity": [opacities]}, [i]);
+    }
+  }
+
+  // Store original trace data for each chart on first filter
+  var originalData = {};
+
+  function filterPlotlyChart(containerId, sites) {
+    var el = getPlotlyDiv(containerId);
+    if (!el) return;
+    // Cache original data on first call
+    if (!originalData[containerId]) {
+      originalData[containerId] = JSON.parse(JSON.stringify(el.data));
+    }
+    var orig = originalData[containerId];
+    var filtered = orig.map(function(trace) {
+      if (!trace.x) return trace;
+      var newTrace = Object.assign({}, trace);
+      var indices = [];
+      trace.x.forEach(function(x, idx) {
+        if (sites.indexOf(x) >= 0) indices.push(idx);
+      });
+      newTrace.x = indices.map(function(i) { return trace.x[i]; });
+      if (trace.y) newTrace.y = indices.map(function(i) { return trace.y[i]; });
+      if (trace.text) newTrace.text = indices.map(function(i) { return trace.text[i]; });
+      return newTrace;
+    });
+    Plotly.react(el, filtered, el.layout);
+  }
+
+  function filterPatientListing(sites) {
+    var tables = document.querySelectorAll(".dataTable");
+    if (tables.length === 0) return;
+    var dtApi = $(tables[tables.length - 1]).DataTable();
+    var regex = "^(" + sites.join("|") + ")$";
+    dtApi.column(invidColIdx).search(regex, true, false).draw();
+  }
+
+  // Global reset function (called by button onclick)
+  window.pdResetFilter = function() {
+    activeCountry = null;
+
+    // Hide banner
+    document.getElementById("pd-filter-banner").style.display = "none";
+
+    // Reset country bar opacity
+    var el = getPlotlyDiv("pd-country-buckets");
+    if (el) {
+      for (var i = 0; i < el.data.length; i++) {
+        var allOnes = el.data[i].x.map(function() { return 1.0; });
+        Plotly.restyle(el, {"marker.opacity": [allOnes]}, [i]);
+      }
+    }
+
+    // Reset site buckets
+    resetPlotlyChart("pd-site-buckets");
+
+    // Reset site scatter
+    resetPlotlyChart("pd-site-scatter");
+
+    // Reset patient listing
+    var tables = document.querySelectorAll(".dataTable");
+    if (tables.length > 0) {
+      var dtApi = $(tables[tables.length - 1]).DataTable();
+      dtApi.column(invidColIdx).search("").draw();
+    }
+  };
+
+  function resetPlotlyChart(containerId) {
+    var el = getPlotlyDiv(containerId);
+    if (!el || !originalData[containerId]) return;
+    Plotly.react(el, originalData[containerId], el.layout);
+  }
+
+  // Initialize when DOM is ready
+  if (document.readyState === "complete") {
+    attachCountryClick();
+  } else {
+    window.addEventListener("load", attachCountryClick);
+  }
+})();
+</script>
+', country_site_map, invid_col_idx))
+```
