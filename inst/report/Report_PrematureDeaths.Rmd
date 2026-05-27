@@ -1,0 +1,119 @@
+---
+output:
+  html_document:
+    mathjax: null
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    css: styles.css
+params:
+  dfResults: NA
+  dfMetrics: NA
+  dfGroups: NA
+  lListings: NA
+  nWindowDays: 90
+---
+
+```{r setup, include=FALSE}
+library(dplyr)
+library(gsm.kri)
+library(plotly)
+library(DT)
+library(htmltools)
+library(knitr)
+
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+
+dfResults <- params$dfResults
+lListings <- params$lListings
+nWindowDays <- params$nWindowDays
+
+Mapped_Death <- lListings$Mapped_Death
+Mapped_SUBJ <- lListings$Mapped_SUBJ
+
+nEnrolled <- nrow(Mapped_SUBJ)
+nPremature <- sum(!is.na(Mapped_Death$death_dy) & Mapped_Death$death_dy <= nWindowDays)
+latest_snapshot <- max(dfResults$SnapshotDate)
+has_premature <- nPremature > 0
+
+# Consistency guard: the charts recompute premature status from Mapped_Death at
+# nWindowDays; the patient listing trusts pat0015 Flag==2 rows (flagged at
+# analysis-time meta.WindowDays). A divergence means nWindowDays != the window
+# that produced dfResults -> charts and listing describe different windows.
+nFlagged <- sum(
+  dfResults$MetricID == "Analysis_pat0015" & dfResults$Flag == 2,
+  na.rm = TRUE
+)
+if (nFlagged != nPremature) {
+  pd_CheckWindowConsistency(nWindowDays, nPremature, nFlagged)
+}
+```
+
+---
+title: "Premature Deaths Overview"
+subtitle: "Study: `r unique(Mapped_SUBJ$studyid)`"
+date: "Snapshot Date: `r latest_snapshot`"
+---
+
+# Premature Deaths Overview
+
+## Overview
+
+```{r overview, echo=FALSE, results='asis'}
+cat(sprintf(
+  "- **Configured window:** %d days\n- **Total enrolled:** %d\n- **Premature deaths (within window):** %d\n- **Premature death rate:** %.1f%%\n",
+  nWindowDays, nEnrolled, nPremature,
+  ifelse(nEnrolled > 0, 100 * nPremature / nEnrolled, 0)
+))
+```
+
+```{r empty-state, echo=FALSE, results='asis', eval=!has_premature}
+cat("\n> **No premature deaths in window.** All charts and the patient listing are empty for this snapshot.\n")
+```
+
+## Study {.tabset .tabset-pills}
+
+### Buckets
+```{r study-buckets, echo=FALSE, eval=has_premature}
+pd_BucketBar(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "studyid", strGroupLabel = "Study")
+```
+
+### Rand -> Death
+```{r study-scatter, echo=FALSE, eval=has_premature}
+pd_RandToDeathScatter(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "studyid", strGroupLabel = "Study")
+```
+
+### Reasons
+```{r study-reasons, echo=FALSE, eval=has_premature}
+pd_ReasonDist(Mapped_Death, nWindowDays)
+```
+
+## Country {.tabset .tabset-pills}
+
+### Buckets
+```{r country-buckets, echo=FALSE, eval=has_premature}
+pd_BucketBar(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "country", strGroupLabel = "Country")
+```
+
+### Rand -> Death
+```{r country-scatter, echo=FALSE, eval=has_premature}
+pd_RandToDeathScatter(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "country", strGroupLabel = "Country")
+```
+
+## Site {.tabset .tabset-pills}
+
+### Buckets
+```{r site-buckets, echo=FALSE, eval=has_premature}
+pd_BucketBar(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "invid", strGroupLabel = "Site")
+```
+
+### Rand -> Death
+```{r site-scatter, echo=FALSE, eval=has_premature}
+pd_RandToDeathScatter(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "invid", strGroupLabel = "Site")
+```
+
+## Patient Listing
+```{r patient-listing, echo=FALSE}
+pd_PatientListing(dfResults, Mapped_Death)
+```
