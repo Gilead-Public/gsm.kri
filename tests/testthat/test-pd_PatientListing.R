@@ -48,6 +48,24 @@ test_that("pd_PatientListing validates inputs {#59}", {
   )
 })
 
+dfSubjects <- tibble::tibble(
+  subjid = c("S1", "S2", "S3"),
+  invid = c("INV-1", "INV-1", "INV-2"),
+  country = c("USA", "USA", "CAN")
+)
+
+test_that("pd_PatientListingData includes invid when dfSubjects provided {#TBD}", {
+  df <- pd_PatientListingData(dfResults, dfDeath, dfSubjects)
+  expect_true("invid" %in% names(df))
+  expect_equal(df$invid, c("INV-1", "INV-1")) # S2 (day 20), S1 (day 50) — both Flag==2
+})
+
+test_that("pd_PatientListingData works without dfSubjects (backwards compat) {#TBD}", {
+  df <- pd_PatientListingData(dfResults, dfDeath)
+  expect_false("invid" %in% names(df))
+  expect_equal(nrow(df), 2)
+})
+
 test_that("pd_CheckWindowConsistency warns on mismatch {#59}", {
   expect_warning(
     pd_CheckWindowConsistency(10, 0, 2),
