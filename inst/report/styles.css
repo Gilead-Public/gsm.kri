@@ -111,6 +111,10 @@ table.dataTable.compact thead th, table.dataTable.compact thead td {
   background-color: #FF585980;
 }
 
+.flag-green {
+  background-color: #52C41A80;
+}
+
 .flag-container {
   display: flex;
   justify-content: center;

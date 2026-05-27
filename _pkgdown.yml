@@ -28,6 +28,8 @@ navbar:
         href: examples/Cookbook_ReportingWorkflow.html
       - text: Example CrossStudySRS
         href: examples/Example_CrossStudySRS.html
+      - text: Example PrematureDeaths
+        href: examples/Example_PrematureDeaths.html
       - text: Report Eligibility
         href: examples/Report_Eligibility.html
       - text: Report Kri Country
