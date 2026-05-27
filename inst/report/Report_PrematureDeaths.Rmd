@@ -123,7 +123,10 @@ htmltools::div(
 
 ### Rand -> Death
 ```{r country-scatter, echo=FALSE, eval=has_premature}
-pd_RandToDeathScatter(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "country", strGroupLabel = "Country")
+htmltools::div(
+  id = "pd-country-scatter",
+  pd_RandToDeathScatter(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "country", strGroupLabel = "Country")
+)
 ```
 
 ## Site {.tabset .tabset-pills}
@@ -201,6 +204,9 @@ cat(sprintf('
     // Highlight country bar: dim non-selected
     highlightCountryBar(country);
 
+    // Filter country scatter to selected country only
+    filterPlotlyChart("pd-country-scatter", [country]);
+
     // Filter site buckets
     filterPlotlyChart("pd-site-buckets", sites);
 
@@ -272,6 +278,9 @@ cat(sprintf('
         Plotly.restyle(el, {"marker.opacity": [allOnes]}, [i]);
       }
     }
+
+    // Reset country scatter
+    resetPlotlyChart("pd-country-scatter");
 
     // Reset site buckets
     resetPlotlyChart("pd-site-buckets");
