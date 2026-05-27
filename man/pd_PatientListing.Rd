@@ -4,12 +4,16 @@
 \alias{pd_PatientListing}
 \title{Premature-death patient listing}
 \usage{
-pd_PatientListing(dfResults, dfDeath)
+pd_PatientListing(dfResults, dfDeath, dfSubjects = NULL)
 }
 \arguments{
 \item{dfResults}{`data.frame` Reporting results containing patient-level rows.}
 
 \item{dfDeath}{`data.frame` Mapped death data keyed on `subjid`.}
+
+\item{dfSubjects}{`data.frame` (optional) Mapped subject data with `subjid`
+and `invid`. When supplied, the output includes `invid` for site-level
+filtering in the interactive report.}
 }
 \value{
 A `DT::datatable` htmlwidget.

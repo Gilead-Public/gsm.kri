@@ -4,12 +4,16 @@
 \alias{pd_PatientListingData}
 \title{Premature-death patient listing data}
 \usage{
-pd_PatientListingData(dfResults, dfDeath)
+pd_PatientListingData(dfResults, dfDeath, dfSubjects = NULL)
 }
 \arguments{
 \item{dfResults}{`data.frame` Reporting results containing patient-level rows.}
 
 \item{dfDeath}{`data.frame` Mapped death data keyed on `subjid`.}
+
+\item{dfSubjects}{`data.frame` (optional) Mapped subject data with `subjid`
+and `invid`. When supplied, the output includes `invid` for site-level
+filtering in the interactive report.}
 }
 \value{
 A `data.frame` of one row per flagged premature-death subject.
