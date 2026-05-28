@@ -1,0 +1,82 @@
+---
+title: "Record Duplication Report"
+date: "`r format(Sys.time(), '%Y-%m-%d %H:%M:%S %Z')`"
+index: 5
+output:
+  html_document:
+    toc: false
+    self_contained: true
+    theme: cosmo
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE,
+  results = 'hide'
+)
+```
+
+```{r load-packages}
+devtools::load_all()
+library(gsm.core)
+library(dplyr)
+library(htmlwidgets)
+```
+
+```{r simulate-data}
+#### Simulate Vitals Data with Duplicates ####
+set.seed(42)
+
+n_subj <- 60
+n_visits <- 10
+subjects <- paste0("S", sprintf("%03d", 1:n_subj))
+sites <- paste0("SITE", sprintf("%02d", rep(1:6, each = 10)))
+
+Mapped_SUBJ <- data.frame(
+  subjid = subjects,
+  invid = sites,
+  stringsAsFactors = FALSE
+)
+
+# Generate VS data
+vs_rows <- expand.grid(subjid = subjects, visit = 1:n_visits, stringsAsFactors = FALSE)
+vs_rows$vs_dt <- as.Date("2024-01-01") + (vs_rows$visit - 1) * 30
+vs_rows$weight <- round(rnorm(nrow(vs_rows), 75, 10), 1)
+vs_rows$sysbp <- round(rnorm(nrow(vs_rows), 125, 15), 0)
+vs_rows$diabp <- round(rnorm(nrow(vs_rows), 80, 10), 0)
+
+# Inject ~10% duplicates per measure
+inject_duplicates <- function(values, subjects, rate = 0.10) {
+  for (subj in unique(subjects)) {
+    idx <- which(subjects == subj)
+    if (length(idx) <= 1) next
+    n_dup <- max(1, round(length(idx[-1]) * rate))
+    dup_pos <- sample(idx[-1], n_dup)
+    for (p in dup_pos) {
+      prior <- idx[idx < p]
+      values[p] <- values[sample(prior, 1)]
+    }
+  }
+  values
+}
+
+vs_rows$weight <- inject_duplicates(vs_rows$weight, vs_rows$subjid)
+vs_rows$sysbp <- inject_duplicates(vs_rows$sysbp, vs_rows$subjid)
+vs_rows$diabp <- inject_duplicates(vs_rows$diabp, vs_rows$subjid)
+
+Mapped_VS <- vs_rows[, c("subjid", "vs_dt", "weight", "sysbp", "diabp")]
+```
+
+```{r report, results='asis'}
+#### Generate Record Duplication Report ####
+w <- Report_RecordDuplication(
+  dfMappedVS = Mapped_VS,
+  dfMappedSUBJ = Mapped_SUBJ,
+  vMeasuresVS = c("weight", "sysbp", "diabp"),
+  vPrioritizedMeasures = c("weight"),
+  strGroupLevel = "Site"
+)
+w
+```
