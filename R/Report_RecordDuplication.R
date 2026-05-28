@@ -17,8 +17,13 @@
 #' @param vMeasuresLB `character` Lab test names to analyze. Default: all unique values
 #'   in `lbtstnam` column.
 #' @param vPrioritizedMeasures `character` Measures with KRI metrics configured (shown first).
+#'   If NULL and `dfMeasureMetrics` is derived from installed YAMLs, defaults to those measures.
 #' @param strGroupCol `character` Column in `dfMappedSUBJ` for grouping. Default: `"invid"`.
 #' @param strGroupLevel `character` Group level label. Default: `"Site"`.
+#' @param dfReportingResults `data.frame` Optional. Standard reportingResults data with columns:
+#'   `GroupID`, `GroupLevel`, `MetricID`, `Score`, `Flag`. Passed to widget to show metric badges.
+#' @param dfReportingMetrics `data.frame` Optional. Standard reportingMetrics data with columns:
+#'   `MetricID`, `Metric`. Passed through to widget for future use.
 #'
 #' @return A [Widget_RecordDuplication()] htmlwidget.
 #'
@@ -40,7 +45,9 @@ Report_RecordDuplication <- function(
   vMeasuresLB = NULL,
   vPrioritizedMeasures = NULL,
   strGroupCol = "invid",
-  strGroupLevel = "Site"
+  strGroupLevel = "Site",
+  dfReportingResults = NULL,
+  dfReportingMetrics = NULL
 ) {
   stopifnot(is.data.frame(dfMappedSUBJ))
   stopifnot("subjid" %in% names(dfMappedSUBJ))
@@ -57,6 +64,7 @@ Report_RecordDuplication <- function(
     measure = character(0),
     value = numeric(0),
     is_duplicate = integer(0),
+    is_source = integer(0),
     stringsAsFactors = FALSE
   )
 
@@ -84,6 +92,7 @@ Report_RecordDuplication <- function(
           measure = measure,
           value = flagged[[measure]],
           is_duplicate = flagged$is_duplicate,
+          is_source = flagged$is_source,
           stringsAsFactors = FALSE
         )
         flagged_out <- merge(flagged_out, dfSubjGroup, by = "subjid", all.x = TRUE)
@@ -117,6 +126,7 @@ Report_RecordDuplication <- function(
             measure = measure,
             value = flagged$rptresn,
             is_duplicate = flagged$is_duplicate,
+            is_source = flagged$is_source,
             stringsAsFactors = FALSE
           )
           flagged_out <- merge(flagged_out, dfSubjGroup, by = "subjid", all.x = TRUE)
@@ -126,8 +136,31 @@ Report_RecordDuplication <- function(
     }
   }
 
+  # Auto-derive measure -> MetricID mapping from installed metric YAMLs
+  wf_path <- system.file("workflow/2_metrics", package = "gsm.kri")
+  yaml_files <- list.files(wf_path, pattern = "^kri.*\\.yaml$", full.names = TRUE)
+  dfMeasureMetrics <- do.call(rbind, lapply(yaml_files, function(f) {
+    m <- yaml::read_yaml(f)$meta
+    if (!is.null(m$ValueCol)) {
+      data.frame(
+        measure = m$ValueCol,
+        MetricID = paste0("Analysis_", m$ID),
+        stringsAsFactors = FALSE
+      )
+    }
+  }))
+  if (is.null(dfMeasureMetrics) || nrow(dfMeasureMetrics) == 0) dfMeasureMetrics <- NULL
+
+  # Auto-set vPrioritizedMeasures if not provided and measure mapping was derived
+  if (is.null(vPrioritizedMeasures) && !is.null(dfMeasureMetrics)) {
+    vPrioritizedMeasures <- dfMeasureMetrics$measure
+  }
+
   Widget_RecordDuplication(
     dfFlagged = dfFlagged,
+    dfReportingResults = dfReportingResults,
+    dfReportingMetrics = dfReportingMetrics,
+    dfMeasureMetrics = dfMeasureMetrics,
     strGroupLevel = strGroupLevel,
     vPrioritizedMeasures = vPrioritizedMeasures
   )

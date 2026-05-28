@@ -75,7 +75,8 @@ w <- Report_RecordDuplication(
   dfMappedVS = Mapped_VS,
   dfMappedSUBJ = Mapped_SUBJ,
   vMeasuresVS = c("weight", "sysbp", "diabp"),
-  vPrioritizedMeasures = c("weight"),
+  dfReportingResults = gsm.core::reportingResults,
+  dfReportingMetrics = gsm.core::reportingMetrics,
   strGroupLevel = "Site"
 )
 w

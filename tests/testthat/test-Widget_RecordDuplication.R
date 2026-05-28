@@ -6,10 +6,48 @@ test_that("Widget_RecordDuplication creates a valid htmlwidget", {
     measure = c("weight", "weight", "weight", "weight", "weight"),
     value = c(75, 75, 76, 80, 80),
     is_duplicate = c(0L, 1L, 0L, 0L, 1L),
+    is_source = c(1L, 0L, 0L, 1L, 0L),
     stringsAsFactors = FALSE
   )
 
   w <- Widget_RecordDuplication(dfFlagged)
+
+  expect_s3_class(w, "htmlwidget")
+  expect_s3_class(w, "Widget_RecordDuplication")
+})
+
+test_that("Widget_RecordDuplication accepts new metric parameters", {
+  dfFlagged <- data.frame(
+    subjid = c("S001", "S001"),
+    GroupID = c("SITE01", "SITE01"),
+    date = as.Date(c("2024-01-01", "2024-02-01")),
+    measure = c("weight", "weight"),
+    value = c(75, 75),
+    is_duplicate = c(0L, 1L),
+    is_source = c(1L, 0L),
+    stringsAsFactors = FALSE
+  )
+
+  dfReportingResults <- data.frame(
+    GroupID = "SITE01",
+    GroupLevel = "Site",
+    MetricID = "Analysis_kri0016",
+    Score = 2.34,
+    Flag = 2L,
+    stringsAsFactors = FALSE
+  )
+
+  dfMeasureMetrics <- data.frame(
+    measure = "weight",
+    MetricID = "Analysis_kri0016",
+    stringsAsFactors = FALSE
+  )
+
+  w <- Widget_RecordDuplication(
+    dfFlagged,
+    dfReportingResults = dfReportingResults,
+    dfMeasureMetrics = dfMeasureMetrics
+  )
 
   expect_s3_class(w, "htmlwidget")
   expect_s3_class(w, "Widget_RecordDuplication")

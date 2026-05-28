@@ -30,7 +30,11 @@ Flag_Duplicates(
 }
 \value{
 A `data.frame` containing the input rows (filtered to the specified measure if
-  applicable), with an added integer column `is_duplicate` (1 = duplicate, 0 = not duplicate).
+  applicable), with two added integer columns:
+  - `is_duplicate` (1 = duplicate, 0 = not): a record is duplicate if its value matches
+    any prior value for the same subject.
+  - `is_source` (1 = source of a duplicate, 0 = not): a record is the source if it was
+    the earliest prior record whose value was later copied by a duplicate record.
   Rows with NA values in `strValueCol` are excluded.
 }
 \description{

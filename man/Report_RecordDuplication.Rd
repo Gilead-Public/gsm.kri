@@ -12,7 +12,9 @@ Report_RecordDuplication(
   vMeasuresLB = NULL,
   vPrioritizedMeasures = NULL,
   strGroupCol = "invid",
-  strGroupLevel = "Site"
+  strGroupLevel = "Site",
+  dfReportingResults = NULL,
+  dfReportingMetrics = NULL
 )
 }
 \arguments{
@@ -30,11 +32,18 @@ columns in `dfMappedVS` except identifiers.}
 \item{vMeasuresLB}{`character` Lab test names to analyze. Default: all unique values
 in `lbtstnam` column.}
 
-\item{vPrioritizedMeasures}{`character` Measures with KRI metrics configured (shown first).}
+\item{vPrioritizedMeasures}{`character` Measures with KRI metrics configured (shown first).
+If NULL and `dfMeasureMetrics` is derived from installed YAMLs, defaults to those measures.}
 
 \item{strGroupCol}{`character` Column in `dfMappedSUBJ` for grouping. Default: `"invid"`.}
 
 \item{strGroupLevel}{`character` Group level label. Default: `"Site"`.}
+
+\item{dfReportingResults}{`data.frame` Optional. Standard reportingResults data with columns:
+`GroupID`, `GroupLevel`, `MetricID`, `Score`, `Flag`. Passed to widget to show metric badges.}
+
+\item{dfReportingMetrics}{`data.frame` Optional. Standard reportingMetrics data with columns:
+`MetricID`, `Metric`. Passed through to widget for future use.}
 }
 \value{
 A [Widget_RecordDuplication()] htmlwidget.

@@ -6,17 +6,26 @@
 \usage{
 Widget_RecordDuplication(
   dfFlagged,
-  dfMetrics = NULL,
+  dfReportingResults = NULL,
+  dfReportingMetrics = NULL,
+  dfMeasureMetrics = NULL,
   strGroupLevel = "Site",
   vPrioritizedMeasures = NULL
 )
 }
 \arguments{
 \item{dfFlagged}{`data.frame` Long-format data with columns: `subjid`, `GroupID`,
-`date`, `measure`, `value`, `is_duplicate`.}
+`date`, `measure`, `value`, `is_duplicate`, `is_source`.}
 
-\item{dfMetrics}{`data.frame` Optional metric metadata to identify prioritized measures.
-Should have a `Metric` or `Abbreviation` column.}
+\item{dfReportingResults}{`data.frame` Optional. Standard reportingResults data with
+columns: `GroupID`, `GroupLevel`, `MetricID`, `Score`, `Flag`. Used to show metric
+badges in group headers.}
+
+\item{dfReportingMetrics}{`data.frame` Optional. Standard reportingMetrics data with
+columns: `MetricID`, `Metric`. Currently passed through for future use.}
+
+\item{dfMeasureMetrics}{`data.frame` Optional. Maps measure names to MetricIDs; columns:
+`measure` (character), `MetricID` (character). Used to link measures to metric results.}
 
 \item{strGroupLevel}{`character` Group level label. Default: `"Site"`.}
 
