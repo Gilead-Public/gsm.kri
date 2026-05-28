@@ -69,14 +69,75 @@ vs_rows$diabp <- inject_duplicates(vs_rows$diabp, vs_rows$subjid)
 Mapped_VS <- vs_rows[, c("subjid", "vs_dt", "weight", "sysbp", "diabp")]
 ```
 
+```{r compute-metrics}
+#### Compute kri0016 (Duplicate Weight Rate) for simulated data ####
+# Run the kri0016 pipeline steps on the simulated data so metric badges appear in the report.
+flagged_weight <- Flag_Duplicates(
+  df = Mapped_VS,
+  strSubjectCol = "subjid",
+  strDateCol = "vs_dt",
+  strValueCol = "weight"
+)
+analysis_input <- gsm.core::Input_Rate(
+  dfSubjects = Mapped_SUBJ,
+  dfNumerator = flagged_weight,
+  dfDenominator = flagged_weight,
+  strSubjectCol = "subjid",
+  strGroupCol = "invid",
+  strGroupLevel = "Site",
+  strNumeratorMethod = "Sum",
+  strNumeratorCol = "is_duplicate",
+  strDenominatorMethod = "Count"
+)
+analysis_transformed <- gsm.core::Transform_Rate(analysis_input)
+analysis_analyzed <- gsm.core::Analyze_NormalApprox(analysis_transformed, strType = "binary")
+analysis_flagged <- gsm.core::Flag_NormalApprox(
+  analysis_analyzed,
+  vThreshold = c(2, 3),
+  vFlag = c(0, 1, 2)
+)
+
+# Format as reportingResults and add kri0016 MetricID
+kri0016_results <- data.frame(
+  GroupID = analysis_flagged$GroupID,
+  GroupLevel = analysis_flagged$GroupLevel,
+  Numerator = analysis_flagged$Numerator,
+  Denominator = analysis_flagged$Denominator,
+  Metric = analysis_flagged$Metric,
+  Score = analysis_flagged$Score,
+  Flag = analysis_flagged$Flag,
+  MetricID = "Analysis_kri0016",
+  SnapshotDate = Sys.Date(),
+  StudyID = "SIM001",
+  stringsAsFactors = FALSE
+)
+
+# Combine with existing reportingResults for full context
+dfReportingResults <- rbind(
+  gsm.core::reportingResults[, names(kri0016_results)],
+  kri0016_results
+)
+
+# Build reportingMetrics entry for kri0016
+kri0016_metric <- data.frame(
+  MetricID = "Analysis_kri0016",
+  Metric = "Duplicate Weight Record Rate",
+  stringsAsFactors = FALSE
+)
+dfReportingMetrics <- rbind(
+  gsm.core::reportingMetrics[, intersect(names(gsm.core::reportingMetrics), names(kri0016_metric)), drop = FALSE],
+  kri0016_metric[, intersect(names(gsm.core::reportingMetrics), names(kri0016_metric)), drop = FALSE]
+)
+```
+
 ```{r report, results='asis'}
 #### Generate Record Duplication Report ####
 w <- Report_RecordDuplication(
   dfMappedVS = Mapped_VS,
   dfMappedSUBJ = Mapped_SUBJ,
   vMeasuresVS = c("weight", "sysbp", "diabp"),
-  dfReportingResults = gsm.core::reportingResults,
-  dfReportingMetrics = gsm.core::reportingMetrics,
+  dfReportingResults = dfReportingResults,
+  dfReportingMetrics = dfReportingMetrics,
   strGroupLevel = "Site"
 )
 w
