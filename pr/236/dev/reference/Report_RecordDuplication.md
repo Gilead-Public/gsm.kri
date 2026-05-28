@@ -17,7 +17,9 @@ Report_RecordDuplication(
   vMeasuresLB = NULL,
   vPrioritizedMeasures = NULL,
   strGroupCol = "invid",
-  strGroupLevel = "Site"
+  strGroupLevel = "Site",
+  dfReportingResults = NULL,
+  dfReportingMetrics = NULL
 )
 ```
 
@@ -49,7 +51,9 @@ Report_RecordDuplication(
 
 - vPrioritizedMeasures:
 
-  \`character\` Measures with KRI metrics configured (shown first).
+  \`character\` Measures with KRI metrics configured (shown first). If
+  NULL and \`dfMeasureMetrics\` is derived from installed YAMLs,
+  defaults to those measures.
 
 - strGroupCol:
 
@@ -59,6 +63,17 @@ Report_RecordDuplication(
 - strGroupLevel:
 
   \`character\` Group level label. Default: \`"Site"\`.
+
+- dfReportingResults:
+
+  \`data.frame\` Optional. Standard reportingResults data with columns:
+  \`GroupID\`, \`GroupLevel\`, \`MetricID\`, \`Score\`, \`Flag\`. Passed
+  to widget to show metric badges.
+
+- dfReportingMetrics:
+
+  \`data.frame\` Optional. Standard reportingMetrics data with columns:
+  \`MetricID\`, \`Metric\`. Passed through to widget for future use.
 
 ## Value
 

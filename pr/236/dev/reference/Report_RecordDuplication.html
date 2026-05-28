@@ -69,7 +69,9 @@ vitals data and long-format lab data.</p>
 <span>  vMeasuresLB <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  vPrioritizedMeasures <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  strGroupCol <span class="op">=</span> <span class="st">"invid"</span>,</span>
-<span>  strGroupLevel <span class="op">=</span> <span class="st">"Site"</span></span>
+<span>  strGroupLevel <span class="op">=</span> <span class="st">"Site"</span>,</span>
+<span>  dfReportingResults <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  dfReportingMetrics <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -102,7 +104,8 @@ in `lbtstnam` column.</p></dd>
 
 
 <dt id="arg-vprioritizedmeasures">vPrioritizedMeasures<a class="anchor" aria-label="anchor" href="#arg-vprioritizedmeasures"></a></dt>
-<dd><p>`character` Measures with KRI metrics configured (shown first).</p></dd>
+<dd><p>`character` Measures with KRI metrics configured (shown first).
+If NULL and `dfMeasureMetrics` is derived from installed YAMLs, defaults to those measures.</p></dd>
 
 
 <dt id="arg-strgroupcol">strGroupCol<a class="anchor" aria-label="anchor" href="#arg-strgroupcol"></a></dt>
@@ -111,6 +114,16 @@ in `lbtstnam` column.</p></dd>
 
 <dt id="arg-strgrouplevel">strGroupLevel<a class="anchor" aria-label="anchor" href="#arg-strgrouplevel"></a></dt>
 <dd><p>`character` Group level label. Default: `"Site"`.</p></dd>
+
+
+<dt id="arg-dfreportingresults">dfReportingResults<a class="anchor" aria-label="anchor" href="#arg-dfreportingresults"></a></dt>
+<dd><p>`data.frame` Optional. Standard reportingResults data with columns:
+`GroupID`, `GroupLevel`, `MetricID`, `Score`, `Flag`. Passed to widget to show metric badges.</p></dd>
+
+
+<dt id="arg-dfreportingmetrics">dfReportingMetrics<a class="anchor" aria-label="anchor" href="#arg-dfreportingmetrics"></a></dt>
+<dd><p>`data.frame` Optional. Standard reportingMetrics data with columns:
+`MetricID`, `Metric`. Passed through to widget for future use.</p></dd>
 
 </dl></div>
     <div class="section level2">

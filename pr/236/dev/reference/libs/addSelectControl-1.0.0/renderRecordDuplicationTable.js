@@ -14,6 +14,20 @@ function renderRecordDuplicationTable(el, input) {
     const groupLevel = input.strGroupLevel || 'Site';
     const prioritized = Array.isArray(input.vPrioritizedMeasures) ? input.vPrioritizedMeasures : [];
 
+    // Parse new metric inputs
+    const reportingResults = Array.isArray(input.dfReportingResults) ? input.dfReportingResults : [];
+    const measureMetrics = Array.isArray(input.dfMeasureMetrics) ? input.dfMeasureMetrics : [];
+
+    // Build measure -> MetricID lookup
+    const measureToMetricID = {};
+    measureMetrics.forEach(mm => { measureToMetricID[mm.measure] = mm.MetricID; });
+
+    // Build metricID+groupID -> {Score, Flag} lookup
+    const metricResultLookup = {};
+    reportingResults.forEach(r => {
+        metricResultLookup[r.MetricID + '|' + r.GroupID] = { Score: r.Score, Flag: r.Flag };
+    });
+
     // Group data by measure -> group -> subject
     const measures = [...new Set(data.map(d => d.measure))];
 
@@ -63,10 +77,30 @@ function renderRecordDuplicationTable(el, input) {
             const groupDups = groupData.filter(d => d.is_duplicate === 1).length;
             const groupPct = groupData.length > 0 ? (groupDups / groupData.length * 100).toFixed(1) : '0.0';
 
+            // Look up metric result for this measure + group
+            const metricID = measureToMetricID[measure];
+            const metricResult = metricID ? metricResultLookup[metricID + '|' + group] : null;
+            let metricBadge = '';
+            if (metricResult) {
+                const flag = metricResult.Flag;
+                let flagBadge = '';
+                if (flag === 2) {
+                    flagBadge = '<span style="background:#dc3545; color:#fff; padding:1px 6px; border-radius:3px; font-size:11px; font-weight:600; margin-left:6px;">▲▲ Flag: 2</span>';
+                } else if (flag === 1) {
+                    flagBadge = '<span style="background:#fd7e14; color:#fff; padding:1px 6px; border-radius:3px; font-size:11px; font-weight:600; margin-left:6px;">▲ Flag: 1</span>';
+                } else if (flag === -1) {
+                    flagBadge = '<span style="background:#198754; color:#fff; padding:1px 6px; border-radius:3px; font-size:11px; font-weight:600; margin-left:6px;">▼ Flag: -1</span>';
+                } else if (flag === -2) {
+                    flagBadge = '<span style="background:#198754; color:#fff; padding:1px 6px; border-radius:3px; font-size:11px; font-weight:600; margin-left:6px;">▼▼ Flag: -2</span>';
+                }
+                const scoreStr = metricResult.Score != null ? ' <span style="font-family:monospace; font-size:11px; margin-left:4px;">Z: ' + parseFloat(metricResult.Score).toFixed(2) + '</span>' : '';
+                metricBadge = flagBadge + scoreStr;
+            }
+
             html += '<div class="rd-group-section" data-group="' + group + '">';
             html += '<div class="rd-group-header" data-idx="g' + mIdx + '-' + gIdx + '" style="background:#e9ecef; padding:8px 12px 8px 24px; cursor:pointer; border-bottom:1px solid #dee2e6; display:flex; justify-content:space-between;">';
             html += '<span style="font-weight:500;">▼ ' + groupLevel + ': ' + group + '</span>';
-            html += '<span style="font-size:12px; color:#6c757d;">' + groupPct + '% dup (' + groupDups + '/' + groupData.length + ')</span>';
+            html += '<span style="font-size:12px; color:#6c757d;">' + groupPct + '% dup (' + groupDups + '/' + groupData.length + ')' + metricBadge + '</span>';
             html += '</div>';
             html += '<div class="rd-group-body" id="rd-body-g' + mIdx + '-' + gIdx + '" style="display:block;">';
 
@@ -93,9 +127,11 @@ function renderRecordDuplicationTable(el, input) {
                 html += '<div style="display:flex; gap:3px; flex-wrap:wrap; flex:1;">';
                 subjData.forEach(row => {
                     const isDup = row.is_duplicate === 1;
+                    const isSrc = !isDup && row.is_source === 1;
                     const cellBg = isDup ? '#f8d7da' : '#e8f5e9';
                     const cellBorder = isDup ? '#f5c6cb' : '#c3e6cb';
-                    const cellColor = isDup ? '#721c24' : '#155724';
+                    const cellColor = isDup ? '#721c24' : (isSrc ? '#c0392b' : '#155724');
+                    const fontWeight = isDup ? '600' : '400';
                     const val = row.value != null ? row.value : 'NA';
                     const dateStr = row.date || '';
                     html += '<div title="' + dateStr + '" style="'
@@ -105,7 +141,7 @@ function renderRecordDuplicationTable(el, input) {
                         + 'padding:2px 6px;'
                         + 'border-radius:3px;'
                         + 'font-size:12px;'
-                        + 'font-weight:' + (isDup ? '600' : '400') + ';'
+                        + 'font-weight:' + fontWeight + ';'
                         + 'cursor:default;'
                         + '">' + val + '</div>';
                 });

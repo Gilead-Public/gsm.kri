@@ -54,9 +54,12 @@ Flag_Duplicates(
 ## Value
 
 A \`data.frame\` containing the input rows (filtered to the specified
-measure if applicable), with an added integer column \`is_duplicate\` (1
-= duplicate, 0 = not duplicate). Rows with NA values in \`strValueCol\`
-are excluded.
+measure if applicable), with two added integer columns: -
+\`is_duplicate\` (1 = duplicate, 0 = not): a record is duplicate if its
+value matches any prior value for the same subject. - \`is_source\` (1 =
+source of a duplicate, 0 = not): a record is the source if it was the
+earliest prior record whose value was later copied by a duplicate
+record. Rows with NA values in \`strValueCol\` are excluded.
 
 ## Details
 
@@ -76,12 +79,12 @@ df_vs <- data.frame(
   weight = c(75.0, 75.0, 76.0, 80.0, 80.0)
 )
 Flag_Duplicates(df_vs, strValueCol = "weight")
-#>   subjid      vs_dt weight is_duplicate
-#> 1     S1 2024-01-01     75            0
-#> 2     S1 2024-02-01     75            1
-#> 3     S1 2024-03-01     76            0
-#> 4     S2 2024-01-01     80            0
-#> 5     S2 2024-02-01     80            1
+#>   subjid      vs_dt weight is_duplicate is_source
+#> 1     S1 2024-01-01     75            0         1
+#> 2     S1 2024-02-01     75            1         0
+#> 3     S1 2024-03-01     76            0         0
+#> 4     S2 2024-01-01     80            0         1
+#> 5     S2 2024-02-01     80            1         0
 
 # Long format (labs)
 df_lb <- data.frame(
@@ -92,7 +95,7 @@ df_lb <- data.frame(
 )
 Flag_Duplicates(df_lb, strDateCol = "lb_dt", strValueCol = "rptresn",
                 strMeasureCol = "lbtstnam", strMeasureVal = "ALT")
-#>   subjid      lb_dt lbtstnam rptresn is_duplicate
-#> 1     S1 2024-01-01      ALT      25            0
-#> 2     S1 2024-02-01      ALT      25            1
+#>   subjid      lb_dt lbtstnam rptresn is_duplicate is_source
+#> 1     S1 2024-01-01      ALT      25            0         1
+#> 2     S1 2024-02-01      ALT      25            1         0
 ```
