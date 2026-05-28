@@ -29,10 +29,10 @@ library(htmlwidgets)
 #### Simulate Vitals Data with Duplicates ####
 set.seed(42)
 
-n_subj <- 60
+n_subj <- 120
 n_visits <- 10
 subjects <- paste0("S", sprintf("%03d", 1:n_subj))
-sites <- paste0("SITE", sprintf("%02d", rep(1:6, each = 10)))
+sites <- paste0("SITE", sprintf("%02d", rep(1:12, each = 10)))
 
 Mapped_SUBJ <- data.frame(
   subjid = subjects,
@@ -44,16 +44,24 @@ Mapped_SUBJ <- data.frame(
 vs_rows <- expand.grid(subjid = subjects, visit = 1:n_visits, stringsAsFactors = FALSE)
 vs_rows$vs_dt <- as.Date("2024-01-01") + (vs_rows$visit - 1) * 30
 vs_rows$weight <- round(rnorm(nrow(vs_rows), 75, 10), 1)
+vs_rows$height <- round(rnorm(nrow(vs_rows), 170, 10), 1)
+vs_rows$bmi <- round(rnorm(nrow(vs_rows), 25, 4), 1)
 vs_rows$sysbp <- round(rnorm(nrow(vs_rows), 125, 15), 0)
 vs_rows$diabp <- round(rnorm(nrow(vs_rows), 80, 10), 0)
+vs_rows$pulse <- round(rnorm(nrow(vs_rows), 72, 12), 0)
+vs_rows$temp <- round(rnorm(nrow(vs_rows), 36.8, 0.4), 1)
+vs_rows$resp <- round(rnorm(nrow(vs_rows), 16, 3), 0)
 
-# Inject ~10% duplicates per measure
-inject_duplicates <- function(values, subjects, rate = 0.10) {
+# Inject duplicates with site-specific rates
+inject_duplicates <- function(values, subjects, site_map, rate = 0.10,
+                              high_sites = NULL, high_rate = 0.30) {
   for (subj in unique(subjects)) {
     idx <- which(subjects == subj)
     if (length(idx) <= 1) next
-    n_dup <- max(1, round(length(idx[-1]) * rate))
-    dup_pos <- sample(idx[-1], n_dup)
+    site <- site_map[subj]
+    r <- if (!is.null(high_sites) && site %in% high_sites) high_rate else rate
+    n_dup <- max(1, round(length(idx[-1]) * r))
+    dup_pos <- sample(idx[-1], min(n_dup, length(idx[-1])))
     for (p in dup_pos) {
       prior <- idx[idx < p]
       values[p] <- values[sample(prior, 1)]
@@ -62,71 +70,122 @@ inject_duplicates <- function(values, subjects, rate = 0.10) {
   values
 }
 
-vs_rows$weight <- inject_duplicates(vs_rows$weight, vs_rows$subjid)
-vs_rows$sysbp <- inject_duplicates(vs_rows$sysbp, vs_rows$subjid)
-vs_rows$diabp <- inject_duplicates(vs_rows$diabp, vs_rows$subjid)
+site_map <- setNames(Mapped_SUBJ$invid, Mapped_SUBJ$subjid)
+high_dup_sites <- c("SITE01", "SITE02", "SITE03")
+clean_sites <- c("SITE10", "SITE11", "SITE12")
 
-Mapped_VS <- vs_rows[, c("subjid", "vs_dt", "weight", "sysbp", "diabp")]
+# Sites 1-3: high duplicate rates (25-40%) for weight; others ~10%
+# Sites 10-12: very clean (2% rate)
+inject_with_tiers <- function(values, subjects, site_map,
+                              high_sites, high_rate, clean_sites, clean_rate = 0.02,
+                              base_rate = 0.10) {
+  for (subj in unique(subjects)) {
+    idx <- which(subjects == subj)
+    if (length(idx) <= 1) next
+    site <- site_map[subj]
+    r <- if (site %in% high_sites) high_rate
+         else if (site %in% clean_sites) clean_rate
+         else base_rate
+    n_dup <- max(0, round(length(idx[-1]) * r))
+    if (n_dup == 0) next
+    dup_pos <- sample(idx[-1], min(n_dup, length(idx[-1])))
+    for (p in dup_pos) {
+      prior <- idx[idx < p]
+      values[p] <- values[sample(prior, 1)]
+    }
+  }
+  values
+}
+
+vs_rows$weight <- inject_with_tiers(vs_rows$weight, vs_rows$subjid, site_map,
+                                    high_dup_sites, 0.40, clean_sites)
+vs_rows$height <- inject_with_tiers(vs_rows$height, vs_rows$subjid, site_map,
+                                    high_dup_sites, 0.30, clean_sites)
+vs_rows$bmi <- inject_with_tiers(vs_rows$bmi, vs_rows$subjid, site_map,
+                                 high_dup_sites, 0.30, clean_sites)
+vs_rows$sysbp <- inject_with_tiers(vs_rows$sysbp, vs_rows$subjid, site_map,
+                                   high_dup_sites, 0.35, clean_sites)
+vs_rows$diabp <- inject_with_tiers(vs_rows$diabp, vs_rows$subjid, site_map,
+                                   high_dup_sites, 0.25, clean_sites)
+vs_rows$pulse <- inject_with_tiers(vs_rows$pulse, vs_rows$subjid, site_map,
+                                   high_dup_sites, 0.30, clean_sites)
+vs_rows$temp <- inject_with_tiers(vs_rows$temp, vs_rows$subjid, site_map,
+                                  high_dup_sites, 0.25, clean_sites)
+vs_rows$resp <- inject_with_tiers(vs_rows$resp, vs_rows$subjid, site_map,
+                                  high_dup_sites, 0.30, clean_sites)
+
+Mapped_VS <- vs_rows[, c("subjid", "vs_dt", "weight", "height", "bmi",
+                          "sysbp", "diabp", "pulse", "temp", "resp")]
 ```
 
 ```{r compute-metrics}
-#### Compute kri0016 (Duplicate Weight Rate) for simulated data ####
-# Run the kri0016 pipeline steps on the simulated data so metric badges appear in the report.
-flagged_weight <- Flag_Duplicates(
-  df = Mapped_VS,
-  strSubjectCol = "subjid",
-  strDateCol = "vs_dt",
-  strValueCol = "weight"
-)
-analysis_input <- gsm.core::Input_Rate(
-  dfSubjects = Mapped_SUBJ,
-  dfNumerator = flagged_weight,
-  dfDenominator = flagged_weight,
-  strSubjectCol = "subjid",
-  strGroupCol = "invid",
-  strGroupLevel = "Site",
-  strNumeratorMethod = "Sum",
-  strNumeratorCol = "is_duplicate",
-  strDenominatorMethod = "Count"
-)
-analysis_transformed <- gsm.core::Transform_Rate(analysis_input)
-analysis_analyzed <- gsm.core::Analyze_NormalApprox(analysis_transformed, strType = "binary")
-analysis_flagged <- gsm.core::Flag_NormalApprox(
-  analysis_analyzed,
-  vThreshold = c(2, 3),
-  vFlag = c(0, 1, 2)
+#### Helper to run a duplicate-rate pipeline ####
+run_duplicate_pipeline <- function(df, dfSubjects, strValueCol, strMetricID, strMetricLabel) {
+  flagged <- Flag_Duplicates(
+    df = df,
+    strSubjectCol = "subjid",
+    strDateCol = "vs_dt",
+    strValueCol = strValueCol
+  )
+  input <- gsm.core::Input_Rate(
+    dfSubjects = dfSubjects,
+    dfNumerator = flagged,
+    dfDenominator = flagged,
+    strSubjectCol = "subjid",
+    strGroupCol = "invid",
+    strGroupLevel = "Site",
+    strNumeratorMethod = "Sum",
+    strNumeratorCol = "is_duplicate",
+    strDenominatorMethod = "Count"
+  )
+  transformed <- gsm.core::Transform_Rate(input)
+  analyzed <- gsm.core::Analyze_NormalApprox(transformed, strType = "binary")
+  flagged_out <- gsm.core::Flag_NormalApprox(
+    analyzed,
+    vThreshold = c(2, 3),
+    vFlag = c(0, 1, 2)
+  )
+  data.frame(
+    GroupID = flagged_out$GroupID,
+    GroupLevel = flagged_out$GroupLevel,
+    Numerator = flagged_out$Numerator,
+    Denominator = flagged_out$Denominator,
+    Metric = flagged_out$Metric,
+    Score = flagged_out$Score,
+    Flag = flagged_out$Flag,
+    MetricID = strMetricID,
+    SnapshotDate = Sys.Date(),
+    StudyID = "SIM001",
+    stringsAsFactors = FALSE
+  )
+}
+
+#### Compute kri0016 (Duplicate Weight Rate) ####
+kri0016_results <- run_duplicate_pipeline(
+  Mapped_VS, Mapped_SUBJ, "weight", "Analysis_kri0016", "Duplicate Weight Record Rate"
 )
 
-# Format as reportingResults and add kri0016 MetricID
-kri0016_results <- data.frame(
-  GroupID = analysis_flagged$GroupID,
-  GroupLevel = analysis_flagged$GroupLevel,
-  Numerator = analysis_flagged$Numerator,
-  Denominator = analysis_flagged$Denominator,
-  Metric = analysis_flagged$Metric,
-  Score = analysis_flagged$Score,
-  Flag = analysis_flagged$Flag,
-  MetricID = "Analysis_kri0016",
-  SnapshotDate = Sys.Date(),
-  StudyID = "SIM001",
-  stringsAsFactors = FALSE
+#### Compute kri0017 (Duplicate Systolic BP Rate) ####
+kri0017_results <- run_duplicate_pipeline(
+  Mapped_VS, Mapped_SUBJ, "sysbp", "Analysis_kri0017", "Duplicate Systolic BP Record Rate"
 )
 
-# Combine with existing reportingResults for full context
+# Combine results
 dfReportingResults <- rbind(
   gsm.core::reportingResults[, names(kri0016_results)],
-  kri0016_results
+  kri0016_results,
+  kri0017_results
 )
 
-# Build reportingMetrics entry for kri0016
-kri0016_metric <- data.frame(
-  MetricID = "Analysis_kri0016",
-  Metric = "Duplicate Weight Record Rate",
+# Build reportingMetrics entries
+new_metrics <- data.frame(
+  MetricID = c("Analysis_kri0016", "Analysis_kri0017"),
+  Metric = c("Duplicate Weight Record Rate", "Duplicate Systolic BP Record Rate"),
   stringsAsFactors = FALSE
 )
 dfReportingMetrics <- rbind(
-  gsm.core::reportingMetrics[, intersect(names(gsm.core::reportingMetrics), names(kri0016_metric)), drop = FALSE],
-  kri0016_metric[, intersect(names(gsm.core::reportingMetrics), names(kri0016_metric)), drop = FALSE]
+  gsm.core::reportingMetrics[, intersect(names(gsm.core::reportingMetrics), names(new_metrics)), drop = FALSE],
+  new_metrics[, intersect(names(gsm.core::reportingMetrics), names(new_metrics)), drop = FALSE]
 )
 ```
 
@@ -135,7 +194,7 @@ dfReportingMetrics <- rbind(
 w <- Report_RecordDuplication(
   dfMappedVS = Mapped_VS,
   dfMappedSUBJ = Mapped_SUBJ,
-  vMeasuresVS = c("weight", "sysbp", "diabp"),
+  vMeasuresVS = c("weight", "height", "bmi", "sysbp", "diabp", "pulse", "temp", "resp"),
   dfReportingResults = dfReportingResults,
   dfReportingMetrics = dfReportingMetrics,
   strGroupLevel = "Site"

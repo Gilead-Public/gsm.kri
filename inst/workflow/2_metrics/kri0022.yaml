@@ -1,0 +1,96 @@
+meta:
+  Type: Analysis
+  ID: kri0022
+  GroupLevel: Site
+  Abbreviation: VS
+  Metric: Duplicate Temperature Record Rate
+  Numerator: Duplicate Temperature Records
+  Denominator: Total Temperature Records
+  Model: Normal Approximation
+  Score: Adjusted Z-Score
+  AnalysisType: binary
+  Threshold: "2,3"
+  Flag: "0,1,2"
+  RiskScoreWeight: "0,1,2"
+  AccrualThreshold: 10
+  AccrualMetric: Numerator
+  ValueCol: temp
+  DateCol: vs_dt
+spec:
+  Mapped_SUBJ:
+    subjid:
+      type: character
+    invid:
+      type: character
+  Mapped_VS:
+    subjid:
+      type: character
+    vs_dt:
+      type: Date
+    temp:
+      type: numeric
+steps:
+  - output: vThreshold
+    name: gsm.core::ParseThreshold
+    params:
+      strThreshold: Threshold
+  - output: vRiskScoreWeight
+    name: gsm.core::ParseThreshold
+    params:
+      strThreshold: RiskScoreWeight
+      bSort: false
+  - output: vFlag
+    name: gsm.core::ParseThreshold
+    params:
+      strThreshold: Flag
+      bSort: false
+  - output: Temp_Measure_Flagged
+    name: gsm.kri::Flag_Duplicates
+    params:
+      df: Mapped_VS
+      strSubjectCol: subjid
+      strDateCol: DateCol
+      strValueCol: ValueCol
+  - output: Analysis_Input
+    name: gsm.core::Input_Rate
+    params:
+      dfSubjects: Mapped_SUBJ
+      dfNumerator: Temp_Measure_Flagged
+      dfDenominator: Temp_Measure_Flagged
+      strSubjectCol: subjid
+      strGroupCol: invid
+      strGroupLevel: GroupLevel
+      strNumeratorMethod: Sum
+      strNumeratorCol: is_duplicate
+      strDenominatorMethod: Count
+  - output: Analysis_Transformed
+    name: gsm.core::Transform_Rate
+    params:
+      dfInput: Analysis_Input
+  - output: Analysis_Analyzed
+    name: Analyze_NormalApprox
+    params:
+      dfTransformed: Analysis_Transformed
+      strType: AnalysisType
+  - output: Analysis_Flagged
+    name: gsm.core::Flag_NormalApprox
+    params:
+      dfAnalyzed: Analysis_Analyzed
+      vThreshold: vThreshold
+      vFlag: vFlag
+      vRiskScoreWeight: vRiskScoreWeight
+      nAccrualThreshold: AccrualThreshold
+      strAccrualMetric: AccrualMetric
+  - output: Analysis_Summary
+    name: gsm.core::Summarize
+    params:
+      dfFlagged: Analysis_Flagged
+  - output: lAnalysis
+    name: list
+    params:
+      ID: ID
+      Analysis_Input: Analysis_Input
+      Analysis_Transformed: Analysis_Transformed
+      Analysis_Analyzed: Analysis_Analyzed
+      Analysis_Flagged: Analysis_Flagged
+      Analysis_Summary: Analysis_Summary
