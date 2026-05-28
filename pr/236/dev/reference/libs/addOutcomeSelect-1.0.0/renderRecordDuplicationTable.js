@@ -28,10 +28,45 @@ function renderRecordDuplicationTable(el, input) {
         metricResultLookup[r.MetricID + '|' + r.GroupID] = { Score: r.Score, Flag: r.Flag };
     });
 
+    // ── Flag icon helpers (same SVGs as gsm.kri KRI report) ──────────────────
+    const COLOR = { green: '#3DAF06', amber: '#FEAA02', red: '#FF5859', gray: '#828282' };
+
+    function svgSingleArrow(flag, color) {
+        const rot = Math.sign(flag) === -1 ? 'transform:rotate(180deg);' : '';
+        return `<svg aria-hidden="true" role="img" viewBox="0 0 448 512" style="height:1em;width:0.88em;vertical-align:-0.125em;fill:${color};overflow:visible;position:relative;${rot}"><path d="M201.4 137.4c12.5-12.5 32.8-12.5 45.3 0l160 160c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L224 205.3 86.6 342.6c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l160-160z"/></svg>`;
+    }
+    function svgDoubleArrow(flag, color) {
+        const rot = Math.sign(flag) === -1 ? 'transform:rotate(180deg);' : '';
+        return `<svg aria-hidden="true" role="img" viewBox="0 0 448 512" style="height:1em;width:0.88em;vertical-align:-0.125em;fill:${color};overflow:visible;position:relative;${rot}"><path d="M246.6 41.4c-12.5-12.5-32.8-12.5-45.3 0l-160 160c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L224 109.3 361.4 246.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3l-160-160zm160 352l-160-160c-12.5-12.5-32.8-12.5-45.3 0l-160 160c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L224 301.3 361.4 438.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3z"/></svg>`;
+    }
+    function svgCheckMark(color) {
+        return `<svg aria-hidden="true" role="img" viewBox="0 0 448 512" style="height:1em;width:0.88em;vertical-align:-0.125em;fill:${color};overflow:visible;position:relative;"><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/></svg>`;
+    }
+    function svgMinus(color) {
+        return `<svg aria-hidden="true" role="img" viewBox="0 0 448 512" style="height:1em;width:0.88em;vertical-align:-0.125em;fill:${color};overflow:visible;position:relative;"><path d="M432 256c0 17.7-14.3 32-32 32L48 288c-17.7 0-32-14.3-32-32s14.3-32 32-32l352 0c17.7 0 32 14.3 32 32z"/></svg>`;
+    }
+
+    // Returns a colored pill with the appropriate SVG icon for a given flag value
+    function flagBadgeHtml(flag, zScore) {
+        let icon, bgColor, label;
+        const f = (flag === null || flag === undefined) ? null : Number(flag);
+        if (f === null || isNaN(f)) {
+            icon = svgMinus(COLOR.gray); bgColor = COLOR.gray; label = 'No flag';
+        } else if (f === 0) {
+            icon = svgCheckMark(COLOR.green); bgColor = COLOR.green; label = 'Flag: 0';
+        } else if (Math.abs(f) === 1) {
+            icon = svgSingleArrow(f, COLOR.amber); bgColor = COLOR.amber; label = 'Flag: ' + f;
+        } else {
+            icon = svgDoubleArrow(f, COLOR.red); bgColor = COLOR.red; label = 'Flag: ' + f;
+        }
+        const zStr = (zScore != null && !isNaN(zScore)) ? ' Z: ' + parseFloat(zScore).toFixed(2) : '';
+        return `<span title="${label}${zStr}" style="display:inline-flex;align-items:center;gap:3px;background:${bgColor}22;border:1px solid ${bgColor};color:#333;padding:1px 6px;border-radius:3px;font-size:11px;margin-left:6px;">${icon}<span style="font-size:11px;font-family:monospace;">${zStr}</span></span>`;
+    }
+
     // Group data by measure -> group -> subject
     const measures = [...new Set(data.map(d => d.measure))];
 
-    // Sort: prioritized first, then alphabetical
+    // Sort: measures with metrics first (prioritized), then alphabetical within each tier
     measures.sort((a, b) => {
         const aPri = prioritized.includes(a) ? 0 : 1;
         const bPri = prioritized.includes(b) ? 0 : 1;
@@ -62,9 +97,30 @@ function renderRecordDuplicationTable(el, input) {
 
         const priLabel = isPrioritized ? ' <span style="background:#ffc107; color:#000; padding:1px 5px; border-radius:3px; font-size:11px; font-weight:600;">KRI</span>' : '';
 
+        // Build flag summary for measure header (metrics only)
+        let measureFlagSummary = '';
+        const metricIDForMeasure = measureToMetricID[measure];
+        if (metricIDForMeasure) {
+            const allGroups = [...new Set(measureData.map(d => d.GroupID))];
+            let nRed = 0, nAmber = 0, nGreen = 0, nNA = 0;
+            allGroups.forEach(g => {
+                const r = metricResultLookup[metricIDForMeasure + '|' + g];
+                if (!r) { nNA++; return; }
+                const f = Number(r.Flag);
+                if (Math.abs(f) === 2) nRed++;
+                else if (Math.abs(f) === 1) nAmber++;
+                else nGreen++;
+            });
+            const parts = [];
+            if (nRed > 0)   parts.push(`<span style="display:inline-flex;align-items:center;gap:2px;margin-left:6px;" title="${nRed} flagged (high)">${svgDoubleArrow(1,COLOR.red)}<span style="font-size:11px;color:#fff;">${nRed}</span></span>`);
+            if (nAmber > 0) parts.push(`<span style="display:inline-flex;align-items:center;gap:2px;margin-left:6px;" title="${nAmber} flagged (moderate)">${svgSingleArrow(1,COLOR.amber)}<span style="font-size:11px;color:#fff;">${nAmber}</span></span>`);
+            if (nGreen > 0) parts.push(`<span style="display:inline-flex;align-items:center;gap:2px;margin-left:6px;" title="${nGreen} no flag">${svgCheckMark(COLOR.green)}<span style="font-size:11px;color:#fff;">${nGreen}</span></span>`);
+            measureFlagSummary = parts.join('');
+        }
+
         html += '<div class="rd-measure-section" data-measure="' + measure + '">';
         html += '<div class="rd-measure-header" data-idx="m' + mIdx + '" style="background:#343a40; color:#fff; padding:10px 12px; cursor:pointer; border-radius:4px 4px 0 0; margin-top:10px; display:flex; justify-content:space-between; align-items:center;">';
-        html += '<span style="font-weight:600;">▼ ' + measure + priLabel + '</span>';
+        html += '<span style="font-weight:600;display:flex;align-items:center;gap:4px;">▼ ' + measure + priLabel + measureFlagSummary + '</span>';
         html += '<span style="font-size:12px;">' + dupPct + '% duplicate (' + dupRecords + '/' + totalRecords + ' records)</span>';
         html += '</div>';
         html += '<div class="rd-measure-body" id="rd-body-m' + mIdx + '" style="display:block; border:1px solid #dee2e6; border-top:none; border-radius:0 0 4px 4px;">';
@@ -80,27 +136,12 @@ function renderRecordDuplicationTable(el, input) {
             // Look up metric result for this measure + group
             const metricID = measureToMetricID[measure];
             const metricResult = metricID ? metricResultLookup[metricID + '|' + group] : null;
-            let metricBadge = '';
-            if (metricResult) {
-                const flag = metricResult.Flag;
-                let flagBadge = '';
-                if (flag === 2) {
-                    flagBadge = '<span style="background:#dc3545; color:#fff; padding:1px 6px; border-radius:3px; font-size:11px; font-weight:600; margin-left:6px;">▲▲ Flag: 2</span>';
-                } else if (flag === 1) {
-                    flagBadge = '<span style="background:#fd7e14; color:#fff; padding:1px 6px; border-radius:3px; font-size:11px; font-weight:600; margin-left:6px;">▲ Flag: 1</span>';
-                } else if (flag === -1) {
-                    flagBadge = '<span style="background:#198754; color:#fff; padding:1px 6px; border-radius:3px; font-size:11px; font-weight:600; margin-left:6px;">▼ Flag: -1</span>';
-                } else if (flag === -2) {
-                    flagBadge = '<span style="background:#198754; color:#fff; padding:1px 6px; border-radius:3px; font-size:11px; font-weight:600; margin-left:6px;">▼▼ Flag: -2</span>';
-                }
-                const scoreStr = metricResult.Score != null ? ' <span style="font-family:monospace; font-size:11px; margin-left:4px;">Z: ' + parseFloat(metricResult.Score).toFixed(2) + '</span>' : '';
-                metricBadge = flagBadge + scoreStr;
-            }
+            const metricBadge = metricResult ? flagBadgeHtml(metricResult.Flag, metricResult.Score) : '';
 
             html += '<div class="rd-group-section" data-group="' + group + '">';
-            html += '<div class="rd-group-header" data-idx="g' + mIdx + '-' + gIdx + '" style="background:#e9ecef; padding:8px 12px 8px 24px; cursor:pointer; border-bottom:1px solid #dee2e6; display:flex; justify-content:space-between;">';
+            html += '<div class="rd-group-header" data-idx="g' + mIdx + '-' + gIdx + '" style="background:#e9ecef; padding:8px 12px 8px 24px; cursor:pointer; border-bottom:1px solid #dee2e6; display:flex; justify-content:space-between; align-items:center;">';
             html += '<span style="font-weight:500;">▼ ' + groupLevel + ': ' + group + '</span>';
-            html += '<span style="font-size:12px; color:#6c757d;">' + groupPct + '% dup (' + groupDups + '/' + groupData.length + ')' + metricBadge + '</span>';
+            html += '<span style="display:flex;align-items:center;font-size:12px;color:#6c757d;">' + groupPct + '% dup (' + groupDups + '/' + groupData.length + ')' + metricBadge + '</span>';
             html += '</div>';
             html += '<div class="rd-group-body" id="rd-body-g' + mIdx + '-' + gIdx + '" style="display:block;">';
 
