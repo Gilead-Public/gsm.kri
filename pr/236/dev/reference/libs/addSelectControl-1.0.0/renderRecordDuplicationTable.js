@@ -50,10 +50,10 @@ function renderRecordDuplicationTable(el, input) {
 
         html += '<div class="rd-measure-section" data-measure="' + measure + '">';
         html += '<div class="rd-measure-header" data-idx="m' + mIdx + '" style="background:#343a40; color:#fff; padding:10px 12px; cursor:pointer; border-radius:4px 4px 0 0; margin-top:10px; display:flex; justify-content:space-between; align-items:center;">';
-        html += '<span style="font-weight:600;">▶ ' + measure + priLabel + '</span>';
+        html += '<span style="font-weight:600;">▼ ' + measure + priLabel + '</span>';
         html += '<span style="font-size:12px;">' + dupPct + '% duplicate (' + dupRecords + '/' + totalRecords + ' records)</span>';
         html += '</div>';
-        html += '<div class="rd-measure-body" id="rd-body-m' + mIdx + '" style="display:none; border:1px solid #dee2e6; border-top:none; border-radius:0 0 4px 4px;">';
+        html += '<div class="rd-measure-body" id="rd-body-m' + mIdx + '" style="display:block; border:1px solid #dee2e6; border-top:none; border-radius:0 0 4px 4px;">';
 
         // Group by GroupID (site/country)
         const groups = [...new Set(measureData.map(d => d.GroupID))].sort();
@@ -65,10 +65,10 @@ function renderRecordDuplicationTable(el, input) {
 
             html += '<div class="rd-group-section" data-group="' + group + '">';
             html += '<div class="rd-group-header" data-idx="g' + mIdx + '-' + gIdx + '" style="background:#e9ecef; padding:8px 12px 8px 24px; cursor:pointer; border-bottom:1px solid #dee2e6; display:flex; justify-content:space-between;">';
-            html += '<span style="font-weight:500;">▶ ' + groupLevel + ': ' + group + '</span>';
+            html += '<span style="font-weight:500;">▼ ' + groupLevel + ': ' + group + '</span>';
             html += '<span style="font-size:12px; color:#6c757d;">' + groupPct + '% dup (' + groupDups + '/' + groupData.length + ')</span>';
             html += '</div>';
-            html += '<div class="rd-group-body" id="rd-body-g' + mIdx + '-' + gIdx + '" style="display:none;">';
+            html += '<div class="rd-group-body" id="rd-body-g' + mIdx + '-' + gIdx + '" style="display:block;">';
 
             // Group by subject
             const subjects = [...new Set(groupData.map(d => d.subjid))].sort();
@@ -81,27 +81,40 @@ function renderRecordDuplicationTable(el, input) {
                 // Sort by date
                 subjData.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
 
-                html += '<div class="rd-subj-section" data-subj="' + subj + '">';
-                html += '<div class="rd-subj-header" data-idx="s' + mIdx + '-' + gIdx + '-' + sIdx + '" style="padding:6px 12px 6px 48px; cursor:pointer; border-bottom:1px solid #f1f3f5; display:flex; justify-content:space-between;">';
-                html += '<span>▶ ' + subj + '</span>';
-                html += '<span style="font-size:12px; color:' + (subjDups > 0 ? '#dc3545' : '#6c757d') + ';">' + subjPct + '% dup (' + subjDups + '/' + subjData.length + ')</span>';
-                html += '</div>';
-                html += '<div class="rd-subj-body" id="rd-body-s' + mIdx + '-' + gIdx + '-' + sIdx + '" style="display:none; padding:4px 12px 4px 72px;">';
+                const dupColor = subjDups > 0 ? '#dc3545' : '#6c757d';
 
-                // Value timeline table
-                html += '<table style="width:100%; border-collapse:collapse; font-size:12px; margin:4px 0;">';
-                html += '<thead><tr style="background:#f8f9fa;"><th style="padding:3px 8px; text-align:left;">Date</th><th style="padding:3px 8px; text-align:right;">Value</th><th style="padding:3px 8px; text-align:center;">Duplicate</th></tr></thead>';
-                html += '<tbody>';
+                html += '<div class="rd-subj-section" data-subj="' + subj + '">';
+                html += '<div style="padding:5px 12px 5px 48px; border-bottom:1px solid #f1f3f5; display:flex; align-items:center; gap:12px;">';
+
+                // Subject label
+                html += '<span style="font-size:12px; min-width:80px; font-weight:500;">' + subj + '</span>';
+
+                // Single-row value timeline
+                html += '<div style="display:flex; gap:3px; flex-wrap:wrap; flex:1;">';
                 subjData.forEach(row => {
-                    const bgColor = row.is_duplicate === 1 ? '#fff5f5' : '';
-                    const borderColor = row.is_duplicate === 1 ? '#f8d7da' : '#f1f3f5';
-                    html += '<tr style="background:' + bgColor + '; border-bottom:1px solid ' + borderColor + ';">';
-                    html += '<td style="padding:3px 8px;">' + (row.date || 'N/A') + '</td>';
-                    html += '<td style="padding:3px 8px; text-align:right;">' + (row.value != null ? row.value : 'NA') + '</td>';
-                    html += '<td style="padding:3px 8px; text-align:center;">' + (row.is_duplicate === 1 ? '<span style="color:#dc3545; font-weight:bold;">✓</span>' : '') + '</td>';
-                    html += '</tr>';
+                    const isDup = row.is_duplicate === 1;
+                    const cellBg = isDup ? '#f8d7da' : '#e8f5e9';
+                    const cellBorder = isDup ? '#f5c6cb' : '#c3e6cb';
+                    const cellColor = isDup ? '#721c24' : '#155724';
+                    const val = row.value != null ? row.value : 'NA';
+                    const dateStr = row.date || '';
+                    html += '<div title="' + dateStr + '" style="'
+                        + 'background:' + cellBg + ';'
+                        + 'border:1px solid ' + cellBorder + ';'
+                        + 'color:' + cellColor + ';'
+                        + 'padding:2px 6px;'
+                        + 'border-radius:3px;'
+                        + 'font-size:12px;'
+                        + 'font-weight:' + (isDup ? '600' : '400') + ';'
+                        + 'cursor:default;'
+                        + '">' + val + '</div>';
                 });
-                html += '</tbody></table>';
+                html += '</div>';
+
+                // % dup summary
+                html += '<span style="font-size:11px; color:' + dupColor + '; white-space:nowrap; min-width:90px; text-align:right;">'
+                    + subjPct + '% dup (' + subjDups + '/' + subjData.length + ')</span>';
+
                 html += '</div></div>';
             });
 
@@ -136,19 +149,14 @@ function renderRecordDuplicationTable(el, input) {
         header.addEventListener('click', () => toggleSection(header, 'rd-body-' + header.dataset.idx));
     });
 
-    // Subject headers
-    el.querySelectorAll('.rd-subj-header').forEach(header => {
-        header.addEventListener('click', () => toggleSection(header, 'rd-body-' + header.dataset.idx));
-    });
-
-    // Expand/Collapse all
+    // Expand/Collapse all (measure + group levels only — participants are always visible)
     const expandBtn = document.getElementById('rd-expand-all');
     const collapseBtn = document.getElementById('rd-collapse-all');
 
     if (expandBtn) {
         expandBtn.addEventListener('click', () => {
-            el.querySelectorAll('[id^="rd-body-"]').forEach(body => { body.style.display = 'block'; });
-            el.querySelectorAll('.rd-measure-header span:first-child, .rd-group-header span:first-child, .rd-subj-header span:first-child').forEach(span => {
+            el.querySelectorAll('[id^="rd-body-m"], [id^="rd-body-g"]').forEach(body => { body.style.display = 'block'; });
+            el.querySelectorAll('.rd-measure-header span:first-child, .rd-group-header span:first-child').forEach(span => {
                 span.innerHTML = span.innerHTML.replace('▶', '▼');
             });
         });
@@ -156,8 +164,8 @@ function renderRecordDuplicationTable(el, input) {
 
     if (collapseBtn) {
         collapseBtn.addEventListener('click', () => {
-            el.querySelectorAll('[id^="rd-body-"]').forEach(body => { body.style.display = 'none'; });
-            el.querySelectorAll('.rd-measure-header span:first-child, .rd-group-header span:first-child, .rd-subj-header span:first-child').forEach(span => {
+            el.querySelectorAll('[id^="rd-body-m"], [id^="rd-body-g"]').forEach(body => { body.style.display = 'none'; });
+            el.querySelectorAll('.rd-measure-header span:first-child, .rd-group-header span:first-child').forEach(span => {
                 span.innerHTML = span.innerHTML.replace('▼', '▶');
             });
         });
