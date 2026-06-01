@@ -33,11 +33,27 @@ nWindowDays <- params$nWindowDays
 Mapped_Death <- lListings$Mapped_Death
 Mapped_SUBJ <- lListings$Mapped_SUBJ
 
-# Country → site lookup for JS filtering
+# Country → site lookup for JS filtering (all enrolled sites in the country)
 country_site_map <- Mapped_SUBJ %>%
   dplyr::distinct(country, invid) %>%
   dplyr::group_by(country) %>%
   dplyr::summarise(sites = list(invid), .groups = "drop") %>%
+  tibble::deframe() %>%
+  jsonlite::toJSON(auto_unbox = FALSE)
+
+# Country → sites with >=1 premature death (within window). The scatter/buckets
+# only ever render sites that had a premature death, so the filter banner reports
+# this count over the enrolled-site total rather than implying all enrolled sites
+# appear in the charts.
+country_premature_site_map <- Mapped_Death %>%
+  dplyr::filter(!is.na(.data$death_dy) & .data$death_dy <= nWindowDays) %>%
+  dplyr::inner_join(
+    Mapped_SUBJ %>% dplyr::distinct(.data$subjid, .data$country, .data$invid),
+    by = "subjid"
+  ) %>%
+  dplyr::distinct(.data$country, .data$invid) %>%
+  dplyr::group_by(.data$country) %>%
+  dplyr::summarise(sites = list(.data$invid), .groups = "drop") %>%
   tibble::deframe() %>%
   jsonlite::toJSON(auto_unbox = FALSE)
 
@@ -162,6 +178,7 @@ cat(sprintf('
 <script>
 (function() {
   var countrySiteMap = %s;
+  var countryPrematureSiteMap = %s;
   var invidColIdx = %d;
   var activeCountry = null;
 
@@ -193,13 +210,16 @@ cat(sprintf('
   function applyFilter(country) {
     activeCountry = country;
     var sites = countrySiteMap[country] || [];
+    var prematureSites = countryPrematureSiteMap[country] || [];
 
-    // Show banner
+    // Show banner. The charts only render sites with a premature death, so the
+    // headline count is premature-death sites over the enrolled-site total.
     var banner = document.getElementById("pd-filter-banner");
     banner.style.display = "flex";
     document.getElementById("pd-filter-text").innerHTML =
-      "\\ud83d\\udd0d <strong>Filtered:</strong> Showing sites for <strong>" +
-      country + "</strong> (" + sites.length + " site" + (sites.length !== 1 ? "s" : "") + ")";
+      "\\ud83d\\udd0d <strong>Showing " + country + "</strong> \\u2014 " +
+      prematureSites.length + "/" + sites.length +
+      " sites with at least 1 premature death";
 
     // Highlight country bar: dim non-selected
     highlightCountryBar(country);
@@ -229,17 +249,24 @@ cat(sprintf('
     }
   }
 
-  // Store original trace data for each chart on first filter
+  // Store original trace data + layout for each chart on first filter
   var originalData = {};
+  var originalLayout = {};
 
   function filterPlotlyChart(containerId, allowedValues) {
     var el = getPlotlyDiv(containerId);
     if (!el) return;
-    // Cache original data on first call
+    // Cache original data + layout on first call
     if (!originalData[containerId]) {
       originalData[containerId] = JSON.parse(JSON.stringify(el.data));
     }
+    if (!originalLayout[containerId]) {
+      originalLayout[containerId] = JSON.parse(JSON.stringify(el.layout));
+    }
     var orig = originalData[containerId];
+    var matchAxisGlobal = null;
+    var keptCategories = [];
+    var seenCategory = {};
     var filtered = orig.map(function(trace) {
       // Determine which axis has categorical group values (strings)
       var matchAxis = null;
@@ -249,11 +276,16 @@ cat(sprintf('
         matchAxis = "y";
       }
       if (!matchAxis) return trace;
+      matchAxisGlobal = matchAxis;
 
       var axisData = trace[matchAxis];
       var indices = [];
       axisData.forEach(function(val, idx) {
-        if (allowedValues.indexOf(val) >= 0) indices.push(idx);
+        if (allowedValues.indexOf(val) >= 0) {
+          indices.push(idx);
+          // Track kept categories in first-seen order to rebuild the axis
+          if (!seenCategory[val]) { seenCategory[val] = true; keptCategories.push(val); }
+        }
       });
 
       var newTrace = Object.assign({}, trace);
@@ -266,7 +298,22 @@ cat(sprintf('
       }
       return newTrace;
     });
-    Plotly.react(el, filtered, el.layout);
+
+    // Constrain the categorical axis to only the kept categories. Without this,
+    // Plotly reuses the cached axis (and its computed range) and leaves an empty
+    // tick/slot for every filtered-out site, so the bars shrink but the axis
+    // still spans all study sites.
+    var layout = JSON.parse(JSON.stringify(originalLayout[containerId]));
+    if (matchAxisGlobal) {
+      var axisName = matchAxisGlobal === "x" ? "xaxis" : "yaxis";
+      layout[axisName] = Object.assign({}, layout[axisName] || {}, {
+        categoryorder: "array",
+        categoryarray: keptCategories,
+        autorange: true
+      });
+      delete layout[axisName].range;
+    }
+    Plotly.react(el, filtered, layout);
   }
 
   function filterPatientListing(sites) {
@@ -313,7 +360,8 @@ cat(sprintf('
   function resetPlotlyChart(containerId) {
     var el = getPlotlyDiv(containerId);
     if (!el || !originalData[containerId]) return;
-    Plotly.react(el, originalData[containerId], el.layout);
+    // Restore the original layout so the full categorical axis returns
+    Plotly.react(el, originalData[containerId], originalLayout[containerId] || el.layout);
   }
 
   // Initialize when DOM is ready
@@ -324,5 +372,5 @@ cat(sprintf('
   }
 })();
 </script>
-', country_site_map, invid_col_idx))
+', country_site_map, country_premature_site_map, invid_col_idx))
 ```
