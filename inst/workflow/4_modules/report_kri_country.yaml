@@ -4,6 +4,7 @@ meta:
   Output: html
   Name: Country-Level Key Risk Indicator Report
   Description: A report summarizing key risk indicators at the country level.
+  Active: true
 spec:
   Reporting_Results:
     _all:
