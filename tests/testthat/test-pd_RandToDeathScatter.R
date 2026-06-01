@@ -13,7 +13,7 @@ dfDeath_dated <- dplyr::mutate(
   death_dt = as.Date("2026-01-01") + .data$death_dy
 )
 
-test_that("pd_RandToDeathScatter returns a plotly object with treatment_related {#59}", {
+test_that("pd_RandToDeathScatter returns a plotly object with treatment_related {#223}", {
   testthat::skip_if_not_installed("plotly")
   p <- pd_RandToDeathScatter(
     dfDeath_full,
@@ -25,7 +25,7 @@ test_that("pd_RandToDeathScatter returns a plotly object with treatment_related 
   expect_s3_class(p, "plotly")
 })
 
-test_that("pd_RandToDeathScatter degrades gracefully without treatment_related {#59}", {
+test_that("pd_RandToDeathScatter degrades gracefully without treatment_related {#223}", {
   testthat::skip_if_not_installed("plotly")
   p <- pd_RandToDeathScatter(
     dfDeath_degraded,
@@ -37,7 +37,7 @@ test_that("pd_RandToDeathScatter degrades gracefully without treatment_related {
   expect_s3_class(p, "plotly")
 })
 
-test_that("pd_RandToDeathScatter validates inputs {#59}", {
+test_that("pd_RandToDeathScatter validates inputs {#223}", {
   expect_error(
     pd_RandToDeathScatter(as.list(dfDeath_full), dfSubjects),
     "dfDeath is not a data.frame"
@@ -48,7 +48,7 @@ test_that("pd_RandToDeathScatter validates inputs {#59}", {
   )
 })
 
-test_that("pd_RandToDeathScatter renders numeric rand-to-snapshot y with dSnapshotDate", {
+test_that("pd_RandToDeathScatter renders numeric rand-to-snapshot y with dSnapshotDate {#223}", {
   testthat::skip_if_not_installed("plotly")
   p <- pd_RandToDeathScatter(
     dfDeath_dated,
@@ -61,7 +61,7 @@ test_that("pd_RandToDeathScatter renders numeric rand-to-snapshot y with dSnapsh
   expect_s3_class(p, "plotly")
 })
 
-test_that("pd_RandToDeathScatter requires death_dt when dSnapshotDate is supplied", {
+test_that("pd_RandToDeathScatter requires death_dt when dSnapshotDate is supplied {#223}", {
   testthat::skip_if_not_installed("plotly")
   expect_error(
     pd_RandToDeathScatter(

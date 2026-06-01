@@ -16,19 +16,19 @@ dfDeath <- tibble::tibble(
   treatment_related = c(TRUE, FALSE)
 )
 
-test_that("pd_PatientListing returns a DT htmlwidget {#59}", {
+test_that("pd_PatientListing returns a DT htmlwidget {#223}", {
   testthat::skip_if_not_installed("DT")
   tbl <- pd_PatientListing(dfResults, dfDeath)
   expect_s3_class(tbl, "datatables")
 })
 
-test_that("pd_PatientListing keeps only Flag==2 rows sorted by death_dy {#59}", {
+test_that("pd_PatientListing keeps only Flag==2 rows sorted by death_dy {#223}", {
   df <- pd_PatientListingData(dfResults, dfDeath)
   expect_equal(df$subjid, c("S2", "S1")) # day 20 before day 50; S3 (Flag 0) dropped
   expect_equal(df$death_reason, c("Sepsis", "Cardiac arrest"))
 })
 
-test_that("pd_PatientListing degrades without reason/treatment columns {#59}", {
+test_that("pd_PatientListing degrades without reason/treatment columns {#223}", {
   df <- pd_PatientListingData(
     dfResults,
     dplyr::select(dfDeath, subjid, death_dt, death_dy)
@@ -37,7 +37,7 @@ test_that("pd_PatientListing degrades without reason/treatment columns {#59}", {
   expect_true(all(is.na(df$treatment_related)))
 })
 
-test_that("pd_PatientListing validates inputs {#59}", {
+test_that("pd_PatientListing validates inputs {#223}", {
   expect_error(
     pd_PatientListing(as.list(dfResults), dfDeath),
     "dfResults is not a data.frame"
@@ -48,7 +48,7 @@ test_that("pd_PatientListing validates inputs {#59}", {
   )
 })
 
-test_that("pd_CheckWindowConsistency warns on mismatch {#59}", {
+test_that("pd_CheckWindowConsistency warns on mismatch {#223}", {
   expect_warning(
     pd_CheckWindowConsistency(10, 0, 2),
     "disagrees with the window used to produce dfResults"

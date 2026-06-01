@@ -1,4 +1,4 @@
-test_that("pd_BucketBar returns a plotly object {#59}", {
+test_that("pd_BucketBar returns a plotly object {#223}", {
   testthat::skip_if_not_installed("plotly")
   dfSubjects <- tibble::tibble(
     subjid = paste0("S", 1:4),
@@ -20,7 +20,7 @@ test_that("pd_BucketBar returns a plotly object {#59}", {
   expect_s3_class(p, "plotly")
 })
 
-test_that("pd_BucketBar uses RAG colors {#59}", {
+test_that("pd_BucketBar uses RAG colors {#223}", {
   testthat::skip_if_not_installed("plotly")
   dfSubjects <- tibble::tibble(subjid = paste0("S", 1:3), studyid = "ST01")
   dfDeath <- tibble::tibble(subjid = c("S1", "S2"), death_dy = c(20, 50))
@@ -34,7 +34,7 @@ test_that("pd_BucketBar uses RAG colors {#59}", {
   )
 })
 
-test_that("pd_BucketBar buckets are correct at study level {#59}", {
+test_that("pd_BucketBar buckets are correct at study level {#223}", {
   dfSubjects <- tibble::tibble(
     subjid = paste0("S", 1:4),
     invid = c("INV-1", "INV-1", "INV-2", "INV-2"),
@@ -57,7 +57,7 @@ test_that("pd_BucketBar buckets are correct at study level {#59}", {
   expect_equal(total$n[total$Bucket == "Alive at 90d"], 2) # S3 (no death) + S4 (day 120)
 })
 
-test_that("pd_BucketBar validates inputs {#59}", {
+test_that("pd_BucketBar validates inputs {#223}", {
   dfSubjects <- tibble::tibble(
     subjid = paste0("S", 1:4),
     invid = c("INV-1", "INV-1", "INV-2", "INV-2"),

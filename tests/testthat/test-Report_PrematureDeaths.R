@@ -38,7 +38,7 @@ lListings <- list(
   )
 )
 
-test_that("Report_PrematureDeaths renders to a file {#59}", {
+test_that("Report_PrematureDeaths renders to a file {#223}", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
   out <- Report_PrematureDeaths(
@@ -52,14 +52,14 @@ test_that("Report_PrematureDeaths renders to a file {#59}", {
   expect_true(file.exists(out))
 })
 
-test_that("Report_PrematureDeaths validates nWindowDays {#59}", {
+test_that("Report_PrematureDeaths validates nWindowDays {#223}", {
   expect_error(
     Report_PrematureDeaths(lListings = lListings, nWindowDays = -1),
     "nWindowDays must be a positive number"
   )
 })
 
-test_that("Report_PrematureDeaths warns when nWindowDays disagrees with dfResults {#59}", {
+test_that("Report_PrematureDeaths warns when nWindowDays disagrees with dfResults {#223}", {
   # Test the window-consistency guard directly (warnings don't propagate
   # through rmarkdown::render boundaries; the helper is exported for this purpose).
   expect_warning(
