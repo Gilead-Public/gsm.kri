@@ -34,6 +34,7 @@ Mapped_SUBJ <- lListings$Mapped_SUBJ
 
 nEnrolled <- nrow(Mapped_SUBJ)
 nPremature <- sum(!is.na(Mapped_Death$death_dy) & Mapped_Death$death_dy <= nWindowDays)
+nPrematureRate <- ifelse(nEnrolled > 0, 100 * nPremature / nEnrolled, 0)
 latest_snapshot <- max(dfResults$SnapshotDate)
 has_premature <- nPremature > 0
 
@@ -72,9 +73,11 @@ date: "Snapshot Date: `r latest_snapshot`"
 
 ```{r overview, echo=FALSE, results='asis'}
 cat(sprintf(
-  "- **Configured window:** %d days\n- **Total enrolled:** %d\n- **Premature deaths (within window):** %d\n- **Premature death rate:** %.1f%%\n",
-  nWindowDays, nEnrolled, nPremature,
-  ifelse(nEnrolled > 0, 100 * nPremature / nEnrolled, 0)
+  "- **Configured window:** %d days\n
+   - **Total enrolled:** %d\n
+   - **Premature deaths (within window):** %d\n
+   - **Premature death rate:** %.1f%%\n",
+  nWindowDays, nEnrolled, nPremature, nPrematureRate
 ))
 ```
 
