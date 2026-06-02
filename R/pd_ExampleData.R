@@ -35,9 +35,23 @@ pd_MockCompleteDeathExtension <- function(dfDeath, dfAE, dfStudComp) {
       ae_rel = .data$aerel
     )
 
+  # Deterministic per-subject selection: prefer "Death" over other non-missing
+  # compreas values, then other non-missing, then missing. This avoids
+  # order-dependent results when dfStudComp has multiple rows per subject.
   dfStudCompReason <- dfStudComp %>%
     dplyr::select("subjid", "compreas") %>%
-    dplyr::distinct(.data$subjid, .keep_all = TRUE)
+    dplyr::mutate(
+      .priority = dplyr::case_when(
+        .data$compreas == "Death" ~ 1L,
+        !is.na(.data$compreas) ~ 2L,
+        .default = 3L
+      )
+    ) %>%
+    dplyr::group_by(.data$subjid) %>%
+    dplyr::arrange(.data$.priority, .by_group = TRUE) %>%
+    dplyr::slice(1) %>%
+    dplyr::ungroup() %>%
+    dplyr::select(-".priority")
 
   dfDeath %>%
     dplyr::left_join(fatal_ae, by = "subjid") %>%
