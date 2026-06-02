@@ -58,3 +58,46 @@ test_that("pd_MockCompleteDeathExtension compreas fallback is deterministic {#22
   expect_equal(out$ae_pt_at_death, c(NA_character_, NA_character_))
   expect_equal(out$treatment_related, c(FALSE, FALSE))
 })
+
+# --- pd_SimulatePrematureDeathCohort ----------------------------------------
+test_that("pd_SimulatePrematureDeathCohort returns a censored, schema-stable cohort {#223}", {
+  dfSubj <- tibble::tibble(
+    studyid = "ABC",
+    subjid = paste0("S", seq_len(500))
+  )
+  snap <- as.Date("2026-06-01")
+  out <- pd_SimulatePrematureDeathCohort(
+    dfSubj,
+    nWindowDays = 90,
+    seed = 1,
+    snapshot_date = snap
+  )
+
+  expect_s3_class(out, "tbl_df")
+  expect_named(
+    out,
+    c(
+      "studyid",
+      "subjid",
+      "death_dt",
+      "death_dy",
+      "death",
+      "pd_date",
+      "ae_pt_at_death",
+      "compreas",
+      "treatment_related",
+      "death_reason"
+    )
+  )
+  expect_gt(nrow(out), 0) # the seed must produce at least one observed death
+  expect_true(all(out$death))
+  expect_true(all(out$death_dy >= 1)) # only positive time-to-death observed
+  expect_true(all(out$death_dt <= snap)) # censoring: no death after the snapshot
+})
+
+test_that("pd_SimulatePrematureDeathCohort is reproducible for a fixed seed {#223}", {
+  dfSubj <- tibble::tibble(studyid = "ABC", subjid = paste0("S", seq_len(500)))
+  a <- pd_SimulatePrematureDeathCohort(dfSubj, 90, seed = 1)
+  b <- pd_SimulatePrematureDeathCohort(dfSubj, 90, seed = 1)
+  expect_identical(a, b)
+})
