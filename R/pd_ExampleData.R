@@ -101,7 +101,9 @@ pd_MockCompleteDeathExtension <- function(dfDeath, dfAE, dfStudComp) {
 #' @param snapshot_date `Date` Reporting snapshot. Default `Sys.Date()`
 #'   (the gsm.reporting `BindResults` default).
 #'
-#' @return A `tibble` of observed simulated deaths matching `Mapped_Death`'s schema.
+#' @return A `tibble` of observed simulated deaths matching the enriched schema
+#'   returned by `pd_MockCompleteDeathExtension()` (`Mapped_Death` plus
+#'   `ae_pt_at_death`, `compreas`, `treatment_related`, `death_reason`).
 #' @noRd
 pd_SimulatePrematureDeathCohort <- function(
   dfSubj,
