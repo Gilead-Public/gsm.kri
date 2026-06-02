@@ -34,10 +34,12 @@ pd_ReasonCounts <- function(dfDeath, nWindowDays = 90) {
 #' Horizontal bar of `death_reason` counts among premature deaths.
 #'
 #' @inheritParams pd_ReasonCounts
+#' @param nEnrolled `numeric` Total enrolled subjects, used for the "% of enrolled"
+#'   tooltip line. When `NULL` (default) that line is omitted. Default: `NULL`.
 #'
 #' @return A `plotly` htmlwidget.
 #' @export
-pd_ReasonDist <- function(dfDeath, nWindowDays = 90) {
+pd_ReasonDist <- function(dfDeath, nWindowDays = 90, nEnrolled = NULL) {
   gsm.core::stop_if(
     cnd = !is.data.frame(dfDeath),
     message = "dfDeath is not a data.frame"
@@ -51,13 +53,30 @@ pd_ReasonDist <- function(dfDeath, nWindowDays = 90) {
   rlang::check_installed("plotly", reason = "to run `pd_ReasonDist()`")
 
   dfCounts <- pd_ReasonCounts(dfDeath, nWindowDays)
+  nPremature <- sum(dfCounts$n)
+
+  dfCounts <- dfCounts %>%
+    dplyr::mutate(
+      text = paste0(
+        "Reason: ", .data$death_reason,
+        "<br>Subjects: ", .data$n,
+        if (!is.null(nEnrolled)) {
+          paste0("<br>% of enrolled: ", pd_PctLabel(.data$n, nEnrolled))
+        } else {
+          ""
+        },
+        "<br>% of premature deaths: ", pd_PctLabel(.data$n, nPremature)
+      )
+    )
 
   plotly::plot_ly(
     dfCounts,
     x = ~n,
     y = ~ stats::reorder(death_reason, n),
     type = "bar",
-    orientation = "h"
+    orientation = "h",
+    text = ~text,
+    hovertemplate = "%{text}<extra></extra>"
   ) %>%
     plotly::layout(
       xaxis = list(title = "Premature Deaths"),

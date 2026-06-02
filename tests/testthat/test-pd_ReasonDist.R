@@ -38,3 +38,23 @@ test_that("pd_ReasonDist validates inputs {#223}", {
     "nWindowDays must be a positive number"
   )
 })
+
+test_that("pd_ReasonDist hover text shows count and both percentages {#223}", {
+  testthat::skip_if_not_installed("plotly")
+  # premature (<=90): S1, S2 (Cardiac arrest), S3 (Sepsis); S4 @120 excluded.
+  p <- pd_ReasonDist(dfDeath_full, nWindowDays = 90, nEnrolled = 10)
+  built <- plotly::plotly_build(p)
+  texts <- unlist(lapply(built$x$data, function(d) d$text))
+  expect_true(any(grepl("Reason: Cardiac arrest", texts)))
+  expect_true(any(grepl("% of enrolled: 20.0%", texts)))          # 2 / 10
+  expect_true(any(grepl("% of premature deaths: 66.7%", texts)))  # 2 / 3
+})
+
+test_that("pd_ReasonDist omits enrolled percent when nEnrolled is NULL {#223}", {
+  testthat::skip_if_not_installed("plotly")
+  p <- pd_ReasonDist(dfDeath_full, nWindowDays = 90)
+  built <- plotly::plotly_build(p)
+  texts <- unlist(lapply(built$x$data, function(d) d$text))
+  expect_false(any(grepl("% of enrolled", texts)))
+  expect_true(any(grepl("% of premature deaths", texts)))
+})
