@@ -11,7 +11,7 @@ output:
     toc_float:
       collapsed: false
       smooth_scroll: true
-    css: ../report/styles.css
+    css: styles.css
 ---
 # Set Up 
 This page provides a sample Eligibility Report generated using `gsm.kri` package. Expand the "Setup" section below to see the code used to generate the report. Or scroll down for the standard report output.
