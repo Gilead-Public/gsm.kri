@@ -120,9 +120,13 @@ pd_BucketBar <- function(
     dplyr::ungroup() %>%
     dplyr::mutate(
       text = paste0(
-        "Bucket: ", .data$Bucket,
-        "<br>Subjects: ", .data$n,
-        " (", pd_PctLabel(.data$n, .data$GroupTotal), ")"
+        "Bucket: ",
+        .data$Bucket,
+        "<br>Subjects: ",
+        .data$n,
+        " (",
+        pd_PctLabel(.data$n, .data$GroupTotal),
+        ")"
       )
     )
 

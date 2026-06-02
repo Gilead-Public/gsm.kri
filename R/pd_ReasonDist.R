@@ -58,14 +58,17 @@ pd_ReasonDist <- function(dfDeath, nWindowDays = 90, nEnrolled = NULL) {
   dfCounts <- dfCounts %>%
     dplyr::mutate(
       text = paste0(
-        "Reason: ", .data$death_reason,
-        "<br>Subjects: ", .data$n,
+        "Reason: ",
+        .data$death_reason,
+        "<br>Subjects: ",
+        .data$n,
         if (!is.null(nEnrolled)) {
           paste0("<br>% of enrolled: ", pd_PctLabel(.data$n, nEnrolled))
         } else {
           ""
         },
-        "<br>% of premature deaths: ", pd_PctLabel(.data$n, nPremature)
+        "<br>% of premature deaths: ",
+        pd_PctLabel(.data$n, nPremature)
       )
     )
 

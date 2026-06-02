@@ -91,12 +91,18 @@ pd_RandToDeathScatter <- function(
         levels = bucket_labels[1:2]
       ),
       text = paste0(
-        "Country: ", .data$country,
-        "<br>Site: ", .data$invid,
-        "<br>Subject: ", .data$subjid,
-        "<br>Days to death: ", .data$death_dy,
-        "<br>Bucket: ", .data$Bucket,
-        "<br>Treatment related: ", pd_YesNo(.data$treatment_related)
+        "Country: ",
+        .data$country,
+        "<br>Site: ",
+        .data$invid,
+        "<br>Subject: ",
+        .data$subjid,
+        "<br>Days to death: ",
+        .data$death_dy,
+        "<br>Bucket: ",
+        .data$Bucket,
+        "<br>Treatment related: ",
+        pd_YesNo(.data$treatment_related)
       )
     )
 

@@ -4,13 +4,16 @@
 \alias{pd_ReasonDist}
 \title{Premature-death reason distribution chart}
 \usage{
-pd_ReasonDist(dfDeath, nWindowDays = 90)
+pd_ReasonDist(dfDeath, nWindowDays = 90, nEnrolled = NULL)
 }
 \arguments{
 \item{dfDeath}{`data.frame` Mapped death data with `subjid`, `death_dy`, and
 optionally `death_reason`.}
 
 \item{nWindowDays}{`numeric` Premature-death window in days. Default: 90.}
+
+\item{nEnrolled}{`numeric` Total enrolled subjects, used for the "% of enrolled"
+tooltip line. When `NULL` (default) that line is omitted. Default: `NULL`.}
 }
 \value{
 A `plotly` htmlwidget.
