@@ -99,7 +99,7 @@ pd_RandToDeathScatter(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "stu
 
 ### Reasons
 ```{r study-reasons, echo=FALSE, eval=has_premature}
-pd_ReasonDist(Mapped_Death, nWindowDays)
+pd_ReasonDist(Mapped_Death, nWindowDays, nEnrolled = nEnrolled)
 ```
 
 ## Country {.tabset .tabset-pills}
