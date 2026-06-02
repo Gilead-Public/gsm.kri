@@ -16,6 +16,7 @@ meta:
   RiskScoreWeight: "0,8,16"
   AccrualThreshold: 3
   AccrualMetric: Denominator
+  GenerateRiskSignal: true
 spec:
   Mapped_EXCLUSION:
     subjid:

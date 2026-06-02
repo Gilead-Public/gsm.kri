@@ -11,6 +11,7 @@ meta:
   Score: Normalized Risk Score
   AnalysisType: identity
   Priority: 4
+  GenerateRiskSignal: true
 steps:
   - output: lAnalysis_filtered
     name: gsm.kri::FilterAnalysis

@@ -14,6 +14,7 @@ meta:
   Flag: "-2,-1,0"
   AccrualMetric: Difference
   AccrualThreshold: 3
+  GenerateRiskSignal: true
 spec:
   Mapped_SUBJ:
     subjid:
