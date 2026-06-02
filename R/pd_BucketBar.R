@@ -114,13 +114,27 @@ pd_BucketBar <- function(
 
   rag_colors <- pd_RagColors(nWindowDays)
 
+  dfCounts <- dfCounts %>%
+    dplyr::group_by(.data$GroupID) %>%
+    dplyr::mutate(GroupTotal = sum(.data$n)) %>%
+    dplyr::ungroup() %>%
+    dplyr::mutate(
+      text = paste0(
+        "Bucket: ", .data$Bucket,
+        "<br>Subjects: ", .data$n,
+        " (", pd_PctLabel(.data$n, .data$GroupTotal), ")"
+      )
+    )
+
   plotly::plot_ly(
     dfCounts,
     x = ~GroupID,
     y = ~n,
     color = ~Bucket,
     colors = rag_colors,
-    type = "bar"
+    type = "bar",
+    text = ~text,
+    hovertemplate = "%{text}<extra></extra>"
   ) %>%
     plotly::layout(
       barmode = "stack",

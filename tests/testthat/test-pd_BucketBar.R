@@ -57,6 +57,33 @@ test_that("pd_BucketBar buckets are correct at study level {#223}", {
   expect_equal(total$n[total$Bucket == "Alive at 90d"], 2) # S3 (no death) + S4 (day 120)
 })
 
+test_that("pd_BucketBar hover text shows bucket, count, and percent of enrolled {#223}", {
+  testthat::skip_if_not_installed("plotly")
+  dfSubjects <- tibble::tibble(
+    subjid = paste0("S", 1:4),
+    invid = c("INV-1", "INV-1", "INV-2", "INV-2"),
+    country = c("USA", "USA", "CAN", "CAN"),
+    studyid = "ST01"
+  )
+  dfDeath <- tibble::tibble(
+    subjid = c("S1", "S2", "S4"),
+    death_dy = c(20, 50, 120)
+  )
+  p <- pd_BucketBar(
+    dfDeath,
+    dfSubjects,
+    nWindowDays = 90,
+    strGroupCol = "studyid",
+    strGroupLabel = "Study"
+  )
+  built <- plotly::plotly_build(p)
+  texts <- unlist(lapply(built$x$data, function(d) d$text))
+  # Bind the percent to its bucket so the assertion can't be satisfied by a
+  # different bucket that happens to share the same count.
+  expect_true(any(grepl("Bucket: <=30d<br>Subjects: 1 \\(25.0%\\)", texts))) # S1 of 4 enrolled
+  expect_true(any(grepl("Bucket: Alive at 90d<br>Subjects: 2 \\(50.0%\\)", texts))) # S3 + S4 alive at 90d
+})
+
 test_that("pd_BucketBar validates inputs {#223}", {
   dfSubjects <- tibble::tibble(
     subjid = paste0("S", 1:4),
