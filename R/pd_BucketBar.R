@@ -137,8 +137,8 @@ pd_BucketBar <- function(
     color = ~Bucket,
     colors = rag_colors,
     type = "bar",
-    text = ~text,
-    hovertemplate = "%{text}<extra></extra>"
+    customdata = ~text,
+    hovertemplate = "%{customdata}<extra></extra>"
   ) %>%
     plotly::layout(
       barmode = "stack",

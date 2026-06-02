@@ -77,11 +77,14 @@ test_that("pd_BucketBar hover text shows bucket, count, and percent of enrolled 
     strGroupLabel = "Study"
   )
   built <- plotly::plotly_build(p)
-  texts <- unlist(lapply(built$x$data, function(d) d$text))
+  texts <- unlist(lapply(built$x$data, function(d) d$customdata))
   # Bind the percent to its bucket so the assertion can't be satisfied by a
   # different bucket that happens to share the same count.
   expect_true(any(grepl("Bucket: <=30d<br>Subjects: 1 \\(25.0%\\)", texts))) # S1 of 4 enrolled
-  expect_true(any(grepl("Bucket: Alive at 90d<br>Subjects: 2 \\(50.0%\\)", texts))) # S3 + S4 alive at 90d
+  expect_true(any(grepl(
+    "Bucket: Alive at 90d<br>Subjects: 2 \\(50.0%\\)",
+    texts
+  ))) # S3 + S4 alive at 90d
 })
 
 test_that("pd_BucketBar validates inputs {#223}", {

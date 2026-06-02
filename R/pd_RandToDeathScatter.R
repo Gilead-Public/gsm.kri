@@ -124,8 +124,8 @@ pd_RandToDeathScatter <- function(
     colors = rag_colors[1:2],
     type = "scatter",
     mode = "markers",
-    text = ~text,
-    hovertemplate = "%{text}<extra></extra>"
+    customdata = ~text,
+    hovertemplate = "%{customdata}<extra></extra>"
   )
 
   yaxis <- if (is_study) {

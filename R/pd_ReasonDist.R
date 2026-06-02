@@ -78,8 +78,8 @@ pd_ReasonDist <- function(dfDeath, nWindowDays = 90, nEnrolled = NULL) {
     y = ~ stats::reorder(death_reason, n),
     type = "bar",
     orientation = "h",
-    text = ~text,
-    hovertemplate = "%{text}<extra></extra>"
+    customdata = ~text,
+    hovertemplate = "%{customdata}<extra></extra>"
   ) %>%
     plotly::layout(
       xaxis = list(title = "Premature Deaths"),

@@ -38,7 +38,7 @@ test_that("pd_RandToDeathScatter degrades gracefully without treatment_related {
   )
   expect_s3_class(p, "plotly")
   built <- plotly::plotly_build(p)
-  texts <- unlist(lapply(built$x$data, function(d) d$text))
+  texts <- unlist(lapply(built$x$data, function(d) d$customdata))
   expect_true(any(grepl("Treatment related: Unknown", texts)))
 })
 
@@ -52,7 +52,7 @@ test_that("pd_RandToDeathScatter hover text shows all fields {#223}", {
     strGroupLabel = "Site"
   )
   built <- plotly::plotly_build(p)
-  texts <- unlist(lapply(built$x$data, function(d) d$text))
+  texts <- unlist(lapply(built$x$data, function(d) d$customdata))
   s1 <- texts[grepl("Subject: S1", texts)]
   expect_match(s1, "Country: USA")
   expect_match(s1, "Site: INV-1")
@@ -122,6 +122,6 @@ test_that("pd_RandToDeathScatter tooltip shows NA for absent context columns {#2
     strGroupCol = "invid"
   )
   built <- plotly::plotly_build(p)
-  texts <- unlist(lapply(built$x$data, function(d) d$text))
+  texts <- unlist(lapply(built$x$data, function(d) d$customdata))
   expect_true(any(grepl("Country: NA", texts)))
 })
