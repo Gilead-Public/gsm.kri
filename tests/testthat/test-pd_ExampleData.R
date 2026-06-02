@@ -98,7 +98,17 @@ test_that("pd_SimulatePrematureDeathCohort returns a censored, schema-stable coh
 test_that("pd_SimulatePrematureDeathCohort is reproducible for a fixed seed {#223}", {
   dfSubj <- tibble::tibble(studyid = "ABC", subjid = paste0("S", seq_len(500)))
   snap <- as.Date("2026-06-01")
-  a <- pd_SimulatePrematureDeathCohort(dfSubj, 90, seed = 1, snapshot_date = snap)
-  b <- pd_SimulatePrematureDeathCohort(dfSubj, 90, seed = 1, snapshot_date = snap)
+  a <- pd_SimulatePrematureDeathCohort(
+    dfSubj,
+    90,
+    seed = 1,
+    snapshot_date = snap
+  )
+  b <- pd_SimulatePrematureDeathCohort(
+    dfSubj,
+    90,
+    seed = 1,
+    snapshot_date = snap
+  )
   expect_identical(a, b)
 })
