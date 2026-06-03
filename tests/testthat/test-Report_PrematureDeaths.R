@@ -100,3 +100,28 @@ test_that("Report_PrematureDeaths includes country filter JS and banner {#TBD}",
   expect_true(grepl('id="pd-site-buckets"', html))
   expect_true(grepl('id="pd-site-scatter"', html))
 })
+
+test_that("Report_PrematureDeaths wires the site-barchart listing filter {#221}", {
+  testthat::skip_if_not_installed("plotly")
+  testthat::skip_if_not_installed("DT")
+  out <- Report_PrematureDeaths(
+    dfResults = dfResults,
+    dfMetrics = dfMetrics,
+    dfGroups = dfGroups,
+    lListings = lListings,
+    nWindowDays = 90,
+    strOutputDir = tempdir()
+  )
+  html <- paste(readLines(out, warn = FALSE), collapse = "\n")
+
+  # Site click is wired as a second, independent filter source.
+  expect_match(html, "attachSiteClick", fixed = TRUE)
+  expect_match(html, "function applySiteFilter", fixed = TRUE)
+  expect_match(html, "highlightSiteBar", fixed = TRUE)
+  # Both filters route through one listing owner.
+  expect_match(html, "function applyListingFilter", fixed = TRUE)
+  # Two-line banner: the new site row + its reset.
+  expect_match(html, "pd-filter-site-row", fixed = TRUE)
+  expect_match(html, "pd-site-filter-text", fixed = TRUE)
+  expect_match(html, "window.pdResetSiteFilter", fixed = TRUE)
+})

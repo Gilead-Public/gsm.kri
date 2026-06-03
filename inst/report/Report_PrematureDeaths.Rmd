@@ -150,9 +150,15 @@ htmltools::div(
 
 ## Site {.tabset .tabset-pills}
 
-<div id="pd-filter-banner" style="display:none; background:#e3f2fd; border:1px solid #90caf9; border-radius:6px; padding:10px 16px; margin:16px 0; align-items:center; justify-content:space-between;">
-  <span id="pd-filter-text" style="font-size:13px; color:#1565c0;"></span>
-  <button id="pd-filter-reset" onclick="pdResetFilter()" style="background:#1a73e8; color:white; border:none; border-radius:4px; padding:4px 12px; cursor:pointer; font-size:12px;">✕ Show All Sites</button>
+<div id="pd-filter-banner" style="display:none; background:#e3f2fd; border:1px solid #90caf9; border-radius:6px; padding:10px 16px; margin:16px 0; flex-direction:column; gap:8px;">
+<div id="pd-filter-country-row" style="display:none; align-items:center; justify-content:space-between;">
+<span id="pd-filter-text" style="font-size:13px; color:#1565c0;"></span>
+<button id="pd-filter-reset" onclick="pdResetFilter()" style="background:#1a73e8; color:white; border:none; border-radius:4px; padding:4px 12px; cursor:pointer; font-size:12px;">✕ Show All Sites</button>
+</div>
+<div id="pd-filter-site-row" style="display:none; align-items:center; justify-content:space-between;">
+<span id="pd-site-filter-text" style="font-size:13px; color:#1565c0;"></span>
+<button id="pd-site-filter-reset" onclick="pdResetSiteFilter()" style="background:#1a73e8; color:white; border:none; border-radius:4px; padding:4px 12px; cursor:pointer; font-size:12px;">✕ Clear Site</button>
+</div>
 </div>
 
 ### Buckets
@@ -177,19 +183,23 @@ pd_PatientListing(dfResults, Mapped_Death, Mapped_SUBJ)
 ```
 
 ```{r filter-js, echo=FALSE, results='asis', eval=has_premature}
-cat(sprintf('
+cat(paste0('
 <script>
 (function() {
-  var countrySiteMap = %s;
-  var countryPrematureSiteMap = %s;
-  var invidColIdx = %d;
+  var countrySiteMap = ', country_site_map, ';
+  var countryPrematureSiteMap = ', country_premature_site_map, ';
+  var invidColIdx = ', invid_col_idx, ';
   var activeCountry = null;
+  var activeSite = null;
 
-  // Find the plotly div inside a container
+  // Find the plotly div inside a container (returns null until Plotly has
+  // initialized the widget and attached its event system).
   function getPlotlyDiv(containerId) {
     var container = document.getElementById(containerId);
     if (!container) return null;
-    return container.querySelector(".plotly");
+    var el = container.querySelector(".plotly");
+    if (!el || !el.on) return null;
+    return el;
   }
 
   // Attach click handler to country buckets chart (max 5 retries)
@@ -197,7 +207,7 @@ cat(sprintf('
   function attachCountryClick() {
     var el = getPlotlyDiv("pd-country-buckets");
     if (!el) {
-      if (++attachRetries < 5) setTimeout(attachCountryClick, 500);
+      if (++attachRetries < 20) setTimeout(attachCountryClick, 500);
       return;
     }
     el.on("plotly_click", function(data) {
@@ -215,14 +225,14 @@ cat(sprintf('
     var sites = countrySiteMap[country] || [];
     var prematureSites = countryPrematureSiteMap[country] || [];
 
-    // Show banner. The charts only render sites with a premature death, so the
-    // headline count is premature-death sites over the enrolled-site total.
-    var banner = document.getElementById("pd-filter-banner");
-    banner.style.display = "flex";
+    // Show the country banner row. The charts only render sites with a premature
+    // death, so the headline count is premature-death sites over the enrolled total.
+    document.getElementById("pd-filter-country-row").style.display = "flex";
     document.getElementById("pd-filter-text").innerHTML =
       "\\ud83d\\udd0d <strong>Showing " + country + "</strong> \\u2014 " +
       prematureSites.length + "/" + sites.length +
       " sites with at least 1 premature death";
+    updateBannerVisibility();
 
     // Highlight country bar: dim non-selected
     highlightCountryBar(country);
@@ -230,14 +240,16 @@ cat(sprintf('
     // Filter country scatter to selected country only
     filterPlotlyChart("pd-country-scatter", [country]);
 
-    // Filter site buckets
+    // Filter site buckets + scatter to this country\'s sites
     filterPlotlyChart("pd-site-buckets", sites);
-
-    // Filter site scatter
     filterPlotlyChart("pd-site-scatter", sites);
 
-    // Filter patient listing
-    filterPatientListing(sites);
+    // The site-buckets re-render above wiped any site-bar opacity highlight;
+    // re-apply it so an active, independent site selection stays visible.
+    if (activeSite) highlightSiteBar(activeSite);
+
+    // Re-derive the listing from all active filters (site > country precedence).
+    applyListingFilter();
   }
 
   function highlightCountryBar(country) {
@@ -251,6 +263,113 @@ cat(sprintf('
       Plotly.restyle(el, {"marker.opacity": [opacities]}, [i]);
     }
   }
+
+  // Show/hide the banner container based on whether either row is active.
+  function updateBannerVisibility() {
+    var banner = document.getElementById("pd-filter-banner");
+    banner.style.display = (activeCountry || activeSite) ? "flex" : "none";
+  }
+
+  // Single owner of the patient-listing column search. Only one search can be
+  // held on the invid column, so both filters route through here. Precedence:
+  // an active site wins over an active country (site is more specific).
+  function applyListingFilter() {
+    var tables = document.querySelectorAll(".dataTable");
+    if (tables.length === 0) return;
+    var dtApi = $(tables[tables.length - 1]).DataTable();
+    var sites = null;
+    if (activeSite) {
+      sites = [activeSite];
+    } else if (activeCountry) {
+      sites = countrySiteMap[activeCountry] || [];
+    }
+    if (sites) {
+      var regex = "^(" + sites.join("|") + ")$";
+      dtApi.column(invidColIdx).search(regex, true, false).draw();
+    } else {
+      dtApi.column(invidColIdx).search("").draw();
+    }
+  }
+
+  // Attach click handler to site buckets chart (max 5 retries)
+  var siteAttachRetries = 0;
+  function attachSiteClick() {
+    var el = getPlotlyDiv("pd-site-buckets");
+    if (!el) {
+      if (++siteAttachRetries < 20) setTimeout(attachSiteClick, 500);
+      return;
+    }
+    el.on("plotly_click", function(data) {
+      var invid = data.points[0].x;
+      if (invid === activeSite) {
+        pdResetSiteFilter();
+      } else {
+        applySiteFilter(invid);
+      }
+    });
+  }
+
+  function applySiteFilter(invid) {
+    activeSite = invid;
+    document.getElementById("pd-filter-site-row").style.display = "flex";
+    document.getElementById("pd-site-filter-text").innerHTML =
+      "\\ud83d\\udd0d <strong>Showing site " + invid + "</strong> \\u2014 patient listing filtered";
+    updateBannerVisibility();
+    highlightSiteBar(invid);
+    applyListingFilter();
+  }
+
+  function highlightSiteBar(invid) {
+    var el = getPlotlyDiv("pd-site-buckets");
+    if (!el) return;
+    // Seed the filter cache with CLEAN (un-dimmed) data BEFORE mutating
+    // marker.opacity below. pd-site-buckets is the one chart that is both a
+    // highlight target and a filter target: if a site is clicked before any
+    // country filter, filterPlotlyChart would otherwise lazily cache this
+    // dimmed chart as the "original", and a later country reset would restore a
+    // permanently-dimmed chart. The guard means a clean cache (seeded here on a
+    // site-first click, or by filterPlotlyChart on a country-first click) is
+    // never overwritten. originalData/originalLayout are var-hoisted and shared
+    // with filterPlotlyChart, so referencing them here (textually before their
+    // declaration) is fine.
+    if (!originalData["pd-site-buckets"]) {
+      originalData["pd-site-buckets"] = JSON.parse(JSON.stringify(el.data));
+    }
+    if (!originalLayout["pd-site-buckets"]) {
+      originalLayout["pd-site-buckets"] = JSON.parse(JSON.stringify(el.layout));
+    }
+    var data = el.data;
+    // If the selected site isn\'t currently rendered (e.g. a country filter is
+    // showing a different country\'s sites), leave opacities untouched rather
+    // than dimming every bar to 0.3.
+    var present = data.some(function(tr) { return tr.x && tr.x.indexOf(invid) >= 0; });
+    if (!present) return;
+    for (var i = 0; i < data.length; i++) {
+      var opacities = data[i].x.map(function(x) {
+        return x === invid ? 1.0 : 0.3;
+      });
+      Plotly.restyle(el, {"marker.opacity": [opacities]}, [i]);
+    }
+  }
+
+  // Global reset for the site filter (called by the site row\'s button onclick)
+  window.pdResetSiteFilter = function() {
+    activeSite = null;
+    document.getElementById("pd-filter-site-row").style.display = "none";
+    updateBannerVisibility();
+
+    // Un-dim site bars
+    var el = getPlotlyDiv("pd-site-buckets");
+    if (el) {
+      for (var i = 0; i < el.data.length; i++) {
+        var allOnes = el.data[i].x.map(function() { return 1.0; });
+        Plotly.restyle(el, {"marker.opacity": [allOnes]}, [i]);
+      }
+    }
+
+    // Re-derive the listing from any remaining active filter (e.g. country).
+    applyListingFilter();
+  };
 
   // Store original trace data + layout for each chart on first filter
   var originalData = {};
@@ -319,20 +438,13 @@ cat(sprintf('
     Plotly.react(el, filtered, layout);
   }
 
-  function filterPatientListing(sites) {
-    var tables = document.querySelectorAll(".dataTable");
-    if (tables.length === 0) return;
-    var dtApi = $(tables[tables.length - 1]).DataTable();
-    var regex = "^(" + sites.join("|") + ")$";
-    dtApi.column(invidColIdx).search(regex, true, false).draw();
-  }
-
-  // Global reset function (called by button onclick)
+  // Global reset for the country filter (called by the country row\'s button onclick)
   window.pdResetFilter = function() {
     activeCountry = null;
 
-    // Hide banner
-    document.getElementById("pd-filter-banner").style.display = "none";
+    // Hide the country banner row (the site row stays as-is)
+    document.getElementById("pd-filter-country-row").style.display = "none";
+    updateBannerVisibility();
 
     // Reset country bar opacity
     var el = getPlotlyDiv("pd-country-buckets");
@@ -343,21 +455,17 @@ cat(sprintf('
       }
     }
 
-    // Reset country scatter
+    // Reset charts the country filter owns
     resetPlotlyChart("pd-country-scatter");
-
-    // Reset site buckets
     resetPlotlyChart("pd-site-buckets");
-
-    // Reset site scatter
     resetPlotlyChart("pd-site-scatter");
 
-    // Reset patient listing
-    var tables = document.querySelectorAll(".dataTable");
-    if (tables.length > 0) {
-      var dtApi = $(tables[tables.length - 1]).DataTable();
-      dtApi.column(invidColIdx).search("").draw();
-    }
+    // The site-buckets reset above wiped any site-bar highlight; re-apply it
+    // if a site filter is still active.
+    if (activeSite) highlightSiteBar(activeSite);
+
+    // Re-derive the listing from any remaining active filter (keeps a site).
+    applyListingFilter();
   };
 
   function resetPlotlyChart(containerId) {
@@ -368,12 +476,16 @@ cat(sprintf('
   }
 
   // Initialize when DOM is ready
-  if (document.readyState === "complete") {
+  function attachClickHandlers() {
     attachCountryClick();
+    attachSiteClick();
+  }
+  if (document.readyState === "complete") {
+    attachClickHandlers();
   } else {
-    window.addEventListener("load", attachCountryClick);
+    window.addEventListener("load", attachClickHandlers);
   }
 })();
 </script>
-', country_site_map, country_premature_site_map, invid_col_idx))
+'))
 ```
