@@ -67,3 +67,36 @@ test_that("Report_PrematureDeaths warns when nWindowDays disagrees with dfResult
     "disagrees with the window used to produce dfResults"
   )
 })
+
+test_that("Report_PrematureDeaths includes country filter JS and banner {#TBD}", {
+  testthat::skip_if_not_installed("plotly")
+  testthat::skip_if_not_installed("DT")
+  out <- Report_PrematureDeaths(
+    dfResults = dfResults,
+    dfMetrics = dfMetrics,
+    dfGroups = dfGroups,
+    lListings = lListings,
+    nWindowDays = 90,
+    strOutputDir = tempdir()
+  )
+  html <- paste(readLines(out, warn = FALSE), collapse = "\n")
+
+  # Filter banner present
+  expect_true(grepl("pd-filter-banner", html))
+
+  # JS controller present
+  expect_true(grepl("pdResetFilter", html))
+  expect_true(grepl("plotly_click", html))
+
+  # Country-site map JSON present
+  expect_true(grepl("countrySiteMap", html))
+
+  # Premature-death site map + honest banner count (sites-with-death / enrolled)
+  expect_true(grepl("countryPrematureSiteMap", html))
+  expect_true(grepl("sites with at least 1 premature death", html))
+
+  # Chart container IDs present
+  expect_true(grepl('id="pd-country-buckets"', html))
+  expect_true(grepl('id="pd-site-buckets"', html))
+  expect_true(grepl('id="pd-site-scatter"', html))
+})

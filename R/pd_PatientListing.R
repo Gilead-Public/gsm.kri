@@ -39,10 +39,13 @@ pd_CheckWindowConsistency <- function(nWindowDays, nPremature, nFlagged) {
 #'
 #' @param dfResults `data.frame` Reporting results containing patient-level rows.
 #' @param dfDeath `data.frame` Mapped death data keyed on `subjid`.
+#' @param dfSubjects `data.frame` (optional) Mapped subject data with `subjid`
+#'   and `invid`. When supplied, the output includes `invid` for site-level
+#'   filtering in the interactive report.
 #'
 #' @return A `data.frame` of one row per flagged premature-death subject.
 #' @export
-pd_PatientListingData <- function(dfResults, dfDeath) {
+pd_PatientListingData <- function(dfResults, dfDeath, dfSubjects = NULL) {
   if (!"death_reason" %in% names(dfDeath)) {
     dfDeath$death_reason <- NA_character_
   }
@@ -50,7 +53,7 @@ pd_PatientListingData <- function(dfResults, dfDeath) {
     dfDeath$treatment_related <- NA
   }
 
-  dfResults %>%
+  df <- dfResults %>%
     dplyr::filter(.data$MetricID == "Analysis_pat0015" & .data$Flag == 2) %>%
     dplyr::transmute(subjid = .data$GroupID, .data$Flag) %>%
     dplyr::left_join(
@@ -66,8 +69,17 @@ pd_PatientListingData <- function(dfResults, dfDeath) {
     ) %>%
     dplyr::mutate(
       death_reason = dplyr::coalesce(.data$death_reason, "Unknown")
-    ) %>%
-    dplyr::arrange(.data$death_dy)
+    )
+
+  if (!is.null(dfSubjects) && "invid" %in% names(dfSubjects)) {
+    df <- df %>%
+      dplyr::left_join(
+        dfSubjects %>% dplyr::select("subjid", "invid"),
+        by = "subjid"
+      )
+  }
+
+  df %>% dplyr::arrange(.data$death_dy)
 }
 
 #' Premature-death patient listing
@@ -81,7 +93,7 @@ pd_PatientListingData <- function(dfResults, dfDeath) {
 #'
 #' @return A `DT::datatable` htmlwidget.
 #' @export
-pd_PatientListing <- function(dfResults, dfDeath) {
+pd_PatientListing <- function(dfResults, dfDeath, dfSubjects = NULL) {
   gsm.core::stop_if(
     cnd = !is.data.frame(dfResults),
     message = "dfResults is not a data.frame"
@@ -92,19 +104,32 @@ pd_PatientListing <- function(dfResults, dfDeath) {
   )
   rlang::check_installed("DT", reason = "to run `pd_PatientListing()`")
 
-  dfListing <- pd_PatientListingData(dfResults, dfDeath)
+  dfListing <- pd_PatientListingData(dfResults, dfDeath, dfSubjects)
+
+  col_names <- c(
+    "Subject" = "subjid",
+    "Flag" = "Flag",
+    "Death Date" = "death_dt",
+    "Days to Death" = "death_dy",
+    "Reason" = "death_reason",
+    "Treatment Related" = "treatment_related"
+  )
+
+  # Hide invid column if present (used by JS filter, not displayed)
+  hidden_cols <- list()
+  if ("invid" %in% names(dfListing)) {
+    col_names <- c(col_names, "Site" = "invid")
+    invid_idx <- which(names(col_names) == "Site") - 1L # 0-indexed
+    hidden_cols <- list(list(visible = FALSE, targets = invid_idx))
+  }
 
   DT::datatable(
     dfListing,
     rownames = FALSE,
-    colnames = c(
-      "Subject" = "subjid",
-      "Flag" = "Flag",
-      "Death Date" = "death_dt",
-      "Days to Death" = "death_dy",
-      "Reason" = "death_reason",
-      "Treatment Related" = "treatment_related"
-    ),
-    options = list(order = list(list(3, "asc")))
+    colnames = col_names,
+    options = list(
+      order = list(list(3, "asc")),
+      columnDefs = hidden_cols
+    )
   )
 }

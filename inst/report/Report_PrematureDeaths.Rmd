@@ -22,6 +22,7 @@ library(plotly)
 library(DT)
 library(htmltools)
 library(knitr)
+library(jsonlite)
 
 knitr::opts_chunk$set(warning = FALSE, message = FALSE)
 
@@ -31,6 +32,33 @@ nWindowDays <- params$nWindowDays
 
 Mapped_Death <- lListings$Mapped_Death
 Mapped_SUBJ <- lListings$Mapped_SUBJ
+
+# Country → site lookup for JS filtering (all enrolled sites in the country)
+country_site_map <- Mapped_SUBJ %>%
+  dplyr::distinct(country, invid) %>%
+  dplyr::group_by(country) %>%
+  dplyr::summarise(sites = list(invid), .groups = "drop") %>%
+  tibble::deframe() %>%
+  jsonlite::toJSON(auto_unbox = FALSE)
+
+# Country → sites with >=1 premature death (within window). The scatter/buckets
+# only ever render sites that had a premature death, so the filter banner reports
+# this count over the enrolled-site total rather than implying all enrolled sites
+# appear in the charts.
+country_premature_site_map <- Mapped_Death %>%
+  dplyr::filter(!is.na(.data$death_dy) & .data$death_dy <= nWindowDays) %>%
+  dplyr::inner_join(
+    Mapped_SUBJ %>% dplyr::distinct(.data$subjid, .data$country, .data$invid),
+    by = "subjid"
+  ) %>%
+  dplyr::distinct(.data$country, .data$invid) %>%
+  dplyr::group_by(.data$country) %>%
+  dplyr::summarise(sites = list(.data$invid), .groups = "drop") %>%
+  tibble::deframe() %>%
+  jsonlite::toJSON(auto_unbox = FALSE)
+
+# 0-indexed column position of invid in the DT widget (for JS filtering)
+invid_col_idx <- 6L
 
 nEnrolled <- nrow(Mapped_SUBJ)
 nPremature <- sum(!is.na(Mapped_Death$death_dy) & Mapped_Death$death_dy <= nWindowDays)
@@ -106,27 +134,246 @@ pd_ReasonDist(Mapped_Death, nWindowDays, nEnrolled = nEnrolled)
 
 ### Buckets
 ```{r country-buckets, echo=FALSE, eval=has_premature}
-pd_BucketBar(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "country", strGroupLabel = "Country")
+htmltools::div(
+  id = "pd-country-buckets",
+  pd_BucketBar(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "country", strGroupLabel = "Country")
+)
 ```
 
 ### Rand -> Death
 ```{r country-scatter, echo=FALSE, eval=has_premature}
-pd_RandToDeathScatter(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "country", strGroupLabel = "Country")
+htmltools::div(
+  id = "pd-country-scatter",
+  pd_RandToDeathScatter(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "country", strGroupLabel = "Country")
+)
 ```
 
 ## Site {.tabset .tabset-pills}
 
+<div id="pd-filter-banner" style="display:none; background:#e3f2fd; border:1px solid #90caf9; border-radius:6px; padding:10px 16px; margin:16px 0; align-items:center; justify-content:space-between;">
+  <span id="pd-filter-text" style="font-size:13px; color:#1565c0;"></span>
+  <button id="pd-filter-reset" onclick="pdResetFilter()" style="background:#1a73e8; color:white; border:none; border-radius:4px; padding:4px 12px; cursor:pointer; font-size:12px;">✕ Show All Sites</button>
+</div>
+
 ### Buckets
 ```{r site-buckets, echo=FALSE, eval=has_premature}
-pd_BucketBar(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "invid", strGroupLabel = "Site")
+htmltools::div(
+  id = "pd-site-buckets",
+  pd_BucketBar(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "invid", strGroupLabel = "Site")
+)
 ```
 
 ### Rand -> Death
 ```{r site-scatter, echo=FALSE, eval=has_premature}
-pd_RandToDeathScatter(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "invid", strGroupLabel = "Site")
+htmltools::div(
+  id = "pd-site-scatter",
+  pd_RandToDeathScatter(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "invid", strGroupLabel = "Site")
+)
 ```
 
 ## Patient Listing
 ```{r patient-listing, echo=FALSE}
-pd_PatientListing(dfResults, Mapped_Death)
+pd_PatientListing(dfResults, Mapped_Death, Mapped_SUBJ)
+```
+
+```{r filter-js, echo=FALSE, results='asis', eval=has_premature}
+cat(sprintf('
+<script>
+(function() {
+  var countrySiteMap = %s;
+  var countryPrematureSiteMap = %s;
+  var invidColIdx = %d;
+  var activeCountry = null;
+
+  // Find the plotly div inside a container
+  function getPlotlyDiv(containerId) {
+    var container = document.getElementById(containerId);
+    if (!container) return null;
+    return container.querySelector(".plotly");
+  }
+
+  // Attach click handler to country buckets chart (max 5 retries)
+  var attachRetries = 0;
+  function attachCountryClick() {
+    var el = getPlotlyDiv("pd-country-buckets");
+    if (!el) {
+      if (++attachRetries < 5) setTimeout(attachCountryClick, 500);
+      return;
+    }
+    el.on("plotly_click", function(data) {
+      var country = data.points[0].x;
+      if (country === activeCountry) {
+        pdResetFilter();
+      } else {
+        applyFilter(country);
+      }
+    });
+  }
+
+  function applyFilter(country) {
+    activeCountry = country;
+    var sites = countrySiteMap[country] || [];
+    var prematureSites = countryPrematureSiteMap[country] || [];
+
+    // Show banner. The charts only render sites with a premature death, so the
+    // headline count is premature-death sites over the enrolled-site total.
+    var banner = document.getElementById("pd-filter-banner");
+    banner.style.display = "flex";
+    document.getElementById("pd-filter-text").innerHTML =
+      "\\ud83d\\udd0d <strong>Showing " + country + "</strong> \\u2014 " +
+      prematureSites.length + "/" + sites.length +
+      " sites with at least 1 premature death";
+
+    // Highlight country bar: dim non-selected
+    highlightCountryBar(country);
+
+    // Filter country scatter to selected country only
+    filterPlotlyChart("pd-country-scatter", [country]);
+
+    // Filter site buckets
+    filterPlotlyChart("pd-site-buckets", sites);
+
+    // Filter site scatter
+    filterPlotlyChart("pd-site-scatter", sites);
+
+    // Filter patient listing
+    filterPatientListing(sites);
+  }
+
+  function highlightCountryBar(country) {
+    var el = getPlotlyDiv("pd-country-buckets");
+    if (!el) return;
+    var data = el.data;
+    for (var i = 0; i < data.length; i++) {
+      var opacities = data[i].x.map(function(x) {
+        return x === country ? 1.0 : 0.3;
+      });
+      Plotly.restyle(el, {"marker.opacity": [opacities]}, [i]);
+    }
+  }
+
+  // Store original trace data + layout for each chart on first filter
+  var originalData = {};
+  var originalLayout = {};
+
+  function filterPlotlyChart(containerId, allowedValues) {
+    var el = getPlotlyDiv(containerId);
+    if (!el) return;
+    // Cache original data + layout on first call
+    if (!originalData[containerId]) {
+      originalData[containerId] = JSON.parse(JSON.stringify(el.data));
+    }
+    if (!originalLayout[containerId]) {
+      originalLayout[containerId] = JSON.parse(JSON.stringify(el.layout));
+    }
+    var orig = originalData[containerId];
+    var matchAxisGlobal = null;
+    var keptCategories = [];
+    var seenCategory = {};
+    var filtered = orig.map(function(trace) {
+      // Determine which axis has categorical group values (strings)
+      var matchAxis = null;
+      if (trace.x && trace.x.length > 0 && typeof trace.x[0] === "string") {
+        matchAxis = "x";
+      } else if (trace.y && trace.y.length > 0 && typeof trace.y[0] === "string") {
+        matchAxis = "y";
+      }
+      if (!matchAxis) return trace;
+      matchAxisGlobal = matchAxis;
+
+      var axisData = trace[matchAxis];
+      var indices = [];
+      axisData.forEach(function(val, idx) {
+        if (allowedValues.indexOf(val) >= 0) {
+          indices.push(idx);
+          // Track kept categories in first-seen order to rebuild the axis
+          if (!seenCategory[val]) { seenCategory[val] = true; keptCategories.push(val); }
+        }
+      });
+
+      var newTrace = Object.assign({}, trace);
+      newTrace.x = indices.map(function(i) { return trace.x[i]; });
+      if (trace.y) newTrace.y = indices.map(function(i) { return trace.y[i]; });
+      if (trace.text) newTrace.text = indices.map(function(i) { return trace.text[i]; });
+      if (trace.marker && trace.marker.color && Array.isArray(trace.marker.color)) {
+        newTrace.marker = Object.assign({}, trace.marker);
+        newTrace.marker.color = indices.map(function(i) { return trace.marker.color[i]; });
+      }
+      return newTrace;
+    });
+
+    // Constrain the categorical axis to only the kept categories. Without this,
+    // Plotly reuses the cached axis (and its computed range) and leaves an empty
+    // tick/slot for every filtered-out site, so the bars shrink but the axis
+    // still spans all study sites.
+    var layout = JSON.parse(JSON.stringify(originalLayout[containerId]));
+    if (matchAxisGlobal) {
+      var axisName = matchAxisGlobal === "x" ? "xaxis" : "yaxis";
+      layout[axisName] = Object.assign({}, layout[axisName] || {}, {
+        categoryorder: "array",
+        categoryarray: keptCategories,
+        autorange: true
+      });
+      delete layout[axisName].range;
+    }
+    Plotly.react(el, filtered, layout);
+  }
+
+  function filterPatientListing(sites) {
+    var tables = document.querySelectorAll(".dataTable");
+    if (tables.length === 0) return;
+    var dtApi = $(tables[tables.length - 1]).DataTable();
+    var regex = "^(" + sites.join("|") + ")$";
+    dtApi.column(invidColIdx).search(regex, true, false).draw();
+  }
+
+  // Global reset function (called by button onclick)
+  window.pdResetFilter = function() {
+    activeCountry = null;
+
+    // Hide banner
+    document.getElementById("pd-filter-banner").style.display = "none";
+
+    // Reset country bar opacity
+    var el = getPlotlyDiv("pd-country-buckets");
+    if (el) {
+      for (var i = 0; i < el.data.length; i++) {
+        var allOnes = el.data[i].x.map(function() { return 1.0; });
+        Plotly.restyle(el, {"marker.opacity": [allOnes]}, [i]);
+      }
+    }
+
+    // Reset country scatter
+    resetPlotlyChart("pd-country-scatter");
+
+    // Reset site buckets
+    resetPlotlyChart("pd-site-buckets");
+
+    // Reset site scatter
+    resetPlotlyChart("pd-site-scatter");
+
+    // Reset patient listing
+    var tables = document.querySelectorAll(".dataTable");
+    if (tables.length > 0) {
+      var dtApi = $(tables[tables.length - 1]).DataTable();
+      dtApi.column(invidColIdx).search("").draw();
+    }
+  };
+
+  function resetPlotlyChart(containerId) {
+    var el = getPlotlyDiv(containerId);
+    if (!el || !originalData[containerId]) return;
+    // Restore the original layout so the full categorical axis returns
+    Plotly.react(el, originalData[containerId], originalLayout[containerId] || el.layout);
+  }
+
+  // Initialize when DOM is ready
+  if (document.readyState === "complete") {
+    attachCountryClick();
+  } else {
+    window.addEventListener("load", attachCountryClick);
+  }
+})();
+</script>
+', country_site_map, country_premature_site_map, invid_col_idx))
 ```
