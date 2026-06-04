@@ -70,7 +70,8 @@ weight information for risk score calculations.</p>
 <dl><dt id="arg-dfmetrics">dfMetrics<a class="anchor" aria-label="anchor" href="#arg-dfmetrics"></a></dt>
 <dd><p>`data.frame` Metrics metadata containing at least `MetricID`, `Flag`,
 and `RiskScoreWeight` columns. The `Flag` and `RiskScoreWeight` columns should contain
-comma-separated values that will be parsed into individual rows.</p></dd>
+comma-separated values that will be parsed into individual rows. If an `Active` column
+is present, rows where `Active == FALSE` are excluded before processing.</p></dd>
 
 </dl></div>
     <div class="section level2">
