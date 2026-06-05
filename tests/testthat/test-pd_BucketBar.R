@@ -175,8 +175,10 @@ test_that("pd_BucketBar builds a 2-D multicategory x grouped by parent {#223}", 
   # x is the 2-D [[outer],[inner]] multicategory structure.
   expect_true(is.list(tr$x) && length(tr$x) == 2)
   # Inner tier is contiguous-by-country (CAN's site first, then USA's).
-  expect_equal(tr$x[[1]], c("CAN", "USA")) # outer
-  expect_equal(tr$x[[2]], c("INV-2", "INV-1")) # inner, aligned to outer
+  # Each tier is I()-wrapped (AsIs) so plotly keeps it an array under JSON
+  # auto-unbox; strip the class with as.character before comparing values.
+  expect_equal(as.character(tr$x[[1]]), c("CAN", "USA")) # outer
+  expect_equal(as.character(tr$x[[2]]), c("INV-2", "INV-1")) # inner, aligned to outer
   # Each bucket trace carries a single RAG marker colour (no color= split).
   expect_equal(built$x$data[[1]]$marker$color, colorScheme("red", "dark"))
 })
@@ -189,4 +191,29 @@ test_that("pd_BucketBar stays flat (one-tier) when strOuterCol is NULL {#223}", 
   built <- plotly::plotly_build(p)
   # Flat x is a plain character vector, not a 2-element list.
   expect_false(is.list(built$x$data[[1]]$x) && length(built$x$data[[1]]$x) == 2)
+})
+
+test_that("pd_BucketBar single-group multicategory x survives JSON auto-unboxing {#223}", {
+  testthat::skip_if_not_installed("plotly")
+  # plotly_build keeps the R list intact, so the unbox bug only surfaces after
+  # JSON serialization: a single-group bucket would otherwise collapse
+  # list(Outer, Inner) to a flat [outer, inner], breaking the 2-D axis in the
+  # browser. Strip whitespace (plotly_json pretty-prints) then match the nested
+  # form.
+  dfSubjects <- tibble::tibble(
+    subjid = "S1",
+    invid = "INV-1",
+    country = "USA",
+    studyid = "ST01"
+  )
+  dfDeath <- tibble::tibble(subjid = "S1", death_dy = 20)
+  p <- pd_BucketBar(
+    dfDeath,
+    dfSubjects,
+    nWindowDays = 90,
+    strGroupCol = "invid",
+    strOuterCol = "country"
+  )
+  json <- gsub("[[:space:]]", "", plotly::plotly_json(p, jsonedit = FALSE))
+  expect_true(grepl('"x":[["USA"],["INV-1"]]', json, fixed = TRUE))
 })

@@ -167,3 +167,50 @@ test_that("pd_RandToDeathScatter stays flat (categorical) when strOuterCol is NU
   built <- plotly::plotly_build(p)
   expect_false(is.list(built$x$data[[1]]$y) && length(built$x$data[[1]]$y) == 2)
 })
+
+test_that("pd_RandToDeathScatter single-point multicategory y survives JSON auto-unboxing {#223}", {
+  testthat::skip_if_not_installed("plotly")
+  # Each bucket holds exactly one death, so list(Outer, Group) would auto-unbox
+  # to a flat [outer, inner] once serialized, collapsing the 2-D y in the browser
+  # (plotly_build keeps the R list, so only the JSON reveals it).
+  dfSubjects_one <- tibble::tibble(
+    subjid = c("S1", "S2"),
+    invid = "INV-1",
+    country = "USA",
+    studyid = "ST01"
+  )
+  dfDeath_two <- tibble::tibble(subjid = c("S1", "S2"), death_dy = c(20, 50))
+  p <- pd_RandToDeathScatter(
+    dfDeath_two,
+    dfSubjects_one,
+    nWindowDays = 90,
+    strGroupCol = "invid",
+    strOuterCol = "country"
+  )
+  json <- gsub("[[:space:]]", "", plotly::plotly_json(p, jsonedit = FALSE))
+  expect_true(grepl('"y":[["USA"],["INV-1"]]', json, fixed = TRUE))
+})
+
+test_that("pd_RandToDeathScatter skips an empty bucket without error {#223}", {
+  testthat::skip_if_not_installed("plotly")
+  # A cohort confined to one bucket (both deaths <=30d) leaves the 31-Wd bucket
+  # empty; add_markers errors on a zero-row trace, so the loop must skip it.
+  dfSubjects_one <- tibble::tibble(
+    subjid = c("S1", "S2"),
+    invid = "INV-1",
+    country = "USA",
+    studyid = "ST01"
+  )
+  dfDeath_early <- tibble::tibble(subjid = c("S1", "S2"), death_dy = c(10, 20))
+  p <- pd_RandToDeathScatter(
+    dfDeath_early,
+    dfSubjects_one,
+    nWindowDays = 90,
+    strGroupCol = "invid",
+    strOuterCol = "country"
+  )
+  expect_s3_class(p, "plotly")
+  built <- plotly::plotly_build(p)
+  # Only the populated <=30d bucket yields a trace.
+  expect_length(built$x$data, 1)
+})

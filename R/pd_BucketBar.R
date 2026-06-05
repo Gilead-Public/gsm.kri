@@ -198,7 +198,10 @@ pd_BucketBar <- function(
     d <- dplyr::filter(dfCounts, .data$Bucket == bk)
     p <- plotly::add_bars(
       p,
-      x = list(d$Outer, d$GroupID),
+      # I() keeps each tier an array under plotly's auto_unbox JSON: a bucket with
+      # a single group would otherwise serialize list(Outer, Inner) as a flat
+      # [outer, inner], collapsing the 2-D axis in the browser.
+      x = list(I(d$Outer), I(d$GroupID)),
       y = d$n,
       name = bk,
       marker = list(color = unname(rag_colors[bk])),

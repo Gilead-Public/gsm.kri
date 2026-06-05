@@ -133,10 +133,19 @@ pd_RandToDeathScatter <- function(
     p <- plotly::plot_ly()
     for (bk in bucket_labels[1:2]) {
       d <- dplyr::filter(dfPlot, .data$Bucket == bk)
+      # Skip an empty bucket: add_markers errors ("Must supply x and y") on a
+      # zero-row trace, so a cohort confined to one bucket (e.g. all deaths
+      # <=30d) would otherwise crash the report.
+      if (nrow(d) == 0) {
+        next
+      }
       p <- plotly::add_markers(
         p,
         x = d$death_dy,
-        y = list(d$Outer, d$Group),
+        # I() keeps each tier an array under plotly's auto_unbox JSON: a bucket
+        # with a single death would otherwise serialize list(Outer, Group) as a
+        # flat [outer, inner], collapsing the 2-D axis in the browser.
+        y = list(I(d$Outer), I(d$Group)),
         name = bk,
         marker = list(color = unname(rag_colors[bk])),
         customdata = d$text,
