@@ -57,9 +57,6 @@ country_premature_site_map <- Mapped_Death %>%
   tibble::deframe() %>%
   jsonlite::toJSON(auto_unbox = FALSE)
 
-# 0-indexed column position of invid in the DT widget (for JS filtering)
-invid_col_idx <- 6L
-
 nEnrolled <- nrow(Mapped_SUBJ)
 nPremature <- sum(!is.na(Mapped_Death$death_dy) & Mapped_Death$death_dy <= nWindowDays)
 nPrematureRate <- ifelse(nEnrolled > 0, 100 * nPremature / nEnrolled, 0)
@@ -188,7 +185,6 @@ cat(paste0('
 (function() {
   var countrySiteMap = ', country_site_map, ';
   var countryPrematureSiteMap = ', country_premature_site_map, ';
-  var invidColIdx = ', invid_col_idx, ';
   var activeCountry = null;
   var activeSite = null;
 
@@ -285,9 +281,9 @@ cat(paste0('
     }
     if (sites) {
       var regex = "^(" + sites.join("|") + ")$";
-      dtApi.column(invidColIdx).search(regex, true, false).draw();
+      dtApi.column("invid:name").search(regex, true, false).draw();
     } else {
-      dtApi.column(invidColIdx).search("").draw();
+      dtApi.column("invid:name").search("").draw();
     }
   }
 
