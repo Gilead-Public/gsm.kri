@@ -196,12 +196,22 @@ cat(paste0('
     return el;
   }
 
+  // The interactive charts carry their category dimension as a 2-D
+  // multicategory axis [[outer],[inner]] -- bars on x, scatters on y. This
+  // returns the inner tier (the site / country labels) regardless of which axis
+  // holds it, so the helpers below never branch on chart shape.
+  function catLabels(tr) {
+    if (Array.isArray(tr.x) && Array.isArray(tr.x[0])) return tr.x[1];
+    if (Array.isArray(tr.y) && Array.isArray(tr.y[0])) return tr.y[1];
+    return tr.x; // flat fallback (defensive; interactive charts are 2-D)
+  }
+
   // Restore every bar in a chart to full opacity (one batched restyle).
   function undimBars(containerId) {
     var el = getPlotlyDiv(containerId);
     if (!el) return;
     var opacities = el.data.map(function(tr) {
-      return tr.x.map(function() { return 1.0; });
+      return catLabels(tr).map(function() { return 1.0; });
     });
     Plotly.restyle(el, {"marker.opacity": opacities}, el.data.map(function(_, i) { return i; }));
   }
@@ -210,7 +220,7 @@ cat(paste0('
   // restyle across all traces).
   function dimBarsExcept(el, value) {
     var opacities = el.data.map(function(tr) {
-      return tr.x.map(function(x) { return x === value ? 1.0 : 0.3; });
+      return catLabels(tr).map(function(v) { return v === value ? 1.0 : 0.3; });
     });
     Plotly.restyle(el, {"marker.opacity": opacities}, el.data.map(function(_, i) { return i; }));
   }
@@ -224,7 +234,7 @@ cat(paste0('
       return;
     }
     el.on("plotly_click", function(data) {
-      var country = data.points[0].x;
+      var country = data.points[0].x[1]; // multicategory click -> [study, country]
       if (country === activeCountry) {
         pdResetFilter();
       } else {
@@ -308,7 +318,7 @@ cat(paste0('
       return;
     }
     el.on("plotly_click", function(data) {
-      var invid = data.points[0].x;
+      var invid = data.points[0].x[1]; // multicategory click -> [country, site]
       if (invid === activeSite) {
         pdResetSiteFilter();
       } else {
@@ -342,7 +352,7 @@ cat(paste0('
     // If the selected site isn\'t currently rendered (e.g. a country filter is
     // showing a different country\'s sites), leave opacities untouched rather
     // than dimming every bar to 0.3.
-    var present = el.data.some(function(tr) { return tr.x && tr.x.indexOf(invid) >= 0; });
+    var present = el.data.some(function(tr) { return catLabels(tr).indexOf(invid) >= 0; });
     if (!present) return;
     dimBarsExcept(el, invid);
   }
@@ -381,60 +391,39 @@ cat(paste0('
     if (!el) return;
     cacheOriginal(el, containerId);
     var orig = originalData[containerId];
-    var matchAxisGlobal = null;
-    var keptCategories = [];
-    var seenCategory = {};
     var filtered = orig.map(function(trace) {
-      // Determine which axis has categorical group values (strings)
-      var matchAxis = null;
-      if (trace.x && trace.x.length > 0 && typeof trace.x[0] === "string") {
-        matchAxis = "x";
-      } else if (trace.y && trace.y.length > 0 && typeof trace.y[0] === "string") {
-        matchAxis = "y";
-      }
-      if (!matchAxis) return trace;
-      matchAxisGlobal = matchAxis;
-
-      var axisData = trace[matchAxis];
+      // The multicategory axis is the one whose first entry is itself an array
+      // ([[outer],[inner]]); its inner tier holds the labels we filter on. Bars
+      // carry it on x, scatters on y.
+      var axis = (Array.isArray(trace.x) && Array.isArray(trace.x[0])) ? "x"
+               : (Array.isArray(trace.y) && Array.isArray(trace.y[0])) ? "y"
+               : null;
+      if (!axis) return trace;
+      var inner = trace[axis][1];
       var indices = [];
-      axisData.forEach(function(val, idx) {
-        if (allowedValues.indexOf(val) >= 0) {
-          indices.push(idx);
-          // Track kept categories in first-seen order to rebuild the axis
-          if (!seenCategory[val]) { seenCategory[val] = true; keptCategories.push(val); }
-        }
+      inner.forEach(function(val, idx) {
+        if (allowedValues.indexOf(val) >= 0) indices.push(idx);
       });
-
+      var valueAxis = axis === "x" ? "y" : "x";
       var newTrace = Object.assign({}, trace);
-      newTrace.x = indices.map(function(i) { return trace.x[i]; });
-      if (trace.y) newTrace.y = indices.map(function(i) { return trace.y[i]; });
-      if (trace.text) newTrace.text = indices.map(function(i) { return trace.text[i]; });
-      // customdata drives the hover tooltip (hovertemplate "%{customdata}"), so it
-      // must be reindexed alongside x/y or the tooltip reads a stale, misaligned
-      // value from the original full-length array (wrong subject counts per bucket).
-      if (trace.customdata) newTrace.customdata = indices.map(function(i) { return trace.customdata[i]; });
-      if (trace.marker && trace.marker.color && Array.isArray(trace.marker.color)) {
-        newTrace.marker = Object.assign({}, trace.marker);
-        newTrace.marker.color = indices.map(function(i) { return trace.marker.color[i]; });
+      // One `indices` list reindexes every per-point array in lockstep: both
+      // tiers of the category axis, the numeric value axis, and customdata --
+      // index i addresses the same data point in all of them.
+      newTrace[axis] = [
+        indices.map(function(i) { return trace[axis][0][i]; }),
+        indices.map(function(i) { return trace[axis][1][i]; })
+      ];
+      if (trace[valueAxis]) {
+        newTrace[valueAxis] = indices.map(function(i) { return trace[valueAxis][i]; });
       }
+      if (trace.text) newTrace.text = indices.map(function(i) { return trace.text[i]; });
+      if (trace.customdata) newTrace.customdata = indices.map(function(i) { return trace.customdata[i]; });
       return newTrace;
     });
-
-    // Constrain the categorical axis to only the kept categories. Without this,
-    // Plotly reuses the cached axis (and its computed range) and leaves an empty
-    // tick/slot for every filtered-out site, so the bars shrink but the axis
-    // still spans all study sites.
-    var layout = JSON.parse(JSON.stringify(originalLayout[containerId]));
-    if (matchAxisGlobal) {
-      var axisName = matchAxisGlobal === "x" ? "xaxis" : "yaxis";
-      layout[axisName] = Object.assign({}, layout[axisName] || {}, {
-        categoryorder: "array",
-        categoryarray: keptCategories,
-        autorange: true
-      });
-      delete layout[axisName].range;
-    }
-    Plotly.react(el, filtered, layout);
+    // A reindexed multicategory axis re-derives its own ticks from the data, so
+    // the empty-slot workaround the flat axis needed is gone. Clone the cached
+    // layout so Plotly.react cannot mutate the stored original.
+    Plotly.react(el, filtered, JSON.parse(JSON.stringify(originalLayout[containerId])));
   }
 
   // Global reset for the country filter (called by the country row\'s button onclick)
