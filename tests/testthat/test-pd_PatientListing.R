@@ -54,13 +54,13 @@ dfSubjects <- tibble::tibble(
   country = c("USA", "USA", "CAN")
 )
 
-test_that("pd_PatientListingData includes invid when dfSubjects provided {#TBD}", {
+test_that("pd_PatientListingData includes invid when dfSubjects provided {#223}", {
   df <- pd_PatientListingData(dfResults, dfDeath, dfSubjects)
   expect_true("invid" %in% names(df))
   expect_equal(df$invid, c("INV-1", "INV-1")) # S2 (day 20), S1 (day 50) — both Flag==2
 })
 
-test_that("pd_PatientListingData works without dfSubjects (backwards compat) {#TBD}", {
+test_that("pd_PatientListingData works without dfSubjects (backwards compat) {#223}", {
   df <- pd_PatientListingData(dfResults, dfDeath)
   expect_false("invid" %in% names(df))
   expect_equal(nrow(df), 2)
@@ -72,4 +72,31 @@ test_that("pd_CheckWindowConsistency warns on mismatch {#223}", {
     "disagrees with the window used to produce dfResults"
   )
   expect_null(suppressWarnings(pd_CheckWindowConsistency(10, 0, 2)))
+})
+
+test_that("pd_PatientListingData joins country when dfSubjects has it {#223}", {
+  df <- pd_PatientListingData(dfResults, dfDeath, dfSubjects)
+  expect_true("country" %in% names(df))
+  expect_equal(df$country, c("USA", "USA")) # S2 (day 20), S1 (day 50)
+})
+
+test_that("pd_PatientListingData orders identity columns first {#223}", {
+  df <- pd_PatientListingData(dfResults, dfDeath, dfSubjects)
+  expect_equal(
+    names(df),
+    c(
+      "subjid",
+      "country",
+      "invid",
+      "death_dt",
+      "death_dy",
+      "death_reason",
+      "treatment_related"
+    )
+  )
+})
+
+test_that("pd_PatientListingData drops the constant Flag column {#223}", {
+  df <- pd_PatientListingData(dfResults, dfDeath)
+  expect_false("Flag" %in% names(df))
 })

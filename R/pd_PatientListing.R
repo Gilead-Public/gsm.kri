@@ -55,7 +55,7 @@ pd_PatientListingData <- function(dfResults, dfDeath, dfSubjects = NULL) {
 
   df <- dfResults %>%
     dplyr::filter(.data$MetricID == "Analysis_pat0015" & .data$Flag == 2) %>%
-    dplyr::transmute(subjid = .data$GroupID, .data$Flag) %>%
+    dplyr::transmute(subjid = .data$GroupID) %>%
     dplyr::left_join(
       dfDeath %>%
         dplyr::select(
@@ -74,12 +74,15 @@ pd_PatientListingData <- function(dfResults, dfDeath, dfSubjects = NULL) {
   if (!is.null(dfSubjects) && "invid" %in% names(dfSubjects)) {
     df <- df %>%
       dplyr::left_join(
-        dfSubjects %>% dplyr::select("subjid", "invid"),
+        dfSubjects %>%
+          dplyr::select("subjid", dplyr::any_of(c("invid", "country"))),
         by = "subjid"
       )
   }
 
-  df %>% dplyr::arrange(.data$death_dy)
+  df %>%
+    dplyr::relocate(dplyr::any_of(c("country", "invid")), .after = "subjid") %>%
+    dplyr::arrange(.data$death_dy)
 }
 
 #' Premature-death patient listing
@@ -108,7 +111,6 @@ pd_PatientListing <- function(dfResults, dfDeath, dfSubjects = NULL) {
 
   col_names <- c(
     "Subject" = "subjid",
-    "Flag" = "Flag",
     "Death Date" = "death_dt",
     "Days to Death" = "death_dy",
     "Reason" = "death_reason",
