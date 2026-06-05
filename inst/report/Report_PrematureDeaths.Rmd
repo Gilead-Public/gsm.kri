@@ -131,7 +131,7 @@ pd_ReasonDist(Mapped_Death, nWindowDays, nEnrolled = nEnrolled)
 ```{r country-buckets, echo=FALSE, eval=has_premature}
 htmltools::div(
   id = "pd-country-buckets",
-  pd_BucketBar(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "country", strGroupLabel = "Country")
+  pd_BucketBar(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "country", strGroupLabel = "Country", strOuterCol = "studyid")
 )
 ```
 
@@ -139,7 +139,7 @@ htmltools::div(
 ```{r country-scatter, echo=FALSE, eval=has_premature}
 htmltools::div(
   id = "pd-country-scatter",
-  pd_RandToDeathScatter(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "country", strGroupLabel = "Country")
+  pd_RandToDeathScatter(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "country", strGroupLabel = "Country", strOuterCol = "studyid")
 )
 ```
 
@@ -160,7 +160,7 @@ htmltools::div(
 ```{r site-buckets, echo=FALSE, eval=has_premature}
 htmltools::div(
   id = "pd-site-buckets",
-  pd_BucketBar(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "invid", strGroupLabel = "Site")
+  pd_BucketBar(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "invid", strGroupLabel = "Site", strOuterCol = "country")
 )
 ```
 
@@ -168,7 +168,7 @@ htmltools::div(
 ```{r site-scatter, echo=FALSE, eval=has_premature}
 htmltools::div(
   id = "pd-site-scatter",
-  pd_RandToDeathScatter(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "invid", strGroupLabel = "Site")
+  pd_RandToDeathScatter(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "invid", strGroupLabel = "Site", strOuterCol = "country")
 )
 ```
 
