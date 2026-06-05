@@ -39,9 +39,10 @@ pd_CheckWindowConsistency <- function(nWindowDays, nPremature, nFlagged) {
 #'
 #' @param dfResults `data.frame` Reporting results containing patient-level rows.
 #' @param dfDeath `data.frame` Mapped death data keyed on `subjid`.
-#' @param dfSubjects `data.frame` (optional) Mapped subject data with `subjid`
-#'   and `invid`. When supplied, the output includes `invid` for site-level
-#'   filtering in the interactive report.
+#' @param dfSubjects `data.frame` (optional) Mapped subject data with `subjid`,
+#'   `invid`, and optionally `country`. When supplied, the output includes
+#'   `invid` (and `country` when present) as visible columns for site- and
+#'   country-level filtering in the interactive report.
 #'
 #' @return A `data.frame` of one row per flagged premature-death subject.
 #' @export

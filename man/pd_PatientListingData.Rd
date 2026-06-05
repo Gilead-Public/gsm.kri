@@ -11,9 +11,10 @@ pd_PatientListingData(dfResults, dfDeath, dfSubjects = NULL)
 
 \item{dfDeath}{`data.frame` Mapped death data keyed on `subjid`.}
 
-\item{dfSubjects}{`data.frame` (optional) Mapped subject data with `subjid`
-and `invid`. When supplied, the output includes `invid` for site-level
-filtering in the interactive report.}
+\item{dfSubjects}{`data.frame` (optional) Mapped subject data with `subjid`,
+`invid`, and optionally `country`. When supplied, the output includes
+`invid` (and `country` when present) as visible columns for site- and
+country-level filtering in the interactive report.}
 }
 \value{
 A `data.frame` of one row per flagged premature-death subject.
