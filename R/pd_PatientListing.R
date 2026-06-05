@@ -109,20 +109,30 @@ pd_PatientListing <- function(dfResults, dfDeath, dfSubjects = NULL) {
 
   dfListing <- pd_PatientListingData(dfResults, dfDeath, dfSubjects)
 
+  col_names <- c("Subject" = "subjid")
+  if ("country" %in% names(dfListing)) {
+    col_names <- c(col_names, "Country" = "country")
+  }
+  if ("invid" %in% names(dfListing)) {
+    col_names <- c(col_names, "Site" = "invid")
+  }
   col_names <- c(
-    "Subject" = "subjid",
+    col_names,
     "Death Date" = "death_dt",
     "Days to Death" = "death_dy",
     "Reason" = "death_reason",
     "Treatment Related" = "treatment_related"
   )
 
-  # Hide invid column if present (used by JS filter, not displayed)
-  hidden_cols <- list()
+  # Stamp the DataTables column name so the report's JS site-filter binds with
+  # column("invid:name") instead of a hardcoded position. The Site column is now
+  # visible (no visible = FALSE def).
+  column_defs <- list()
   if ("invid" %in% names(dfListing)) {
-    col_names <- c(col_names, "Site" = "invid")
-    invid_idx <- which(names(col_names) == "Site") - 1L # 0-indexed
-    hidden_cols <- list(list(visible = FALSE, targets = invid_idx))
+    column_defs <- list(list(
+      name = "invid",
+      targets = which(names(dfListing) == "invid") - 1L
+    ))
   }
 
   DT::datatable(
@@ -130,8 +140,8 @@ pd_PatientListing <- function(dfResults, dfDeath, dfSubjects = NULL) {
     rownames = FALSE,
     colnames = col_names,
     options = list(
-      order = list(list(3, "asc")),
-      columnDefs = hidden_cols
+      order = list(list(which(names(dfListing) == "death_dy") - 1L, "asc")),
+      columnDefs = column_defs
     )
   )
 }

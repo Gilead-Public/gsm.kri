@@ -100,3 +100,22 @@ test_that("pd_PatientListingData drops the constant Flag column {#223}", {
   df <- pd_PatientListingData(dfResults, dfDeath)
   expect_false("Flag" %in% names(df))
 })
+
+test_that("pd_PatientListing names the invid column for the JS filter {#223}", {
+  testthat::skip_if_not_installed("DT")
+  tbl <- pd_PatientListing(dfResults, dfDeath, dfSubjects)
+  defs <- tbl$x$options$columnDefs
+  has_invid_name <- any(vapply(
+    defs,
+    function(d) identical(d$name, "invid"),
+    logical(1)
+  ))
+  expect_true(has_invid_name)
+})
+
+test_that("pd_PatientListing sorts by death_dy via a name-derived index {#223}", {
+  testthat::skip_if_not_installed("DT")
+  tbl <- pd_PatientListing(dfResults, dfDeath, dfSubjects)
+  sort_target <- tbl$x$options$order[[1]][[1]]
+  expect_equal(sort_target, which(names(tbl$x$data) == "death_dy") - 1L)
+})
