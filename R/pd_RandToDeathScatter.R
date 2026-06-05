@@ -23,6 +23,9 @@
 #' @param dSnapshotDate `Date` (or coercible) When non-`NULL`, selects the
 #'   study-level view: y becomes days from randomization to the snapshot. Default:
 #'   `NULL` (categorical group y-axis).
+#' @param strOuterCol `character` Optional parent column for a two-tier
+#'   (multicategory) y-axis bracketing each group under its parent (e.g.
+#'   "country" for sites). Ignored in the study view (numeric y). Default `NULL`.
 #'
 #' @return A `plotly` htmlwidget.
 #' @export
@@ -33,7 +36,8 @@ pd_RandToDeathScatter <- function(
   nWindowDays = 90,
   strGroupCol = "invid",
   strGroupLabel = "Group",
-  dSnapshotDate = NULL
+  dSnapshotDate = NULL,
+  strOuterCol = NULL
 ) {
   gsm.core::stop_if(
     cnd = !is.data.frame(dfDeath),
@@ -111,17 +115,47 @@ pd_RandToDeathScatter <- function(
       )
   }
 
-  p <- plotly::plot_ly(
-    dfPlot,
-    x = ~death_dy,
-    y = if (is_study) ~RandToSnapshot else ~Group,
-    color = ~Bucket,
-    colors = rag_colors[1:2],
-    type = "scatter",
-    mode = "markers",
-    customdata = ~text,
-    hovertemplate = "%{customdata}<extra></extra>"
-  )
+  # Two-tier y only in the categorical (non-study) view: the study view's y is
+  # numeric days-to-snapshot and is never filtered.
+  use_mc <- !is.null(strOuterCol) && !is_study
+  if (use_mc) {
+    outer <- dfPlot[[strOuterCol]]
+    dfPlot <- dfPlot %>%
+      dplyr::mutate(
+        Outer = dplyr::if_else(is.na(outer), "Unknown", as.character(outer))
+      ) %>%
+      dplyr::arrange(.data$Outer, .data$Group)
+  }
+
+  if (use_mc) {
+    # Per-bucket traces with an aligned [outer, inner] y (see pd_BucketBar for
+    # why color= cannot split a list-valued axis).
+    p <- plotly::plot_ly()
+    for (bk in bucket_labels[1:2]) {
+      d <- dplyr::filter(dfPlot, .data$Bucket == bk)
+      p <- plotly::add_markers(
+        p,
+        x = d$death_dy,
+        y = list(d$Outer, d$Group),
+        name = bk,
+        marker = list(color = unname(rag_colors[bk])),
+        customdata = d$text,
+        hovertemplate = "%{customdata}<extra></extra>"
+      )
+    }
+  } else {
+    p <- plotly::plot_ly(
+      dfPlot,
+      x = ~death_dy,
+      y = if (is_study) ~RandToSnapshot else ~Group,
+      color = ~Bucket,
+      colors = rag_colors[1:2],
+      type = "scatter",
+      mode = "markers",
+      customdata = ~text,
+      hovertemplate = "%{customdata}<extra></extra>"
+    )
+  }
 
   yaxis <- if (is_study) {
     list(title = "Days from Randomization to Snapshot", rangemode = "tozero")

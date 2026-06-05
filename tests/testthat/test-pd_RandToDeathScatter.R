@@ -125,3 +125,45 @@ test_that("pd_RandToDeathScatter tooltip shows NA for absent context columns {#2
   texts <- unlist(lapply(built$x$data, function(d) d$customdata))
   expect_true(any(grepl("Country: NA", texts)))
 })
+
+test_that("pd_RandToDeathScatter builds a 2-D multicategory y when strOuterCol set {#223}", {
+  testthat::skip_if_not_installed("plotly")
+  p <- pd_RandToDeathScatter(
+    dfDeath_full,
+    dfSubjects,
+    nWindowDays = 90,
+    strGroupCol = "invid",
+    strGroupLabel = "Site",
+    strOuterCol = "country"
+  )
+  built <- plotly::plotly_build(p)
+  tr <- built$x$data[[1]]
+  expect_true(is.list(tr$y) && length(tr$y) == 2) # [[outer],[inner]]
+  expect_true(all(tr$y[[1]] %in% c("USA", "CAN"))) # outer = country
+})
+
+test_that("pd_RandToDeathScatter labels a missing parent 'Unknown' {#223}", {
+  testthat::skip_if_not_installed("plotly")
+  p <- pd_RandToDeathScatter(
+    dfDeath_full,
+    dplyr::mutate(dfSubjects, country = NA_character_),
+    nWindowDays = 90,
+    strGroupCol = "invid",
+    strOuterCol = "country"
+  )
+  built <- plotly::plotly_build(p)
+  outer <- unlist(lapply(built$x$data, function(d) d$y[[1]]))
+  expect_true(all(outer == "Unknown"))
+})
+
+test_that("pd_RandToDeathScatter stays flat (categorical) when strOuterCol is NULL {#223}", {
+  testthat::skip_if_not_installed("plotly")
+  p <- pd_RandToDeathScatter(
+    dfDeath_full,
+    dfSubjects,
+    nWindowDays = 90,
+    strGroupCol = "invid"
+  )
+  built <- plotly::plotly_build(p)
+  expect_false(is.list(built$x$data[[1]]$y) && length(built$x$data[[1]]$y) == 2)
+})
