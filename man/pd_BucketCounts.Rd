@@ -4,7 +4,13 @@
 \alias{pd_BucketCounts}
 \title{Premature-death bucket counts}
 \usage{
-pd_BucketCounts(dfDeath, dfSubjects, nWindowDays = 90, strGroupCol = "studyid")
+pd_BucketCounts(
+  dfDeath,
+  dfSubjects,
+  nWindowDays = 90,
+  strGroupCol = "studyid",
+  strOuterCol = NULL
+)
 }
 \arguments{
 \item{dfDeath}{`data.frame` Mapped death data with `subjid` and `death_dy`.}
@@ -14,9 +20,14 @@ pd_BucketCounts(dfDeath, dfSubjects, nWindowDays = 90, strGroupCol = "studyid")
 \item{nWindowDays}{`numeric` Premature-death window in days. Default: 90.}
 
 \item{strGroupCol}{`character` Column in `dfSubjects` to group by. Default: "studyid".}
+
+\item{strOuterCol}{`character` Optional parent column in `dfSubjects` for a
+two-tier (multicategory) axis (e.g. "country" to bracket sites by country).
+When `NULL` (default) the result is the flat one-tier count.}
 }
 \value{
-A `data.frame` with `GroupID`, `Bucket`, and `n` columns.
+A `data.frame` with `GroupID`, `Bucket`, and `n` columns. When
+  `strOuterCol` is set, an additional `Outer` column carries the parent tier.
 }
 \description{
 `r lifecycle::badge("experimental")`

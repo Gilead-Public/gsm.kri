@@ -9,7 +9,8 @@ pd_BucketBar(
   dfSubjects,
   nWindowDays = 90,
   strGroupCol = "studyid",
-  strGroupLabel = "Group"
+  strGroupLabel = "Group",
+  strOuterCol = NULL
 )
 }
 \arguments{
@@ -22,6 +23,10 @@ pd_BucketBar(
 \item{strGroupCol}{`character` Column in `dfSubjects` to group by. Default: "studyid".}
 
 \item{strGroupLabel}{`character` Axis label for the group dimension. Default: "Group".}
+
+\item{strOuterCol}{`character` Optional parent column for a two-tier
+(multicategory) x-axis bracketing each group under its parent (e.g.
+"country" for sites). `NULL` (default) renders the flat one-tier bar.}
 }
 \value{
 A `plotly` htmlwidget.

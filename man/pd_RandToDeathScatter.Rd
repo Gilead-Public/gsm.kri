@@ -10,7 +10,8 @@ pd_RandToDeathScatter(
   nWindowDays = 90,
   strGroupCol = "invid",
   strGroupLabel = "Group",
-  dSnapshotDate = NULL
+  dSnapshotDate = NULL,
+  strOuterCol = NULL
 )
 }
 \arguments{
@@ -29,6 +30,10 @@ optionally `treatment_related` (shown as "Unknown" when absent). When
 \item{dSnapshotDate}{`Date` (or coercible) When non-`NULL`, selects the
 study-level view: y becomes days from randomization to the snapshot. Default:
 `NULL` (categorical group y-axis).}
+
+\item{strOuterCol}{`character` Optional parent column for a two-tier
+(multicategory) y-axis bracketing each group under its parent (e.g.
+"country" for sites). Ignored in the study view (numeric y). Default `NULL`.}
 }
 \value{
 A `plotly` htmlwidget.
