@@ -140,6 +140,7 @@ test_that("pd_RandToDeathScatter builds a 2-D multicategory y when strOuterCol s
   tr <- built$x$data[[1]]
   expect_true(is.list(tr$y) && length(tr$y) == 2) # [[outer],[inner]]
   expect_true(all(tr$y[[1]] %in% c("USA", "CAN"))) # outer = country
+  expect_true(all(tr$y[[2]] %in% c("INV-1", "INV-2"))) # inner = site, aligned to outer
 })
 
 test_that("pd_RandToDeathScatter labels a missing parent 'Unknown' {#223}", {
