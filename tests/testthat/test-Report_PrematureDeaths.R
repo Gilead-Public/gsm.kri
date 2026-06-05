@@ -91,8 +91,8 @@ test_that("Report_PrematureDeaths includes country filter JS and banner {#TBD}",
   # Country-site map JSON present
   expect_true(grepl("countrySiteMap", html))
 
-  # Premature-death site map + honest banner count (sites-with-death / enrolled)
-  expect_true(grepl("countryPrematureSiteMap", html))
+  # Premature-death site count + honest banner count (sites-with-death / enrolled)
+  expect_true(grepl("countryPrematureCount", html))
   expect_true(grepl("sites with at least 1 premature death", html))
 
   # Chart container IDs present

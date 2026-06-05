@@ -66,13 +66,8 @@ pd_RandToDeathScatter <- function(
     dfDeath$treatment_related <- NA
   }
 
-  dfSubInfo <- dfSubjects %>%
-    dplyr::mutate(Group = .data[[strGroupCol]]) %>%
-    dplyr::select("subjid", "Group", dplyr::any_of(c("country", "invid")))
-
-  dfPlot <- dfDeath %>%
-    dplyr::filter(!is.na(.data$death_dy) & .data$death_dy <= nWindowDays) %>%
-    dplyr::left_join(dfSubInfo, by = "subjid")
+  dfPlot <- pd_PrematureCohort(dfDeath, dfSubjects, nWindowDays) %>%
+    dplyr::mutate(Group = .data[[strGroupCol]])
 
   for (col in c("country", "invid")) {
     if (!col %in% names(dfPlot)) {

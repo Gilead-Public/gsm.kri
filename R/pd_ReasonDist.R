@@ -17,8 +17,7 @@ pd_ReasonCounts <- function(dfDeath, nWindowDays = 90) {
     dfDeath$death_reason <- NA_character_
   }
 
-  dfDeath %>%
-    dplyr::filter(!is.na(.data$death_dy) & .data$death_dy <= nWindowDays) %>%
+  pd_PrematureCohort(dfDeath, nWindowDays = nWindowDays) %>%
     dplyr::mutate(
       death_reason = dplyr::coalesce(.data$death_reason, "Unknown")
     ) %>%

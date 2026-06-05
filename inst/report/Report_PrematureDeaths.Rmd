@@ -41,24 +41,22 @@ country_site_map <- Mapped_SUBJ %>%
   tibble::deframe() %>%
   jsonlite::toJSON(auto_unbox = FALSE)
 
-# Country → sites with >=1 premature death (within window). The scatter/buckets
-# only ever render sites that had a premature death, so the filter banner reports
-# this count over the enrolled-site total rather than implying all enrolled sites
-# appear in the charts.
-country_premature_site_map <- Mapped_Death %>%
-  dplyr::filter(!is.na(.data$death_dy) & .data$death_dy <= nWindowDays) %>%
-  dplyr::inner_join(
-    Mapped_SUBJ %>% dplyr::distinct(.data$subjid, .data$country, .data$invid),
-    by = "subjid"
-  ) %>%
+# Premature-death cohort (deaths within nWindowDays, joined to subject country/
+# site), computed once and reused for the count and the per-country banner.
+dfPrematureCohort <- pd_PrematureCohort(Mapped_Death, Mapped_SUBJ, nWindowDays)
+
+# Per-country count of enrolled sites with >=1 premature death, for the filter
+# banner's "N/M sites with at least 1 premature death" headline. Only the count
+# is consumed (as the numerator over the country's enrolled-site total), so we
+# don't carry the site-id arrays.
+country_premature_count <- dfPrematureCohort %>%
   dplyr::distinct(.data$country, .data$invid) %>%
-  dplyr::group_by(.data$country) %>%
-  dplyr::summarise(sites = list(.data$invid), .groups = "drop") %>%
+  dplyr::count(.data$country) %>%
   tibble::deframe() %>%
-  jsonlite::toJSON(auto_unbox = FALSE)
+  jsonlite::toJSON(auto_unbox = TRUE)
 
 nEnrolled <- nrow(Mapped_SUBJ)
-nPremature <- sum(!is.na(Mapped_Death$death_dy) & Mapped_Death$death_dy <= nWindowDays)
+nPremature <- nrow(dfPrematureCohort)
 nPrematureRate <- ifelse(nEnrolled > 0, 100 * nPremature / nEnrolled, 0)
 latest_snapshot <- max(dfResults$SnapshotDate)
 has_premature <- nPremature > 0
@@ -184,7 +182,7 @@ cat(paste0('
 <script>
 (function() {
   var countrySiteMap = ', country_site_map, ';
-  var countryPrematureSiteMap = ', country_premature_site_map, ';
+  var countryPrematureCount = ', country_premature_count, ';
   var activeCountry = null;
   var activeSite = null;
 
@@ -198,7 +196,26 @@ cat(paste0('
     return el;
   }
 
-  // Attach click handler to country buckets chart (max 5 retries)
+  // Restore every bar in a chart to full opacity (one batched restyle).
+  function undimBars(containerId) {
+    var el = getPlotlyDiv(containerId);
+    if (!el) return;
+    var opacities = el.data.map(function(tr) {
+      return tr.x.map(function() { return 1.0; });
+    });
+    Plotly.restyle(el, {"marker.opacity": opacities}, el.data.map(function(_, i) { return i; }));
+  }
+
+  // Dim every bar except those whose category equals `value` (one batched
+  // restyle across all traces).
+  function dimBarsExcept(el, value) {
+    var opacities = el.data.map(function(tr) {
+      return tr.x.map(function(x) { return x === value ? 1.0 : 0.3; });
+    });
+    Plotly.restyle(el, {"marker.opacity": opacities}, el.data.map(function(_, i) { return i; }));
+  }
+
+  // Attach click handler to country buckets chart (retry until Plotly ready, max 20)
   var attachRetries = 0;
   function attachCountryClick() {
     var el = getPlotlyDiv("pd-country-buckets");
@@ -219,14 +236,15 @@ cat(paste0('
   function applyFilter(country) {
     activeCountry = country;
     var sites = countrySiteMap[country] || [];
-    var prematureSites = countryPrematureSiteMap[country] || [];
+    var prematureCount = countryPrematureCount[country] || 0;
 
-    // Show the country banner row. The charts only render sites with a premature
-    // death, so the headline count is premature-death sites over the enrolled total.
+    // Show the country banner row. The headline reports how many of the country\'s
+    // enrolled sites had at least one premature death (premature-site count over
+    // the enrolled-site total).
     document.getElementById("pd-filter-country-row").style.display = "flex";
     document.getElementById("pd-filter-text").innerHTML =
       "\\ud83d\\udd0d <strong>Showing " + country + "</strong> \\u2014 " +
-      prematureSites.length + "/" + sites.length +
+      prematureCount + "/" + sites.length +
       " sites with at least 1 premature death";
     updateBannerVisibility();
 
@@ -251,13 +269,7 @@ cat(paste0('
   function highlightCountryBar(country) {
     var el = getPlotlyDiv("pd-country-buckets");
     if (!el) return;
-    var data = el.data;
-    for (var i = 0; i < data.length; i++) {
-      var opacities = data[i].x.map(function(x) {
-        return x === country ? 1.0 : 0.3;
-      });
-      Plotly.restyle(el, {"marker.opacity": [opacities]}, [i]);
-    }
+    dimBarsExcept(el, country);
   }
 
   // Show/hide the banner container based on whether either row is active.
@@ -287,7 +299,7 @@ cat(paste0('
     }
   }
 
-  // Attach click handler to site buckets chart (max 5 retries)
+  // Attach click handler to site buckets chart (retry until Plotly ready, max 20)
   var siteAttachRetries = 0;
   function attachSiteClick() {
     var el = getPlotlyDiv("pd-site-buckets");
@@ -318,34 +330,21 @@ cat(paste0('
   function highlightSiteBar(invid) {
     var el = getPlotlyDiv("pd-site-buckets");
     if (!el) return;
-    // Seed the filter cache with CLEAN (un-dimmed) data BEFORE mutating
-    // marker.opacity below. pd-site-buckets is the one chart that is both a
-    // highlight target and a filter target: if a site is clicked before any
-    // country filter, filterPlotlyChart would otherwise lazily cache this
-    // dimmed chart as the "original", and a later country reset would restore a
-    // permanently-dimmed chart. The guard means a clean cache (seeded here on a
+    // Seed the filter cache with CLEAN (un-dimmed) data BEFORE dimming below.
+    // pd-site-buckets is the one chart that is both a highlight target and a
+    // filter target: if a site is clicked before any country filter,
+    // filterPlotlyChart would otherwise lazily cache this dimmed chart as the
+    // "original", and a later country reset would restore a permanently-dimmed
+    // chart. cacheOriginal is idempotent, so a clean cache (seeded here on a
     // site-first click, or by filterPlotlyChart on a country-first click) is
-    // never overwritten. originalData/originalLayout are var-hoisted and shared
-    // with filterPlotlyChart, so referencing them here (textually before their
-    // declaration) is fine.
-    if (!originalData["pd-site-buckets"]) {
-      originalData["pd-site-buckets"] = JSON.parse(JSON.stringify(el.data));
-    }
-    if (!originalLayout["pd-site-buckets"]) {
-      originalLayout["pd-site-buckets"] = JSON.parse(JSON.stringify(el.layout));
-    }
-    var data = el.data;
+    // never overwritten.
+    cacheOriginal(el, "pd-site-buckets");
     // If the selected site isn\'t currently rendered (e.g. a country filter is
     // showing a different country\'s sites), leave opacities untouched rather
     // than dimming every bar to 0.3.
-    var present = data.some(function(tr) { return tr.x && tr.x.indexOf(invid) >= 0; });
+    var present = el.data.some(function(tr) { return tr.x && tr.x.indexOf(invid) >= 0; });
     if (!present) return;
-    for (var i = 0; i < data.length; i++) {
-      var opacities = data[i].x.map(function(x) {
-        return x === invid ? 1.0 : 0.3;
-      });
-      Plotly.restyle(el, {"marker.opacity": [opacities]}, [i]);
-    }
+    dimBarsExcept(el, invid);
   }
 
   // Global reset for the site filter (called by the site row\'s button onclick)
@@ -355,13 +354,7 @@ cat(paste0('
     updateBannerVisibility();
 
     // Un-dim site bars
-    var el = getPlotlyDiv("pd-site-buckets");
-    if (el) {
-      for (var i = 0; i < el.data.length; i++) {
-        var allOnes = el.data[i].x.map(function() { return 1.0; });
-        Plotly.restyle(el, {"marker.opacity": [allOnes]}, [i]);
-      }
-    }
+    undimBars("pd-site-buckets");
 
     // Re-derive the listing from any remaining active filter (e.g. country).
     applyListingFilter();
@@ -371,16 +364,22 @@ cat(paste0('
   var originalData = {};
   var originalLayout = {};
 
-  function filterPlotlyChart(containerId, allowedValues) {
-    var el = getPlotlyDiv(containerId);
-    if (!el) return;
-    // Cache original data + layout on first call
+  // Cache a chart\'s clean trace data + layout the first time we touch it, so a
+  // later reset can restore the un-filtered, un-dimmed version. Idempotent: a
+  // second call never overwrites an existing (clean) cache.
+  function cacheOriginal(el, containerId) {
     if (!originalData[containerId]) {
       originalData[containerId] = JSON.parse(JSON.stringify(el.data));
     }
     if (!originalLayout[containerId]) {
       originalLayout[containerId] = JSON.parse(JSON.stringify(el.layout));
     }
+  }
+
+  function filterPlotlyChart(containerId, allowedValues) {
+    var el = getPlotlyDiv(containerId);
+    if (!el) return;
+    cacheOriginal(el, containerId);
     var orig = originalData[containerId];
     var matchAxisGlobal = null;
     var keptCategories = [];
@@ -410,6 +409,10 @@ cat(paste0('
       newTrace.x = indices.map(function(i) { return trace.x[i]; });
       if (trace.y) newTrace.y = indices.map(function(i) { return trace.y[i]; });
       if (trace.text) newTrace.text = indices.map(function(i) { return trace.text[i]; });
+      // customdata drives the hover tooltip (hovertemplate "%{customdata}"), so it
+      // must be reindexed alongside x/y or the tooltip reads a stale, misaligned
+      // value from the original full-length array (wrong subject counts per bucket).
+      if (trace.customdata) newTrace.customdata = indices.map(function(i) { return trace.customdata[i]; });
       if (trace.marker && trace.marker.color && Array.isArray(trace.marker.color)) {
         newTrace.marker = Object.assign({}, trace.marker);
         newTrace.marker.color = indices.map(function(i) { return trace.marker.color[i]; });
@@ -443,13 +446,7 @@ cat(paste0('
     updateBannerVisibility();
 
     // Reset country bar opacity
-    var el = getPlotlyDiv("pd-country-buckets");
-    if (el) {
-      for (var i = 0; i < el.data.length; i++) {
-        var allOnes = el.data[i].x.map(function() { return 1.0; });
-        Plotly.restyle(el, {"marker.opacity": [allOnes]}, [i]);
-      }
-    }
+    undimBars("pd-country-buckets");
 
     // Reset charts the country filter owns
     resetPlotlyChart("pd-country-scatter");
