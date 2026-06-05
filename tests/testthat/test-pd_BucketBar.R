@@ -151,3 +151,42 @@ test_that("pd_BucketCounts labels a missing parent 'Unknown' {#223}", {
   )
   expect_true("Unknown" %in% df$Outer)
 })
+
+test_that("pd_BucketBar builds a 2-D multicategory x grouped by parent {#223}", {
+  testthat::skip_if_not_installed("plotly")
+  dfSubjects <- tibble::tibble(
+    subjid = paste0("S", 1:3),
+    invid = c("INV-2", "INV-1", "INV-1"),
+    country = c("CAN", "USA", "USA"),
+    studyid = "ST01"
+  )
+  dfDeath <- tibble::tibble(subjid = c("S1", "S2"), death_dy = c(20, 50))
+  p <- pd_BucketBar(
+    dfDeath,
+    dfSubjects,
+    nWindowDays = 90,
+    strGroupCol = "invid",
+    strGroupLabel = "Site",
+    strOuterCol = "country"
+  )
+  expect_s3_class(p, "plotly")
+  built <- plotly::plotly_build(p)
+  tr <- built$x$data[[1]]
+  # x is the 2-D [[outer],[inner]] multicategory structure.
+  expect_true(is.list(tr$x) && length(tr$x) == 2)
+  # Inner tier is contiguous-by-country (CAN's site first, then USA's).
+  expect_equal(tr$x[[1]], c("CAN", "USA")) # outer
+  expect_equal(tr$x[[2]], c("INV-2", "INV-1")) # inner, aligned to outer
+  # Each bucket trace carries a single RAG marker colour (no color= split).
+  expect_equal(built$x$data[[1]]$marker$color, colorScheme("red", "dark"))
+})
+
+test_that("pd_BucketBar stays flat (one-tier) when strOuterCol is NULL {#223}", {
+  testthat::skip_if_not_installed("plotly")
+  dfSubjects <- tibble::tibble(subjid = paste0("S", 1:2), studyid = "ST01")
+  dfDeath <- tibble::tibble(subjid = "S1", death_dy = 20)
+  p <- pd_BucketBar(dfDeath, dfSubjects, nWindowDays = 90)
+  built <- plotly::plotly_build(p)
+  # Flat x is a plain character vector, not a 2-element list.
+  expect_false(is.list(built$x$data[[1]]$x) && length(built$x$data[[1]]$x) == 2)
+})

@@ -110,6 +110,9 @@ pd_BucketCounts <- function(
 #'
 #' @inheritParams pd_BucketCounts
 #' @param strGroupLabel `character` Axis label for the group dimension. Default: "Group".
+#' @param strOuterCol `character` Optional parent column for a two-tier
+#'   (multicategory) x-axis bracketing each group under its parent (e.g.
+#'   "country" for sites). `NULL` (default) renders the flat one-tier bar.
 #'
 #' @return A `plotly` htmlwidget.
 #' @export
@@ -118,7 +121,8 @@ pd_BucketBar <- function(
   dfSubjects,
   nWindowDays = 90,
   strGroupCol = "studyid",
-  strGroupLabel = "Group"
+  strGroupLabel = "Group",
+  strOuterCol = NULL
 ) {
   gsm.core::stop_if(
     cnd = !is.data.frame(dfDeath),
@@ -136,7 +140,13 @@ pd_BucketBar <- function(
   )
   rlang::check_installed("plotly", reason = "to run `pd_BucketBar()`")
 
-  dfCounts <- pd_BucketCounts(dfDeath, dfSubjects, nWindowDays, strGroupCol)
+  dfCounts <- pd_BucketCounts(
+    dfDeath,
+    dfSubjects,
+    nWindowDays,
+    strGroupCol,
+    strOuterCol
+  )
 
   rag_colors <- pd_RagColors(nWindowDays)
 
@@ -156,20 +166,51 @@ pd_BucketBar <- function(
       )
     )
 
-  plotly::plot_ly(
-    dfCounts,
-    x = ~GroupID,
-    y = ~n,
-    color = ~Bucket,
-    colors = rag_colors,
-    type = "bar",
-    customdata = ~text,
-    hovertemplate = "%{customdata}<extra></extra>"
-  ) %>%
-    plotly::layout(
-      barmode = "stack",
-      xaxis = list(title = strGroupLabel),
-      yaxis = list(title = "Subjects"),
-      legend = list(title = list(text = "Bucket"))
+  # Flat one-tier axis: the original single-trace bar (Plotly's color= split is
+  # fine for a plain string x). Preserved verbatim for the Study chart.
+  if (is.null(strOuterCol)) {
+    return(
+      plotly::plot_ly(
+        dfCounts,
+        x = ~GroupID,
+        y = ~n,
+        color = ~Bucket,
+        colors = rag_colors,
+        type = "bar",
+        customdata = ~text,
+        hovertemplate = "%{customdata}<extra></extra>"
+      ) %>%
+        plotly::layout(
+          barmode = "stack",
+          xaxis = list(title = strGroupLabel),
+          yaxis = list(title = "Subjects"),
+          legend = list(title = list(text = "Bucket"))
+        )
     )
+  }
+
+  # Two-tier (multicategory) axis. Plotly's high-level color= split positionally
+  # mis-subsets a list-valued x, so build one trace per bucket with its own
+  # aligned [outer, inner] x. Looping in bucket-label order keeps colour and
+  # stack order identical to the flat chart.
+  p <- plotly::plot_ly()
+  for (bk in pd_BucketLabels(nWindowDays)) {
+    d <- dplyr::filter(dfCounts, .data$Bucket == bk)
+    p <- plotly::add_bars(
+      p,
+      x = list(d$Outer, d$GroupID),
+      y = d$n,
+      name = bk,
+      marker = list(color = unname(rag_colors[bk])),
+      customdata = d$text,
+      hovertemplate = "%{customdata}<extra></extra>"
+    )
+  }
+  plotly::layout(
+    p,
+    barmode = "stack",
+    xaxis = list(title = strGroupLabel),
+    yaxis = list(title = "Subjects"),
+    legend = list(title = list(text = "Bucket"))
+  )
 }
