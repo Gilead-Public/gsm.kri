@@ -111,3 +111,43 @@ test_that("pd_BucketBar validates inputs {#223}", {
     "nWindowDays must be a positive number"
   )
 })
+
+test_that("pd_BucketCounts carries a contiguous Outer tier when strOuterCol set {#223}", {
+  dfSubjects <- tibble::tibble(
+    subjid = paste0("S", 1:3),
+    invid = c("INV-2", "INV-1", "INV-1"), # deliberately unsorted vs country
+    country = c("CAN", "USA", "USA")
+  )
+  dfDeath <- tibble::tibble(subjid = c("S1", "S2"), death_dy = c(20, 50))
+  df <- pd_BucketCounts(
+    dfDeath,
+    dfSubjects,
+    nWindowDays = 90,
+    strGroupCol = "invid",
+    strOuterCol = "country"
+  )
+  expect_true("Outer" %in% names(df))
+  # One row per (Outer, GroupID, Bucket): 2 sites x 3 buckets.
+  expect_equal(nrow(df), 6)
+  # Outer is contiguous so Plotly draws one bracket per country.
+  expect_false(is.unsorted(df$Outer))
+  # Every site keeps all three bucket rows (stack alignment depends on this).
+  expect_true(all(table(df$GroupID) == 3))
+})
+
+test_that("pd_BucketCounts labels a missing parent 'Unknown' {#223}", {
+  dfSubjects <- tibble::tibble(
+    subjid = c("S1", "S2"),
+    invid = c("INV-1", "INV-2"),
+    country = c("USA", NA)
+  )
+  dfDeath <- tibble::tibble(subjid = "S1", death_dy = 20)
+  df <- pd_BucketCounts(
+    dfDeath,
+    dfSubjects,
+    nWindowDays = 90,
+    strGroupCol = "invid",
+    strOuterCol = "country"
+  )
+  expect_true("Unknown" %in% df$Outer)
+})

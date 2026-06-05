@@ -48,14 +48,19 @@ pd_RagColors <- function(nWindowDays) {
 #' @param dfSubjects `data.frame` Mapped subject data with `subjid` and `strGroupCol`.
 #' @param nWindowDays `numeric` Premature-death window in days. Default: 90.
 #' @param strGroupCol `character` Column in `dfSubjects` to group by. Default: "studyid".
+#' @param strOuterCol `character` Optional parent column in `dfSubjects` for a
+#'   two-tier (multicategory) axis (e.g. "country" to bracket sites by country).
+#'   When `NULL` (default) the result is the flat one-tier count.
 #'
-#' @return A `data.frame` with `GroupID`, `Bucket`, and `n` columns.
+#' @return A `data.frame` with `GroupID`, `Bucket`, and `n` columns. When
+#'   `strOuterCol` is set, an additional `Outer` column carries the parent tier.
 #' @export
 pd_BucketCounts <- function(
   dfDeath,
   dfSubjects,
   nWindowDays = 90,
-  strGroupCol = "studyid"
+  strGroupCol = "studyid",
+  strOuterCol = NULL
 ) {
   bucket_levels <- pd_BucketLabels(nWindowDays)
 
@@ -68,11 +73,32 @@ pd_BucketCounts <- function(
     TRUE ~ bucket_levels[3]
   )
 
-  tibble::tibble(
+  df <- tibble::tibble(
     GroupID = dfSubjects[[strGroupCol]],
     Bucket = factor(bucket, levels = bucket_levels)
-  ) %>%
-    dplyr::count(.data$GroupID, .data$Bucket, name = "n", .drop = FALSE)
+  )
+
+  if (is.null(strOuterCol)) {
+    return(
+      dplyr::count(df, .data$GroupID, .data$Bucket, name = "n", .drop = FALSE)
+    )
+  }
+
+  # Multicategory: carry the parent tier (country for sites, study for
+  # countries), labelling a missing parent "Unknown", and sort so each parent is
+  # one contiguous run -- interleaved rows make Plotly draw a fragmented bracket.
+  outer <- dfSubjects[[strOuterCol]]
+  df$Outer <- dplyr::if_else(is.na(outer), "Unknown", as.character(outer))
+
+  df %>%
+    dplyr::count(
+      .data$Outer,
+      .data$GroupID,
+      .data$Bucket,
+      name = "n",
+      .drop = FALSE
+    ) %>%
+    dplyr::arrange(.data$Outer, .data$GroupID)
 }
 
 #' Premature-death bucket bar chart
