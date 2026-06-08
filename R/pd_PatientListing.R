@@ -145,7 +145,10 @@ pd_PatientListing <- function(dfResults, dfDeath, dfSubjects = NULL) {
     colnames = col_names,
     extensions = "Buttons",
     options = list(
-      dom = "Bfrtip",
+      # dom letters: B=buttons, l=length menu ("Show N entries"), f=filter,
+      # r=processing, t=table, i=info, p=pagination. Keep `l` so the length
+      # dropdown stays alongside the Buttons bar.
+      dom = "Blfrtip",
       buttons = list(list(
         extend = "csv",
         text = "Download CSV",

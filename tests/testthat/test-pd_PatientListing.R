@@ -124,6 +124,8 @@ test_that("pd_PatientListing exposes a CSV download button {#223}", {
     logical(1)
   ))
   expect_true(has_csv)
+  # dom keeps "l" so the "Show N entries" length menu survives the button bar
+  expect_match(tbl$x$options$dom, "l")
 })
 
 test_that("pd_PatientListing sorts by death_dy via a name-derived index {#223}", {
