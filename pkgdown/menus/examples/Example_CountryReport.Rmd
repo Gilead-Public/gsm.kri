@@ -11,7 +11,7 @@ output:
     toc_float:
       collapsed: false
       smooth_scroll: true
-    css: ../report/styles.css
+    css: styles.css
 ---
 
 

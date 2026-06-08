@@ -4,6 +4,7 @@ meta:
   Output: html
   Name: CTQ Eligibility Report
   Description: A report summarizing CTQ
+  Active: true
 spec:
   Mapped_EXCLUSION:
     _all:

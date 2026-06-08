@@ -34,7 +34,7 @@ Load required packages and data:
 library(gsm.core)
 library(gsm.mapping)
 library(dplyr)
-devtools::load_all()
+library(gsm.kri)
 
 # Load source data
 dm <- gsm.core::lSource$Raw_SUBJ

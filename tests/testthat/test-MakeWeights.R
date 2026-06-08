@@ -412,3 +412,50 @@ test_that("MakeWeights succeeds when all lengths match (#135)", {
   # Should not throw an error
   expect_silent(dfWeights <- MakeWeights(dfMetrics_match))
 })
+
+# Active column filtering tests ----
+
+test_that("MakeWeights excludes inactive metrics from weight table (#226)", {
+  dfMetrics <- data.frame(
+    MetricID = c("Analysis_kri0001", "Analysis_kri0002", "Analysis_kri0003"),
+    Flag = c("-2,-1,0,1,2", "-2,-1,0,1,2", "-2,-1,0,1,2"),
+    RiskScoreWeight = c("4,2,0,2,4", "4,2,0,2,4", "4,2,0,2,4"),
+    Active = c(TRUE, FALSE, TRUE),
+    stringsAsFactors = FALSE
+  )
+
+  dfWeights <- MakeWeights(dfMetrics)
+
+  expect_false("Analysis_kri0002" %in% dfWeights$MetricID)
+  expect_true("Analysis_kri0001" %in% dfWeights$MetricID)
+  expect_true("Analysis_kri0003" %in% dfWeights$MetricID)
+})
+
+test_that("MakeWeights includes all metrics when Active column is absent (#226)", {
+  dfMetrics <- data.frame(
+    MetricID = c("Analysis_kri0001", "Analysis_kri0002"),
+    Flag = c("-2,-1,0,1,2", "-2,-1,0,1,2"),
+    RiskScoreWeight = c("4,2,0,2,4", "4,2,0,2,4"),
+    stringsAsFactors = FALSE
+  )
+
+  dfWeights <- MakeWeights(dfMetrics)
+
+  expect_true("Analysis_kri0001" %in% dfWeights$MetricID)
+  expect_true("Analysis_kri0002" %in% dfWeights$MetricID)
+})
+
+test_that("MakeWeights includes metrics with NA Active (#226)", {
+  dfMetrics <- data.frame(
+    MetricID = c("Analysis_kri0001", "Analysis_kri0002"),
+    Flag = c("-2,-1,0,1,2", "-2,-1,0,1,2"),
+    RiskScoreWeight = c("4,2,0,2,4", "4,2,0,2,4"),
+    Active = c(TRUE, NA),
+    stringsAsFactors = FALSE
+  )
+
+  dfWeights <- MakeWeights(dfMetrics)
+
+  expect_true("Analysis_kri0001" %in% dfWeights$MetricID)
+  expect_true("Analysis_kri0002" %in% dfWeights$MetricID)
+})
