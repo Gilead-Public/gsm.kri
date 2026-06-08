@@ -3,17 +3,15 @@
 \`r lifecycle::badge("experimental")\`
 
 Scatter of premature deaths: x = days from randomization to death
-(\`death_dy\`). Subjects who died after the window are excluded.
-
-By default y = group and colour = \`treatment_related\` (degrading to a
-single uncoloured series when \`treatment_related\` is absent, e.g.
-before the gsm.mapping \`complete_death()\` extension lands). When
-\`dSnapshotDate\` is supplied the y-axis instead becomes numeric — days
-from randomization to the snapshot date (\`SnapshotDate - death_dt +
-death_dy\`) — and points are coloured by premature-death bucket
-(\`\<=30d\` / \`31-Wd\`), reusing the RAG colours of \[pd_BucketBar()\].
-This is the study-level view, where the categorical group axis would
-otherwise collapse to a single row.
+(\`death_dy\`), colored by premature-death bucket (\`\<=30d\` /
+\`31-Wd\`) using the RAG colors of \[pd_BucketBar()\]. By default y =
+group (categorical). When \`dSnapshotDate\` is supplied the y-axis
+instead becomes numeric — days from randomization to the snapshot
+(\`SnapshotDate − death_dt + death_dy\`), the full window the subject
+would have been observed had they lived — for the study-level view,
+where the categorical group axis would otherwise collapse to one row.
+Country, site, subject, days to death, bucket, and treatment-related
+status are surfaced in the hover tooltip.
 
 ## Usage
 
@@ -24,7 +22,8 @@ pd_RandToDeathScatter(
   nWindowDays = 90,
   strGroupCol = "invid",
   strGroupLabel = "Group",
-  dSnapshotDate = NULL
+  dSnapshotDate = NULL,
+  strOuterCol = NULL
 )
 ```
 
@@ -33,8 +32,8 @@ pd_RandToDeathScatter(
 - dfDeath:
 
   \`data.frame\` Mapped death data with \`subjid\`, \`death_dy\`, and
-  optionally \`treatment_related\`. When \`dSnapshotDate\` is supplied,
-  \`death_dt\` is also required.
+  optionally \`treatment_related\` (shown as "Unknown" when absent).
+  When \`dSnapshotDate\` is supplied, \`death_dt\` is also required.
 
 - dfSubjects:
 
@@ -55,9 +54,15 @@ pd_RandToDeathScatter(
 
 - dSnapshotDate:
 
-  \`Date\` (or coercible) Snapshot date. When non-\`NULL\`, switches the
-  y-axis to numeric days-from-randomization-to-snapshot and colours by
-  bucket. Default: \`NULL\` (categorical group y-axis).
+  \`Date\` (or coercible) When non-\`NULL\`, selects the study-level
+  view: y becomes days from randomization to the snapshot. Default:
+  \`NULL\` (categorical group y-axis).
+
+- strOuterCol:
+
+  \`character\` Optional parent column for a two-tier (multicategory)
+  y-axis bracketing each group under its parent (e.g. "country" for
+  sites). Ignored in the study view (numeric y). Default \`NULL\`.
 
 ## Value
 

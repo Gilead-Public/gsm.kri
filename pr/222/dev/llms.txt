@@ -269,6 +269,8 @@ lCharts <- RunWorkflow(
   : Premature-death patient listing
 - [`pd_PatientListingData()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_PatientListingData.md)
   : Premature-death patient listing data
+- [`pd_PrematureCohort()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_PrematureCohort.md)
+  : Premature-death cohort
 - [`pd_RandToDeathScatter()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_RandToDeathScatter.md)
   : Randomization-to-death scatter
 - [`pd_ReasonCounts()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_ReasonCounts.md)

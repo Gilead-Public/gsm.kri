@@ -9,7 +9,13 @@ Categorizes every enrolled subject into a premature-death bucket
 ## Usage
 
 ``` r
-pd_BucketCounts(dfDeath, dfSubjects, nWindowDays = 90, strGroupCol = "studyid")
+pd_BucketCounts(
+  dfDeath,
+  dfSubjects,
+  nWindowDays = 90,
+  strGroupCol = "studyid",
+  strOuterCol = NULL
+)
 ```
 
 ## Arguments
@@ -32,6 +38,14 @@ pd_BucketCounts(dfDeath, dfSubjects, nWindowDays = 90, strGroupCol = "studyid")
   \`character\` Column in \`dfSubjects\` to group by. Default:
   "studyid".
 
+- strOuterCol:
+
+  \`character\` Optional parent column in \`dfSubjects\` for a two-tier
+  (multicategory) axis (e.g. "country" to bracket sites by country).
+  When \`NULL\` (default) the result is the flat one-tier count.
+
 ## Value
 
-A \`data.frame\` with \`GroupID\`, \`Bucket\`, and \`n\` columns.
+A \`data.frame\` with \`GroupID\`, \`Bucket\`, and \`n\` columns. When
+\`strOuterCol\` is set, an additional \`Outer\` column carries the
+parent tier.

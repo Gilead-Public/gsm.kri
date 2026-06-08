@@ -12,7 +12,8 @@ pd_BucketBar(
   dfSubjects,
   nWindowDays = 90,
   strGroupCol = "studyid",
-  strGroupLabel = "Group"
+  strGroupLabel = "Group",
+  strOuterCol = NULL
 )
 ```
 
@@ -39,6 +40,12 @@ pd_BucketBar(
 - strGroupLabel:
 
   \`character\` Axis label for the group dimension. Default: "Group".
+
+- strOuterCol:
+
+  \`character\` Optional parent column for a two-tier (multicategory)
+  x-axis bracketing each group under its parent (e.g. "country" for
+  sites). \`NULL\` (default) renders the flat one-tier bar.
 
 ## Value
 

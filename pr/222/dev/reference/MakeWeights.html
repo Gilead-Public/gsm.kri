@@ -31,7 +31,10 @@ weight information for risk score calculations."><meta name="robots" content="no
   <ul class="dropdown-menu" aria-labelledby="dropdown-examples"><li><a class="dropdown-item" href="../examples/Example_SiteReport.html">Site KRI Report</a></li>
     <li><a class="dropdown-item" href="../examples/Example_CountryReport.html">Country KRI Report</a></li>
     <li><a class="dropdown-item" href="../examples/Example_Eligibility.html">Eligibility Report</a></li>
+    <li><a class="dropdown-item" href="../examples/Example_CrossStudySRS.html">Cross-Study KRI Report</a></li>
     <li><a class="dropdown-item" href="../examples/Example_PrematureDeaths.html">Premature Deaths Report</a></li>
+    <li><a class="dropdown-item" href="../examples/Cookbook_AdverseEventKRI.html">Cookbook - Adverse Event KRI Report</a></li>
+    <li><a class="dropdown-item" href="../examples/Cookbook_AdverseEventWorkflow.html">Cookbook - Adverse Event Workflow Examples</a></li>
     <li><a class="dropdown-item" href="../examples/Cookbook_ReportingWorkflow.html">Cookbook - Reporting Workflow Examples</a></li>
   </ul></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -68,7 +71,8 @@ weight information for risk score calculations.</p>
 <dl><dt id="arg-dfmetrics">dfMetrics<a class="anchor" aria-label="anchor" href="#arg-dfmetrics"></a></dt>
 <dd><p>`data.frame` Metrics metadata containing at least `MetricID`, `Flag`,
 and `RiskScoreWeight` columns. The `Flag` and `RiskScoreWeight` columns should contain
-comma-separated values that will be parsed into individual rows.</p></dd>
+comma-separated values that will be parsed into individual rows. If an `Active` column
+is present, rows where `Active == FALSE` are excluded before processing.</p></dd>
 
 </dl></div>
     <div class="section level2">

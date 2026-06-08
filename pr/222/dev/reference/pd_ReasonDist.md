@@ -7,7 +7,7 @@ Horizontal bar of \`death_reason\` counts among premature deaths.
 ## Usage
 
 ``` r
-pd_ReasonDist(dfDeath, nWindowDays = 90)
+pd_ReasonDist(dfDeath, nWindowDays = 90, nEnrolled = NULL)
 ```
 
 ## Arguments
@@ -20,6 +20,11 @@ pd_ReasonDist(dfDeath, nWindowDays = 90)
 - nWindowDays:
 
   \`numeric\` Premature-death window in days. Default: 90.
+
+- nEnrolled:
+
+  \`numeric\` Total enrolled subjects, used for the " tooltip line. When
+  \`NULL\` (default) that line is omitted. Default: \`NULL\`.
 
 ## Value
 

@@ -29,7 +29,10 @@ Stacked bar of premature-death bucket counts per group.'><meta name="robots" con
   <ul class="dropdown-menu" aria-labelledby="dropdown-examples"><li><a class="dropdown-item" href="../examples/Example_SiteReport.html">Site KRI Report</a></li>
     <li><a class="dropdown-item" href="../examples/Example_CountryReport.html">Country KRI Report</a></li>
     <li><a class="dropdown-item" href="../examples/Example_Eligibility.html">Eligibility Report</a></li>
+    <li><a class="dropdown-item" href="../examples/Example_CrossStudySRS.html">Cross-Study KRI Report</a></li>
     <li><a class="dropdown-item" href="../examples/Example_PrematureDeaths.html">Premature Deaths Report</a></li>
+    <li><a class="dropdown-item" href="../examples/Cookbook_AdverseEventKRI.html">Cookbook - Adverse Event KRI Report</a></li>
+    <li><a class="dropdown-item" href="../examples/Cookbook_AdverseEventWorkflow.html">Cookbook - Adverse Event Workflow Examples</a></li>
     <li><a class="dropdown-item" href="../examples/Cookbook_ReportingWorkflow.html">Cookbook - Reporting Workflow Examples</a></li>
   </ul></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -60,7 +63,8 @@ Stacked bar of premature-death bucket counts per group.'><meta name="robots" con
 <span>  <span class="va">dfSubjects</span>,</span>
 <span>  nWindowDays <span class="op">=</span> <span class="fl">90</span>,</span>
 <span>  strGroupCol <span class="op">=</span> <span class="st">"studyid"</span>,</span>
-<span>  strGroupLabel <span class="op">=</span> <span class="st">"Group"</span></span>
+<span>  strGroupLabel <span class="op">=</span> <span class="st">"Group"</span>,</span>
+<span>  strOuterCol <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -86,6 +90,12 @@ Stacked bar of premature-death bucket counts per group.'><meta name="robots" con
 
 <dt id="arg-strgrouplabel">strGroupLabel<a class="anchor" aria-label="anchor" href="#arg-strgrouplabel"></a></dt>
 <dd><p>`character` Axis label for the group dimension. Default: "Group".</p></dd>
+
+
+<dt id="arg-stroutercol">strOuterCol<a class="anchor" aria-label="anchor" href="#arg-stroutercol"></a></dt>
+<dd><p>`character` Optional parent column for a two-tier
+(multicategory) x-axis bracketing each group under its parent (e.g.
+"country" for sites). `NULL` (default) renders the flat one-tier bar.</p></dd>
 
 </dl></div>
     <div class="section level2">

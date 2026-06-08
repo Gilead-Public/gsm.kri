@@ -7,7 +7,7 @@
 ## Usage
 
 ``` r
-pd_PatientListing(dfResults, dfDeath)
+pd_PatientListing(dfResults, dfDeath, dfSubjects = NULL)
 ```
 
 ## Arguments
@@ -19,6 +19,13 @@ pd_PatientListing(dfResults, dfDeath)
 - dfDeath:
 
   \`data.frame\` Mapped death data keyed on \`subjid\`.
+
+- dfSubjects:
+
+  \`data.frame\` (optional) Mapped subject data with \`subjid\`,
+  \`invid\`, and optionally \`country\`. When supplied, the output
+  includes \`invid\` (and \`country\` when present) as visible columns
+  for site- and country-level filtering in the interactive report.
 
 ## Value
 
