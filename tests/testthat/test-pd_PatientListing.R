@@ -113,6 +113,19 @@ test_that("pd_PatientListing names the invid column for the JS filter {#223}", {
   expect_true(has_invid_name)
 })
 
+test_that("pd_PatientListing exposes a CSV download button {#223}", {
+  testthat::skip_if_not_installed("DT")
+  tbl <- pd_PatientListing(dfResults, dfDeath, dfSubjects)
+  expect_true("Buttons" %in% unlist(tbl$x$extensions))
+  buttons <- tbl$x$options$buttons
+  has_csv <- any(vapply(
+    buttons,
+    function(b) identical(b$extend, "csv"),
+    logical(1)
+  ))
+  expect_true(has_csv)
+})
+
 test_that("pd_PatientListing sorts by death_dy via a name-derived index {#223}", {
   testthat::skip_if_not_installed("DT")
   tbl <- pd_PatientListing(dfResults, dfDeath, dfSubjects)

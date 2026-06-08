@@ -136,11 +136,21 @@ pd_PatientListing <- function(dfResults, dfDeath, dfSubjects = NULL) {
     ))
   }
 
+  # CSV export via the DataTables Buttons extension (bundled with DT, no JSZip
+  # needed for CSV). `search = "applied"` makes the download follow the report's
+  # active country/site column filter, so the CSV matches what's on screen.
   DT::datatable(
     dfListing,
     rownames = FALSE,
     colnames = col_names,
+    extensions = "Buttons",
     options = list(
+      dom = "Bfrtip",
+      buttons = list(list(
+        extend = "csv",
+        text = "Download CSV",
+        exportOptions = list(modifier = list(search = "applied"))
+      )),
       order = list(list(which(names(dfListing) == "death_dy") - 1L, "asc")),
       columnDefs = column_defs
     )
