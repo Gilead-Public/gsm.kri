@@ -28,8 +28,7 @@ test_that("pkgdown/extra.css exists", {
   )
 })
 
-test_that("pkgdown/extra.css contains all critical rules from inst/report/styles.css", {
-  report_css_path <- system.file("report", "styles.css", package = "gsm.kri")
+test_that("pkgdown/extra.css contains critical selectors", {
   extra_css_path <- file.path(
     system.file(package = "gsm.kri"),
     "..", "pkgdown", "extra.css"
