@@ -2,12 +2,7 @@
 # must be duplicated in pkgdown/extra.css (#240).
 
 test_that("pkgdown/extra.css exists", {
-  extra_css <- system.file("../pkgdown/extra.css", package = "gsm.kri")
-  # system.file returns "" when the path is outside inst/; use file path instead
-  extra_css_path <- file.path(
-    system.file(package = "gsm.kri"),
-    "..", "pkgdown", "extra.css"
-  )
+  extra_css_path <- testthat::test_path("..", "..", "pkgdown", "extra.css")
 
   skip_if_not(file.exists(extra_css_path), "pkgdown/extra.css not found (likely in installed package)")
 
