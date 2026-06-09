@@ -217,3 +217,134 @@ test_that("pd_BucketBar single-group multicategory x survives JSON auto-unboxing
   json <- gsub("[[:space:]]", "", plotly::plotly_json(p, jsonedit = FALSE))
   expect_true(grepl('"x":[["USA"],["INV-1"]]', json, fixed = TRUE))
 })
+
+test_that("pd_BucketBar shows permanent inside labels with bucket, count, percent {#223}", {
+  testthat::skip_if_not_installed("plotly")
+  dfSubjects <- tibble::tibble(subjid = paste0("S", 1:4), studyid = "ST01")
+  dfDeath <- tibble::tibble(
+    subjid = c("S1", "S2", "S4"),
+    death_dy = c(20, 50, 120)
+  )
+  p <- pd_BucketBar(
+    dfDeath,
+    dfSubjects,
+    nWindowDays = 90,
+    strGroupCol = "studyid",
+    strGroupLabel = "Study"
+  )
+  built <- plotly::plotly_build(p)
+  labels <- unlist(lapply(built$x$data, function(d) d$text))
+  # 1 of 4 enrolled died <=30d.
+  expect_true(any(grepl("<=30d: 1 (25.0%)", labels, fixed = TRUE)))
+  # vapply + isTRUE (not unlist + all): unlist drops a NULL textposition, so a
+  # trace that never received the attribute would slip through `all()`.
+  expect_true(all(vapply(
+    built$x$data,
+    function(d) isTRUE(d$textposition == "inside"),
+    logical(1)
+  )))
+  expect_true(all(vapply(
+    built$x$data,
+    function(d) isTRUE(d$constraintext == "none"),
+    logical(1)
+  )))
+  expect_true(all(vapply(
+    built$x$data,
+    function(d) isTRUE(d$textangle == 0),
+    logical(1)
+  )))
+  expect_true(all(vapply(
+    built$x$data,
+    function(d) isTRUE(d$insidetextanchor == "middle"),
+    logical(1)
+  )))
+  expect_true(all(vapply(
+    built$x$data,
+    function(d) isTRUE(d$insidetextfont$color == "white"),
+    logical(1)
+  )))
+})
+
+test_that("pd_BucketBar blanks labels for zero-count buckets {#223}", {
+  testthat::skip_if_not_installed("plotly")
+  dfSubjects <- tibble::tibble(subjid = paste0("S", 1:3), studyid = "ST01")
+  # Only death is beyond the window -> all 3 subjects land in "Alive at 90d";
+  # both premature buckets are zero.
+  dfDeath <- tibble::tibble(subjid = "S1", death_dy = 200)
+  p <- pd_BucketBar(dfDeath, dfSubjects, nWindowDays = 90)
+  built <- plotly::plotly_build(p)
+  labels <- unlist(lapply(built$x$data, function(d) d$text))
+  expect_false(any(grepl(": 0 (", labels, fixed = TRUE))) # no zero-count label rendered
+  expect_true(any(labels == "")) # zero buckets are blanked
+})
+
+test_that("pd_BucketBar two-tier traces carry permanent labels {#223}", {
+  testthat::skip_if_not_installed("plotly")
+  dfSubjects <- tibble::tibble(
+    subjid = paste0("S", 1:3),
+    invid = c("INV-2", "INV-1", "INV-1"),
+    country = c("CAN", "USA", "USA"),
+    studyid = "ST01"
+  )
+  dfDeath <- tibble::tibble(subjid = c("S1", "S2"), death_dy = c(20, 50))
+  p <- pd_BucketBar(
+    dfDeath,
+    dfSubjects,
+    nWindowDays = 90,
+    strGroupCol = "invid",
+    strGroupLabel = "Site",
+    strOuterCol = "country"
+  )
+  built <- plotly::plotly_build(p)
+  expect_true(all(vapply(
+    built$x$data,
+    function(d) !is.null(d$text),
+    logical(1)
+  )))
+  expect_true(all(vapply(
+    built$x$data,
+    function(d) isTRUE(d$textposition == "inside"),
+    logical(1)
+  )))
+  expect_true(all(vapply(
+    built$x$data,
+    function(d) isTRUE(d$constraintext == "none"),
+    logical(1)
+  )))
+  expect_true(all(vapply(
+    built$x$data,
+    function(d) isTRUE(d$textangle == 0),
+    logical(1)
+  )))
+  labels <- unlist(lapply(built$x$data, function(d) d$text))
+  # INV-2 (CAN) has its single subject in <=30d -> 100% of that site's bar.
+  expect_true(any(grepl("<=30d: 1 (", labels, fixed = TRUE)))
+})
+
+test_that("pd_BucketBar attaches a JS hook that hides labels overflowing their bar {#223}", {
+  testthat::skip_if_not_installed("plotly")
+  dfSubjects <- tibble::tibble(subjid = paste0("S", 1:3), studyid = "ST01")
+  dfDeath <- tibble::tibble(subjid = "S1", death_dy = 20)
+  p <- pd_BucketBar(dfDeath, dfSubjects, nWindowDays = 90)
+  hook <- paste(unlist(p$jsHooks$render), collapse = " ")
+  expect_match(hook, "bartext-inside", fixed = TRUE)
+  expect_match(hook, "plotly_afterplot", fixed = TRUE)
+
+  dfSub2 <- tibble::tibble(
+    subjid = paste0("S", 1:3),
+    invid = c("I2", "I1", "I1"),
+    country = c("CAN", "USA", "USA"),
+    studyid = "ST01"
+  )
+  dfDeath2 <- tibble::tibble(subjid = c("S1", "S2"), death_dy = c(20, 50))
+  p2 <- pd_BucketBar(
+    dfDeath2,
+    dfSub2,
+    nWindowDays = 90,
+    strGroupCol = "invid",
+    strGroupLabel = "Site",
+    strOuterCol = "country"
+  )
+  hook2 <- paste(unlist(p2$jsHooks$render), collapse = " ")
+  expect_match(hook2, "bartext-inside", fixed = TRUE)
+})

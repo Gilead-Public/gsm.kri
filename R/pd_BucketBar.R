@@ -163,29 +163,72 @@ pd_BucketBar <- function(
         " (",
         pd_PctLabel(.data$n, .data$GroupTotal),
         ")"
+      ),
+      label = dplyr::if_else(
+        .data$n == 0,
+        "",
+        paste0(
+          .data$Bucket,
+          ": ",
+          .data$n,
+          " (",
+          pd_PctLabel(.data$n, .data$GroupTotal),
+          ")"
+        )
       )
     )
+
+  # Plotly has no native "hide label if it doesn't fit", so after each draw we
+  # hide any on-bar label whose box overflows its own bar's box. Bound to
+  # plotly_afterplot so it re-applies on resize/redraw, not just initial render.
+  js_hide_overflow <- r"(function(el, x) {
+  function hideOverflow() {
+    el.querySelectorAll('text.bartext-inside').forEach(function(t) {
+      t.style.display = '';
+      var pt = t.closest('g.point'); if (!pt) return;
+      var bar = pt.querySelector('path'); if (!bar) return;
+      var tb = t.getBBox(), bb = bar.getBBox();
+      if (bb.width === 0 && bb.height === 0) return;
+      // -2/-1: the bar stroke straddles the edge, so allow ~1px on each side
+      if (tb.width > bb.width - 2 || tb.height > bb.height - 1) t.style.display = 'none';
+    });
+  }
+  requestAnimationFrame(hideOverflow);
+  el.on('plotly_afterplot', hideOverflow);
+})"
 
   # Flat one-tier axis: the original single-trace bar (Plotly's color= split is
   # fine for a plain string x). Preserved verbatim for the Study chart.
   if (is.null(strOuterCol)) {
     return(
-      plotly::plot_ly(
-        dfCounts,
-        x = ~GroupID,
-        y = ~n,
-        color = ~Bucket,
-        colors = rag_colors,
-        type = "bar",
-        customdata = ~text,
-        hovertemplate = "%{customdata}<extra></extra>"
-      ) %>%
-        plotly::layout(
-          barmode = "stack",
-          xaxis = list(title = strGroupLabel),
-          yaxis = list(title = "Subjects"),
-          legend = list(title = list(text = "Bucket"))
-        )
+      htmlwidgets::onRender(
+        plotly::plot_ly(
+          dfCounts,
+          x = ~GroupID,
+          y = ~n,
+          color = ~Bucket,
+          colors = rag_colors,
+          type = "bar",
+          text = ~label,
+          textposition = "inside",
+          insidetextanchor = "middle",
+          constraintext = "none",
+          textangle = 0,
+          # color = ~Bucket tints the label text with the bucket color too; set it
+          # white explicitly so labels are readable on the dark RAG fills. The
+          # two-tier path has no color= aesthetic and keeps Plotly's auto-contrast.
+          insidetextfont = list(color = "white"),
+          customdata = ~text,
+          hovertemplate = "%{customdata}<extra></extra>"
+        ) %>%
+          plotly::layout(
+            barmode = "stack",
+            xaxis = list(title = strGroupLabel),
+            yaxis = list(title = "Subjects"),
+            legend = list(title = list(text = "Bucket"))
+          ),
+        js_hide_overflow
+      )
     )
   }
 
@@ -205,15 +248,29 @@ pd_BucketBar <- function(
       y = d$n,
       name = bk,
       marker = list(color = unname(rag_colors[bk])),
+      text = d$label,
       customdata = d$text,
       hovertemplate = "%{customdata}<extra></extra>"
     )
   }
-  plotly::layout(
+  # style() keeps textposition/constraintext as a scalar per-trace (add_bars()
+  # would broadcast them to per-row vectors, causing isTRUE(... == "inside")
+  # to fail).
+  p <- plotly::style(
     p,
-    barmode = "stack",
-    xaxis = list(title = strGroupLabel),
-    yaxis = list(title = "Subjects"),
-    legend = list(title = list(text = "Bucket"))
+    textposition = "inside",
+    insidetextanchor = "middle",
+    constraintext = "none",
+    textangle = 0
+  )
+  htmlwidgets::onRender(
+    plotly::layout(
+      p,
+      barmode = "stack",
+      xaxis = list(title = strGroupLabel),
+      yaxis = list(title = "Subjects"),
+      legend = list(title = list(text = "Bucket"))
+    ),
+    js_hide_overflow
   )
 }
