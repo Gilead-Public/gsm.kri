@@ -12,8 +12,9 @@ pd_PatientListing(dfResults, dfDeath, dfSubjects = NULL)
 \item{dfDeath}{`data.frame` Mapped death data keyed on `subjid`.}
 
 \item{dfSubjects}{`data.frame` (optional) Mapped subject data with `subjid`,
-`invid`, and optionally `country`. When supplied, the output includes
-`invid` (and `country` when present) as visible columns for site- and
+`invid`, and optionally `studyid` / `country`. When supplied, the output
+includes `studyid` (when present, as the leftmost column), `invid`, and
+`country` (when present) as visible columns for study-, site-, and
 country-level filtering in the interactive report.}
 }
 \value{

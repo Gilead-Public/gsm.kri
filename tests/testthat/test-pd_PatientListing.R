@@ -88,11 +88,22 @@ test_that("pd_PatientListingData orders identity columns first {#223}", {
       "subjid",
       "country",
       "invid",
+      "randomization_date",
       "death_dt",
       "death_dy",
       "death_reason",
       "treatment_related"
     )
+  )
+})
+
+test_that("pd_PatientListingData derives randomization_date as death_dt - death_dy {#221}", {
+  df <- pd_PatientListingData(dfResults, dfDeath)
+  expect_s3_class(df$randomization_date, "Date")
+  # Rows are sorted by death_dy asc: S2 (20) then S1 (50).
+  expect_equal(
+    df$randomization_date,
+    as.Date(c("2026-03-01", "2026-02-15")) - c(20, 50)
   )
 })
 
@@ -133,4 +144,75 @@ test_that("pd_PatientListing sorts by death_dy via a name-derived index {#223}",
   tbl <- pd_PatientListing(dfResults, dfDeath, dfSubjects)
   sort_target <- tbl$x$options$order[[1]][[1]]
   expect_equal(sort_target, which(names(tbl$x$data) == "death_dy") - 1L)
+})
+
+dfSubjectsStudy <- tibble::tibble(
+  subjid = c("S1", "S2", "S3"),
+  studyid = "STUDY-X",
+  invid = c("INV-1", "INV-1", "INV-2"),
+  country = c("USA", "USA", "CAN")
+)
+
+test_that("pd_PatientListingData includes studyid when dfSubjects has it {#221}", {
+  df <- pd_PatientListingData(dfResults, dfDeath, dfSubjectsStudy)
+  expect_true("studyid" %in% names(df))
+  expect_equal(df$studyid, c("STUDY-X", "STUDY-X"))
+})
+
+test_that("pd_PatientListingData omits studyid when dfSubjects lacks it {#221}", {
+  df <- pd_PatientListingData(dfResults, dfDeath, dfSubjects)
+  expect_false("studyid" %in% names(df))
+  expect_true("randomization_date" %in% names(df))
+})
+
+test_that("pd_PatientListingData joins studyid even when dfSubjects has no invid {#221}", {
+  dfSubjectsNoInvid <- tibble::tibble(
+    subjid = c("S1", "S2", "S3"),
+    studyid = "STUDY-X"
+  )
+  df <- pd_PatientListingData(dfResults, dfDeath, dfSubjectsNoInvid)
+  expect_true("studyid" %in% names(df))
+  expect_equal(df$studyid, c("STUDY-X", "STUDY-X"))
+  expect_false("invid" %in% names(df))
+})
+
+test_that("pd_PatientListingData puts Study first, Rand Date before Death Date {#221}", {
+  df <- pd_PatientListingData(dfResults, dfDeath, dfSubjectsStudy)
+  expect_equal(
+    names(df),
+    c(
+      "studyid",
+      "subjid",
+      "country",
+      "invid",
+      "randomization_date",
+      "death_dt",
+      "death_dy",
+      "death_reason",
+      "treatment_related"
+    )
+  )
+})
+
+test_that("pd_PatientListing labels Study and Randomization Date columns {#221}", {
+  testthat::skip_if_not_installed("DT")
+  tbl <- pd_PatientListing(dfResults, dfDeath, dfSubjectsStudy)
+  header <- paste(as.character(tbl$x$container), collapse = " ")
+  expect_match(header, "Study", fixed = TRUE)
+  expect_match(header, "Randomization Date", fixed = TRUE)
+})
+
+test_that("pd_PatientListingData yields NA randomization_date when death data missing {#221}", {
+  dfResultsMissing <- tibble::tibble(
+    GroupID = "S9",
+    GroupLevel = "Patient",
+    MetricID = "Analysis_pat0015",
+    Numerator = 1,
+    Denominator = 1,
+    Score = 1,
+    Flag = 2,
+    SnapshotDate = as.Date("2026-05-01")
+  )
+  df <- pd_PatientListingData(dfResultsMissing, dfDeath) # S9 absent from dfDeath
+  expect_true(is.na(df$randomization_date))
 })

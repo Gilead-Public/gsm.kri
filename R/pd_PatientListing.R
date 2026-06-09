@@ -36,12 +36,15 @@ pd_CheckWindowConsistency <- function(nWindowDays, nPremature, nFlagged) {
 #' (`MetricID == "Analysis_pat0015"`, `Flag == 2`) and joins `Mapped_Death`
 #' detail. Sorted by `death_dy` ascending. Missing `death_reason` /
 #' `treatment_related` columns degrade to `"Unknown"` / `NA`.
+#' A `randomization_date` column is derived as `death_dt - death_dy`,
+#' reconstructing the randomization date (`rgmn_dt`) that `death_dy` was counted from.
 #'
 #' @param dfResults `data.frame` Reporting results containing patient-level rows.
 #' @param dfDeath `data.frame` Mapped death data keyed on `subjid`.
 #' @param dfSubjects `data.frame` (optional) Mapped subject data with `subjid`,
-#'   `invid`, and optionally `country`. When supplied, the output includes
-#'   `invid` (and `country` when present) as visible columns for site- and
+#'   `invid`, and optionally `studyid` / `country`. When supplied, the output
+#'   includes `studyid` (when present, as the leftmost column), `invid`, and
+#'   `country` (when present) as visible columns for study-, site-, and
 #'   country-level filtering in the interactive report.
 #'
 #' @return A `data.frame` of one row per flagged premature-death subject.
@@ -69,20 +72,31 @@ pd_PatientListingData <- function(dfResults, dfDeath, dfSubjects = NULL) {
       by = "subjid"
     ) %>%
     dplyr::mutate(
-      death_reason = dplyr::coalesce(.data$death_reason, "Unknown")
+      death_reason = dplyr::coalesce(.data$death_reason, "Unknown"),
+      # death_dy was defined upstream (complete_death) as death_dt - rgmn_dt, the
+      # randomization date, so this subtraction reconstructs that exact date.
+      randomization_date = .data$death_dt - .data$death_dy
     )
 
-  if (!is.null(dfSubjects) && "invid" %in% names(dfSubjects)) {
+  if (
+    !is.null(dfSubjects) &&
+      any(c("studyid", "invid", "country") %in% names(dfSubjects))
+  ) {
     df <- df %>%
       dplyr::left_join(
         dfSubjects %>%
-          dplyr::select("subjid", dplyr::any_of(c("invid", "country"))),
+          dplyr::select(
+            "subjid",
+            dplyr::any_of(c("studyid", "invid", "country"))
+          ),
         by = "subjid"
       )
   }
 
   df %>%
+    dplyr::relocate(dplyr::any_of("studyid")) %>%
     dplyr::relocate(dplyr::any_of(c("country", "invid")), .after = "subjid") %>%
+    dplyr::relocate("randomization_date", .before = "death_dt") %>%
     dplyr::arrange(.data$death_dy)
 }
 
@@ -110,7 +124,11 @@ pd_PatientListing <- function(dfResults, dfDeath, dfSubjects = NULL) {
 
   dfListing <- pd_PatientListingData(dfResults, dfDeath, dfSubjects)
 
-  col_names <- c("Subject" = "subjid")
+  col_names <- character(0)
+  if ("studyid" %in% names(dfListing)) {
+    col_names <- c(col_names, "Study" = "studyid")
+  }
+  col_names <- c(col_names, "Subject" = "subjid")
   if ("country" %in% names(dfListing)) {
     col_names <- c(col_names, "Country" = "country")
   }
@@ -119,6 +137,7 @@ pd_PatientListing <- function(dfResults, dfDeath, dfSubjects = NULL) {
   }
   col_names <- c(
     col_names,
+    "Randomization Date" = "randomization_date",
     "Death Date" = "death_dt",
     "Days to Death" = "death_dy",
     "Reason" = "death_reason",
