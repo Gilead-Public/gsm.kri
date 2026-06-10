@@ -1,7 +1,7 @@
 # pkgdown ignores the css: YAML parameter in menu articles, so report styles
 # must be duplicated in pkgdown/extra.css (#240).
 
-test_that("pkgdown/extra.css exists", {
+test_that("pkgdown/extra.css exists (#240)", {
   extra_css_path <- testthat::test_path("..", "..", "pkgdown", "extra.css")
 
   skip_if_not(file.exists(extra_css_path), "pkgdown/extra.css not found (likely in installed package)")
@@ -23,7 +23,7 @@ test_that("pkgdown/extra.css exists", {
   )
 })
 
-test_that("pkgdown/extra.css contains critical selectors", {
+test_that("pkgdown/extra.css contains critical selectors (#240)", {
   extra_css_path <- file.path(
     system.file(package = "gsm.kri"),
     "..", "pkgdown", "extra.css"
