@@ -34,5 +34,10 @@ A `plotly` htmlwidget.
 \description{
 `r lifecycle::badge("experimental")`
 
-Stacked bar of premature-death bucket counts per group.
+Stacked bar of premature-death bucket counts per group. Each point's
+`customdata` carries `[count, pct]` (pct = the bucket's share of its group's
+enrolled subjects), so the report can toggle the y-axis between counts and
+percentages client-side without recomputation. Permanent on-bar labels
+(`Bucket: N (P%)`, blanked for empty buckets) are retained in `text`,
+independent of the toggle's `customdata`.
 }
