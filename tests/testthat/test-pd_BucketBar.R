@@ -25,13 +25,14 @@ test_that("pd_BucketBar uses RAG colors {#223}", {
   dfSubjects <- tibble::tibble(subjid = paste0("S", 1:3), studyid = "ST01")
   dfDeath <- tibble::tibble(subjid = c("S1", "S2"), death_dy = c(20, 50))
   p <- pd_BucketBar(dfDeath, dfSubjects, nWindowDays = 90)
-  colors_used <- p$x$attrs[[1]]$colors
-  expect_equal(unname(colors_used["<=30d"]), colorScheme("red", "dark"))
-  expect_equal(unname(colors_used["31-90d"]), colorScheme("amber", "dark"))
-  expect_equal(
-    unname(colors_used["Alive at 90d"]),
-    colorScheme("green", "dark")
+  built <- plotly::plotly_build(p)
+  cols <- setNames(
+    lapply(built$x$data, function(d) d$marker$color),
+    vapply(built$x$data, function(d) d$name, character(1))
   )
+  expect_equal(unname(cols[["<=30d"]]), colorScheme("red", "dark"))
+  expect_equal(unname(cols[["31-90d"]]), colorScheme("amber", "dark"))
+  expect_equal(unname(cols[["Alive at 90d"]]), colorScheme("green", "dark"))
 })
 
 test_that("pd_BucketBar buckets are correct at study level {#223}", {
@@ -57,7 +58,7 @@ test_that("pd_BucketBar buckets are correct at study level {#223}", {
   expect_equal(total$n[total$Bucket == "Alive at 90d"], 2) # S3 (no death) + S4 (day 120)
 })
 
-test_that("pd_BucketBar hover text shows bucket, count, and percent of enrolled {#223}", {
+test_that("pd_BucketBar hover shows bucket, count, and percent of group {#223}", {
   testthat::skip_if_not_installed("plotly")
   dfSubjects <- tibble::tibble(
     subjid = paste0("S", 1:4),
@@ -77,14 +78,16 @@ test_that("pd_BucketBar hover text shows bucket, count, and percent of enrolled 
     strGroupLabel = "Study"
   )
   built <- plotly::plotly_build(p)
-  texts <- unlist(lapply(built$x$data, function(d) d$customdata))
-  # Bind the percent to its bucket so the assertion can't be satisfied by a
-  # different bucket that happens to share the same count.
-  expect_true(any(grepl("Bucket: <=30d<br>Subjects: 1 \\(25.0%\\)", texts))) # S1 of 4 enrolled
-  expect_true(any(grepl(
-    "Bucket: Alive at 90d<br>Subjects: 2 \\(50.0%\\)",
-    texts
-  ))) # S3 + S4 alive at 90d
+  tmpl <- setNames(
+    vapply(built$x$data, function(d) d$hovertemplate, character(1)),
+    vapply(built$x$data, function(d) d$name, character(1))
+  )
+  expect_match(tmpl[["<=30d"]], "Bucket: <=30d", fixed = TRUE)
+  expect_match(
+    tmpl[["<=30d"]],
+    "Subjects: %{customdata[0]} (%{customdata[1]:.1f}%)",
+    fixed = TRUE
+  )
 })
 
 test_that("pd_BucketBar validates inputs {#223}", {
@@ -347,4 +350,51 @@ test_that("pd_BucketBar attaches a JS hook that hides labels overflowing their b
   )
   hook2 <- paste(unlist(p2$jsHooks$render), collapse = " ")
   expect_match(hook2, "bartext-inside", fixed = TRUE)
+})
+
+test_that("pd_BucketBar packs [count, pct] per point in customdata {#223}", {
+  testthat::skip_if_not_installed("plotly")
+  dfSubjects <- tibble::tibble(
+    subjid = paste0("S", 1:4),
+    invid = c("INV-1", "INV-1", "INV-2", "INV-2"),
+    country = c("USA", "USA", "CAN", "CAN"),
+    studyid = "ST01"
+  )
+  dfDeath <- tibble::tibble(
+    subjid = c("S1", "S2", "S4"),
+    death_dy = c(20, 50, 120)
+  )
+  p <- pd_BucketBar(
+    dfDeath,
+    dfSubjects,
+    nWindowDays = 90,
+    strGroupCol = "studyid",
+    strGroupLabel = "Study"
+  )
+  json <- gsub("[[:space:]]", "", plotly::plotly_json(p, jsonedit = FALSE))
+  # <=30d: 1 of 4 enrolled -> 25%; Alive at 90d: 2 of 4 -> 50%.
+  expect_true(grepl('"customdata":[[1,25]]', json, fixed = TRUE))
+  expect_true(grepl('"customdata":[[2,50]]', json, fixed = TRUE))
+})
+
+test_that("pd_BucketBar single-group customdata survives JSON auto-unboxing {#223}", {
+  testthat::skip_if_not_installed("plotly")
+  # One study, one subject dead at day 20 -> <=30d bucket, 1 of 1 -> 100%.
+  # The pair must stay nested [[1,100]], NOT a flattened [1,100] (which the
+  # browser would read as two single-value points).
+  dfSubjects <- tibble::tibble(subjid = "S1", studyid = "ST01")
+  dfDeath <- tibble::tibble(subjid = "S1", death_dy = 20)
+  p <- pd_BucketBar(dfDeath, dfSubjects, nWindowDays = 90)
+  json <- gsub("[[:space:]]", "", plotly::plotly_json(p, jsonedit = FALSE))
+  expect_true(grepl('"customdata":[[1,100]]', json, fixed = TRUE))
+})
+
+test_that("pd_BucketBar builds one trace per bucket (no color= split) {#223}", {
+  testthat::skip_if_not_installed("plotly")
+  dfSubjects <- tibble::tibble(subjid = paste0("S", 1:3), studyid = "ST01")
+  dfDeath <- tibble::tibble(subjid = c("S1", "S2"), death_dy = c(20, 50))
+  p <- pd_BucketBar(dfDeath, dfSubjects, nWindowDays = 90)
+  built <- plotly::plotly_build(p)
+  trace_names <- vapply(built$x$data, function(d) d$name, character(1))
+  expect_setequal(trace_names, c("<=30d", "31-90d", "Alive at 90d"))
 })
