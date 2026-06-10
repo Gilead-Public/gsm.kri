@@ -1,3 +1,11 @@
+# gsm.kri v1.5.2
+
+This patch release fixes report display issues on the pkgdown site and renders missing examples.
+
+**Bug Fixes:**
+- Fix overlapping summary table and text in Site/Country Report examples on the pkgdown site (#240)
+- Render missing pkgdown examples (#228)
+
 # gsm.kri v1.5.1
 
 This patch release updates the GitHub action workflows to align with the new federated action framework in `gsm.utils`
