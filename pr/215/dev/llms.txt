@@ -1,0 +1,273 @@
+# gsm.kri
+
+The {gsm} ecosystem provides a standardized Risk Based Quality
+Monitoring (RBQM) framework for clinical trials that pairs a flexible
+data pipeline with robust reports like the one shown below.
+
+![](reference/figures/gsm_report_screenshot_1.png)
+
+The [gsm.kri](https://github.com/Gilead-BioStats/gsm.kri) package
+provides the necessary functions and workflows to produce the data
+visualizations, widgets and tables that ultimately go into an html KRI
+report. This package also provides the functions and scripts that
+generate the html KRI reports. This README provides a high-level
+overview of {gsm.kri}; see the [package
+website](https://gilead-biostats.github.io/gsm.kri/) for additional
+details.
+
+## Installation
+
+You can install the latest release of gsm.kri from
+[GitHub](https://github.com/) with:
+
+``` r
+
+# install.packages("pak")
+pak::pak("Gilead-BioStats/gsm.kri@*release")
+```
+
+You can install the development version of gsm.kri from
+[GitHub](https://github.com/) with:
+
+``` r
+
+# install.packages("pak")
+pak::pak("Gilead-BioStats/gsm.kri")
+```
+
+## Sample Code
+
+This is a basic example showing how to create interactive widget
+visualizations based on reporting outputs from the
+[gsm.reporting](https://gilead-biostats.github.io/gsm.reporting/)
+package:
+
+``` r
+
+library(gsm.kri)
+library(gsm.core)
+
+#### Visualize SAE Metric distribution using Bar Charts using provided htmlwidgets
+labels <- list(  
+  Metric= "Serious Adverse Event Rate",
+  Numerator= "Serious Adverse Events",
+  Denominator= "Days on Study"
+)
+
+# filter gsm sample data for one KRI and one snapshot
+SAE_KRI <- reportingResults %>% 
+            dplyr::filter(MetricID == "Analysis_kri0002" & SnapshotDate == "2012-12-31")
+
+Widget_BarChart(dfResults = SAE_KRI, lMetric=labels, strOutcome="Metric")
+Widget_BarChart(dfResults = SAE_KRI, lMetric=labels, strOutcome="Score")
+Widget_BarChart(dfResults = SAE_KRI, lMetric=labels, strOutcome="Numerator")
+
+### Create SAE Scatter plot with confidence bounds
+dfBounds <- gsm.core::reportingBounds %>%
+              dplyr::filter(MetricID == "Analysis_kri0002" & SnapshotDate == "2012-12-31")
+Widget_ScatterPlot(SAE_KRI, lMetric = labels, dfBounds = dfBounds)
+
+#### Site-Level KRI Report with multiple SnapshotDate
+
+# First, create a list of charts using data output from `{gsm.reporting}` 
+# For this example, we are using sample reporting data from `{gsm}`
+lCharts <- MakeCharts(
+  dfResults = gsm.core::reportingResults,
+  dfGroups = gsm.core::reportingGroups,
+  dfMetrics = gsm.core::reportingMetrics,
+  dfBounds = gsm.core::reportingBounds
+)
+
+# Feed charts and reporting data into `Report_KRI()` to create the html report.
+kri_report_path <- Report_KRI(
+  lCharts = lCharts,
+  dfResults =  FilterByLatestSnapshotDate(gsm.core::reportingResults),
+  dfGroups =  gsm.core::reportingGroups,
+  dfMetrics = gsm.core::reportingMetrics
+)
+```
+
+Full reports for a sample trial run with
+[`{clindata}`](https://github.com/Gilead-BioStats/clindata) are provided
+below:
+
+- [Site
+  Report](https://gilead-biostats.github.io/gsm.kri/report_kri_site.html)
+- [Country
+  Report](https://gilead-biostats.github.io/gsm.kri/report_kri_country.html)
+
+## Chart Customization
+
+All widgets can be customized with any configuration setting available
+via the underlying [JavaScript library
+API](https://github.com/Gilead-BioStats/gsm.viz/wiki/API) at the report,
+chart, or metric level. Customize a widget by passing any configuration
+setting as an argument to the widget function. Below we can change the
+default x-axis type of `logarithmic` to `linear` for the scatter plot
+widget:
+
+``` r
+
+## Filter data to one metric and snapshot
+reportingResults_filter <- gsm.core::reportingResults %>%
+  dplyr::filter(MetricID == "Analysis_kri0001" & SnapshotDate == max(SnapshotDate))
+
+reportingMetrics_filter <- gsm.core::reportingMetrics %>%
+  dplyr::filter(MetricID == "Analysis_kri0001") %>%
+  as.list()
+
+reportingBounds_filter <- gsm.core::reportingBounds %>%
+  dplyr::filter(MetricID == "Analysis_kri0001" & SnapshotDate == max(SnapshotDate))
+
+Widget_ScatterPlot(
+  dfResults = reportingResults_filter,
+  lMetric = reportingMetrics_filter,
+  dfGroups = gsm.core::reportingGroups,
+  dfBounds = reportingBounds_filter,
+  xType = "linear"  # Change x-axis type to linear
+)
+```
+
+In the context of a workflow, you can also customize the chart
+configuration by passing a list of settings to the
+[`Report_KRI()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/Report_KRI.md)
+function:
+
+``` r
+
+lWorkflow <-     yaml::read_yaml(text = '
+steps:
+  - output: lCharts
+    name: gsm.kri::MakeCharts
+    params:
+      dfResults: Reporting_Results
+      dfGroups: Reporting_Groups
+      dfBounds: Reporting_Bounds
+      dfMetrics: Reporting_Metrics
+      # applies to all charts
+      resultTooltipKeys:
+        - Numerator
+        - Denominator
+        - Metric
+        - Score
+      # applies to all scatter plots
+      Widget_ScatterPlot:
+        yType: logarithmic
+      # applies to scatter plot only for kri0013
+      Analysis_kri0013:
+        Widget_ScatterPlot:
+          xType: linear
+')
+
+lCharts <- RunWorkflow(
+    lWorkflow = lWorkflow,
+    lData = list(
+        Reporting_Results = gsm.core::reportingResults,
+        Reporting_Metrics = gsm.core::reportingMetrics,
+        Reporting_Groups = gsm.core::reportingGroups,
+        Reporting_Bounds = gsm.core::reportingBounds
+    )
+)
+```
+
+# Package index
+
+## All functions
+
+- [`CalculateRiskScore()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/CalculateRiskScore.md)
+  : Calculate Risk Score
+- [`FilterAnalysis()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/FilterAnalysis.md)
+  : Filter Analysis Outputs
+- [`FilterByFlags()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/FilterByFlags.md)
+  : Filter out non-flagged rows on FlagOverTime Widget
+- [`FilterByLatestSnapshotDate()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/FilterByLatestSnapshotDate.md)
+  : Filter by Latest Snapshot Date
+- [`MakeChartConfig()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/MakeChartConfig.md)
+  : Make Chart Config
+- [`MakeCharts()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/MakeCharts.md)
+  : Helper function to create charts for multiple metrics
+- [`MakeMetricTable()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/MakeMetricTable.md)
+  : Generate a Summary data.frame for use in reports
+- [`MakeParamLabels()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/MakeParamLabels.md)
+  [`MakeParamLabelsList()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/MakeParamLabels.md)
+  : Create Labels for Parameters
+- [`MakeStudyInfo()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/MakeStudyInfo.md)
+  : Generate a study information data.frame for use in reports
+- [`MakeWeights()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/MakeWeights.md)
+  : Create Weight Table from Metrics Metadata
+- [`RenderRmd()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/RenderRmd.md)
+  : Custom Rmarkdown render function
+- [`Report_Eligibility()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/Report_Eligibility.md)
+  : Report_Eligibility function
+- [`Report_FlagChange()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/Report_FlagChange.md)
+  : Report Flag Changes
+- [`Report_FlagOverTime()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/Report_FlagOverTime.md)
+  : Summarize flags by SnapshotDate
+- [`Report_FormatFlag()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/Report_FormatFlag.md)
+  : KRI Directionality Logo.
+- [`Report_KRI()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/Report_KRI.md)
+  : Report_KRI function
+- [`Report_MetricCharts()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/Report_MetricCharts.md)
+  : Render charts for a given metric to markdown
+- [`Report_MetricTable()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/Report_MetricTable.md)
+  : Generate a summary table for a report
+- [`Report_StudyInfo()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/Report_StudyInfo.md)
+  : Report Study Information
+- [`StackAnalysis()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/StackAnalysis.md)
+  : Stack Analysis Outputs
+- [`SummarizeCrossStudy()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/SummarizeCrossStudy.md)
+  : Summarize Cross-Study Risk Scores
+- [`Visualize_Metric()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/Visualize_Metric.md)
+  : Visualize_Metric Function
+- [`Visualize_RiskScore()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/Visualize_RiskScore.md)
+  : Visualize Risk Score
+- [`Visualize_Scatter()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/Visualize_Scatter.md)
+  : Group-level visualization of group-level results
+- [`Visualize_Score()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/Visualize_Score.md)
+  : Group-level visualization of scores.
+- [`Widget_BarChartOutput()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/Widget_BarChart-shiny.md)
+  [`renderWidget_BarChart()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/Widget_BarChart-shiny.md)
+  : Shiny bindings for Widget_BarChart
+- [`Widget_BarChart()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/Widget_BarChart.md)
+  : Bar Chart Widget
+- [`Widget_CrossStudyRiskScoreOutput()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/Widget_CrossStudyRiskScore-shiny.md)
+  [`renderWidget_CrossStudyRiskScore()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/Widget_CrossStudyRiskScore-shiny.md)
+  : Shiny bindings for Widget_CrossStudyRiskScore
+- [`Widget_CrossStudyRiskScore()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/Widget_CrossStudyRiskScore.md)
+  : Cross-Study Risk Score Widget
+- [`Widget_FlagOverTimeOutput()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/Widget_FlagOverTime-shiny.md)
+  [`renderWidget_FlagOverTime()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/Widget_FlagOverTime-shiny.md)
+  : Shiny bindings for Widget_FlagOverTime
+- [`Widget_FlagOverTime()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/Widget_FlagOverTime.md)
+  : Flag Over Time Widget
+- [`Widget_GroupOverviewOutput()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/Widget_GroupOverview-shiny.md)
+  [`renderWidget_GroupOverview()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/Widget_GroupOverview-shiny.md)
+  : Shiny bindings for Widget_GroupOverview
+- [`Widget_GroupOverview()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/Widget_GroupOverview.md)
+  : Group Overview Widget
+- [`Widget_ScatterPlotOutput()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/Widget_ScatterPlot-shiny.md)
+  [`renderWidget_ScatterPlot()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/Widget_ScatterPlot-shiny.md)
+  : Shiny bindings for Widget_ScatterPlot
+- [`Widget_ScatterPlot()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/Widget_ScatterPlot.md)
+  : Scatter Plot Widget
+- [`Widget_TimeSeriesOutput()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/Widget_TimeSeries-shiny.md)
+  [`renderWidget_TimeSeries()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/Widget_TimeSeries-shiny.md)
+  : Shiny bindings for Widget_TimeSeries
+- [`Widget_TimeSeries()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/Widget_TimeSeries.md)
+  : Time Series Widget
+- [`add_Groups_metadata()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/add_Groups_metadata.md)
+  : Add group meta data for report
+
+# Articles
+
+### All vignettes
+
+- [Step-by-Step Guide to add a new
+  KRI](https://gilead-biostats.github.io/gsm.kri/dev/articles/AddingKRIs.md):
+
+  This vignette outlines the necessary analytics tasks required before a
+  new Key Risk Indicator (KRI), Quality Tolerance Limit (QTL), or
+  similar metric can be put into production.
+
+- [Calculating Site Risk
+  Scores](https://gilead-biostats.github.io/gsm.kri/dev/articles/SiteRiskScore.md):
