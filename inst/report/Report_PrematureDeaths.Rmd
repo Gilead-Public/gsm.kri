@@ -173,7 +173,7 @@ htmltools::div(
 ```{r site-buckets, echo=FALSE, eval=has_premature}
 htmltools::div(
   id = "pd-site-buckets",
-  pd_BucketBar(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "invid", strGroupLabel = "Site", strOuterCol = "country")
+  pd_BucketBar(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "invid", strGroupLabel = "Site", strOuterCol = "country", strOuterLabel = "Country")
 )
 ```
 
