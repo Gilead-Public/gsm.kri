@@ -459,8 +459,9 @@ test_that("pd_BucketBar two-tier tooltip names parent then group when strOuterLa
 
 test_that("pd_BucketBar two-tier customdata carries [count, pct, group, parent] nested {#223}", {
   testthat::skip_if_not_installed("plotly")
-  # Single-group two-tier: the 4-tuple must stay nested [[1,100,"INV-1","USA"]], not
-  # flatten under JSON auto-unbox -- the same hazard the [count,pct] pair already guards.
+  # Single-group two-tier: the 4-tuple must stay nested
+  # [[1,100,"INV-1","USA"]], not flatten under JSON auto-unbox -- the same hazard
+  # the [count, pct] pair already guards.
   dfSubjects <- tibble::tibble(subjid = "S1", invid = "INV-1", country = "USA")
   dfDeath <- tibble::tibble(subjid = "S1", death_dy = 20)
   p <- pd_BucketBar(
