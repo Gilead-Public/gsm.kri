@@ -1,8 +1,23 @@
-
 # gsm.kri
 
 <!-- badges: start -->
-[![R-CMD-check](https://github.com/Gilead-BioStats/gsm.kri/workflows/R-CMD-check-main/badge.svg)](https://github.com/Gilead-BioStats/gsm.kri/actions) 
+
+<div class="pkgdown-release">
+
+[![R-CMD-check](https://github.com/Gilead-BioStats/gsm.kri/actions/workflows/R-CMD-check.yaml/badge.svg?branch=main)](https://github.com/Gilead-BioStats/gsm.kri/actions/workflows/R-CMD-check.yaml)
+[![test-coverage](https://github.com/Gilead-BioStats/gsm.kri/actions/workflows/test-coverage.yaml/badge.svg?branch=main)](https://github.com/Gilead-BioStats/gsm.kri/actions/workflows/test-coverage.yaml)
+[![pkgdown-all](https://github.com/Gilead-BioStats/gsm.kri/actions/workflows/pkgdown-all.yaml/badge.svg?branch=main)](https://github.com/Gilead-BioStats/gsm.kri/actions/workflows/pkgdown-all.yaml)
+
+</div>
+
+<div class="pkgdown-devel">
+
+[![R-CMD-check](https://github.com/Gilead-BioStats/gsm.kri/actions/workflows/R-CMD-check.yaml/badge.svg?branch=dev)](https://github.com/Gilead-BioStats/gsm.kri/actions/workflows/R-CMD-check.yaml)
+[![test-coverage](https://github.com/Gilead-BioStats/gsm.kri/actions/workflows/test-coverage.yaml/badge.svg?branch=dev)](https://github.com/Gilead-BioStats/gsm.kri/actions/workflows/test-coverage.yaml)
+[![pkgdown-all](https://github.com/Gilead-BioStats/gsm.kri/actions/workflows/pkgdown-all.yaml/badge.svg?branch=dev)](https://github.com/Gilead-BioStats/gsm.kri/actions/workflows/pkgdown-all.yaml)
+
+</div>
+
 <!-- badges: end -->
 
 The {gsm} ecosystem provides a standardized Risk Based Quality Monitoring (RBQM) framework for clinical trials that pairs a flexible data pipeline with robust reports like the one shown below.  
@@ -17,17 +32,26 @@ The {gsm} ecosystem provides a standardized Risk Based Quality Monitoring (RBQM)
 The `{gsm.kri}` package provides the necessary functions and workflows to produce the data visualizations, widgets and tables that ultimately go into an html KRI report. This package also provides the functions and scripts that generate the html KRI reports.
 This README provides a high-level overview of {gsm.kri}; see the [package website](https://gilead-biostats.github.io/gsm.kri/) for additional details.
 
-
-
-
 ## Installation
 
-You can install the development version of gsm.kri like so:
+You can install the latest release of gsm.kri from [GitHub](https://github.com/) with:
 
 ``` r
 # install.packages("pak")
-pak::pak("Gilead-BioStats/gsm.kri@dev")
+pak::pak("Gilead-BioStats/gsm.kri@*release")
 ```
+
+<div class="pkgdown-devel">
+
+You can install the development version of gsm.kri from
+[GitHub](https://github.com/) with:
+
+``` r
+# install.packages("pak")
+pak::pak("Gilead-BioStats/gsm.kri")
+```
+
+</div>
 
 ## Sample Code
 

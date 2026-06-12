@@ -9,8 +9,5 @@ inst/doc
 .DS_Store
 inst/.DS_Store
 
-# Generated HTML files and associated folders in inst/examples
-inst/examples/*.html
-inst/examples/*_files/
 # inst/examples/output is now tracked for gh-pages sync
 .positai

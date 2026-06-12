@@ -83,9 +83,8 @@ Report_Eligibility(
   lParams = lParams,
   strOutputDir = file.path(getwd(), "pkgdown", "assets", "examples"),
   strOutputFile = "Example_Eligibility.html",
-  strInputPath = system.file(
-    "report/Report_Eligibility.Rmd",
-    package = "gsm.kri"
+  strInputPath = file.path(
+    getwd(), "pkgdown", "menus", "examples", "report/Report_Eligibility.Rmd"
   )
 )
 }

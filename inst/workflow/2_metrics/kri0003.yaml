@@ -1,4 +1,5 @@
 meta:
+  Active: true
   Type: Analysis
   ID: kri0003
   GroupLevel: Site
@@ -14,6 +15,7 @@ meta:
   RiskScoreWeight: "8,4,0,8,16"
   AccrualThreshold: 30
   AccrualMetric: Denominator
+  GenerateRiskSignal: true
 spec:
   Mapped_PD:
     subjid:

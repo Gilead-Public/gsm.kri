@@ -26,7 +26,7 @@ knitr::opts_chunk$set(
 library(gsm.core)
 library(gsm.mapping)
 library(yaml)
-devtools::load_all()
+library(gsm.kri)
 ```
 
 ## Example 2.1 - Configurable Adverse Event Workflow

@@ -6,7 +6,8 @@
 #'
 #' @param dfMetrics `data.frame` Metrics metadata containing at least `MetricID`, `Flag`,
 #'   and `RiskScoreWeight` columns. The `Flag` and `RiskScoreWeight` columns should contain
-#'   comma-separated values that will be parsed into individual rows.
+#'   comma-separated values that will be parsed into individual rows. If an `Active` column
+#'   is present, rows where `Active == FALSE` are excluded before processing.
 #'
 #' @return `data.frame` Weight table with one row per MetricID-Flag combination, containing:
 #'   \describe{
@@ -47,6 +48,12 @@ MakeWeights <- function(dfMetrics) {
     )
   }
 
+  # Exclude inactive metrics if the Active column is present
+  if ("Active" %in% colnames(dfMetrics)) {
+    dfMetrics <- dfMetrics %>%
+      dplyr::filter(is.na(.data$Active) | .data$Active != FALSE)
+  }
+
   # Create weight table from dfMetrics
   weight_table <- dfMetrics %>%
     dplyr::filter(!is.na(.data$Flag) & !is.na(.data$RiskScoreWeight)) %>%
@@ -84,7 +91,7 @@ MakeWeights <- function(dfMetrics) {
   if (any(length_check$length_mismatch)) {
     mismatched_metrics <- length_check %>%
       dplyr::filter(.data$length_mismatch) %>%
-      dplyr::select(MetricID, n_flags, n_weights)
+      dplyr::select("MetricID", "n_flags", "n_weights")
 
     error_details <- paste(
       apply(mismatched_metrics, 1, function(row) {

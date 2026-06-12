@@ -188,7 +188,7 @@ The widget produces an interactive table showing risk score summaries across stu
 knitr::include_graphics("figures/CrossStudySRS.png")
 ```
 
-For a complete working example, see `inst/examples/Example_CrossStudySRS.Rmd`, which demonstrates:
+For a complete working example, see [https://github.com/Gilead-BioStats/gsm.kri/blob/main/pkgdown/menus/examples/Example_CrossStudySRS.Rmd](https://github.com/Gilead-BioStats/gsm.kri/blob/main/pkgdown/menus/examples/Example_CrossStudySRS.Rmd), which demonstrates:
 
 - Simulating multi-study data with site risk scores
 - Creating the cross-study widget

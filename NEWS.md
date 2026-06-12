@@ -1,3 +1,15 @@
+# gsm.kri v1.5.2
+
+This patch release fixes report display issues on the pkgdown site and renders missing examples.
+
+**Bug Fixes:**
+- Fix overlapping summary table and text in Site/Country Report examples on the pkgdown site (#240)
+- Render missing pkgdown examples (#228)
+
+# gsm.kri v1.5.1
+
+This patch release updates the GitHub action workflows to align with the new federated action framework in `gsm.utils`
+
 # gsm.kri v1.5.0
 
 This minor release includes new workflows/tests and CI automation, plus performance-focused improvements to the qcthat testing infrastructure.
@@ -6,6 +18,7 @@ This minor release includes new workflows/tests and CI automation, plus performa
 - Add test-data caching helpers and new tests (cache, pipe export, gt utilities), and refactor qual test data setup to use cached mapped data.
 - Introduce new “Deaths in First 90 Days / Premature Death” KRI workflows (site + country) and expand Cross-Study SRS widget study filtering to multi-select.
 - Migrate/replace qcthat GitHub Actions workflows.
+
 # gsm.kri v1.4.1
 
 This patch release addresses the following issues:

@@ -1,4 +1,5 @@
 meta:
+  Active: true
   Type: Analysis
   ID: cou0015
   GroupLevel: Country
@@ -13,6 +14,7 @@ meta:
   Flag: "0,1,2"
   AccrualThreshold: 1
   AccrualMetric: Denominator
+  GenerateRiskSignal: true
 spec:
   Mapped_Death:
     subjid:
@@ -29,11 +31,6 @@ steps:
     name: gsm.core::ParseThreshold
     params:
       strThreshold: Threshold
-  - output: vRiskScoreWeight
-    name: gsm.core::ParseThreshold
-    params:
-      strThreshold: RiskScoreWeight
-      bSort: false
   - output: vFlag
     name: gsm.core::ParseThreshold
     params:
@@ -70,7 +67,6 @@ steps:
       dfAnalyzed: Analysis_Analyzed
       vThreshold: vThreshold
       vFlag: vFlag
-      vRiskScoreWeight: vRiskScoreWeight
       nAccrualThreshold: AccrualThreshold
       strAccrualMetric: AccrualMetric
   - output: Analysis_Summary

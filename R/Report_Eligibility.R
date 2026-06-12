@@ -60,9 +60,8 @@
 #'   lParams = lParams,
 #'   strOutputDir = file.path(getwd(), "pkgdown", "assets", "examples"),
 #'   strOutputFile = "Example_Eligibility.html",
-#'   strInputPath = system.file(
-#'     "report/Report_Eligibility.Rmd",
-#'     package = "gsm.kri"
+#'   strInputPath = file.path(
+#'     getwd(), "pkgdown", "menus", "examples", "report/Report_Eligibility.Rmd"
 #'   )
 #' )
 #' }
@@ -78,7 +77,11 @@ Report_Eligibility <- function(
   lListings = lListings,
   strOutputDir = getwd(),
   strOutputFile = NULL,
-  strInputPath = system.file("report", "Report_Eligibility.Rmd", package = "gsm.kri")
+  strInputPath = system.file(
+    "report",
+    "Report_Eligibility.Rmd",
+    package = "gsm.kri"
+  )
 ) {
   rlang::check_installed("rmarkdown", reason = "to run `Report_Eligibility()`")
   rlang::check_installed("knitr", reason = "to run `Report_Eligibility()`")

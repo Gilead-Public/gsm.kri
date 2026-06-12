@@ -1,0 +1,199 @@
+/* MAIN */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100;400');
+
+:root {
+  --good-red: #c51f3f;
+  --good-gray: #9D9D9D;
+  --blue-button-color: #3C587F;
+  --default: 'Roboto', sans-serif;
+}
+
+body {
+  font-family: 'Roboto', sans-serif;
+}
+/* MAIN */
+
+
+/* SIDEBAR */
+.list-group-item.active, .list-group-item.active:focus, .list-group-item.active:hover {
+  background-color: var(--good-gray);
+  border-color: white;
+}
+/* SIDEBAR */
+
+
+
+/* BUTTON: SHOW REPORT */
+.btn-show-report {
+    background-color: var(--blue-button-color);
+    color: white;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 400;
+    border-radius: 1.5px;
+    border-color: var(--blue-button-color);
+    box-shadow: none;
+    border-style: solid;
+    height: 30px;
+    width: 100px;
+}
+
+button.btn-show-report:hover {
+    background-color: var(--good-gray);
+    border-color: var(--good-gray);
+}
+/* BUTTON: SHOW REPORT */
+
+
+
+/* TABLE: FLAGGED SUMMARY TABLE */
+.Widget_GroupOverview {
+    height: auto !important;
+}
+.gsm-overview-table {
+  font-family: var(--default);
+}
+table.dataTable thead>tr>th.sorting, table.dataTable thead>tr>th.sorting_asc, table.dataTable thead>tr>th.sorting_desc, table.dataTable thead>tr>th.sorting_asc_disabled, table.dataTable thead>tr>th.sorting_desc_disabled, table.dataTable thead>tr>td.sorting, table.dataTable thead>tr>td.sorting_asc, table.dataTable thead>tr>td.sorting_desc, table.dataTable thead>tr>td.sorting_asc_disabled, table.dataTable thead>tr>td.sorting_desc_disabled {
+    padding-right: 16px;
+}
+table.dataTable.compact thead th, table.dataTable.compact thead td {
+    padding: 4px 4px;
+}
+/* TABLE: FLAGGED SUMMARY TABLE */
+
+/* Group select */
+.overall-group-select {
+  position: fixed;
+  width: 128px;
+  top: 64px;
+  right: 32px;
+  background-color: var(--blue-button-color);
+  color: white;
+  border: 2px solid var(--good-gray);
+  border-radius: 4px;
+  padding: 4px;
+  text-align: center;
+  z-index: 1;
+}
+
+.overall-group-select:hover {
+  cursor: grab;
+}
+
+/* font color for drop-down */
+
+.gsm-overview-table .dataTables_wrapper .dataTables_length select {
+  color: var(--good-red);
+}
+
+
+
+.overall-group-select select,
+.overall-group-select option {
+    color: black;
+}
+
+.flag {
+  display: inline-block;
+  border-style: solid;
+  border-color: black;
+  font-weight: bold;
+  text-align: center;
+  margin: 5px;
+  width: 20%;
+  font-family: 'Roboto', sans-serif;
+}
+
+.flag-amber {
+  background-color: #FEAA0280;
+}
+
+.flag-red {
+  background-color: #FF585980;
+}
+
+.flag-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#tocify-header0 {
+  display: none;
+}
+
+
+/* Group summary table -- change cursor to cue to user that tooltip is available */
+td[title] {
+  cursor: help;
+}
+
+tbody.gt_table_body tr:hover:nth-child(odd) {
+  background: #f9f9f9;
+}
+
+#timeline {
+  display: none;
+}
+
+/* Flag Change List Styles */
+.flag-change-list {
+  list-style-type: disc;
+  margin-left: 1.5em;
+}
+.flag-change-parent {
+  margin-bottom: 1em;
+  font-weight: bold;
+  list-style-type: none;
+  position: relative;
+}
+.flag-change-parent::before {
+  content: "+ ";
+  position: absolute;
+  left: -1.2em;
+  font-weight: bold;
+  color: #888;
+}
+.flag-change-parent.expanded::before {
+  content: "\2212 "; /* Unicode minus sign */
+  color: #888;
+}
+.flag-change-nested {
+  list-style-type: circle;
+  margin-left: 2em;
+  display: none;
+}
+.flag-change-parent:not(.expandable)::before {
+  content: none;
+}
+.flag-change-item {
+  margin-bottom: 0.5em;
+  font-weight: normal;
+  list-style-type: none;
+  position: relative;
+}
+.flag-change-item::before {
+  content: "+ ";
+  position: absolute;
+  left: -1.2em;
+  font-weight: bold;
+  color: #888;
+}
+.flag-change-item.expanded::before {
+  content: "\2212 "; /* Unicode minus sign */
+  color: #888;
+}
+.flag-change-details {
+  list-style-type: square;
+  margin-left: 2em;
+  color: #444;
+  font-size: 0.95em;
+  display: none;
+}
+.flag-change-item:not(.expandable)::before {
+  content: none;
+}
+.flag-change-parent:hover, .flag-change-item:hover {
+  background: #f5f5f5;
+  cursor: pointer;
+}
+

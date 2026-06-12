@@ -19,9 +19,7 @@ knitr::opts_chunk$set(
 ```
 
 ```{r load-packages}
-# Load development version
-devtools::load_all()
-
+library(gsm.kri)
 library(gsm.core)
 library(dplyr)
 library(htmlwidgets)

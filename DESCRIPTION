@@ -1,7 +1,7 @@
 Type: Package
 Package: gsm.kri
 Title: Good Statistical Monitoring KRIs
-Version: 1.5.0
+Version: 1.5.2
 Authors@R: c(
     person("Jeremy", "Wildfire", , "jwildfire@gmail.com", role = c("aut", "cre")),
     person("Laura", "Maxwell", , "laura.maxwell@atorusresearch.com", role = "aut"),
@@ -60,9 +60,9 @@ Remotes:
     gsm.qtl=Gilead-BioStats/gsm.qtl@workr-implementation,
     gsm.reporting=Gilead-BioStats/gsm.reporting@workr-implementation,
     workr=Gilead-BioStats/workr,
-    qcthat=Gilead-BioStats/qcthat@main
+    qcthat=Gilead-BioStats/qcthat@*release
+Config/roxygen2/version: 8.0.0
 Config/testthat/edition: 3
 Config/testthat/parallel: false
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.3.3

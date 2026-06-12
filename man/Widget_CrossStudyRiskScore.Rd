@@ -29,5 +29,5 @@ An htmlwidget for cross-study risk score visualization.
 A widget that generates an interactive cross-study risk score table.
 Shows a summary view with click-to-expand details for each site.
 
-For a working example see inst/examples/Example_CrossStudySRS.R.
+For a working example see [Cross-Study KRI Report](https://gilead-biostats.github.io/gsm.kri/examples/Example_CrossStudySRS.html).
 }

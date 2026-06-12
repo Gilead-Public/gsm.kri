@@ -20,7 +20,7 @@
 #'
 #' @examples
 #' \dontrun{
-#' # See inst/examples/Example_CrossStudySRS.Rmd
+#' # See https://gilead-biostats.github.io/gsm.kri/examples/Example_CrossStudySRS.html
 #' }
 #' @export
 SummarizeCrossStudy <- function(

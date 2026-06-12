@@ -13,11 +13,13 @@ Visualize_RiskScore(dfResults, dfMetrics, dfGroups, strGroupLevel = "Site")
 
 \item{dfGroups}{`data.frame` Group metadata from gsm.core::reportingGroups}
 
-\item{strGroupLevel}{`character` The group level to filter the risk score data. Default is 'Site'.}
+\item{strGroupLevel}{`character` The group level to filter the risk score
+data. Default is 'Site'.}
 }
 \description{
 Creates an interactive risk score widget for cross-study visualization.
 }
 \details{
-For a working example see inst/examples/Example_CrossStudySRS.R.
+For a working example see
+[Cross-Study KRI Report](https://gilead-biostats.github.io/gsm.kri/examples/Example_CrossStudySRS.html).
 }
