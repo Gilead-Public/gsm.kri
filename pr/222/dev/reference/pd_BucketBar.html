@@ -3,15 +3,21 @@
 Stacked bar of premature-death bucket counts per group. Each point's
 `customdata` carries `[count, pct]` (pct = the bucket's share of its group's
 enrolled subjects), so the report can toggle the y-axis between counts and
-percentages client-side without recomputation. Permanent on-bar labels
-(`Bucket: N (P
-independent of the toggle's `customdata`."><meta property="og:description" content="`r lifecycle::badge(&quot;experimental&quot;)`
+percentages client-side without recomputation. Two-tier (nested) charts
+extend `customdata` to `[count, pct, group, parent]` and name the group –
+and, when `strOuterLabel` is set, its parent – in the hover tooltip; the flat
+chart's single labelled axis already identifies the bar, so its tooltip stays
+minimal. Permanent on-bar labels (`Bucket: N (P
+buckets) are retained in `text`, independent of the toggle's `customdata`."><meta property="og:description" content="`r lifecycle::badge(&quot;experimental&quot;)`
 Stacked bar of premature-death bucket counts per group. Each point's
 `customdata` carries `[count, pct]` (pct = the bucket's share of its group's
 enrolled subjects), so the report can toggle the y-axis between counts and
-percentages client-side without recomputation. Permanent on-bar labels
-(`Bucket: N (P
-independent of the toggle's `customdata`."><meta name="robots" content="noindex"></head><body>
+percentages client-side without recomputation. Two-tier (nested) charts
+extend `customdata` to `[count, pct, group, parent]` and name the group –
+and, when `strOuterLabel` is set, its parent – in the hover tooltip; the flat
+chart's single labelled axis already identifies the bar, so its tooltip stays
+minimal. Permanent on-bar labels (`Bucket: N (P
+buckets) are retained in `text`, independent of the toggle's `customdata`."><meta name="robots" content="noindex"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -66,9 +72,12 @@ independent of the toggle's `customdata`."><meta name="robots" content="noindex"
 <p>Stacked bar of premature-death bucket counts per group. Each point's
 `customdata` carries `[count, pct]` (pct = the bucket's share of its group's
 enrolled subjects), so the report can toggle the y-axis between counts and
-percentages client-side without recomputation. Permanent on-bar labels
-(`Bucket: N (P<!-- %)`, blanked for empty buckets) are retained in `text`, -->
-independent of the toggle's `customdata`.</p>
+percentages client-side without recomputation. Two-tier (nested) charts
+extend `customdata` to `[count, pct, group, parent]` and name the group –
+and, when `strOuterLabel` is set, its parent – in the hover tooltip; the flat
+chart's single labelled axis already identifies the bar, so its tooltip stays
+minimal. Permanent on-bar labels (`Bucket: N (P<!-- %)`, blanked for empty -->
+buckets) are retained in `text`, independent of the toggle's `customdata`.</p>
     </div>
 
     <div class="section level2">
@@ -79,7 +88,8 @@ independent of the toggle's `customdata`.</p>
 <span>  nWindowDays <span class="op">=</span> <span class="fl">90</span>,</span>
 <span>  strGroupCol <span class="op">=</span> <span class="st">"studyid"</span>,</span>
 <span>  strGroupLabel <span class="op">=</span> <span class="st">"Group"</span>,</span>
-<span>  strOuterCol <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  strOuterCol <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  strOuterLabel <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -111,6 +121,12 @@ independent of the toggle's `customdata`.</p>
 <dd><p>`character` Optional parent column for a two-tier
 (multicategory) x-axis bracketing each group under its parent (e.g.
 "country" for sites). `NULL` (default) renders the flat one-tier bar.</p></dd>
+
+
+<dt id="arg-strouterlabel">strOuterLabel<a class="anchor" aria-label="anchor" href="#arg-strouterlabel"></a></dt>
+<dd><p>`character` Optional tooltip label for the parent tier
+(e.g. "Country" for the site chart). When supplied, two-tier tooltips name
+the parent above the group. `NULL` (default) omits the parent line.</p></dd>
 
 </dl></div>
     <div class="section level2">

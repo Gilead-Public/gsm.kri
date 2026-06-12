@@ -6,8 +6,12 @@ Stacked bar of premature-death bucket counts per group. Each point's
 \`customdata\` carries \`\[count, pct\]\` (pct = the bucket's share of
 its group's enrolled subjects), so the report can toggle the y-axis
 between counts and percentages client-side without recomputation.
-Permanent on-bar labels (\`Bucket: N (P independent of the toggle's
-\`customdata\`.
+Two-tier (nested) charts extend \`customdata\` to \`\[count, pct, group,
+parent\]\` and name the group – and, when \`strOuterLabel\` is set, its
+parent – in the hover tooltip; the flat chart's single labelled axis
+already identifies the bar, so its tooltip stays minimal. Permanent
+on-bar labels (\`Bucket: N (P buckets) are retained in \`text\`,
+independent of the toggle's \`customdata\`.
 
 ## Usage
 
@@ -18,7 +22,8 @@ pd_BucketBar(
   nWindowDays = 90,
   strGroupCol = "studyid",
   strGroupLabel = "Group",
-  strOuterCol = NULL
+  strOuterCol = NULL,
+  strOuterLabel = NULL
 )
 ```
 
@@ -51,6 +56,12 @@ pd_BucketBar(
   \`character\` Optional parent column for a two-tier (multicategory)
   x-axis bracketing each group under its parent (e.g. "country" for
   sites). \`NULL\` (default) renders the flat one-tier bar.
+
+- strOuterLabel:
+
+  \`character\` Optional tooltip label for the parent tier (e.g.
+  "Country" for the site chart). When supplied, two-tier tooltips name
+  the parent above the group. \`NULL\` (default) omits the parent line.
 
 ## Value
 
