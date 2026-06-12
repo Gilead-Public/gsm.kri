@@ -125,3 +125,95 @@ test('reset restores all sites', async ({ page }) => {
   await page.locator('#pd-filter-reset').click();
   await expect(page.locator('#pd-filter-country-row')).toBeHidden();
 });
+
+test('% toggle normalizes each group to 100% and flips the y-axis title', async ({ page }) => {
+  await page.click('#pd-mode-pct');
+  await page.waitForTimeout(300);
+  // Target the MULTI-group country chart (USA + CAN) so this tests genuine
+  // per-group normalization, not a lone group that sums to 100% trivially.
+  // The chart is multicategory: each bucket trace's x is [[study...],[country...]]
+  // and its y is aligned to that inner (country) axis, so locate USA's column
+  // by name rather than assuming an index.
+  const info = await page.evaluate(() => {
+    const el = document.querySelector('#pd-country-buckets .plotly');
+    let usaSum = 0;
+    el.data.forEach((tr) => {
+      const inner = (tr.x && Array.isArray(tr.x[1])) ? tr.x[1] : [];
+      const i = inner.indexOf('USA');
+      if (i >= 0) usaSum += (tr.y || [])[i] || 0;
+    });
+    return { usaSum: usaSum, title: el.layout.yaxis.title.text };
+  });
+  expect(Math.round(info.usaSum)).toBe(100); // USA's three buckets sum to 100% of USA's enrolled
+  expect(info.title).toBe('% of group');
+});
+
+test('% mode survives a country filter (re-apply hook)', async ({ page }) => {
+  await page.click('#pd-mode-pct');
+  await page.waitForTimeout(200);
+  // Drive the registered filter handler (real-click shape is covered elsewhere).
+  await page.evaluate(() => {
+    document.querySelector('#pd-country-buckets .plotly')
+      .emit('plotly_click', { points: [{ x: ['ST01', 'USA'] }] });
+  });
+  await page.waitForTimeout(300);
+  const title = await page.evaluate(() =>
+    document.querySelector('#pd-site-buckets .plotly').layout.yaxis.title.text);
+  expect(title).toBe('% of group'); // site chart re-applied % after the filter react
+});
+
+test('toggling back to Count restores the Subjects axis', async ({ page }) => {
+  await page.click('#pd-mode-pct');
+  await page.waitForTimeout(200);
+  await page.click('#pd-mode-count');
+  await page.waitForTimeout(200);
+  const title = await page.evaluate(() =>
+    document.querySelector('#pd-study-buckets .plotly').layout.yaxis.title.text);
+  expect(title).toBe('Subjects');
+});
+
+test('% mode leaves the scatter charts untouched after a filter (F1 guard)', async ({ page }) => {
+  await page.click('#pd-mode-pct');
+  await page.waitForTimeout(200);
+  // The scatters are filter targets too, but applyMode() must never run on them
+  // (their customdata is a hover string, not [count, pct]). Capture the scatter's
+  // own y-axis title in % mode, then drive a country filter and assert it is
+  // unchanged -- i.e. the bucket-only re-apply guard held.
+  const before = await page.evaluate(() =>
+    document.querySelector('#pd-site-scatter .plotly').layout.yaxis.title.text);
+  await page.evaluate(() => {
+    document.querySelector('#pd-country-buckets .plotly')
+      .emit('plotly_click', { points: [{ x: ['ST01', 'USA'] }] });
+  });
+  await page.waitForTimeout(300);
+  const after = await page.evaluate(() =>
+    document.querySelector('#pd-site-scatter .plotly').layout.yaxis.title.text);
+  expect(after).toBe(before);
+  expect(after).not.toBe('% of group'); // applyMode never stamped the scatter
+});
+
+test('Count mode after a %-seeded filter cache restores true counts (cache-pollution regression)', async ({ page }) => {
+  // restyle mutates el.data in place, so filtering while % mode is active seeds
+  // originalData with % y values. Toggling back to Count and resetting must
+  // re-derive counts from customdata (unconditional re-apply hook), not replay
+  // the polluted cache as if it were counts.
+  await page.click('#pd-mode-pct');
+  await page.waitForTimeout(200);
+  await page.evaluate(() => {
+    document.querySelector('#pd-country-buckets .plotly')
+      .emit('plotly_click', { points: [{ x: ['ST01', 'USA'] }] }); // seeds site-buckets cache in % mode
+  });
+  await page.waitForTimeout(300);
+  await page.click('#pd-mode-count');
+  await page.waitForTimeout(200);
+  await page.locator('#pd-filter-reset').click(); // resetPlotlyChart replays the %-seeded cache
+  await page.waitForTimeout(300);
+  const info = await page.evaluate(() => {
+    const el = document.querySelector('#pd-site-buckets .plotly');
+    let total = 0;
+    el.data.forEach((tr) => (tr.y || []).forEach((v) => { total += v; }));
+    return { total: total, title: el.layout.yaxis.title.text };
+  });
+  expect(info.total).toBe(3); // 3 enrolled subjects as absolute counts (a % replay would sum to 200)
+  expect(info.title).toBe('Subjects');
+});

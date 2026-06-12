@@ -108,11 +108,24 @@ cat(sprintf(
 cat("\n> **No premature deaths in window.** All charts and the patient listing are empty for this snapshot.\n")
 ```
 
+```{r mode-toggle, echo=FALSE, results='asis', eval=has_premature}
+cat('
+<div id="pd-mode-toggle" style="margin:12px 0;">
+  <span style="font-size:13px; color:#555; margin-right:8px;">Bucket bars:</span>
+  <button id="pd-mode-count" onclick="pdSetMode(\'count\')" style="background:#1a73e8; color:white; border:none; border-radius:4px; padding:4px 14px; cursor:pointer; font-size:12px;">Count</button>
+  <button id="pd-mode-pct" onclick="pdSetMode(\'pct\')" style="background:#cfd8dc; color:#37474f; border:none; border-radius:4px; padding:4px 14px; cursor:pointer; font-size:12px;">%</button>
+</div>
+')
+```
+
 ## Study {.tabset .tabset-pills}
 
 ### Buckets
 ```{r study-buckets, echo=FALSE, eval=has_premature}
-pd_BucketBar(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "studyid", strGroupLabel = "Study")
+htmltools::div(
+  id = "pd-study-buckets",
+  pd_BucketBar(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "studyid", strGroupLabel = "Study")
+)
 ```
 
 ### Rand -> Death
@@ -424,6 +437,13 @@ cat(paste0('
     // the empty-slot workaround the flat axis needed is gone. Clone the cached
     // layout so Plotly.react cannot mutate the stored original.
     Plotly.react(el, filtered, JSON.parse(JSON.stringify(originalLayout[containerId])));
+    // Only the bucket bars carry [count, pct]; scatters pack a hover string in
+    // customdata, so applyMode() must never run on them (it would garble y / the
+    // axis). PD_BUCKET_CHARTS already lists exactly the three bucket containers.
+    // Unconditional (not just % mode): restyle mutates el.data in place, so a
+    // cache seeded while % mode was active holds % y values; re-deriving y from
+    // customdata on every react makes that polluted cache harmless in both modes.
+    if (PD_BUCKET_CHARTS.indexOf(containerId) >= 0) applyMode(el);
   }
 
   // Global reset for the country filter (called by the country row\'s button onclick)
@@ -455,7 +475,50 @@ cat(paste0('
     if (!el || !originalData[containerId]) return;
     // Restore the original layout so the full categorical axis returns
     Plotly.react(el, originalData[containerId], originalLayout[containerId] || el.layout);
+    // Bucket charts only -- see the filterPlotlyChart note: scatters are filter
+    // targets too, and applyMode() would corrupt their string customdata / y-axis.
+    // Unconditional for the same reason as filterPlotlyChart: the cached
+    // "original" may carry %-mode y values; applyMode re-derives the right y
+    // for the CURRENT mode from customdata either way.
+    if (PD_BUCKET_CHARTS.indexOf(containerId) >= 0) applyMode(el);
   }
+
+  // ---- Count <-> % toggle for the three bucket bars -----------------------
+  // pd_BucketBar packs [count, pct] per point into customdata; y is always
+  // re-derived from it, so the mode is stateless and survives the Plotly.react
+  // the filters trigger (re-applied at the tail of every react below).
+  var pdMode = "count";
+  var PD_BUCKET_CHARTS = ["pd-study-buckets", "pd-country-buckets", "pd-site-buckets"];
+
+  function applyMode(el) {
+    if (!el || !el.data) return;
+    var slot = pdMode === "pct" ? 1 : 0;
+    var traceIndices = el.data.map(function(_, idx) { return idx; });
+    var ys = el.data.map(function(tr) {
+      return (tr.customdata || []).map(function(cd) { return cd[slot]; });
+    });
+    // One atomic data+layout update (single redraw) instead of restyle+relayout:
+    // avoids the bars-resized-but-axis-stale flicker frame, which the filter hooks
+    // would otherwise paint on every react in % mode. range:null clears the fixed
+    // [0,100] so autorange unambiguously recomputes the Subjects scale on the way back.
+    var layoutUpdate = pdMode === "pct"
+      ? {"yaxis.title.text": "% of group", "yaxis.ticksuffix": "%", "yaxis.range": [0, 100]}
+      : {"yaxis.title.text": "Subjects", "yaxis.ticksuffix": "", "yaxis.autorange": true, "yaxis.range": null};
+    Plotly.update(el, {y: ys}, layoutUpdate, traceIndices);
+  }
+
+  window.pdSetMode = function(mode) {
+    pdMode = mode;
+    // Flip text color WITH background: white text on the inactive light-grey
+    // (#cfd8dc) would be illegible, so the inactive side gets dark text.
+    var btnCount = document.getElementById("pd-mode-count");
+    var btnPct = document.getElementById("pd-mode-pct");
+    btnCount.style.background = mode === "count" ? "#1a73e8" : "#cfd8dc";
+    btnCount.style.color = mode === "count" ? "white" : "#37474f";
+    btnPct.style.background = mode === "pct" ? "#1a73e8" : "#cfd8dc";
+    btnPct.style.color = mode === "pct" ? "white" : "#37474f";
+    PD_BUCKET_CHARTS.forEach(function(id) { applyMode(getPlotlyDiv(id)); });
+  };
 
   // Initialize when DOM is ready
   function attachClickHandlers() {

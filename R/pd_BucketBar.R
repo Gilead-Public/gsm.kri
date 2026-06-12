@@ -106,7 +106,12 @@ pd_BucketCounts <- function(
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' Stacked bar of premature-death bucket counts per group.
+#' Stacked bar of premature-death bucket counts per group. Each point's
+#' `customdata` carries `[count, pct]` (pct = the bucket's share of its group's
+#' enrolled subjects), so the report can toggle the y-axis between counts and
+#' percentages client-side without recomputation. Permanent on-bar labels
+#' (`Bucket: N (P%)`, blanked for empty buckets) are retained in `text`,
+#' independent of the toggle's `customdata`.
 #'
 #' @inheritParams pd_BucketCounts
 #' @param strGroupLabel `character` Axis label for the group dimension. Default: "Group".
@@ -150,20 +155,23 @@ pd_BucketBar <- function(
 
   rag_colors <- pd_RagColors(nWindowDays)
 
+  # Per-group composition: pct = the bucket's share of its group's enrolled
+  # subjects. GroupTotal is always >= 1 (every GroupID comes from a dfSubjects
+  # row), so the > 0 guard is purely defensive against an impossible zero-division.
   dfCounts <- dfCounts %>%
     dplyr::group_by(.data$GroupID) %>%
     dplyr::mutate(GroupTotal = sum(.data$n)) %>%
     dplyr::ungroup() %>%
     dplyr::mutate(
-      text = paste0(
-        "Bucket: ",
-        .data$Bucket,
-        "<br>Subjects: ",
-        .data$n,
-        " (",
-        pd_PctLabel(.data$n, .data$GroupTotal),
-        ")"
+      Pct = dplyr::if_else(
+        .data$GroupTotal > 0,
+        100 * .data$n / .data$GroupTotal,
+        0
       ),
+      # Permanent on-bar label (retained from the labels feature): blanked for
+      # zero buckets. It lives in `text`, independent of the `customdata` the
+      # toggle reads, so labels and the count/% toggle are orthogonal. The label's
+      # % is the same per-group share as the bar, so it stays meaningful in % mode.
       label = dplyr::if_else(
         .data$n == 0,
         "",
@@ -180,7 +188,8 @@ pd_BucketBar <- function(
 
   # Plotly has no native "hide label if it doesn't fit", so after each draw we
   # hide any on-bar label whose box overflows its own bar's box. Bound to
-  # plotly_afterplot so it re-applies on resize/redraw, not just initial render.
+  # plotly_afterplot so it re-applies on resize/redraw -- and, crucially, after
+  # each restyle/relayout the count/% toggle triggers (% mode resizes segments).
   js_hide_overflow <- r"(function(el, x) {
   function hideOverflow() {
     el.querySelectorAll('text.bartext-inside').forEach(function(t) {
@@ -197,72 +206,59 @@ pd_BucketBar <- function(
   el.on('plotly_afterplot', hideOverflow);
 })"
 
-  # Flat one-tier axis: the original single-trace bar (Plotly's color= split is
-  # fine for a plain string x). Preserved verbatim for the Study chart.
-  if (is.null(strOuterCol)) {
-    return(
-      htmlwidgets::onRender(
-        plotly::plot_ly(
-          dfCounts,
-          x = ~GroupID,
-          y = ~n,
-          color = ~Bucket,
-          colors = rag_colors,
-          type = "bar",
-          text = ~label,
-          textposition = "inside",
-          insidetextanchor = "middle",
-          constraintext = "none",
-          textangle = 0,
-          # color = ~Bucket tints the label text with the bucket color too; set it
-          # white explicitly so labels are readable on the dark RAG fills. The
-          # two-tier path has no color= aesthetic and keeps Plotly's auto-contrast.
-          insidetextfont = list(color = "white"),
-          customdata = ~text,
-          hovertemplate = "%{customdata}<extra></extra>"
-        ) %>%
-          plotly::layout(
-            barmode = "stack",
-            xaxis = list(title = strGroupLabel),
-            yaxis = list(title = "Subjects"),
-            legend = list(title = list(text = "Bucket"))
-          ),
-        js_hide_overflow
-      )
-    )
-  }
-
-  # Two-tier (multicategory) axis. Plotly's high-level color= split positionally
-  # mis-subsets a list-valued x, so build one trace per bucket with its own
-  # aligned [outer, inner] x. Looping in bucket-label order keeps colour and
-  # stack order identical to the flat chart.
+  # One trace per bucket, in RAG label order (stack + colour order stay stable).
+  # The flat (Study) and two-tier (Country/Site) charts share this loop; only the
+  # x differs. The high-level color= split is avoided deliberately: it mis-subsets
+  # a list-valued x and cannot carry a structured customdata (it errors on a
+  # multi-column one and flattens a single-point one).
   p <- plotly::plot_ly()
   for (bk in pd_BucketLabels(nWindowDays)) {
     d <- dplyr::filter(dfCounts, .data$Bucket == bk)
+    x <- if (is.null(strOuterCol)) {
+      d$GroupID
+    } else {
+      # I() keeps each tier an array under plotly's JSON auto-unbox; a single-group
+      # bucket would otherwise collapse list(Outer, Inner) to a flat [outer, inner].
+      list(I(d$Outer), I(d$GroupID))
+    }
     p <- plotly::add_bars(
       p,
-      # I() keeps each tier an array under plotly's auto_unbox JSON: a bucket with
-      # a single group would otherwise serialize list(Outer, Inner) as a flat
-      # [outer, inner], collapsing the 2-D axis in the browser.
-      x = list(I(d$Outer), I(d$GroupID)),
+      x = x,
       y = d$n,
       name = bk,
       marker = list(color = unname(rag_colors[bk])),
       text = d$label,
-      customdata = d$text,
-      hovertemplate = "%{customdata}<extra></extra>"
+      # [count, pct] per point. I(Map(...)) keeps it a per-point [[c, p], ...]
+      # array under auto-unbox (a single-point trace would otherwise serialize as
+      # a flat [c, p] and read back as two points). The report toggle reads
+      # customdata[0]/[1]; the existing filter JS reindexes customdata for free.
+      customdata = I(Map(function(cnt, pct) list(cnt, pct), d$n, d$Pct)),
+      hovertemplate = paste0(
+        "Bucket: ",
+        bk,
+        "<br>Subjects: %{customdata[0]} (%{customdata[1]:.1f}%)<extra></extra>"
+      )
     )
   }
-  # style() keeps textposition/constraintext as a scalar per-trace (add_bars()
-  # would broadcast them to per-row vectors, causing isTRUE(... == "inside")
-  # to fail).
+
+  # style() keeps textposition/constraintext/textangle/insidetextfont as per-trace
+  # scalars (add_bars would broadcast them to per-row vectors, breaking
+  # isTRUE(... == "inside") in the label tests). insidetextfont = white keeps the
+  # on-bar labels readable on the dark RAG fills -- the flat path previously set
+  # this only because of its color= aesthetic; the unified manual path now sets it
+  # explicitly for both the flat and two-tier charts.
   p <- plotly::style(
     p,
     textposition = "inside",
     insidetextanchor = "middle",
     constraintext = "none",
-    textangle = 0
+    textangle = 0,
+    insidetextfont = list(color = "white")
   )
+
+  # onRender re-attaches the overflow-hiding hook (retained from the labels
+  # feature) so labels that no longer fit -- including after a % toggle resizes
+  # the segments -- are hidden on every plotly_afterplot.
   htmlwidgets::onRender(
     plotly::layout(
       p,
