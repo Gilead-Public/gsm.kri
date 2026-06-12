@@ -109,15 +109,21 @@ pd_BucketCounts <- function(
 #' Stacked bar of premature-death bucket counts per group. Each point's
 #' `customdata` carries `[count, pct]` (pct = the bucket's share of its group's
 #' enrolled subjects), so the report can toggle the y-axis between counts and
-#' percentages client-side without recomputation. Permanent on-bar labels
-#' (`Bucket: N (P%)`, blanked for empty buckets) are retained in `text`,
-#' independent of the toggle's `customdata`.
+#' percentages client-side without recomputation. Two-tier (nested) charts
+#' extend `customdata` to `[count, pct, group, parent]` and name the group --
+#' and, when `strOuterLabel` is set, its parent -- in the hover tooltip; the flat
+#' chart's single labelled axis already identifies the bar, so its tooltip stays
+#' minimal. Permanent on-bar labels (`Bucket: N (P%)`, blanked for empty
+#' buckets) are retained in `text`, independent of the toggle's `customdata`.
 #'
 #' @inheritParams pd_BucketCounts
 #' @param strGroupLabel `character` Axis label for the group dimension. Default: "Group".
 #' @param strOuterCol `character` Optional parent column for a two-tier
 #'   (multicategory) x-axis bracketing each group under its parent (e.g.
 #'   "country" for sites). `NULL` (default) renders the flat one-tier bar.
+#' @param strOuterLabel `character` Optional tooltip label for the parent tier
+#'   (e.g. "Country" for the site chart). When supplied, two-tier tooltips name
+#'   the parent above the group. `NULL` (default) omits the parent line.
 #'
 #' @return A `plotly` htmlwidget.
 #' @export
@@ -127,7 +133,8 @@ pd_BucketBar <- function(
   nWindowDays = 90,
   strGroupCol = "studyid",
   strGroupLabel = "Group",
-  strOuterCol = NULL
+  strOuterCol = NULL,
+  strOuterLabel = NULL
 ) {
   gsm.core::stop_if(
     cnd = !is.data.frame(dfDeath),
@@ -206,6 +213,23 @@ pd_BucketBar <- function(
   el.on('plotly_afterplot', hideOverflow);
 })"
 
+  # Tooltip identity lines, derived once (invariant across buckets). A nested
+  # chart names the specific group (customdata[2]) and -- when strOuterLabel is
+  # supplied -- its parent (customdata[3]); the flat chart names neither, since
+  # its single labelled x-axis already identifies each bar.
+  strIdentity <- ""
+  if (!is.null(strOuterCol)) {
+    if (!is.null(strOuterLabel)) {
+      strIdentity <- paste0("<br>", strOuterLabel, ": %{customdata[3]}")
+    }
+    strIdentity <- paste0(
+      strIdentity,
+      "<br>",
+      strGroupLabel,
+      ": %{customdata[2]}"
+    )
+  }
+
   # One trace per bucket, in RAG label order (stack + colour order stay stable).
   # The flat (Study) and two-tier (Country/Site) charts share this loop; only the
   # x differs. The high-level color= split is avoided deliberately: it mis-subsets
@@ -228,14 +252,28 @@ pd_BucketBar <- function(
       name = bk,
       marker = list(color = unname(rag_colors[bk])),
       text = d$label,
-      # [count, pct] per point. I(Map(...)) keeps it a per-point [[c, p], ...]
-      # array under auto-unbox (a single-point trace would otherwise serialize as
-      # a flat [c, p] and read back as two points). The report toggle reads
-      # customdata[0]/[1]; the existing filter JS reindexes customdata for free.
-      customdata = I(Map(function(cnt, pct) list(cnt, pct), d$n, d$Pct)),
+      # I(Map(...)) keeps customdata a per-point [[...], ...] array under auto-unbox
+      # (a single-point trace would otherwise serialize as a flat array and read back
+      # as multiple points). The report toggle reads customdata[0]/[1]; the existing
+      # filter JS reindexes customdata for free.
+      customdata = if (is.null(strOuterCol)) {
+        # [count, pct] -- a flat chart needs no identity in customdata.
+        I(Map(function(cnt, pct) list(cnt, pct), d$n, d$Pct))
+      } else {
+        # [count, pct, group, parent] -- the trailing two feed the tooltip's
+        # group/parent lines; the toggle still only reads customdata[0]/[1].
+        I(Map(
+          function(cnt, pct, grp, out) list(cnt, pct, grp, out),
+          d$n,
+          d$Pct,
+          d$GroupID,
+          d$Outer
+        ))
+      },
       hovertemplate = paste0(
         "Bucket: ",
         bk,
+        strIdentity,
         "<br>Subjects: %{customdata[0]} (%{customdata[1]:.1f}%)<extra></extra>"
       )
     )

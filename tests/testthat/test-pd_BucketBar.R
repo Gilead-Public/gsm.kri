@@ -88,6 +88,7 @@ test_that("pd_BucketBar hover shows bucket, count, and percent of group {#223}",
     "Subjects: %{customdata[0]} (%{customdata[1]:.1f}%)",
     fixed = TRUE
   )
+  expect_no_match(tmpl[["<=30d"]], "Study:", fixed = TRUE) # flat chart names no group
 })
 
 test_that("pd_BucketBar validates inputs {#223}", {
@@ -397,4 +398,80 @@ test_that("pd_BucketBar builds one trace per bucket (no color= split) {#223}", {
   built <- plotly::plotly_build(p)
   trace_names <- vapply(built$x$data, function(d) d$name, character(1))
   expect_setequal(trace_names, c("<=30d", "31-90d", "Alive at 90d"))
+})
+
+test_that("pd_BucketBar two-tier tooltip names the group, not the unlabelled parent {#223}", {
+  testthat::skip_if_not_installed("plotly")
+  dfSubjects <- tibble::tibble(
+    subjid = paste0("S", 1:4),
+    country = c("USA", "USA", "CAN", "CAN"),
+    studyid = "ST01"
+  )
+  dfDeath <- tibble::tibble(subjid = c("S1", "S3"), death_dy = c(20, 50))
+  p <- pd_BucketBar(
+    dfDeath,
+    dfSubjects,
+    nWindowDays = 90,
+    strGroupCol = "country",
+    strGroupLabel = "Country",
+    strOuterCol = "studyid"
+  )
+  tmpl <- plotly::plotly_build(p)$x$data[[1]]$hovertemplate
+  expect_match(tmpl, "Country: %{customdata[2]}", fixed = TRUE)
+  expect_match(
+    tmpl,
+    "Subjects: %{customdata[0]} (%{customdata[1]:.1f}%)",
+    fixed = TRUE
+  )
+  # No strOuterLabel -> the parent (study) tier is carried but never named.
+  expect_no_match(tmpl, "customdata[3]", fixed = TRUE)
+})
+
+test_that("pd_BucketBar two-tier tooltip names parent then group when strOuterLabel set {#223}", {
+  testthat::skip_if_not_installed("plotly")
+  dfSubjects <- tibble::tibble(
+    subjid = paste0("S", 1:3),
+    invid = c("INV-2", "INV-1", "INV-1"),
+    country = c("CAN", "USA", "USA"),
+    studyid = "ST01"
+  )
+  dfDeath <- tibble::tibble(subjid = c("S1", "S2"), death_dy = c(20, 50))
+  p <- pd_BucketBar(
+    dfDeath,
+    dfSubjects,
+    nWindowDays = 90,
+    strGroupCol = "invid",
+    strGroupLabel = "Site",
+    strOuterCol = "country",
+    strOuterLabel = "Country"
+  )
+  tmpl <- plotly::plotly_build(p)$x$data[[1]]$hovertemplate
+  expect_match(tmpl, "Country: %{customdata[3]}", fixed = TRUE)
+  expect_match(tmpl, "Site: %{customdata[2]}", fixed = TRUE)
+  # Parent line sits above the group line. hovertemplate is broadcast per point, so
+  # compare positions within one element; as.integer strips regexpr's match.length.
+  one <- tmpl[[1]]
+  expect_lt(
+    as.integer(regexpr("Country: %{customdata[3]}", one, fixed = TRUE)),
+    as.integer(regexpr("Site: %{customdata[2]}", one, fixed = TRUE))
+  )
+})
+
+test_that("pd_BucketBar two-tier customdata carries [count, pct, group, parent] nested {#223}", {
+  testthat::skip_if_not_installed("plotly")
+  # Single-group two-tier: the 4-tuple must stay nested
+  # [[1,100,"INV-1","USA"]], not flatten under JSON auto-unbox -- the same hazard
+  # the [count, pct] pair already guards.
+  dfSubjects <- tibble::tibble(subjid = "S1", invid = "INV-1", country = "USA")
+  dfDeath <- tibble::tibble(subjid = "S1", death_dy = 20)
+  p <- pd_BucketBar(
+    dfDeath,
+    dfSubjects,
+    nWindowDays = 90,
+    strGroupCol = "invid",
+    strOuterCol = "country",
+    strOuterLabel = "Country"
+  )
+  json <- gsub("[[:space:]]", "", plotly::plotly_json(p, jsonedit = FALSE))
+  expect_true(grepl('"customdata":[[1,100,"INV-1","USA"]]', json, fixed = TRUE))
 })
