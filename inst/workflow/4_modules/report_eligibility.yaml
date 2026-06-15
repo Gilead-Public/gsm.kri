@@ -1,52 +1,106 @@
 meta:
   Type: Report
-  ID: eligibility
+  ID: report_eligibility
   Output: html
   Name: CTQ Eligibility Report
   Description: A report summarizing CTQ
-  Active: true
 spec:
-  Mapped_EXCLUSION:
+  Reporting_Results_Longitudinal:
     _all:
-      required: true
-  Reporting_Results:
-    _all:
-      required: true
   Reporting_Groups:
     _all:
-      required: true
   Reporting_Metrics:
     _all:
-      required: true
+  Mapped_EXCLUSION:
+    _all:
 steps:
-  - output: IE_num
+  # Subset on study-level results.
+  - output: dfResults
+    name: gsm.core::RunQuery
+    params:
+      df: Reporting_Results_Longitudinal
+      strQuery: |
+        SELECT *
+        FROM df
+        WHERE MetricID = 'Analysis_qtl0001'
+        ORDER BY MetricID, SnapshotDate
+
+  # Subset on study-level metrics.
+  - output: dfMetrics
+    name: gsm.core::RunQuery
+    params:
+      df: Reporting_Metrics
+      strQuery: |
+        SELECT *
+        FROM df
+        WHERE MetricID = 'Analysis_qtl0001'
+        ORDER BY MetricID
+        
+  # Subset on study- and site-level group metadata.
+  - output: dfGroups
+    name: gsm.core::RunQuery
+    params:
+      df: Reporting_Groups
+      strQuery: |
+        SELECT *
+        FROM df
+        WHERE GroupLevel IN ('Study', 'Site')
+        ORDER BY GroupLevel, GroupID, Param
+
+  # Subset on ineligible participants.
+  - output: Ineligibility
     name: gsm.core::RunQuery
     params:
       df: Mapped_EXCLUSION
-      strQuery: "SELECT * FROM df WHERE Source != 'Neither'"
-  - output: reporting_listings
+      strQuery: |
+        SELECT *
+        FROM df
+        WHERE Source != 'Neither'
+
+  # Define listings.
+  - output: lListings
     name: list
     params:
-      'IE_num': IE_num
+      'IE_num': Ineligibility
       'IE_denom': Mapped_EXCLUSION
-  - output: strOutputDir
-    name: getwd
+
+  # Define path to R markdown report template.
   - output: strInputPath
-    names: system.file
+    name: system.file
     params:
-      ...: "report/Report_QTL.Rmd"
-      package: "gsm.qtl"
-  - output: lParams
-    name: list
+      ...: report/Report_Eligibility.Rmd
+      package: gsm.kri
+
+  # Capture snapshot date.
+  - output: SnapshotDate
+    name: pull
     params:
-      'dfResults': Reporting_Results
-      'dfMetrics': Reporting_Metrics
-      'dfGroups': Reporting_Groups
-      'lListings': reporting_listings
-  - output: Report
-    name: gsm.kri::RenderRmd
+      .data: Reporting_Results_Longitudinal
+      var: SnapshotDate
+  - output: SnapshotDate
+    name: max
     params:
-      lParams: lParams
+      ...: SnapshotDate
+
+  # Define output path.
+  - output: strOutputDir
+    name: file.path
+    params:
+      outputs: outputs
+      SnapshotDate: SnapshotDate
+  - output: strOutputDir
+    name: normalizePath
+    params:
+      path: strOutputDir
+
+  # Generate report.
+  - output: strFilePath
+    name: gsm.kri::Report_Eligibility
+    params:
+      dfResults: dfResults
+      dfMetrics: dfMetrics
+      dfGroups: dfGroups
+      lListings: lListings
+      strInputPath: strInputPath
       strOutputDir: strOutputDir
       strOutputFile: ID
-      strInputPath: strInputPath
