@@ -494,6 +494,11 @@ test_that("pd_BucketBar adds a thin x-axis range slider when bRangeSlider = TRUE
   rs <- built$x$layout$xaxis$rangeslider
   expect_true(isTRUE(rs$visible))
   expect_equal(rs$thickness, 0.04)
+  # Styled track: Plotly's default slider is white-on-white, so the track is
+  # given a visible grey fill + border (the report still hides its mini-preview).
+  expect_equal(rs$bgcolor, "#f2f2f2")
+  expect_equal(rs$bordercolor, "#828282")
+  expect_equal(rs$borderwidth, 1)
 })
 
 test_that("pd_BucketBar errors when bRangeSlider is not logical {#223}", {
