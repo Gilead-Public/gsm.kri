@@ -118,7 +118,7 @@ cat('
 ')
 ```
 
-```{r rangeslider-css, echo=FALSE, results='asis'}
+```{r rangeslider-css, echo=FALSE, results='asis', eval=has_premature}
 # Hide each bucket bar's range-slider mini-preview, leaving a scroll-only track.
 # Scoped to the three bucket-bar container ids so it never reaches another
 # gsm.kri report sharing styles.css. A stylesheet rule (not inline JS) is used
