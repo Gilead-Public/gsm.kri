@@ -11,7 +11,8 @@ pd_BucketBar(
   strGroupCol = "studyid",
   strGroupLabel = "Group",
   strOuterCol = NULL,
-  strOuterLabel = NULL
+  strOuterLabel = NULL,
+  bRangeSlider = FALSE
 )
 }
 \arguments{
@@ -32,6 +33,11 @@ pd_BucketBar(
 \item{strOuterLabel}{`character` Optional tooltip label for the parent tier
 (e.g. "Country" for the site chart). When supplied, two-tier tooltips name
 the parent above the group. `NULL` (default) omits the parent line.}
+
+\item{bRangeSlider}{`logical` When `TRUE`, adds a thin (thickness `0.04`)
+x-axis range slider for navigating long category axes. The report hides the
+slider's mini-preview via CSS, leaving a scroll-only track; see
+`Report_PrematureDeaths.Rmd`. Default: `FALSE`.}
 }
 \value{
 A `plotly` htmlwidget.
