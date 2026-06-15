@@ -118,13 +118,27 @@ cat('
 ')
 ```
 
+```{r rangeslider-css, echo=FALSE, results='asis'}
+# Hide each bucket bar's range-slider mini-preview, leaving a scroll-only track.
+# Scoped to the three bucket-bar container ids so it never reaches another
+# gsm.kri report sharing styles.css. A stylesheet rule (not inline JS) is used
+# so it re-matches the slider DOM that Plotly.react rebuilds on every filter.
+cat('
+<style>
+#pd-study-buckets .rangeslider-rangeplot,
+#pd-country-buckets .rangeslider-rangeplot,
+#pd-site-buckets .rangeslider-rangeplot { display: none !important; }
+</style>
+')
+```
+
 ## Study {.tabset .tabset-pills}
 
 ### Buckets
 ```{r study-buckets, echo=FALSE, eval=has_premature}
 htmltools::div(
   id = "pd-study-buckets",
-  pd_BucketBar(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "studyid", strGroupLabel = "Study")
+  pd_BucketBar(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "studyid", strGroupLabel = "Study", bRangeSlider = TRUE)
 )
 ```
 
@@ -144,7 +158,7 @@ pd_ReasonDist(Mapped_Death, nWindowDays, nEnrolled = nEnrolled)
 ```{r country-buckets, echo=FALSE, eval=has_premature}
 htmltools::div(
   id = "pd-country-buckets",
-  pd_BucketBar(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "country", strGroupLabel = "Country", strOuterCol = "studyid")
+  pd_BucketBar(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "country", strGroupLabel = "Country", strOuterCol = "studyid", bRangeSlider = TRUE)
 )
 ```
 
@@ -173,7 +187,7 @@ htmltools::div(
 ```{r site-buckets, echo=FALSE, eval=has_premature}
 htmltools::div(
   id = "pd-site-buckets",
-  pd_BucketBar(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "invid", strGroupLabel = "Site", strOuterCol = "country", strOuterLabel = "Country")
+  pd_BucketBar(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "invid", strGroupLabel = "Site", strOuterCol = "country", strOuterLabel = "Country", bRangeSlider = TRUE)
 )
 ```
 
