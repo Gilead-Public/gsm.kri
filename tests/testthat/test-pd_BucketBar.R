@@ -475,3 +475,33 @@ test_that("pd_BucketBar two-tier customdata carries [count, pct, group, parent] 
   json <- gsub("[[:space:]]", "", plotly::plotly_json(p, jsonedit = FALSE))
   expect_true(grepl('"customdata":[[1,100,"INV-1","USA"]]', json, fixed = TRUE))
 })
+
+test_that("pd_BucketBar omits the range slider by default {#223}", {
+  testthat::skip_if_not_installed("plotly")
+  dfSubjects <- tibble::tibble(subjid = paste0("S", 1:3), studyid = "ST01")
+  dfDeath <- tibble::tibble(subjid = c("S1", "S2"), death_dy = c(20, 50))
+  p <- pd_BucketBar(dfDeath, dfSubjects, nWindowDays = 90)
+  built <- plotly::plotly_build(p)
+  expect_null(built$x$layout$xaxis$rangeslider)
+})
+
+test_that("pd_BucketBar adds a thin x-axis range slider when bRangeSlider = TRUE {#223}", {
+  testthat::skip_if_not_installed("plotly")
+  dfSubjects <- tibble::tibble(subjid = paste0("S", 1:3), studyid = "ST01")
+  dfDeath <- tibble::tibble(subjid = c("S1", "S2"), death_dy = c(20, 50))
+  p <- pd_BucketBar(dfDeath, dfSubjects, nWindowDays = 90, bRangeSlider = TRUE)
+  built <- plotly::plotly_build(p)
+  rs <- built$x$layout$xaxis$rangeslider
+  expect_true(isTRUE(rs$visible))
+  expect_equal(rs$thickness, 0.04)
+})
+
+test_that("pd_BucketBar errors when bRangeSlider is not logical {#223}", {
+  testthat::skip_if_not_installed("plotly")
+  dfSubjects <- tibble::tibble(subjid = paste0("S", 1:3), studyid = "ST01")
+  dfDeath <- tibble::tibble(subjid = c("S1", "S2"), death_dy = c(20, 50))
+  expect_error(
+    pd_BucketBar(dfDeath, dfSubjects, nWindowDays = 90, bRangeSlider = 1),
+    "bRangeSlider must be logical"
+  )
+})

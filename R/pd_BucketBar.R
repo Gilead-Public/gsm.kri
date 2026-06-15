@@ -124,6 +124,10 @@ pd_BucketCounts <- function(
 #' @param strOuterLabel `character` Optional tooltip label for the parent tier
 #'   (e.g. "Country" for the site chart). When supplied, two-tier tooltips name
 #'   the parent above the group. `NULL` (default) omits the parent line.
+#' @param bRangeSlider `logical` When `TRUE`, adds a thin (thickness `0.04`)
+#'   x-axis range slider for navigating long category axes. The report hides the
+#'   slider's mini-preview via CSS, leaving a scroll-only track; see
+#'   `Report_PrematureDeaths.Rmd`. Default: `FALSE`.
 #'
 #' @return A `plotly` htmlwidget.
 #' @export
@@ -134,7 +138,8 @@ pd_BucketBar <- function(
   strGroupCol = "studyid",
   strGroupLabel = "Group",
   strOuterCol = NULL,
-  strOuterLabel = NULL
+  strOuterLabel = NULL,
+  bRangeSlider = FALSE
 ) {
   gsm.core::stop_if(
     cnd = !is.data.frame(dfDeath),
@@ -149,6 +154,10 @@ pd_BucketBar <- function(
       length(nWindowDays) == 1 &&
       nWindowDays > 0),
     message = "nWindowDays must be a positive number"
+  )
+  gsm.core::stop_if(
+    cnd = !is.logical(bRangeSlider),
+    message = "bRangeSlider must be logical"
   )
   rlang::check_installed("plotly", reason = "to run `pd_BucketBar()`")
 
@@ -297,11 +306,19 @@ pd_BucketBar <- function(
   # onRender re-attaches the overflow-hiding hook (retained from the labels
   # feature) so labels that no longer fit -- including after a % toggle resizes
   # the segments -- are hidden on every plotly_afterplot.
+  xaxis <- list(title = strGroupLabel)
+  if (bRangeSlider) {
+    # Scroll-only range slider for the long Site axis: thickness 0.04 keeps the
+    # track slim but still grabbable; the report hides its mini-preview via CSS
+    # (#pd-*-buckets .rangeslider-rangeplot { display:none }).
+    xaxis$rangeslider <- list(visible = TRUE, thickness = 0.04)
+  }
+
   htmlwidgets::onRender(
     plotly::layout(
       p,
       barmode = "stack",
-      xaxis = list(title = strGroupLabel),
+      xaxis = xaxis,
       yaxis = list(title = "Subjects"),
       legend = list(title = list(text = "Bucket"))
     ),
