@@ -505,3 +505,14 @@ test_that("pd_BucketBar errors when bRangeSlider is not logical {#223}", {
     "bRangeSlider must be logical"
   )
 })
+
+test_that("pd_BucketBar scopes the overflow-hider to the main cartesian layer {#223}", {
+  testthat::skip_if_not_installed("plotly")
+  dfSubjects <- tibble::tibble(subjid = paste0("S", 1:3), studyid = "ST01")
+  dfDeath <- tibble::tibble(subjid = "S1", death_dy = 20)
+  p <- pd_BucketBar(dfDeath, dfSubjects, nWindowDays = 90)
+  hook <- paste(unlist(p$jsHooks$render), collapse = " ")
+  # The slider renders a duplicate of every bar label outside .cartesianlayer;
+  # the hider must not touch those (getBBox under display:none is browser-flaky).
+  expect_match(hook, ".cartesianlayer text.bartext-inside", fixed = TRUE)
+})

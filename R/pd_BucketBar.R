@@ -208,7 +208,7 @@ pd_BucketBar <- function(
   # each restyle/relayout the count/% toggle triggers (% mode resizes segments).
   js_hide_overflow <- r"(function(el, x) {
   function hideOverflow() {
-    el.querySelectorAll('text.bartext-inside').forEach(function(t) {
+    el.querySelectorAll('.cartesianlayer text.bartext-inside').forEach(function(t) {
       t.style.display = '';
       var pt = t.closest('g.point'); if (!pt) return;
       var bar = pt.querySelector('path'); if (!bar) return;
