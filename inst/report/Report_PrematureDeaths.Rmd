@@ -119,15 +119,21 @@ cat('
 ```
 
 ```{r rangeslider-css, echo=FALSE, results='asis', eval=has_premature}
-# Hide each bucket bar's range-slider mini-preview, leaving a scroll-only track.
-# Scoped to the three bucket-bar container ids so it never reaches another
-# gsm.kri report sharing styles.css. A stylesheet rule (not inline JS) is used
-# so it re-matches the slider DOM that Plotly.react rebuilds on every filter.
+# Hide each bucket bar's range-slider mini-preview, leaving a scroll-only track,
+# and recolor its grabber handles. Plotly draws the handles white (fill="#fff"),
+# which is invisible on the grey track styled in pd_BucketBar(); a fill of #828282
+# (colorScheme gray/dark) makes them read as grips. CSS fill overrides Plotly's
+# presentation attribute. Scoped to the three bucket-bar container ids so it never
+# reaches another gsm.kri report sharing styles.css; a stylesheet rule (not inline
+# JS) re-matches the slider DOM that Plotly.react rebuilds on every filter.
 cat('
 <style>
 #pd-study-buckets .rangeslider-rangeplot,
 #pd-country-buckets .rangeslider-rangeplot,
 #pd-site-buckets .rangeslider-rangeplot { display: none !important; }
+#pd-study-buckets .rangeslider-handle-min, #pd-study-buckets .rangeslider-handle-max,
+#pd-country-buckets .rangeslider-handle-min, #pd-country-buckets .rangeslider-handle-max,
+#pd-site-buckets .rangeslider-handle-min, #pd-site-buckets .rangeslider-handle-max { fill: #828282 !important; }
 </style>
 ')
 ```
