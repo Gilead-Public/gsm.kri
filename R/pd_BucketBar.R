@@ -311,8 +311,17 @@ pd_BucketBar <- function(
   if (bRangeSlider) {
     # Scroll-only range slider for the long Site axis: thickness 0.04 keeps the
     # track slim but still grabbable; the report hides its mini-preview via CSS
-    # (#pd-*-buckets .rangeslider-rangeplot { display:none }).
-    xaxis$rangeslider <- list(visible = TRUE, thickness = 0.04)
+    # (#pd-*-buckets .rangeslider-rangeplot { display:none }). Plotly's default
+    # track is white-on-white, so style .rangeslider-bg (a separate element from
+    # the hidden .rangeslider-rangeplot) with a grey fill + border so the track
+    # stays visible even at full range.
+    xaxis$rangeslider <- list(
+      visible = TRUE,
+      thickness = 0.04,
+      bgcolor = "#f2f2f2",
+      bordercolor = colorScheme("gray", "dark"),
+      borderwidth = 1
+    )
   }
 
   htmlwidgets::onRender(
