@@ -108,3 +108,51 @@ test_that("pd_Classify errors without a randomization date {#246}", {
     "rgmn_dt"
   )
 })
+
+test_that("pd_Classify validates its data.frame inputs {#246}", {
+  expect_error(
+    pd_Classify(as.list(make_subjects()), make_death()),
+    "dfSubjects is not a data.frame"
+  )
+  expect_error(
+    pd_Classify(make_subjects(), as.list(make_death())),
+    "dfDeath is not a data.frame"
+  )
+})
+
+test_that("pd_Classify pulls rgmn_dt from dfRand when dfSubjects lacks it {#246}", {
+  subj <- make_subjects()
+  subj$rgmn_dt <- NULL
+  rand <- tibble::tibble(
+    subjid = make_subjects()$subjid,
+    rgmn_dt = make_subjects()$rgmn_dt
+  )
+  out <- pd_Classify(
+    subj,
+    make_death(),
+    make_studcomp(),
+    dfRand = rand,
+    nWindowDays = 90,
+    dSnapshotDate = as.Date("2026-05-01")
+  )
+  cat_by <- setNames(as.character(out$Category), out$subjid)
+  expect_equal(cat_by[["A"]], pd_CategoryLevels(90)[1]) # death 20d
+  expect_equal(cat_by[["F"]], pd_CategoryLevels(90)[5]) # alive prior
+})
+
+test_that("pd_Classify fills missing optional columns with NA {#246}", {
+  subj <- tibble::tibble(
+    subjid = c("A", "F"),
+    rgmn_dt = as.Date(c("2025-10-13", "2026-03-22"))
+  )
+  out <- pd_Classify(
+    subj,
+    make_death(),
+    NULL,
+    nWindowDays = 90,
+    dSnapshotDate = as.Date("2026-05-01")
+  )
+  expect_true(all(is.na(out$studyid)))
+  expect_true(all(is.na(out$country)))
+  expect_true(all(is.na(out$invid)))
+})

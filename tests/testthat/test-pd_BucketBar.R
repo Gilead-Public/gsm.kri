@@ -181,6 +181,20 @@ test_that("pd_BucketBar adds a thin styled x-axis range slider when bRangeSlider
   expect_equal(rs$borderwidth, 1)
 })
 
+test_that("pd_BucketBar two-tier tooltip names the parent when strOuterLabel set {#246}", {
+  testthat::skip_if_not_installed("plotly")
+  p <- pd_BucketBar(
+    make_classified(),
+    strGroupCol = "invid",
+    strGroupLabel = "Site",
+    strOuterCol = "country",
+    strOuterLabel = "Country"
+  )
+  tmpl <- plotly::plotly_build(p)$x$data[[1]]$hovertemplate
+  expect_match(tmpl, "Country: %{customdata[3]}", fixed = TRUE)
+  expect_match(tmpl, "Site: %{customdata[2]}", fixed = TRUE)
+})
+
 test_that("pd_BucketBar attaches a JS hook scoped to the main cartesian layer {#246}", {
   testthat::skip_if_not_installed("plotly")
   p <- pd_BucketBar(make_classified())
