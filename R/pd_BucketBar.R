@@ -1,81 +1,28 @@
-#' Premature-death bucket labels
-#'
-#' @description
-#' The three bucket labels (`<=30d`, `31-Wd`, `Alive at Wd`, where `W` is
-#' `nWindowDays`), in RAG order. Shared by the bucket bar and the
-#' randomization-to-death scatter so labels and colors stay in lockstep.
-#'
-#' @param nWindowDays `numeric` Premature-death window in days.
-#'
-#' @return A length-3 `character` vector of bucket labels.
-#' @noRd
-pd_BucketLabels <- function(nWindowDays) {
-  c(
-    "<=30d",
-    paste0("31-", nWindowDays, "d"),
-    paste0("Alive at ", nWindowDays, "d")
-  )
-}
-
-#' Premature-death bucket RAG colors
-#'
-#' @description
-#' Named (red / amber / green) color vector keyed by [pd_BucketLabels()].
-#'
-#' @param nWindowDays `numeric` Premature-death window in days.
-#'
-#' @return A length-3 named `character` vector of hex colors.
-#' @noRd
-pd_RagColors <- function(nWindowDays) {
-  rag_colors <- c(
-    colorScheme("red", "dark"),
-    colorScheme("amber", "dark"),
-    colorScheme("green", "dark")
-  )
-  names(rag_colors) <- pd_BucketLabels(nWindowDays)
-  rag_colors
-}
-
-#' Premature-death bucket counts
+#' Premature-death category counts
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' Categorizes every enrolled subject into a premature-death bucket
-#' (`<=30d`, `31-Wd`, or `Alive at Wd`, where `W` is `nWindowDays`) grouped by `strGroupCol`.
+#' Counts the [pd_Classify()] category of each enrolled subject per
+#' `strGroupCol`. `.drop = FALSE` keeps every category present for every group so
+#' the stacked bar and its colors stay aligned.
 #'
-#' @param dfDeath `data.frame` Mapped death data with `subjid` and `death_dy`.
-#' @param dfSubjects `data.frame` Mapped subject data with `subjid` and `strGroupCol`.
-#' @param nWindowDays `numeric` Premature-death window in days. Default: 90.
-#' @param strGroupCol `character` Column in `dfSubjects` to group by. Default: "studyid".
-#' @param strOuterCol `character` Optional parent column in `dfSubjects` for a
-#'   two-tier (multicategory) axis (e.g. "country" to bracket sites by country).
-#'   When `NULL` (default) the result is the flat one-tier count.
+#' @param dfClassified `data.frame` Output of [pd_Classify()].
+#' @param strGroupCol `character` Column to group by. Default "studyid".
+#' @param strOuterCol `character` Optional parent column for a two-tier
+#'   (multicategory) axis. `NULL` (default) is the flat one-tier count.
 #'
-#' @return A `data.frame` with `GroupID`, `Bucket`, and `n` columns. When
-#'   `strOuterCol` is set, an additional `Outer` column carries the parent tier.
+#' @return A `data.frame` with `GroupID`, `Bucket`, `n` (and `Outer` when
+#'   `strOuterCol` is set).
 #' @export
 pd_BucketCounts <- function(
-  dfDeath,
-  dfSubjects,
-  nWindowDays = 90,
+  dfClassified,
   strGroupCol = "studyid",
   strOuterCol = NULL
 ) {
-  bucket_levels <- pd_BucketLabels(nWindowDays)
-
-  death_dy <- dfDeath$death_dy[match(dfSubjects$subjid, dfDeath$subjid)]
-  premature <- !is.na(death_dy) & death_dy <= nWindowDays
-
-  bucket <- dplyr::case_when(
-    premature & death_dy <= 30 ~ bucket_levels[1],
-    premature ~ bucket_levels[2],
-    TRUE ~ bucket_levels[3]
-  )
-
   df <- tibble::tibble(
-    GroupID = dfSubjects[[strGroupCol]],
-    Bucket = factor(bucket, levels = bucket_levels)
+    GroupID = dfClassified[[strGroupCol]],
+    Bucket = dfClassified$Category
   )
 
   if (is.null(strOuterCol)) {
@@ -84,10 +31,7 @@ pd_BucketCounts <- function(
     )
   }
 
-  # Multicategory: carry the parent tier (country for sites, study for
-  # countries), labelling a missing parent "Unknown", and sort so each parent is
-  # one contiguous run -- interleaved rows make Plotly draw a fragmented bracket.
-  outer <- dfSubjects[[strOuterCol]]
+  outer <- dfClassified[[strOuterCol]]
   df$Outer <- dplyr::if_else(is.na(outer), "Unknown", as.character(outer))
 
   df %>%

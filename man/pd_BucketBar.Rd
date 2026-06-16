@@ -16,13 +16,7 @@ pd_BucketBar(
 )
 }
 \arguments{
-\item{dfDeath}{`data.frame` Mapped death data with `subjid` and `death_dy`.}
-
-\item{dfSubjects}{`data.frame` Mapped subject data with `subjid` and `strGroupCol`.}
-
-\item{nWindowDays}{`numeric` Premature-death window in days. Default: 90.}
-
-\item{strGroupCol}{`character` Column in `dfSubjects` to group by. Default: "studyid".}
+\item{strGroupCol}{`character` Column to group by. Default "studyid".}
 
 \item{strGroupLabel}{`character` Axis label for the group dimension. Default: "Group".}
 
