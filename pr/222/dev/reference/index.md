@@ -90,9 +90,15 @@
 - [`pd_BucketBar()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_BucketBar.md)
   : Premature-death bucket bar chart
 - [`pd_BucketCounts()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_BucketCounts.md)
-  : Premature-death bucket counts
+  : Premature-death category counts
+- [`pd_CategoryColors()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_CategoryColors.md)
+  : Premature-death category colors
+- [`pd_CategoryLevels()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_CategoryLevels.md)
+  : Premature-death category levels
 - [`pd_CheckWindowConsistency()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_CheckWindowConsistency.md)
   : Check premature-death window consistency
+- [`pd_Classify()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_Classify.md)
+  : Classify enrolled subjects into premature-death categories
 - [`pd_PatientListing()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_PatientListing.md)
   : Premature-death patient listing
 - [`pd_PatientListingData()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_PatientListingData.md)

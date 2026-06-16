@@ -1,51 +1,33 @@
-# Premature-death bucket counts
+# Premature-death category counts
 
 \`r lifecycle::badge("experimental")\`
 
-Categorizes every enrolled subject into a premature-death bucket
-(\`\<=30d\`, \`31-Wd\`, or \`Alive at Wd\`, where \`W\` is
-\`nWindowDays\`) grouped by \`strGroupCol\`.
+Counts the \[pd_Classify()\] category of each enrolled subject per
+\`strGroupCol\`. \`.drop = FALSE\` keeps every category present for
+every group so the stacked bar and its colors stay aligned.
 
 ## Usage
 
 ``` r
-pd_BucketCounts(
-  dfDeath,
-  dfSubjects,
-  nWindowDays = 90,
-  strGroupCol = "studyid",
-  strOuterCol = NULL
-)
+pd_BucketCounts(dfClassified, strGroupCol = "studyid", strOuterCol = NULL)
 ```
 
 ## Arguments
 
-- dfDeath:
+- dfClassified:
 
-  \`data.frame\` Mapped death data with \`subjid\` and \`death_dy\`.
-
-- dfSubjects:
-
-  \`data.frame\` Mapped subject data with \`subjid\` and
-  \`strGroupCol\`.
-
-- nWindowDays:
-
-  \`numeric\` Premature-death window in days. Default: 90.
+  \`data.frame\` Output of \[pd_Classify()\].
 
 - strGroupCol:
 
-  \`character\` Column in \`dfSubjects\` to group by. Default:
-  "studyid".
+  \`character\` Column to group by. Default "studyid".
 
 - strOuterCol:
 
-  \`character\` Optional parent column in \`dfSubjects\` for a two-tier
-  (multicategory) axis (e.g. "country" to bracket sites by country).
-  When \`NULL\` (default) the result is the flat one-tier count.
+  \`character\` Optional parent column for a two-tier (multicategory)
+  axis. \`NULL\` (default) is the flat one-tier count.
 
 ## Value
 
-A \`data.frame\` with \`GroupID\`, \`Bucket\`, and \`n\` columns. When
-\`strOuterCol\` is set, an additional \`Outer\` column carries the
-parent tier.
+A \`data.frame\` with \`GroupID\`, \`Bucket\`, \`n\` (and \`Outer\` when
+\`strOuterCol\` is set).
