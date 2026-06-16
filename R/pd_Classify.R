@@ -48,28 +48,17 @@ pd_CategoryColors <- function(nWindowDays) {
 #'
 #' @description
 #' Maps a category label to its legend `name`, `group`, and optional group title.
-#' The two death categories share a "Death within `nWindowDays` days" group
-#' heading with `<=30d` / `31-Wd` sub-entries (FIX-1); the other three are
-#' top-level entries.
+#' Every category -- including the two death categories -- is a separate
+#' top-level legend entry named by its full [pd_CategoryLevels()] label; the two
+#' deaths are no longer joined under a "Death within `nWindowDays` days" heading.
 #'
 #' @param category `character` One value of [pd_CategoryLevels()].
-#' @param nWindowDays `numeric` Premature-death window in days.
+#' @param nWindowDays `numeric` Premature-death window in days (unused; retained
+#'   so callers can pass the window without special-casing).
 #'
-#' @return A list with `name`, `group`, and `grouptitle` (`NULL` when ungrouped).
+#' @return A list with `name`, `group`, and `grouptitle` (always `NULL`).
 #' @noRd
 pd_LegendMeta <- function(category, nWindowDays) {
-  lv <- pd_CategoryLevels(nWindowDays)
-  death_title <- paste0("Death within ", nWindowDays, " days")
-  if (identical(category, lv[1])) {
-    return(list(name = "\u226430d", group = "death", grouptitle = death_title))
-  }
-  if (identical(category, lv[2])) {
-    return(list(
-      name = paste0("31\u2013", nWindowDays, "d"),
-      group = "death",
-      grouptitle = death_title
-    ))
-  }
   list(name = category, group = category, grouptitle = NULL)
 }
 

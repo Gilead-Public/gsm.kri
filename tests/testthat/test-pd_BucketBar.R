@@ -56,7 +56,7 @@ test_that("pd_BucketBar returns a plotly object {#246}", {
   expect_s3_class(p, "plotly")
 })
 
-test_that("pd_BucketBar labels show counts only and uses grouped death legend {#246}", {
+test_that("pd_BucketBar shows count labels and five separate legend categories {#246}", {
   testthat::skip_if_not_installed("plotly")
   p <- pd_BucketBar(
     make_classified(),
@@ -65,12 +65,13 @@ test_that("pd_BucketBar labels show counts only and uses grouped death legend {#
   )
   b <- plotly::plotly_build(p)
 
-  # FIX-2: on-bar text is the bare count (or "" for zero), never "Bucket: N (P%)"
+  # FIX-2: default (count) on-bar text is the bare count (or "" for zero).
   texts <- unlist(lapply(b$x$data, function(tr) tr$text))
   texts <- texts[nzchar(texts)]
   expect_true(all(grepl("^[0-9]+$", texts)))
 
-  # FIX-1: the two death traces share a "Death within 90 days" legend group title
+  # The two death categories are separate legend entries, NOT joined under a
+  # "Death within 90 days" group title.
   grouptitles <- vapply(
     b$x$data,
     function(tr) {
@@ -79,9 +80,11 @@ test_that("pd_BucketBar labels show counts only and uses grouped death legend {#
     },
     character(1)
   )
-  expect_true("Death within 90 days" %in% grouptitles)
+  expect_false("Death within 90 days" %in% grouptitles)
 
-  # five traces (one per category)
+  # Each of the five categories is its own legend entry, named by its full label.
+  names <- vapply(b$x$data, function(tr) tr$name, character(1))
+  expect_setequal(names, pd_CategoryLevels(90))
   expect_equal(length(b$x$data), 5)
 })
 
