@@ -93,6 +93,23 @@ test_that("Report_PrematureDeaths renders the studcomp discontinuation note {#24
   expect_true(grepl("studcomp", html, ignore.case = TRUE))
 })
 
+test_that("Report bucket-bar on-bar labels follow the count/percent toggle {#246}", {
+  testthat::skip_if_not_installed("plotly")
+  testthat::skip_if_not_installed("DT")
+  out <- Report_PrematureDeaths(
+    dfResults = dfResults,
+    dfMetrics = dfMetrics,
+    dfGroups = dfGroups,
+    lListings = lListings,
+    nWindowDays = 90,
+    strOutputDir = tempdir()
+  )
+  html <- paste(readLines(out, warn = FALSE), collapse = "\n")
+  # applyMode rebuilds the on-bar text per mode (count vs %) and pushes it with y.
+  expect_match(html, "var texts =", fixed = TRUE)
+  expect_match(html, "text: texts", fixed = TRUE)
+})
+
 test_that("Report_PrematureDeaths includes country filter JS and banner {#246}", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")

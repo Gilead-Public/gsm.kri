@@ -534,6 +534,15 @@ cat(paste0('
     var ys = el.data.map(function(tr) {
       return (tr.customdata || []).map(function(cd) { return cd[slot]; });
     });
+    // On-bar labels track the mode: the count in count mode, the rounded % in %
+    // mode; an empty bucket (count 0) stays blank either way. customdata is
+    // [count, pct] per point, so the label is re-derived alongside y.
+    var texts = el.data.map(function(tr) {
+      return (tr.customdata || []).map(function(cd) {
+        if (!cd[0]) return "";
+        return pdMode === "pct" ? Math.round(cd[1]) + "%" : String(cd[0]);
+      });
+    });
     // One atomic data+layout update (single redraw) instead of restyle+relayout:
     // avoids the bars-resized-but-axis-stale flicker frame, which the filter hooks
     // would otherwise paint on every react in % mode. range:null clears the fixed
@@ -541,7 +550,7 @@ cat(paste0('
     var layoutUpdate = pdMode === "pct"
       ? {"yaxis.title.text": "% of group", "yaxis.ticksuffix": "%", "yaxis.range": [0, 100]}
       : {"yaxis.title.text": "Subjects", "yaxis.ticksuffix": "", "yaxis.autorange": true, "yaxis.range": null};
-    Plotly.update(el, {y: ys}, layoutUpdate, traceIndices);
+    Plotly.update(el, {y: ys, text: texts}, layoutUpdate, traceIndices);
   }
 
   window.pdSetMode = function(mode) {
