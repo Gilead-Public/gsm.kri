@@ -174,3 +174,20 @@ test_that("Report_PrematureDeaths wires the site-barchart listing filter {#221}"
   expect_match(html, "pd-site-filter-text", fixed = TRUE)
   expect_match(html, "window.pdResetSiteFilter", fixed = TRUE)
 })
+
+test_that("Report wires the numeric-y scatter point filter {#247}", {
+  testthat::skip_if_not_installed("plotly")
+  testthat::skip_if_not_installed("DT")
+  out <- Report_PrematureDeaths(
+    dfResults = dfResults,
+    dfMetrics = dfMetrics,
+    dfGroups = dfGroups,
+    lListings = lListings,
+    nWindowDays = 90,
+    strOutputDir = tempdir()
+  )
+  html <- paste(readLines(out, warn = FALSE), collapse = "\n")
+  expect_match(html, "function filterScatterChart", fixed = TRUE)
+  expect_match(html, "pd-country-scatter", fixed = TRUE)
+  expect_match(html, "pd-site-scatter", fixed = TRUE)
+})
