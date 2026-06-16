@@ -34,6 +34,15 @@ Mapped_Death <- lListings$Mapped_Death
 Mapped_SUBJ <- lListings$Mapped_SUBJ
 Mapped_STUDCOMP <- lListings$Mapped_STUDCOMP
 
+# The premature-death window is anchored on randomization, so a subject without
+# a randomization date has no position on the timeline (NA follow-up / x). Drop
+# them from the analysis cohort up front so the Overview count, the bucket bars,
+# and the scatter all describe the same randomized subjects -- otherwise such
+# subjects would be counted in the bars but silently dropped from the scatter.
+if ("rgmn_dt" %in% names(Mapped_SUBJ)) {
+  Mapped_SUBJ <- dplyr::filter(Mapped_SUBJ, !is.na(.data$rgmn_dt))
+}
+
 # Reporting snapshot drives follow-up (the two "alive" categories), so it is
 # defined here, ahead of the single classification of every enrolled subject.
 latest_snapshot <- max(dfResults$SnapshotDate)
@@ -46,6 +55,13 @@ dfClassified <- pd_Classify(
   nWindowDays = nWindowDays,
   dSnapshotDate = latest_snapshot
 )
+
+# Study-wide fixed scatter range, shared by the study/country/site views (AXIS-1).
+# Derived from the data (not hardcoded); a 5% pad keeps boundary points off the edge.
+x_max <- max(c(dfClassified$x_anchor, nWindowDays), na.rm = TRUE)
+y_max <- max(c(dfClassified$follow_up, nWindowDays), na.rm = TRUE)
+vXRange <- c(0, x_max * 1.05)
+vYRange <- c(0, y_max * 1.05)
 
 # Country → site lookup for JS filtering (all enrolled sites in the country)
 country_site_map <- Mapped_SUBJ %>%
@@ -167,7 +183,10 @@ cat("\n> **Study discontinuation** is taken from study-completion records (`stud
 
 ### Rand -> Death
 ```{r study-scatter, echo=FALSE, eval=has_premature}
-pd_RandToDeathScatter(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "studyid", strGroupLabel = "Study", dSnapshotDate = latest_snapshot)
+htmltools::div(
+  id = "pd-study-scatter",
+  pd_RandToDeathScatter(dfClassified, nWindowDays, vXRange = vXRange, vYRange = vYRange)
+)
 ```
 
 ### Reasons
@@ -189,7 +208,7 @@ htmltools::div(
 ```{r country-scatter, echo=FALSE, eval=has_premature}
 htmltools::div(
   id = "pd-country-scatter",
-  pd_RandToDeathScatter(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "country", strGroupLabel = "Country", strOuterCol = "studyid")
+  pd_RandToDeathScatter(dfClassified, nWindowDays, vXRange = vXRange, vYRange = vYRange)
 )
 ```
 
@@ -218,7 +237,7 @@ htmltools::div(
 ```{r site-scatter, echo=FALSE, eval=has_premature}
 htmltools::div(
   id = "pd-site-scatter",
-  pd_RandToDeathScatter(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "invid", strGroupLabel = "Site", strOuterCol = "country")
+  pd_RandToDeathScatter(dfClassified, nWindowDays, vXRange = vXRange, vYRange = vYRange)
 )
 ```
 
@@ -311,12 +330,15 @@ cat(paste0('
     // Highlight country bar: dim non-selected
     highlightCountryBar(country);
 
-    // Filter country scatter to selected country only
-    filterPlotlyChart("pd-country-scatter", [country]);
+    // Country scatter: keep points in the selected country (customdata[1]).
+    filterScatterChart("pd-country-scatter", [country], 1);
 
-    // Filter site buckets + scatter to this country\'s sites
+    // Site scatter: single owner applies site > country precedence (a site
+    // selection, if any, stays narrowed; otherwise the country sites show).
+    applySiteScatterFilter();
+
+    // Site buckets are still multicategory -> existing bar filter.
     filterPlotlyChart("pd-site-buckets", sites);
-    filterPlotlyChart("pd-site-scatter", sites);
 
     // The site-buckets re-render above wiped any site-bar opacity highlight;
     // re-apply it so an active, independent site selection stays visible.
@@ -359,6 +381,21 @@ cat(paste0('
     }
   }
 
+  // Single owner of the site-scatter point filter (the scatter has the same two
+  // filter sources as the listing). Same site > country > none precedence: an
+  // active site shows just that site, else an active country shows its sites,
+  // else all points return at the shared fixed range. Routing every caller
+  // through here keeps the scatter and listing in lockstep.
+  function applySiteScatterFilter() {
+    if (activeSite) {
+      filterScatterChart("pd-site-scatter", [activeSite], 2);
+    } else if (activeCountry) {
+      filterScatterChart("pd-site-scatter", countrySiteMap[activeCountry] || [], 2);
+    } else {
+      resetPlotlyChart("pd-site-scatter");
+    }
+  }
+
   // Attach click handler to site buckets chart (retry until Plotly ready, max 20)
   var siteAttachRetries = 0;
   function attachSiteClick() {
@@ -384,6 +421,8 @@ cat(paste0('
       "\\ud83d\\udd0d <strong>Showing site " + invid + "</strong> \\u2014 patient listing filtered";
     updateBannerVisibility();
     highlightSiteBar(invid);
+    // Narrow the site scatter to just this site (single owner, customdata[2]).
+    applySiteScatterFilter();
     applyListingFilter();
   }
 
@@ -415,6 +454,10 @@ cat(paste0('
 
     // Un-dim site bars
     undimBars("pd-site-buckets");
+
+    // The site click narrowed the site scatter; restore it from the remaining
+    // state (the active country\'s sites, or all points) via the single owner.
+    applySiteScatterFilter();
 
     // Re-derive the listing from any remaining active filter (e.g. country).
     applyListingFilter();
@@ -483,6 +526,30 @@ cat(paste0('
     if (PD_BUCKET_CHARTS.indexOf(containerId) >= 0) applyMode(el);
   }
 
+  // Numeric-y scatters filter by per-point customdata: index 1 = country,
+  // index 2 = invid. Reindex each trace\'s x/y/customdata in lockstep, then
+  // react with the CACHED layout so the fixed [x]/[y] range is preserved
+  // (no autorange to the filtered subset -- AXIS-1).
+  function filterScatterChart(containerId, allowedValues, cdIndex) {
+    var el = getPlotlyDiv(containerId);
+    if (!el) return;
+    cacheOriginal(el, containerId);
+    var orig = originalData[containerId];
+    var filtered = orig.map(function(trace) {
+      if (!Array.isArray(trace.customdata)) return trace;
+      var keep = [];
+      trace.customdata.forEach(function(cd, idx) {
+        if (cd && allowedValues.indexOf(cd[cdIndex]) >= 0) keep.push(idx);
+      });
+      var nt = Object.assign({}, trace);
+      nt.x = keep.map(function(i) { return trace.x[i]; });
+      nt.y = keep.map(function(i) { return trace.y[i]; });
+      nt.customdata = keep.map(function(i) { return trace.customdata[i]; });
+      return nt;
+    });
+    Plotly.react(el, filtered, JSON.parse(JSON.stringify(originalLayout[containerId])));
+  }
+
   // Global reset for the country filter (called by the country row\'s button onclick)
   window.pdResetFilter = function() {
     activeCountry = null;
@@ -497,7 +564,9 @@ cat(paste0('
     // Reset charts the country filter owns
     resetPlotlyChart("pd-country-scatter");
     resetPlotlyChart("pd-site-buckets");
-    resetPlotlyChart("pd-site-scatter");
+    // Site scatter via the single owner so a still-active site stays narrowed
+    // (else it returns to all points at the shared fixed range).
+    applySiteScatterFilter();
 
     // The site-buckets reset above wiped any site-bar highlight; re-apply it
     // if a site filter is still active.
