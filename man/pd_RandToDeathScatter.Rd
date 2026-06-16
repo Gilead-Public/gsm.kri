@@ -2,38 +2,23 @@
 % Please edit documentation in R/pd_RandToDeathScatter.R
 \name{pd_RandToDeathScatter}
 \alias{pd_RandToDeathScatter}
-\title{Randomization-to-death scatter}
+\title{Randomization-to-event scatter}
 \usage{
 pd_RandToDeathScatter(
-  dfDeath,
-  dfSubjects,
+  dfClassified,
   nWindowDays = 90,
-  strGroupCol = "invid",
-  strGroupLabel = "Group",
-  dSnapshotDate = NULL,
-  strOuterCol = NULL
+  vXRange = NULL,
+  vYRange = NULL
 )
 }
 \arguments{
-\item{dfDeath}{`data.frame` Mapped death data with `subjid`, `death_dy`, and
-optionally `treatment_related` (shown as "Unknown" when absent). When
-`dSnapshotDate` is supplied, `death_dt` is also required.}
+\item{dfClassified}{`data.frame` Output of [pd_Classify()].}
 
-\item{dfSubjects}{`data.frame` Mapped subject data with `subjid` and `strGroupCol`.}
+\item{nWindowDays}{`numeric` Window in days (color/legend vocabulary). Default 90.}
 
-\item{nWindowDays}{`numeric` Premature-death window in days. Default: 90.}
+\item{vXRange}{`numeric(2)` Optional fixed x-axis range. `NULL` autoranges.}
 
-\item{strGroupCol}{`character` Column in `dfSubjects` to group by. Default: "invid".}
-
-\item{strGroupLabel}{`character` Axis label for the group dimension. Default: "Group".}
-
-\item{dSnapshotDate}{`Date` (or coercible) When non-`NULL`, selects the
-study-level view: y becomes days from randomization to the snapshot. Default:
-`NULL` (categorical group y-axis).}
-
-\item{strOuterCol}{`character` Optional parent column for a two-tier
-(multicategory) y-axis bracketing each group under its parent (e.g.
-"country" for sites). Ignored in the study view (numeric y). Default `NULL`.}
+\item{vYRange}{`numeric(2)` Optional fixed y-axis range. `NULL` autoranges.}
 }
 \value{
 A `plotly` htmlwidget.
@@ -41,13 +26,13 @@ A `plotly` htmlwidget.
 \description{
 `r lifecycle::badge("experimental")`
 
-Scatter of premature deaths: x = days from randomization to death (`death_dy`),
-colored by premature-death bucket (`<=30d` / `31-Wd`) using the RAG colors of
-[pd_BucketBar()]. By default y = group (categorical). When `dSnapshotDate` is
-supplied the y-axis instead becomes numeric — days from randomization to the
-snapshot (`SnapshotDate − death_dt + death_dy`), the full window the subject
-would have been observed had they lived — for the study-level view, where the
-categorical group axis would otherwise collapse to one row. Country, site,
-subject, days to death, bucket, and treatment-related status are surfaced in
-the hover tooltip.
+Scatter of every enrolled subject from [pd_Classify()]: x = `x_anchor` (death
+day for deaths; the window boundary for "alive at window"; follow-up for
+"alive prior"; discontinuation day for discontinuations), y = `follow_up`
+(days from randomization to snapshot). Colored by category; each category
+(including the two death categories) is a separate legend entry (SI-1 design
+decision: no grouped "Death within `nWindowDays` days" heading). Pass
+`vXRange`/`vYRange` (computed study-wide by the report) to fix a shared range
+across the study/country/site views (AXIS-1). Each point's `customdata` packs
+`[hover, country, invid]` so the report can filter points client-side.
 }
