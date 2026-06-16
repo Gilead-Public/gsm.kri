@@ -543,12 +543,13 @@ cat(paste0('
         return pdMode === "pct" ? Math.round(cd[1]) + "%" : String(cd[0]);
       });
     });
-    // One atomic data+layout update (single redraw) instead of restyle+relayout:
-    // avoids the bars-resized-but-axis-stale flicker frame, which the filter hooks
-    // would otherwise paint on every react in % mode. range:null clears the fixed
-    // [0,100] so autorange unambiguously recomputes the Subjects scale on the way back.
+    // One atomic data+layout update (single redraw) instead of restyle+relayout
+    // avoids the bars-resized-but-axis-stale flicker frame on every react. BOTH
+    // modes autorange (range:null) so hiding a category via the legend rescales
+    // the y-axis to the remaining traces -- count to the remaining total, % to
+    // the remaining stacked share. Pinning % to [0,100] would freeze that rescale.
     var layoutUpdate = pdMode === "pct"
-      ? {"yaxis.title.text": "% of group", "yaxis.ticksuffix": "%", "yaxis.range": [0, 100]}
+      ? {"yaxis.title.text": "% of group", "yaxis.ticksuffix": "%", "yaxis.autorange": true, "yaxis.range": null}
       : {"yaxis.title.text": "Subjects", "yaxis.ticksuffix": "", "yaxis.autorange": true, "yaxis.range": null};
     Plotly.update(el, {y: ys, text: texts}, layoutUpdate, traceIndices);
   }

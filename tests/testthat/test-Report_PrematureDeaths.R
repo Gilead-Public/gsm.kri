@@ -93,7 +93,7 @@ test_that("Report_PrematureDeaths renders the studcomp discontinuation note {#24
   expect_true(grepl("studcomp", html, ignore.case = TRUE))
 })
 
-test_that("Report bucket-bar on-bar labels follow the count/percent toggle {#246}", {
+test_that("Report bucket-bar toggle updates labels and autoranges both modes {#246}", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
   out <- Report_PrematureDeaths(
@@ -108,6 +108,13 @@ test_that("Report bucket-bar on-bar labels follow the count/percent toggle {#246
   # applyMode rebuilds the on-bar text per mode (count vs %) and pushes it with y.
   expect_match(html, "var texts =", fixed = TRUE)
   expect_match(html, "text: texts", fixed = TRUE)
+  # % mode autoranges the y-axis (no pinned [0, 100]) so a legend deselect
+  # rescales the bars, consistent with count mode.
+  expect_match(
+    html,
+    '"yaxis.ticksuffix": "%", "yaxis.autorange": true',
+    fixed = TRUE
+  )
 })
 
 test_that("Report_PrematureDeaths includes country filter JS and banner {#246}", {
