@@ -191,3 +191,37 @@ test_that("Report wires the numeric-y scatter point filter {#247}", {
   expect_match(html, "pd-country-scatter", fixed = TRUE)
   expect_match(html, "pd-site-scatter", fixed = TRUE)
 })
+
+test_that("Report drops subjects without a randomization date from the cohort {#247}", {
+  testthat::skip_if_not_installed("plotly")
+  testthat::skip_if_not_installed("DT")
+  # S4 is enrolled but never randomized (rgmn_dt NA): it has no position on the
+  # randomization-anchored timeline, so the cohort count must stay at the three
+  # randomized subjects rather than counting it in the bars and dropping it from
+  # the scatter.
+  lL <- lListings
+  lL$Mapped_SUBJ <- dplyr::bind_rows(
+    lListings$Mapped_SUBJ,
+    tibble::tibble(
+      studyid = "ST01",
+      subjid = "S4",
+      invid = "INV-2",
+      country = "CAN",
+      rgmn_dt = as.Date(NA)
+    )
+  )
+  out <- Report_PrematureDeaths(
+    dfResults = dfResults,
+    dfMetrics = dfMetrics,
+    dfGroups = dfGroups,
+    lListings = lL,
+    nWindowDays = 90,
+    strOutputDir = tempdir()
+  )
+  html <- paste(readLines(out, warn = FALSE), collapse = "\n")
+  enrolled <- regmatches(
+    html,
+    regexpr("Total enrolled:</strong>[^0-9]*[0-9]+", html)
+  )
+  expect_match(enrolled, "3$") # S4 excluded -> 3 randomized subjects, not 4
+})

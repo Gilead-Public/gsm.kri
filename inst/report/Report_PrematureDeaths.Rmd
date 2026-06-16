@@ -34,6 +34,15 @@ Mapped_Death <- lListings$Mapped_Death
 Mapped_SUBJ <- lListings$Mapped_SUBJ
 Mapped_STUDCOMP <- lListings$Mapped_STUDCOMP
 
+# The premature-death window is anchored on randomization, so a subject without
+# a randomization date has no position on the timeline (NA follow-up / x). Drop
+# them from the analysis cohort up front so the Overview count, the bucket bars,
+# and the scatter all describe the same randomized subjects -- otherwise such
+# subjects would be counted in the bars but silently dropped from the scatter.
+if ("rgmn_dt" %in% names(Mapped_SUBJ)) {
+  Mapped_SUBJ <- dplyr::filter(Mapped_SUBJ, !is.na(.data$rgmn_dt))
+}
+
 # Reporting snapshot drives follow-up (the two "alive" categories), so it is
 # defined here, ahead of the single classification of every enrolled subject.
 latest_snapshot <- max(dfResults$SnapshotDate)
