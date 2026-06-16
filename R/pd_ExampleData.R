@@ -101,9 +101,11 @@ pd_MockCompleteDeathExtension <- function(dfDeath, dfAE, dfStudComp) {
 #' @param snapshot_date `Date` Reporting snapshot. Default `Sys.Date()`
 #'   (the gsm.reporting `BindResults` default).
 #'
-#' @return A `tibble` of observed simulated deaths matching the enriched schema
-#'   returned by `pd_MockCompleteDeathExtension()` (`Mapped_Death` plus
-#'   `ae_pt_at_death`, `compreas`, `treatment_related`, `death_reason`).
+#' @return A named `list` of mapped frames: `Mapped_SUBJ` (every subject plus
+#'   `rgmn_dt`), `Mapped_Death` (observed simulated deaths with `death_reason` /
+#'   `deathcls` / `aerel`), and `Mapped_STUDCOMP` (non-death discontinuations
+#'   dated inside the window) -- the inputs [pd_Classify()] needs to populate all
+#'   five categories.
 #' @noRd
 pd_SimulatePrematureDeathCohort <- function(
   dfSubj,
@@ -138,21 +140,57 @@ pd_SimulatePrematureDeathCohort <- function(
   n_obs <- sum(observed)
 
   reasons <- c("Cardiac arrest", "Sepsis", "Disease progression", "Unknown")
-  tibble::tibble(
+  deathcls_pool <- c("Adverse Event", "Disease Progression", "Other")
+
+  # Follow-up (snapshot - randomization) drives the two "alive" categories, so
+  # every subject carries its randomization date.
+  Mapped_SUBJ <- subj %>%
+    dplyr::mutate(rgmn_dt = rand_date)
+
+  Mapped_Death <- tibble::tibble(
     studyid = subj$studyid[observed],
     subjid = subj$subjid[observed],
     death_dt = rand_date[observed] + death_time[observed],
     death_dy = death_time[observed],
     death = TRUE,
     pd_date = as.Date(NA),
-    ae_pt_at_death = NA_character_,
-    compreas = NA_character_,
-    treatment_related = stats::runif(n_obs) < 0.35,
     death_reason = sample(
       reasons,
       n_obs,
       replace = TRUE,
       prob = c(0.30, 0.25, 0.30, 0.15)
-    )
+    ),
+    deathcls = sample(
+      deathcls_pool,
+      n_obs,
+      replace = TRUE,
+      prob = c(0.5, 0.3, 0.2)
+    ),
+    aerel = sample(c("Yes", "No"), n_obs, replace = TRUE, prob = c(0.35, 0.65))
+  )
+
+  # Non-death discontinuations: ~8% of the *surviving* subjects discontinue,
+  # dated inside the window so they populate the dark-grey category.
+  # mincreated_dts is the studcomp-internal date pd_Classify() uses by default.
+  alive <- subj$subjid[!observed]
+  n_disc <- max(1, round(0.08 * length(alive)))
+  disc_ids <- utils::head(alive, n_disc)
+  disc_offset <- round(stats::runif(n_disc, 10, nWindowDays - 5))
+  Mapped_STUDCOMP <- tibble::tibble(
+    studyid = "ST01",
+    subjid = disc_ids,
+    compyn = "N",
+    compreas = sample(
+      c("Withdrawal by Subject", "Lost to Follow-up"),
+      n_disc,
+      replace = TRUE
+    ),
+    mincreated_dts = rand_date[match(disc_ids, subj$subjid)] + disc_offset
+  )
+
+  list(
+    Mapped_SUBJ = Mapped_SUBJ,
+    Mapped_Death = Mapped_Death,
+    Mapped_STUDCOMP = Mapped_STUDCOMP
   )
 }

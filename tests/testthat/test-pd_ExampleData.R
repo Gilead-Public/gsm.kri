@@ -60,22 +60,37 @@ test_that("pd_MockCompleteDeathExtension compreas fallback is deterministic {#22
 })
 
 # --- pd_SimulatePrematureDeathCohort ----------------------------------------
-test_that("pd_SimulatePrematureDeathCohort returns a censored, schema-stable cohort {#223}", {
+test_that("simulation exposes rgmn_dt and a studcomp frame for all subjects {#246}", {
+  subj <- tibble::tibble(studyid = "ST01", subjid = paste0("S", 1:50))
+  sim <- pd_SimulatePrematureDeathCohort(
+    subj,
+    nWindowDays = 90,
+    snapshot_date = as.Date("2026-05-01")
+  )
+  expect_true(all(
+    c("Mapped_Death", "Mapped_SUBJ", "Mapped_STUDCOMP") %in% names(sim)
+  ))
+  expect_true("rgmn_dt" %in% names(sim$Mapped_SUBJ))
+  expect_equal(nrow(sim$Mapped_SUBJ), 50) # follow-up for every subject
+  expect_true(all(c("deathcls", "aerel") %in% names(sim$Mapped_Death)))
+})
+
+test_that("pd_SimulatePrematureDeathCohort returns a censored, schema-stable death frame {#246}", {
   dfSubj <- tibble::tibble(
     studyid = "ABC",
     subjid = paste0("S", seq_len(500))
   )
   snap <- as.Date("2026-06-01")
-  out <- pd_SimulatePrematureDeathCohort(
+  sim <- pd_SimulatePrematureDeathCohort(
     dfSubj,
     nWindowDays = 90,
     seed = 1,
     snapshot_date = snap
   )
 
-  expect_s3_class(out, "tbl_df")
+  expect_s3_class(sim$Mapped_Death, "tbl_df")
   expect_named(
-    out,
+    sim$Mapped_Death,
     c(
       "studyid",
       "subjid",
@@ -83,19 +98,18 @@ test_that("pd_SimulatePrematureDeathCohort returns a censored, schema-stable coh
       "death_dy",
       "death",
       "pd_date",
-      "ae_pt_at_death",
-      "compreas",
-      "treatment_related",
-      "death_reason"
+      "death_reason",
+      "deathcls",
+      "aerel"
     )
   )
-  expect_gt(nrow(out), 0) # the seed must produce at least one observed death
-  expect_true(all(out$death))
-  expect_true(all(out$death_dy >= 1)) # only positive time-to-death observed
-  expect_true(all(out$death_dt <= snap)) # censoring: no death after the snapshot
+  expect_gt(nrow(sim$Mapped_Death), 0) # the seed must produce >=1 observed death
+  expect_true(all(sim$Mapped_Death$death))
+  expect_true(all(sim$Mapped_Death$death_dy >= 1)) # only positive time-to-death
+  expect_true(all(sim$Mapped_Death$death_dt <= snap)) # censoring vs snapshot
 })
 
-test_that("pd_SimulatePrematureDeathCohort is reproducible for a fixed seed {#223}", {
+test_that("pd_SimulatePrematureDeathCohort is reproducible for a fixed seed {#246}", {
   dfSubj <- tibble::tibble(studyid = "ABC", subjid = paste0("S", seq_len(500)))
   snap <- as.Date("2026-06-01")
   a <- pd_SimulatePrematureDeathCohort(
