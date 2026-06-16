@@ -106,7 +106,7 @@
 - [`pd_PrematureCohort()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_PrematureCohort.md)
   : Premature-death cohort
 - [`pd_RandToDeathScatter()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_RandToDeathScatter.md)
-  : Randomization-to-death scatter
+  : Randomization-to-event scatter
 - [`pd_ReasonCounts()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_ReasonCounts.md)
   : Premature-death reason counts
 - [`pd_ReasonDist()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_ReasonDist.md)
