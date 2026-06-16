@@ -47,6 +47,13 @@ dfClassified <- pd_Classify(
   dSnapshotDate = latest_snapshot
 )
 
+# Study-wide fixed scatter range, shared by the study/country/site views (AXIS-1).
+# Derived from the data (not hardcoded); a 5% pad keeps boundary points off the edge.
+x_max <- max(c(dfClassified$x_anchor, nWindowDays), na.rm = TRUE)
+y_max <- max(c(dfClassified$follow_up, nWindowDays), na.rm = TRUE)
+vXRange <- c(0, x_max * 1.05)
+vYRange <- c(0, y_max * 1.05)
+
 # Country → site lookup for JS filtering (all enrolled sites in the country)
 country_site_map <- Mapped_SUBJ %>%
   dplyr::distinct(country, invid) %>%
@@ -167,7 +174,10 @@ cat("\n> **Study discontinuation** is taken from study-completion records (`stud
 
 ### Rand -> Death
 ```{r study-scatter, echo=FALSE, eval=has_premature}
-pd_RandToDeathScatter(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "studyid", strGroupLabel = "Study", dSnapshotDate = latest_snapshot)
+htmltools::div(
+  id = "pd-study-scatter",
+  pd_RandToDeathScatter(dfClassified, nWindowDays, vXRange = vXRange, vYRange = vYRange)
+)
 ```
 
 ### Reasons
@@ -189,7 +199,7 @@ htmltools::div(
 ```{r country-scatter, echo=FALSE, eval=has_premature}
 htmltools::div(
   id = "pd-country-scatter",
-  pd_RandToDeathScatter(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "country", strGroupLabel = "Country", strOuterCol = "studyid")
+  pd_RandToDeathScatter(dfClassified, nWindowDays, vXRange = vXRange, vYRange = vYRange)
 )
 ```
 
@@ -218,7 +228,7 @@ htmltools::div(
 ```{r site-scatter, echo=FALSE, eval=has_premature}
 htmltools::div(
   id = "pd-site-scatter",
-  pd_RandToDeathScatter(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "invid", strGroupLabel = "Site", strOuterCol = "country")
+  pd_RandToDeathScatter(dfClassified, nWindowDays, vXRange = vXRange, vYRange = vYRange)
 )
 ```
 
