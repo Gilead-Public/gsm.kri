@@ -22,13 +22,11 @@ if (requireNamespace("gsm.qtl", quietly = TRUE)) {
   library(gsm.qtl)
 }
 
-library(gsm.kri)
 library(dplyr)
 library(purrr)
 library(tidyr)
 library(cli)
 library(glue)
-library(yaml)
 library(stringr)
 
 test_check("gsm.kri")

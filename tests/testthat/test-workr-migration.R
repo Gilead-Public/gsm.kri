@@ -6,6 +6,8 @@
 # runtime surface.
 
 test_that("workflow specs route extracted runtime functions through workr (#238)", {
+  skip_if_not_installed("yaml")
+
   wf_dir <- system.file("workflow", package = "gsm.kri")
   skip_if(identical(wf_dir, ""), "gsm.kri not installed")
 

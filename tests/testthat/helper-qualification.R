@@ -5,7 +5,6 @@ suppressPackageStartupMessages({
   library(tidyr)
   library(cli)
   library(glue)
-  library(yaml)
   library(stringr)
 })
 

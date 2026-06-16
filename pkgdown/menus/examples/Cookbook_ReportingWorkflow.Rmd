@@ -100,7 +100,7 @@ mapped <- workr::RunWorkflows(mappings_wf, lRaw)
 Calculate metrics using mapped data.
 
 ```{r create-metrics, results='hide', warning=FALSE, message=FALSE}
-metrics_wf <- workr::MakeWorkflowList(strPath = "inst/workflow/2_metrics", strPackage = "gsm.kri")
+metrics_wf <- workr::MakeWorkflowList(strPath = "workflow/2_metrics", strPackage = "gsm.kri")
 analyzed <- workr::RunWorkflows(metrics_wf, c(mapped, list(lWorkflows = metrics_wf)))
 ```
 
@@ -121,7 +121,7 @@ reporting <- workr::RunWorkflows(reporting_wf, c(mapped, list(
 Create KRI Site and Country reports using reporting data.
 
 ```{r create-kri-reports, results='hide', warning=FALSE, message=FALSE}
-module_wf <- workr::MakeWorkflowList("kri", strPath = "inst/workflow/4_modules", strPackage = "gsm.kri")
+module_wf <- workr::MakeWorkflowList("kri", strPath = "workflow/4_modules", strPackage = "gsm.kri")
 lReports <- workr::RunWorkflows(module_wf, reporting)
 ```
 
