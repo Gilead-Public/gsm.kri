@@ -32,6 +32,20 @@ nWindowDays <- params$nWindowDays
 
 Mapped_Death <- lListings$Mapped_Death
 Mapped_SUBJ <- lListings$Mapped_SUBJ
+Mapped_STUDCOMP <- lListings$Mapped_STUDCOMP
+
+# Reporting snapshot drives follow-up (the two "alive" categories), so it is
+# defined here, ahead of the single classification of every enrolled subject.
+latest_snapshot <- max(dfResults$SnapshotDate)
+
+# Single classification of every enrolled subject (the SOT for all charts).
+dfClassified <- pd_Classify(
+  dfSubjects = Mapped_SUBJ,
+  dfDeath = Mapped_Death,
+  dfStudComp = Mapped_STUDCOMP,
+  nWindowDays = nWindowDays,
+  dSnapshotDate = latest_snapshot
+)
 
 # Country → site lookup for JS filtering (all enrolled sites in the country)
 country_site_map <- Mapped_SUBJ %>%
@@ -58,7 +72,6 @@ country_premature_count <- dfPrematureCohort %>%
 nEnrolled <- nrow(Mapped_SUBJ)
 nPremature <- nrow(dfPrematureCohort)
 nPrematureRate <- ifelse(nEnrolled > 0, 100 * nPremature / nEnrolled, 0)
-latest_snapshot <- max(dfResults$SnapshotDate)
 has_premature <- nPremature > 0
 
 # Consistency guard: the charts recompute premature status from Mapped_Death at
@@ -144,8 +157,12 @@ cat('
 ```{r study-buckets, echo=FALSE, eval=has_premature}
 htmltools::div(
   id = "pd-study-buckets",
-  pd_BucketBar(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "studyid", strGroupLabel = "Study", bRangeSlider = TRUE)
+  pd_BucketBar(dfClassified, nWindowDays, strGroupCol = "studyid", strGroupLabel = "Study", bRangeSlider = TRUE)
 )
+```
+
+```{r study-buckets-note, echo=FALSE, results='asis', eval=has_premature}
+cat("\n> **Study discontinuation** is taken from study-completion records (`studcomp`): a subject is counted here when their record indicates discontinuation within ", nWindowDays, " days of randomization for a reason other than death. Deaths within ", nWindowDays, " days appear under *Death within ", nWindowDays, " days*; subjects still on study appear under the *Alive* categories. Discontinuation timing is approximated from the study-completion record date.\n", sep = "")
 ```
 
 ### Rand -> Death
@@ -164,7 +181,7 @@ pd_ReasonDist(Mapped_Death, nWindowDays, nEnrolled = nEnrolled)
 ```{r country-buckets, echo=FALSE, eval=has_premature}
 htmltools::div(
   id = "pd-country-buckets",
-  pd_BucketBar(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "country", strGroupLabel = "Country", strOuterCol = "studyid", bRangeSlider = TRUE)
+  pd_BucketBar(dfClassified, nWindowDays, strGroupCol = "country", strGroupLabel = "Country", strOuterCol = "studyid", bRangeSlider = TRUE)
 )
 ```
 
@@ -193,7 +210,7 @@ htmltools::div(
 ```{r site-buckets, echo=FALSE, eval=has_premature}
 htmltools::div(
   id = "pd-site-buckets",
-  pd_BucketBar(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "invid", strGroupLabel = "Site", strOuterCol = "country", strOuterLabel = "Country", bRangeSlider = TRUE)
+  pd_BucketBar(dfClassified, nWindowDays, strGroupCol = "invid", strGroupLabel = "Site", strOuterCol = "country", strOuterLabel = "Country", bRangeSlider = TRUE)
 )
 ```
 
@@ -517,14 +534,24 @@ cat(paste0('
     var ys = el.data.map(function(tr) {
       return (tr.customdata || []).map(function(cd) { return cd[slot]; });
     });
-    // One atomic data+layout update (single redraw) instead of restyle+relayout:
-    // avoids the bars-resized-but-axis-stale flicker frame, which the filter hooks
-    // would otherwise paint on every react in % mode. range:null clears the fixed
-    // [0,100] so autorange unambiguously recomputes the Subjects scale on the way back.
+    // On-bar labels track the mode: the count in count mode, the rounded % in %
+    // mode; an empty bucket (count 0) stays blank either way. customdata is
+    // [count, pct] per point, so the label is re-derived alongside y.
+    var texts = el.data.map(function(tr) {
+      return (tr.customdata || []).map(function(cd) {
+        if (!cd[0]) return "";
+        return pdMode === "pct" ? Math.round(cd[1]) + "%" : String(cd[0]);
+      });
+    });
+    // One atomic data+layout update (single redraw) instead of restyle+relayout
+    // avoids the bars-resized-but-axis-stale flicker frame on every react. BOTH
+    // modes autorange (range:null) so hiding a category via the legend rescales
+    // the y-axis to the remaining traces -- count to the remaining total, % to
+    // the remaining stacked share. Pinning % to [0,100] would freeze that rescale.
     var layoutUpdate = pdMode === "pct"
-      ? {"yaxis.title.text": "% of group", "yaxis.ticksuffix": "%", "yaxis.range": [0, 100]}
+      ? {"yaxis.title.text": "% of group", "yaxis.ticksuffix": "%", "yaxis.autorange": true, "yaxis.range": null}
       : {"yaxis.title.text": "Subjects", "yaxis.ticksuffix": "", "yaxis.autorange": true, "yaxis.range": null};
-    Plotly.update(el, {y: ys}, layoutUpdate, traceIndices);
+    Plotly.update(el, {y: ys, text: texts}, layoutUpdate, traceIndices);
   }
 
   window.pdSetMode = function(mode) {

@@ -83,12 +83,16 @@ lMapped$Mapped_Death <- lMapped$Mapped_Death %>%
 # premature deaths land off-scale on the study scatter. Manufacture an
 # accrual / Weibull-mortality / censoring cohort instead -- see R/pd_ExampleData.R
 # for the full trial-dynamics rationale.
-sim_death <- gsm.kri:::pd_SimulatePrematureDeathCohort(
+# The simulation returns the mapped frames pd_Classify() needs: Mapped_SUBJ
+# (+ rgmn_dt for follow-up), Mapped_Death (+ deathcls / aerel), and
+# Mapped_STUDCOMP (non-death discontinuations dated inside the window).
+sim <- gsm.kri:::pd_SimulatePrematureDeathCohort(
   dfSubj = lMapped$Mapped_SUBJ,
   nWindowDays = window_days
 )
-# Replace Mapped_Death with the simulated deaths, preserving its column schema.
-lMapped$Mapped_Death <- dplyr::bind_rows(lMapped$Mapped_Death[0, ], sim_death)
+lMapped$Mapped_SUBJ <- sim$Mapped_SUBJ
+lMapped$Mapped_Death <- sim$Mapped_Death
+lMapped$Mapped_STUDCOMP <- sim$Mapped_STUDCOMP
 
 # --- Step 3: Run the site / country / patient premature-death metrics --------
 metric_names <- c("kri0015", "cou0015", "pat0015")
@@ -116,7 +120,8 @@ dfResults <- lReporting$Reporting_Results |>
 # --- Step 5: Assemble the listings consumed by the report --------------------
 lListings <- list(
   Mapped_SUBJ = lMapped$Mapped_SUBJ,
-  Mapped_Death = lMapped$Mapped_Death
+  Mapped_Death = lMapped$Mapped_Death,
+  Mapped_STUDCOMP = lMapped$Mapped_STUDCOMP
 )
 ```
 

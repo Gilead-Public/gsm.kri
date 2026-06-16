@@ -1,0 +1,184 @@
+#' Premature-death category levels
+#'
+#' @description
+#' The five categories, in precedence order: death within 30 days, death
+#' 31-`nWindowDays` days, study discontinuation within the window, alive at the
+#' window (follow-up >= window), and alive prior to the window (follow-up <
+#' window). Shared by the bucket bar, the scatter, and the report so labels and
+#' colors stay in lockstep.
+#'
+#' @param nWindowDays `numeric` Premature-death window in days.
+#'
+#' @return A length-5 `character` vector of category labels.
+#' @export
+pd_CategoryLevels <- function(nWindowDays) {
+  c(
+    "Death \u226430d",
+    paste0("Death 31\u2013", nWindowDays, "d"),
+    paste0("Study discontinuation within ", nWindowDays, " days"),
+    paste0("Alive at ", nWindowDays, " days"),
+    paste0("Alive prior to ", nWindowDays, " days")
+  )
+}
+
+#' Premature-death category colors
+#'
+#' @description
+#' Named color vector keyed by [pd_CategoryLevels()]: red/amber (deaths),
+#' dark-grey (discontinuation), dark green (alive at window), light green
+#' (alive prior to window). Reuses [colorScheme()] so no new hues are introduced.
+#'
+#' @param nWindowDays `numeric` Premature-death window in days.
+#'
+#' @return A length-5 named `character` vector of hex colors.
+#' @export
+pd_CategoryColors <- function(nWindowDays) {
+  cols <- c(
+    colorScheme("red", "dark"),
+    colorScheme("amber", "dark"),
+    colorScheme("gray", "dark"),
+    colorScheme("green", "dark"),
+    colorScheme("green", "light")
+  )
+  names(cols) <- pd_CategoryLevels(nWindowDays)
+  cols
+}
+
+#' Legend presentation for a category
+#'
+#' @description
+#' Maps a category label to its legend `name`, `group`, and optional group title.
+#' Every category -- including the two death categories -- is a separate
+#' top-level legend entry named by its full [pd_CategoryLevels()] label; the two
+#' deaths are no longer joined under a "Death within `nWindowDays` days" heading.
+#'
+#' @param category `character` One value of [pd_CategoryLevels()].
+#' @param nWindowDays `numeric` Premature-death window in days (unused; retained
+#'   so callers can pass the window without special-casing).
+#'
+#' @return A list with `name`, `group`, and `grouptitle` (always `NULL`).
+#' @noRd
+pd_LegendMeta <- function(category, nWindowDays) {
+  list(name = category, group = category, grouptitle = NULL)
+}
+
+#' Classify enrolled subjects into premature-death categories
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#'
+#' Single source of truth for the five premature-death categories. Every enrolled
+#' subject in `dfSubjects` is assigned exactly one `Category` by precedence
+#' (first match wins): death `<=30d` -> death `31-Wd` -> study discontinuation
+#' within the window -> alive at the window (`follow_up >= nWindowDays`, which
+#' includes a death after the window -- it survived the window) -> alive prior to
+#' the window. `discont_dy` is `discontinuation_date - rgmn_dt`, mirroring how
+#' `death_dy` is derived, so the whole report shares one day-zero (randomization).
+#'
+#' @param dfSubjects `data.frame` Enrolled subjects: `subjid` (+ `studyid` /
+#'   `country` / `invid` when present). Needs `rgmn_dt`, or supply `dfRand`.
+#' @param dfDeath `data.frame` Mapped death data with `subjid` and `death_dy`.
+#' @param dfStudComp `data.frame` (optional) Study-completion data with `subjid`,
+#'   `compyn`, `compreas`, and `strDiscontDateCol`. `NULL` (default) yields no
+#'   discontinuation category.
+#' @param dfRand `data.frame` (optional) Randomization data with `subjid` and
+#'   `rgmn_dt`, used when `dfSubjects` lacks `rgmn_dt`.
+#' @param nWindowDays `numeric` Window in days. Default 90.
+#' @param dSnapshotDate `Date` Reporting snapshot (drives `follow_up`). Default `Sys.Date()`.
+#' @param strDiscontDateCol `character` Column in `dfStudComp` used as the
+#'   discontinuation date. Default `"mincreated_dts"` (a proxy; repoint to a true
+#'   discontinuation/end-of-study date when one is mapped).
+#' @param strDeathReason `character` `compreas` value meaning death (excluded from
+#'   the discontinuation category). Default `"Death"`.
+#'
+#' @return A `tibble`: `subjid`, `studyid`, `country`, `invid`, `Category`
+#'   (factor with the [pd_CategoryLevels()] levels), `death_dy`, `discont_dy`,
+#'   `follow_up`, `x_anchor`.
+#' @export
+pd_Classify <- function(
+  dfSubjects,
+  dfDeath,
+  dfStudComp = NULL,
+  dfRand = NULL,
+  nWindowDays = 90,
+  dSnapshotDate = Sys.Date(),
+  strDiscontDateCol = "mincreated_dts",
+  strDeathReason = "Death"
+) {
+  gsm.core::stop_if(
+    cnd = !is.data.frame(dfSubjects),
+    message = "dfSubjects is not a data.frame"
+  )
+  gsm.core::stop_if(
+    cnd = !is.data.frame(dfDeath),
+    message = "dfDeath is not a data.frame"
+  )
+  lv <- pd_CategoryLevels(nWindowDays)
+
+  subj <- dfSubjects %>% dplyr::distinct(.data$subjid, .keep_all = TRUE)
+  if (!"rgmn_dt" %in% names(subj) && !is.null(dfRand)) {
+    subj <- subj %>%
+      dplyr::left_join(
+        dfRand %>% dplyr::select("subjid", "rgmn_dt") %>% dplyr::distinct(),
+        by = "subjid"
+      )
+  }
+  gsm.core::stop_if(
+    cnd = !"rgmn_dt" %in% names(subj),
+    message = "pd_Classify needs rgmn_dt on dfSubjects or a dfRand carrying rgmn_dt"
+  )
+
+  death_dy <- dfDeath$death_dy[match(subj$subjid, dfDeath$subjid)]
+
+  discont_dy <- rep(NA_real_, nrow(subj))
+  if (!is.null(dfStudComp) && strDiscontDateCol %in% names(dfStudComp)) {
+    dc <- dfStudComp %>%
+      dplyr::filter(
+        toupper(.data$compyn) %in% c("N", "NO", "FALSE"),
+        is.na(.data$compreas) | .data$compreas != strDeathReason
+      ) %>%
+      dplyr::transmute(
+        subjid = .data$subjid,
+        discont_dt = as.Date(.data[[strDiscontDateCol]])
+      ) %>%
+      dplyr::group_by(.data$subjid) %>%
+      dplyr::slice(1) %>%
+      dplyr::ungroup()
+    discont_dt <- dc$discont_dt[match(subj$subjid, dc$subjid)]
+    discont_dy <- as.numeric(discont_dt - subj$rgmn_dt)
+  }
+
+  follow_up <- as.numeric(as.Date(dSnapshotDate) - subj$rgmn_dt)
+
+  is_premature <- !is.na(death_dy) & death_dy <= nWindowDays
+  is_discont <- !is.na(discont_dy) & discont_dy <= nWindowDays
+
+  category <- dplyr::case_when(
+    is_premature & death_dy <= 30 ~ lv[1],
+    is_premature ~ lv[2],
+    is_discont ~ lv[3],
+    follow_up >= nWindowDays ~ lv[4],
+    TRUE ~ lv[5]
+  )
+
+  x_anchor <- dplyr::case_when(
+    is_premature ~ death_dy,
+    is_discont ~ discont_dy,
+    category == lv[4] ~ as.numeric(nWindowDays),
+    TRUE ~ follow_up
+  )
+
+  pick <- function(col) if (col %in% names(subj)) subj[[col]] else NA_character_
+
+  tibble::tibble(
+    subjid = subj$subjid,
+    studyid = pick("studyid"),
+    country = pick("country"),
+    invid = pick("invid"),
+    Category = factor(category, levels = lv),
+    death_dy = death_dy,
+    discont_dy = discont_dy,
+    follow_up = follow_up,
+    x_anchor = x_anchor
+  )
+}
