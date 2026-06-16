@@ -27,14 +27,23 @@ lListings <- list(
     studyid = "ST01",
     subjid = c("S1", "S2", "S3"),
     invid = c("INV-1", "INV-1", "INV-2"),
-    country = c("USA", "USA", "CAN")
+    country = c("USA", "USA", "CAN"),
+    rgmn_dt = as.Date(c("2026-01-26", "2026-01-10", "2026-04-15"))
   ),
   Mapped_Death = tibble::tibble(
     subjid = c("S1", "S2"),
     death_dt = as.Date(c("2026-02-15", "2026-03-01")),
     death_dy = c(20, 50),
     death_reason = c("Cardiac arrest", "Sepsis"),
-    treatment_related = c(TRUE, FALSE)
+    deathcls = c("Adverse Event", "Disease Progression"),
+    aerel = c("Yes", "No")
+  ),
+  Mapped_STUDCOMP = tibble::tibble(
+    studyid = "ST01",
+    subjid = "S3",
+    compyn = "N",
+    compreas = "Withdrawal by Subject",
+    mincreated_dts = as.Date("2026-05-30")
   )
 )
 
@@ -68,7 +77,23 @@ test_that("Report_PrematureDeaths warns when nWindowDays disagrees with dfResult
   )
 })
 
-test_that("Report_PrematureDeaths includes country filter JS and banner {#TBD}", {
+test_that("Report_PrematureDeaths renders the studcomp discontinuation note {#246}", {
+  testthat::skip_if_not_installed("plotly")
+  testthat::skip_if_not_installed("DT")
+  out <- Report_PrematureDeaths(
+    dfResults = dfResults,
+    dfMetrics = dfMetrics,
+    dfGroups = dfGroups,
+    lListings = lListings,
+    nWindowDays = 90,
+    strOutputDir = tempdir()
+  )
+  html <- paste(readLines(out, warn = FALSE), collapse = "\n")
+  expect_true(grepl("Study discontinuation", html)) # CAT-3 note text
+  expect_true(grepl("studcomp", html, ignore.case = TRUE))
+})
+
+test_that("Report_PrematureDeaths includes country filter JS and banner {#246}", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
   out <- Report_PrematureDeaths(

@@ -1,3 +1,42 @@
+#' Legacy 3-bucket labels for the categorical scatter
+#'
+#' @description
+#' The `<=30d` / `31-Wd` / `Alive at Wd` labels (RAG order) the categorical
+#' scatter still colors by. Retained here, the helper's sole remaining consumer,
+#' after [pd_Classify()] replaced the bucket vocabulary elsewhere. The numeric-y
+#' scatter rewrite removes both this and [pd_RagColors()].
+#'
+#' @param nWindowDays `numeric` Premature-death window in days.
+#'
+#' @return A length-3 `character` vector of bucket labels.
+#' @noRd
+pd_BucketLabels <- function(nWindowDays) {
+  c(
+    "<=30d",
+    paste0("31-", nWindowDays, "d"),
+    paste0("Alive at ", nWindowDays, "d")
+  )
+}
+
+#' Legacy RAG colors for the categorical scatter
+#'
+#' @description
+#' Named (red / amber / green) color vector keyed by [pd_BucketLabels()].
+#'
+#' @param nWindowDays `numeric` Premature-death window in days.
+#'
+#' @return A length-3 named `character` vector of hex colors.
+#' @noRd
+pd_RagColors <- function(nWindowDays) {
+  rag_colors <- c(
+    colorScheme("red", "dark"),
+    colorScheme("amber", "dark"),
+    colorScheme("green", "dark")
+  )
+  names(rag_colors) <- pd_BucketLabels(nWindowDays)
+  rag_colors
+}
+
 #' Randomization-to-death scatter
 #'
 #' @description

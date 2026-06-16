@@ -32,6 +32,20 @@ nWindowDays <- params$nWindowDays
 
 Mapped_Death <- lListings$Mapped_Death
 Mapped_SUBJ <- lListings$Mapped_SUBJ
+Mapped_STUDCOMP <- lListings$Mapped_STUDCOMP
+
+# Reporting snapshot drives follow-up (the two "alive" categories), so it is
+# defined here, ahead of the single classification of every enrolled subject.
+latest_snapshot <- max(dfResults$SnapshotDate)
+
+# Single classification of every enrolled subject (the SOT for all charts).
+dfClassified <- pd_Classify(
+  dfSubjects = Mapped_SUBJ,
+  dfDeath = Mapped_Death,
+  dfStudComp = Mapped_STUDCOMP,
+  nWindowDays = nWindowDays,
+  dSnapshotDate = latest_snapshot
+)
 
 # Country → site lookup for JS filtering (all enrolled sites in the country)
 country_site_map <- Mapped_SUBJ %>%
@@ -58,7 +72,6 @@ country_premature_count <- dfPrematureCohort %>%
 nEnrolled <- nrow(Mapped_SUBJ)
 nPremature <- nrow(dfPrematureCohort)
 nPrematureRate <- ifelse(nEnrolled > 0, 100 * nPremature / nEnrolled, 0)
-latest_snapshot <- max(dfResults$SnapshotDate)
 has_premature <- nPremature > 0
 
 # Consistency guard: the charts recompute premature status from Mapped_Death at
@@ -144,8 +157,12 @@ cat('
 ```{r study-buckets, echo=FALSE, eval=has_premature}
 htmltools::div(
   id = "pd-study-buckets",
-  pd_BucketBar(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "studyid", strGroupLabel = "Study", bRangeSlider = TRUE)
+  pd_BucketBar(dfClassified, nWindowDays, strGroupCol = "studyid", strGroupLabel = "Study", bRangeSlider = TRUE)
 )
+```
+
+```{r study-buckets-note, echo=FALSE, results='asis', eval=has_premature}
+cat("\n> **Study discontinuation** is taken from study-completion records (`studcomp`): a subject is counted here when their record indicates discontinuation within ", nWindowDays, " days of randomization for a reason other than death. Deaths within ", nWindowDays, " days appear under *Death within ", nWindowDays, " days*; subjects still on study appear under the *Alive* categories. Discontinuation timing is approximated from the study-completion record date.\n", sep = "")
 ```
 
 ### Rand -> Death
@@ -164,7 +181,7 @@ pd_ReasonDist(Mapped_Death, nWindowDays, nEnrolled = nEnrolled)
 ```{r country-buckets, echo=FALSE, eval=has_premature}
 htmltools::div(
   id = "pd-country-buckets",
-  pd_BucketBar(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "country", strGroupLabel = "Country", strOuterCol = "studyid", bRangeSlider = TRUE)
+  pd_BucketBar(dfClassified, nWindowDays, strGroupCol = "country", strGroupLabel = "Country", strOuterCol = "studyid", bRangeSlider = TRUE)
 )
 ```
 
@@ -193,7 +210,7 @@ htmltools::div(
 ```{r site-buckets, echo=FALSE, eval=has_premature}
 htmltools::div(
   id = "pd-site-buckets",
-  pd_BucketBar(Mapped_Death, Mapped_SUBJ, nWindowDays, strGroupCol = "invid", strGroupLabel = "Site", strOuterCol = "country", strOuterLabel = "Country", bRangeSlider = TRUE)
+  pd_BucketBar(dfClassified, nWindowDays, strGroupCol = "invid", strGroupLabel = "Site", strOuterCol = "country", strOuterLabel = "Country", bRangeSlider = TRUE)
 )
 ```
 
