@@ -53,6 +53,11 @@ pd_RandToDeathScatter <- function(
       )
     )
 
+  # plot_ly() seeds an empty base trace. It is inert in the report -- absent from
+  # the legend, its placeholder x renders no marker, and the point filter skips
+  # it (no customdata) -- and is intentionally left: the rmarkdown widget render
+  # re-materializes it from plotly's internal trace state, so neither an attrs
+  # prune nor a pre-built x$data removes it without fragile internals work.
   p <- plotly::plot_ly()
   for (ct in pd_CategoryLevels(nWindowDays)) {
     d <- dplyr::filter(df, .data$Category == ct)
@@ -78,7 +83,6 @@ pd_RandToDeathScatter <- function(
       hovertemplate = "%{customdata[0]}<extra></extra>"
     )
   }
-
   xaxis <- list(title = "Days from Randomization to Event")
   yaxis <- list(
     title = "Days from Randomization to Snapshot",

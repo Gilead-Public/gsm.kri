@@ -80,6 +80,12 @@ test_that("scatter autoranges when no fixed range is supplied {#247}", {
   expect_s3_class(p, "plotly")
 })
 
+test_that("scatter returns an empty figure for an empty cohort {#247}", {
+  testthat::skip_if_not_installed("plotly")
+  p <- pd_RandToDeathScatter(dfC[0, ], nWindowDays = 90)
+  expect_s3_class(p, "plotly")
+})
+
 test_that("scatter validates dfClassified is a data.frame {#247}", {
   expect_error(
     pd_RandToDeathScatter(as.list(dfC)),
