@@ -43,7 +43,7 @@ steps:
       strThreshold: RiskScoreWeight
       bSort: false
   - output: Temp_LAG
-    name: RunQuery
+    name: workr::RunQuery
     params:
       df: Mapped_DATAENT
       strQuery: "SELECT * FROM df WHERE data_entry_lag > 10"

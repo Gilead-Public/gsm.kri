@@ -33,7 +33,7 @@ steps:
     params:
       strThreshold: Threshold
   - output: Temp_NONIMPORTANT
-    name: RunQuery
+    name: workr::RunQuery
     params:
       df: Mapped_PD
       strQuery: "SELECT * FROM df WHERE deemedimportant = 'No'"

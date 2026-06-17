@@ -45,7 +45,7 @@ steps:
       strThreshold: Flag
       bSort: false
   - output: Temp_DISCONTINUED
-    name: RunQuery
+    name: workr::RunQuery
     params:
       df: Mapped_SDRGCOMP
       strQuery: "SELECT DISTINCT subjid FROM df WHERE sdrgyn = 'N'"
