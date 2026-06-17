@@ -28,13 +28,14 @@ test_that("pd_PatientListing keeps only Flag==2 rows sorted by death_dy {#223}",
   expect_equal(df$death_reason, c("Sepsis", "Cardiac arrest"))
 })
 
-test_that("pd_PatientListing degrades without reason/treatment columns {#223}", {
+test_that("pd_PatientListing degrades without reason/class columns {#223}", {
   df <- pd_PatientListingData(
     dfResults,
     dplyr::select(dfDeath, subjid, death_dt, death_dy)
   )
   expect_equal(df$death_reason, c("Unknown", "Unknown"))
-  expect_true(all(is.na(df$treatment_related)))
+  # No deathcls/aerel -> treatment_related cannot be decided -> "Unknown".
+  expect_true(all(df$treatment_related == "Unknown"))
 })
 
 test_that("pd_PatientListing validates inputs {#223}", {
@@ -46,6 +47,47 @@ test_that("pd_PatientListing validates inputs {#223}", {
     pd_PatientListing(dfResults, as.list(dfDeath)),
     "dfDeath is not a data.frame"
   )
+})
+
+test_that("Treatment Related is Yes only for AE deathcls AND aerel Yes {#248}", {
+  dfResultsTR <- tibble::tibble(
+    GroupID = c("A", "B", "C", "D"),
+    MetricID = "Analysis_pat0015",
+    Flag = 2
+  )
+  dfDeathTR <- tibble::tibble(
+    subjid = c("A", "B", "C", "D"),
+    death_dt = as.Date("2026-02-01"),
+    death_dy = c(10, 20, 30, 40),
+    deathcls = c("Adverse Event", "AE", "Disease Progression", "adverse event"),
+    aerel = c("Yes", "no", "YES", "Y")
+  )
+  out <- pd_PatientListingData(dfResultsTR, dfDeathTR)
+  tr <- setNames(out$treatment_related, out$subjid)
+  expect_equal(tr[["A"]], "Yes") # AE + aerel Yes
+  expect_equal(tr[["B"]], "No") # AE but aerel recorded "no"
+  expect_equal(tr[["C"]], "No") # aerel YES but death class is not an AE
+  expect_equal(tr[["D"]], "No") # AE but aerel "Y" is not "Yes"
+})
+
+test_that("Treatment Related is Unknown when class or relatedness is missing {#248}", {
+  dfResultsTR <- tibble::tibble(
+    GroupID = c("E", "F", "G"),
+    MetricID = "Analysis_pat0015",
+    Flag = 2
+  )
+  dfDeathTR <- tibble::tibble(
+    subjid = c("E", "F", "G"),
+    death_dt = as.Date("2026-02-01"),
+    death_dy = c(10, 20, 30),
+    deathcls = c("Adverse Event", NA_character_, "AE"),
+    aerel = c(NA_character_, "Yes", "")
+  )
+  out <- pd_PatientListingData(dfResultsTR, dfDeathTR)
+  tr <- setNames(out$treatment_related, out$subjid)
+  expect_equal(tr[["E"]], "Unknown") # AE but relatedness not recorded
+  expect_equal(tr[["F"]], "Unknown") # death class missing
+  expect_equal(tr[["G"]], "Unknown") # AE but aerel blank
 })
 
 dfSubjects <- tibble::tibble(
