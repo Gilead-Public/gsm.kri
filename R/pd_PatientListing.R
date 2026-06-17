@@ -34,8 +34,12 @@ pd_CheckWindowConsistency <- function(nWindowDays, nPremature, nFlagged) {
 #'
 #' Filters `dfResults` to flagged patient-level premature-death rows
 #' (`MetricID == "Analysis_pat0015"`, `Flag == 2`) and joins `Mapped_Death`
-#' detail. Sorted by `death_dy` ascending. Missing `death_reason` /
-#' `treatment_related` columns degrade to `"Unknown"` / `NA`.
+#' detail. Sorted by `death_dy` ascending. Missing `death_reason` degrades to
+#' `"Unknown"`. The `treatment_related` display column (LIST-1) is derived from
+#' the death class (`deathcls`) and AE relatedness (`aerel`): `"Yes"` iff the
+#' class is an Adverse Event (case-insensitive `"Adverse Event"` / `"AE"`) **and**
+#' `aerel == "Yes"` (case-insensitive); `"Unknown"` when the class or relatedness
+#' is missing; otherwise `"No"`. The raw `deathcls` / `aerel` columns are dropped.
 #' A `randomization_date` column is derived as `death_dt - death_dy`,
 #' reconstructing the randomization date (`rgmn_dt`) that `death_dy` was counted from.
 #'
@@ -50,11 +54,10 @@ pd_CheckWindowConsistency <- function(nWindowDays, nPremature, nFlagged) {
 #' @return A `data.frame` of one row per flagged premature-death subject.
 #' @export
 pd_PatientListingData <- function(dfResults, dfDeath, dfSubjects = NULL) {
-  if (!"death_reason" %in% names(dfDeath)) {
-    dfDeath$death_reason <- NA_character_
-  }
-  if (!"treatment_related" %in% names(dfDeath)) {
-    dfDeath$treatment_related <- NA
+  for (col in c("death_reason", "deathcls", "aerel")) {
+    if (!col %in% names(dfDeath)) {
+      dfDeath[[col]] <- NA_character_
+    }
   }
 
   df <- dfResults %>%
@@ -67,7 +70,8 @@ pd_PatientListingData <- function(dfResults, dfDeath, dfSubjects = NULL) {
           "death_dt",
           "death_dy",
           "death_reason",
-          "treatment_related"
+          "deathcls",
+          "aerel"
         ),
       by = "subjid"
     ) %>%
@@ -75,7 +79,19 @@ pd_PatientListingData <- function(dfResults, dfDeath, dfSubjects = NULL) {
       death_reason = dplyr::coalesce(.data$death_reason, "Unknown"),
       # death_dy was defined upstream (complete_death) as death_dt - rgmn_dt, the
       # randomization date, so this subtraction reconstructs that exact date.
-      randomization_date = .data$death_dt - .data$death_dy
+      randomization_date = .data$death_dt - .data$death_dy,
+      # LIST-1 (three-valued): "Yes" iff the death class is an Adverse Event
+      # (case-insensitive "Adverse Event" / "AE") AND aerel == "Yes"
+      # (case-insensitive). "Unknown" when we lack the class or the relatedness
+      # needed to decide; "No" when the data is present and it is not a
+      # treatment-related AE death.
+      treatment_related = dplyr::case_when(
+        is.na(.data$deathcls) | trimws(.data$deathcls) == "" ~ "Unknown",
+        !grepl("a(dverse[ ]*)?e", .data$deathcls, ignore.case = TRUE) ~ "No",
+        toupper(trimws(.data$aerel)) == "YES" ~ "Yes",
+        is.na(.data$aerel) | trimws(.data$aerel) == "" ~ "Unknown",
+        TRUE ~ "No"
+      )
     )
 
   if (
@@ -97,6 +113,7 @@ pd_PatientListingData <- function(dfResults, dfDeath, dfSubjects = NULL) {
     dplyr::relocate(dplyr::any_of("studyid")) %>%
     dplyr::relocate(dplyr::any_of(c("country", "invid")), .after = "subjid") %>%
     dplyr::relocate("randomization_date", .before = "death_dt") %>%
+    dplyr::select(-dplyr::any_of(c("deathcls", "aerel"))) %>%
     dplyr::arrange(.data$death_dy)
 }
 
