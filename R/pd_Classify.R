@@ -13,8 +13,8 @@
 #' @export
 pd_CategoryLevels <- function(nWindowDays) {
   c(
-    "Death \u226430d",
-    paste0("Death 31\u2013", nWindowDays, "d"),
+    "Death within 30 days",
+    paste0("Death within 31\u2013", nWindowDays, " days"),
     paste0("Study discontinuation within ", nWindowDays, " days"),
     paste0("Alive at ", nWindowDays, " days"),
     paste0("Alive prior to ", nWindowDays, " days")

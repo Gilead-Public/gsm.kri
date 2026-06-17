@@ -33,6 +33,12 @@ make_studcomp <- function() {
   )
 }
 
+test_that("pd_CategoryLevels labels both death buckets with 'Death within' {#246}", {
+  lv <- pd_CategoryLevels(90)
+  expect_equal(lv[1], "Death within 30 days")
+  expect_equal(lv[2], "Death within 31–90 days")
+})
+
 test_that("pd_Classify assigns the five categories by precedence {#246}", {
   out <- pd_Classify(
     dfSubjects = make_subjects(),
