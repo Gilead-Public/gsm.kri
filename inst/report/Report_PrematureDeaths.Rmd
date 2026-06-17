@@ -246,6 +246,10 @@ htmltools::div(
 pd_PatientListing(dfResults, Mapped_Death, Mapped_SUBJ)
 ```
 
+```{r patient-listing-note, echo=FALSE, results='asis', eval=has_premature}
+cat("\n> **Treatment Related** is derived from the death classification (`deathcls`) and adverse-event relatedness (`aerel`): **Yes** when the death class is an adverse event (`Adverse Event` / `AE`) *and* `aerel` is `Yes`; **No** when both are recorded but the death is not a treatment-related adverse event (a non-AE death, or an AE death whose relatedness is not `Yes`); **Unknown** when the death class or relatedness is missing.\n")
+```
+
 ```{r filter-js, echo=FALSE, results='asis', eval=has_premature}
 cat(paste0('
 <script>
