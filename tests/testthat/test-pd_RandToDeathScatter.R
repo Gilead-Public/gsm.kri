@@ -49,7 +49,9 @@ test_that("scatter hover carries subject / category / day fields {#247}", {
   hover <- b$x$data[[1]]$customdata[[1]][[1]]
   expect_match(hover, "Subject: A")
   expect_match(hover, "Category: Death")
-  expect_match(hover, "Follow-up: 200d")
+  expect_match(hover, "Days \\(x\\): 20")
+  # Follow-up duplicates the y-axis and is not in the spec (design doc section 5).
+  expect_no_match(hover, "Follow-up")
 })
 
 test_that("scatter omits categories with no subjects {#247}", {
