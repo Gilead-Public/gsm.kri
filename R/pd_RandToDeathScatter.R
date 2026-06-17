@@ -46,10 +46,7 @@ pd_RandToDeathScatter <- function(
         "<br>Category: ",
         as.character(.data$Category),
         "<br>Days (x): ",
-        round(.data$x_anchor),
-        "<br>Follow-up: ",
-        round(.data$follow_up),
-        "d"
+        round(.data$x_anchor)
       )
     )
 
