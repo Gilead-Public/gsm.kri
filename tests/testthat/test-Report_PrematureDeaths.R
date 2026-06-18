@@ -140,9 +140,10 @@ test_that("Report_PrematureDeaths includes country filter JS and banner {#246}",
   # Country-site map JSON present
   expect_true(grepl("countrySiteMap", html))
 
-  # Premature-death site count + honest banner count (sites-with-death / enrolled)
-  expect_true(grepl("countryPrematureCount", html))
-  expect_true(grepl("sites with at least 1 premature death", html))
+  # Active-country chip names the country; the old per-country "N/M sites with at
+  # least 1 premature death" headline (and its JS map) are gone.
+  expect_true(grepl("pd-filter-country-chip", html))
+  expect_false(grepl("sites with at least 1 premature death", html))
 
   # Chart container IDs present
   expect_true(grepl('id="pd-country-buckets"', html))
@@ -169,9 +170,9 @@ test_that("Report_PrematureDeaths wires the site-barchart listing filter {#221}"
   expect_match(html, "highlightSiteBar", fixed = TRUE)
   # Both filters route through one listing owner.
   expect_match(html, "function applyListingFilter", fixed = TRUE)
-  # Two-line banner: the new site row + its reset.
-  expect_match(html, "pd-filter-site-row", fixed = TRUE)
-  expect_match(html, "pd-site-filter-text", fixed = TRUE)
+  # Site chip + its reset.
+  expect_match(html, "pd-filter-site-chip", fixed = TRUE)
+  expect_match(html, "pd-filter-site-value", fixed = TRUE)
   expect_match(html, "window.pdResetSiteFilter", fixed = TRUE)
 })
 

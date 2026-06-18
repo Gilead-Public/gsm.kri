@@ -33,14 +33,13 @@ async function readMultiAxis(page, containerId) {
   }, containerId);
 }
 
-// Expected tiers reflect the fixture's DEATH cohort, not the enrolled set: the
-// bars count every enrolled group (.drop=FALSE) so INV-2/CAN appear, but the
-// scatters plot only the two deaths (both at INV-1/USA), so CAN/INV-2 are absent.
+// Only the bucket bars carry a 2-D multicategory axis. The rand->death scatters
+// are numeric-y with customdata-based filtering (#247), so their contract is
+// covered by the numeric-scatter tests, not here. Inner tiers reflect every
+// enrolled group (bars use .drop=FALSE, so INV-2/CAN appear even with no deaths).
 const INTERACTIVE = [
   { id: 'pd-country-buckets', outer: ['ST01'],       inner: ['USA', 'CAN'] },
-  { id: 'pd-site-buckets',    outer: ['USA', 'CAN'], inner: ['INV-1', 'INV-2'] },
-  { id: 'pd-country-scatter', outer: ['ST01'],       inner: ['USA'] },
-  { id: 'pd-site-scatter',    outer: ['USA'],        inner: ['INV-1'] }
+  { id: 'pd-site-buckets',    outer: ['USA', 'CAN'], inner: ['INV-1', 'INV-2'] }
 ];
 
 for (const chart of INTERACTIVE) {
@@ -93,7 +92,7 @@ test('a REAL multicategory bar click delivers points[0].x = [outer, inner]', asy
   expect(x.length).toBe(2); //            [outer, inner]
   // The same real click must drive the filter banner with the inner label.
   await expect(page.locator('#pd-filter-banner')).toBeVisible();
-  await expect(page.locator('#pd-filter-text')).toContainText(x[1]);
+  await expect(page.locator('#pd-filter-country-value')).toContainText(x[1]);
 });
 
 test('clicking a country filters the site charts, leaves NO empty slot, shows the banner', async ({ page }) => {
@@ -105,8 +104,8 @@ test('clicking a country filters the site charts, leaves NO empty slot, shows th
     el.emit('plotly_click', { points: [{ x: ['ST01', 'USA'] }] });
   });
   await expect(page.locator('#pd-filter-banner')).toBeVisible();
-  await expect(page.locator('#pd-filter-country-row')).toBeVisible();
-  await expect(page.locator('#pd-filter-text')).toContainText('USA');
+  await expect(page.locator('#pd-filter-country-chip')).toBeVisible();
+  await expect(page.locator('#pd-filter-country-value')).toContainText('USA');
   // categoryarray hack is deleted: a reindexed multicategory axis must
   // re-derive its ticks from the data, so the filtered-out CAN site (INV-2)
   // leaves NO empty slot. This is the deterministic check the self-baselined
@@ -123,7 +122,7 @@ test('reset restores all sites', async ({ page }) => {
   });
   await expect(page.locator('#pd-filter-banner')).toBeVisible();
   await page.locator('#pd-filter-reset').click();
-  await expect(page.locator('#pd-filter-country-row')).toBeHidden();
+  await expect(page.locator('#pd-filter-country-chip')).toBeHidden();
 });
 
 test('% toggle normalizes each group to 100% and flips the y-axis title', async ({ page }) => {

@@ -72,18 +72,8 @@ country_site_map <- Mapped_SUBJ %>%
   jsonlite::toJSON(auto_unbox = FALSE)
 
 # Premature-death cohort (deaths within nWindowDays, joined to subject country/
-# site), computed once and reused for the count and the per-country banner.
+# site), computed once and reused for the premature-death count below.
 dfPrematureCohort <- pd_PrematureCohort(Mapped_Death, Mapped_SUBJ, nWindowDays)
-
-# Per-country count of enrolled sites with >=1 premature death, for the filter
-# banner's "N/M sites with at least 1 premature death" headline. Only the count
-# is consumed (as the numerator over the country's enrolled-site total), so we
-# don't carry the site-id arrays.
-country_premature_count <- dfPrematureCohort %>%
-  dplyr::distinct(.data$country, .data$invid) %>%
-  dplyr::count(.data$country) %>%
-  tibble::deframe() %>%
-  jsonlite::toJSON(auto_unbox = TRUE)
 
 nEnrolled <- nrow(Mapped_SUBJ)
 nPremature <- nrow(dfPrematureCohort)
@@ -110,6 +100,40 @@ date: "Snapshot Date: `r latest_snapshot`"
 ---
 
 # Premature Deaths Overview
+
+```{r filter-strip, echo=FALSE}
+# Sticky cross-filter strip: one chip per active country/site filter, shown by
+# the filter-js chunk as selections change. Built with htmltools (not raw HTML)
+# so pandoc doesn't wrap the inline chips in a <p>, which would break the flex
+# row and add stray paragraph margins. Hidden (CSS display:none) until a filter
+# is active.
+htmltools::tags$div(
+  id = "pd-filter-banner", class = "pd-filter-strip",
+  htmltools::tags$span(class = "pd-filter-eyebrow", "Filtering"),
+  htmltools::tags$span(
+    id = "pd-filter-country-chip", class = "pd-filter-chip", style = "display:none;",
+    htmltools::tags$span(
+      class = "pd-chip-label", "Country: ",
+      htmltools::tags$span(id = "pd-filter-country-value", class = "pd-chip-value")
+    ),
+    htmltools::tags$button(
+      id = "pd-filter-reset", onclick = "pdResetFilter()",
+      `aria-label` = "Clear country filter", htmltools::HTML("&times;")
+    )
+  ),
+  htmltools::tags$span(
+    id = "pd-filter-site-chip", class = "pd-filter-chip", style = "display:none;",
+    htmltools::tags$span(
+      class = "pd-chip-label", "Site: ",
+      htmltools::tags$span(id = "pd-filter-site-value", class = "pd-chip-value")
+    ),
+    htmltools::tags$button(
+      id = "pd-site-filter-reset", onclick = "pdResetSiteFilter()",
+      `aria-label` = "Clear site filter", htmltools::HTML("&times;")
+    )
+  )
+)
+```
 
 ## Overview
 
@@ -214,17 +238,6 @@ htmltools::div(
 
 ## Site {.tabset .tabset-pills}
 
-<div id="pd-filter-banner" style="display:none; background:#e3f2fd; border:1px solid #90caf9; border-radius:6px; padding:10px 16px; margin:16px 0; flex-direction:column; gap:8px;">
-<div id="pd-filter-country-row" style="display:none; align-items:center; justify-content:space-between;">
-<span id="pd-filter-text" style="font-size:13px; color:#1565c0;"></span>
-<button id="pd-filter-reset" onclick="pdResetFilter()" style="background:#1a73e8; color:white; border:none; border-radius:4px; padding:4px 12px; cursor:pointer; font-size:12px;">✕ Show All Sites</button>
-</div>
-<div id="pd-filter-site-row" style="display:none; align-items:center; justify-content:space-between;">
-<span id="pd-site-filter-text" style="font-size:13px; color:#1565c0;"></span>
-<button id="pd-site-filter-reset" onclick="pdResetSiteFilter()" style="background:#1a73e8; color:white; border:none; border-radius:4px; padding:4px 12px; cursor:pointer; font-size:12px;">✕ Clear Site</button>
-</div>
-</div>
-
 ### Buckets
 ```{r site-buckets, echo=FALSE, eval=has_premature}
 htmltools::div(
@@ -255,7 +268,6 @@ cat(paste0('
 <script>
 (function() {
   var countrySiteMap = ', country_site_map, ';
-  var countryPrematureCount = ', country_premature_count, ';
   var activeCountry = null;
   var activeSite = null;
 
@@ -319,16 +331,10 @@ cat(paste0('
   function applyFilter(country) {
     activeCountry = country;
     var sites = countrySiteMap[country] || [];
-    var prematureCount = countryPrematureCount[country] || 0;
 
-    // Show the country banner row. The headline reports how many of the country\'s
-    // enrolled sites had at least one premature death (premature-site count over
-    // the enrolled-site total).
-    document.getElementById("pd-filter-country-row").style.display = "flex";
-    document.getElementById("pd-filter-text").innerHTML =
-      "\\ud83d\\udd0d <strong>Showing " + country + "</strong> \\u2014 " +
-      prematureCount + "/" + sites.length +
-      " sites with at least 1 premature death";
+    // Show the country chip naming the active country.
+    document.getElementById("pd-filter-country-chip").style.display = "inline-flex";
+    document.getElementById("pd-filter-country-value").textContent = country;
     updateBannerVisibility();
 
     // Highlight country bar: dim non-selected
@@ -420,9 +426,8 @@ cat(paste0('
 
   function applySiteFilter(invid) {
     activeSite = invid;
-    document.getElementById("pd-filter-site-row").style.display = "flex";
-    document.getElementById("pd-site-filter-text").innerHTML =
-      "\\ud83d\\udd0d <strong>Showing site " + invid + "</strong> \\u2014 patient listing filtered";
+    document.getElementById("pd-filter-site-chip").style.display = "inline-flex";
+    document.getElementById("pd-filter-site-value").textContent = invid;
     updateBannerVisibility();
     highlightSiteBar(invid);
     // Narrow the site scatter to just this site (single owner, customdata[2]).
@@ -453,7 +458,7 @@ cat(paste0('
   // Global reset for the site filter (called by the site row\'s button onclick)
   window.pdResetSiteFilter = function() {
     activeSite = null;
-    document.getElementById("pd-filter-site-row").style.display = "none";
+    document.getElementById("pd-filter-site-chip").style.display = "none";
     updateBannerVisibility();
 
     // Un-dim site bars
@@ -558,8 +563,8 @@ cat(paste0('
   window.pdResetFilter = function() {
     activeCountry = null;
 
-    // Hide the country banner row (the site row stays as-is)
-    document.getElementById("pd-filter-country-row").style.display = "none";
+    // Hide the country chip (the site chip stays as-is)
+    document.getElementById("pd-filter-country-chip").style.display = "none";
     updateBannerVisibility();
 
     // Reset country bar opacity

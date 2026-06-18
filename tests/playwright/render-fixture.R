@@ -29,14 +29,27 @@ lListings <- list(
     studyid = "ST01",
     subjid = c("S1", "S2", "S3"),
     invid = c("INV-1", "INV-1", "INV-2"),
-    country = c("USA", "USA", "CAN")
+    country = c("USA", "USA", "CAN"),
+    # pd_Classify() anchors the death window on randomization, so rgmn_dt is
+    # required on every subject (it errors otherwise).
+    rgmn_dt = as.Date(c("2026-01-26", "2026-01-10", "2026-04-15"))
   ),
   Mapped_Death = tibble::tibble(
     subjid = c("S1", "S2"),
     death_dt = as.Date(c("2026-02-15", "2026-03-01")),
     death_dy = c(20, 50),
     death_reason = c("Cardiac arrest", "Sepsis"),
-    treatment_related = c(TRUE, FALSE)
+    # "Treatment Related" derives from deathcls + aerel (LIST-1), not a boolean.
+    deathcls = c("Adverse Event", "Disease Progression"),
+    aerel = c("Yes", "No")
+  ),
+  # S3 (CAN / INV-2) discontinues within the window -> dark-grey bucket.
+  Mapped_STUDCOMP = tibble::tibble(
+    studyid = "ST01",
+    subjid = "S3",
+    compyn = "N",
+    compreas = "Withdrawal by Subject",
+    mincreated_dts = as.Date("2026-05-30")
   )
 )
 dir.create("tests/playwright/fixture", showWarnings = FALSE, recursive = TRUE)
