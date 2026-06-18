@@ -82,6 +82,19 @@ nPrematureRate <- ifelse(nEnrolled > 0, 100 * nPremature / nEnrolled, 0)
 has_premature <- nPremature > 0
 has_eligibility <- !is.null(Mapped_EXCLUSION) && "Source" %in% names(Mapped_EXCLUSION)
 
+# Study-discontinuation caveat, shared verbatim by the Study Buckets and the
+# Study Rand -> Death tabs (single source of truth so the embedded nWindowDays
+# can't drift between the two placements).
+study_discont_note <- paste0(
+  "\n> **Study discontinuation** is taken from study-completion records (`studcomp`): a subject is counted here when their record indicates discontinuation within ",
+  nWindowDays,
+  " days of randomization for a reason other than death. Deaths within ",
+  nWindowDays,
+  " days appear under *Death within ",
+  nWindowDays,
+  " days*; subjects still on study appear under the *Alive* categories. Discontinuation timing is approximated from the study-completion record date.\n"
+)
+
 # Consistency guard: the charts recompute premature status from Mapped_Death at
 # nWindowDays; the patient listing trusts pat0015 Flag==2 rows (flagged at
 # analysis-time meta.WindowDays). A divergence means nWindowDays != the window
@@ -225,7 +238,7 @@ htmltools::div(
 ```
 
 ```{r study-buckets-note, echo=FALSE, results='asis', eval=has_premature}
-cat("\n> **Study discontinuation** is taken from study-completion records (`studcomp`): a subject is counted here when their record indicates discontinuation within ", nWindowDays, " days of randomization for a reason other than death. Deaths within ", nWindowDays, " days appear under *Death within ", nWindowDays, " days*; subjects still on study appear under the *Alive* categories. Discontinuation timing is approximated from the study-completion record date.\n", sep = "")
+cat(study_discont_note)
 ```
 
 ### Rand -> Death
@@ -234,6 +247,10 @@ htmltools::div(
   id = "pd-study-scatter",
   pd_RandToDeathScatter(dfClassified, nWindowDays, vXRange = vXRange, vYRange = vYRange)
 )
+```
+
+```{r study-scatter-note, echo=FALSE, results='asis', eval=has_premature}
+cat(study_discont_note)
 ```
 
 ### Reasons
