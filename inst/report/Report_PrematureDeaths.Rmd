@@ -101,6 +101,27 @@ date: "Snapshot Date: `r latest_snapshot`"
 
 # Premature Deaths Overview
 
+```{r filter-strip-css, echo=FALSE, results='asis'}
+# The chip strip's styling ships as an inline <style> block HERE, not via
+# styles.css, so it survives every host context. The standalone report links
+# styles.css, but the pkgdown example embeds this report through knit_child and
+# does NOT load styles.css -- there the chips would render unstyled and
+# non-sticky. Literal hex (no var(--...) tokens) for the same reason: the :root
+# tokens defined in styles.css aren't present in the embedded context. Same
+# inline-<style> pattern the rangeslider-css chunk below uses.
+cat('
+<style>
+.pd-filter-strip { position: sticky; top: 0; z-index: 1030; display: none; align-items: center; flex-wrap: wrap; gap: 10px; background-color: #f1f7fe; border-bottom: 1px solid #cfe3fb; padding: 8px 14px; margin: 0 0 16px; }
+.pd-filter-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #5b7193; }
+.pd-filter-chip { display: inline-flex; align-items: center; gap: 6px; background-color: #ffffff; border: 1px solid #3C587F; border-radius: 16px; padding: 3px 6px 3px 12px; font-size: 13px; color: #3C587F; }
+.pd-chip-value { font-weight: 600; }
+.pd-filter-chip button { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; padding: 0; border: none; border-radius: 50%; background-color: transparent; color: #3C587F; font-size: 13px; line-height: 1; cursor: pointer; }
+.pd-filter-chip button:hover { background-color: #3C587F; color: #ffffff; }
+.pd-filter-chip button:focus-visible { outline: 2px solid #3C587F; outline-offset: 2px; }
+</style>
+')
+```
+
 ```{r filter-strip, echo=FALSE}
 # Sticky cross-filter strip: one chip per active country/site filter, shown by
 # the filter-js chunk as selections change. Built with htmltools (not raw HTML)
