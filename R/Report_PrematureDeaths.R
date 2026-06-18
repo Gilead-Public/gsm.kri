@@ -10,7 +10,9 @@
 #'   `Analysis_pat0015` rows for the patient listing).
 #' @param dfMetrics `data.frame` Analysis metrics data.
 #' @param dfGroups `data.frame` Analysis groups data.
-#' @param lListings `list` containing `Mapped_Death` and `Mapped_SUBJ` frames.
+#' @param lListings `list` containing `Mapped_Death` and `Mapped_SUBJ` frames,
+#'   and optionally `Mapped_EXCLUSION` (adds the Eligibility Status column to the
+#'   patient listing).
 #' @param nWindowDays `numeric` Premature-death window in days. Default: 90.
 #'   **Must equal the `meta.WindowDays` used when `pat0015` produced `dfResults`.**
 #'   The charts recompute premature status live from `Mapped_Death` at this

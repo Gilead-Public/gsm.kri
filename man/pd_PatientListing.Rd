@@ -4,7 +4,7 @@
 \alias{pd_PatientListing}
 \title{Premature-death patient listing}
 \usage{
-pd_PatientListing(dfResults, dfDeath, dfSubjects = NULL)
+pd_PatientListing(dfResults, dfDeath, dfSubjects = NULL, dfExclusion = NULL)
 }
 \arguments{
 \item{dfResults}{`data.frame` Reporting results containing patient-level rows.}
@@ -16,6 +16,13 @@ pd_PatientListing(dfResults, dfDeath, dfSubjects = NULL)
 includes `studyid` (when present, as the leftmost column), `invid`, and
 `country` (when present) as visible columns for study-, site-, and
 country-level filtering in the interactive report.}
+
+\item{dfExclusion}{`data.frame` (optional) Mapped exclusion data with `subjid`
+and `Source` (as produced by `EXCLUSION.yaml`). When supplied with a
+`Source` column, the output gains a three-valued `eligibility_status`
+column: `"Ineligible"` when `Source != "Neither"` (matching the `kri0014`
+rule), `"Eligible"` when `Source == "Neither"`, and `"Unknown"` when the
+subject has no matching exclusion row.}
 }
 \value{
 A `DT::datatable` htmlwidget.
