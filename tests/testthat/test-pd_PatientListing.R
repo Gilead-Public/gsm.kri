@@ -319,3 +319,22 @@ test_that("eligibility_status is the rightmost column {#249}", {
   )
   expect_equal(utils::tail(names(out), 1), "eligibility_status")
 })
+
+test_that("pd_PatientListing labels the Eligibility Status column {#249}", {
+  testthat::skip_if_not_installed("DT")
+  tbl <- pd_PatientListing(
+    dfResultsElig,
+    dfDeathElig,
+    dfSubjects = NULL,
+    dfExclusion = dfExclusionElig
+  )
+  header <- paste(as.character(tbl$x$container), collapse = " ")
+  expect_match(header, "Eligibility Status", fixed = TRUE)
+})
+
+test_that("pd_PatientListing omits Eligibility Status without dfExclusion {#249}", {
+  testthat::skip_if_not_installed("DT")
+  tbl <- pd_PatientListing(dfResults, dfDeath)
+  header <- paste(as.character(tbl$x$container), collapse = " ")
+  expect_no_match(header, "Eligibility Status", fixed = TRUE)
+})

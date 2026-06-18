@@ -159,7 +159,12 @@ pd_PatientListingData <- function(
 #'
 #' @return A `DT::datatable` htmlwidget.
 #' @export
-pd_PatientListing <- function(dfResults, dfDeath, dfSubjects = NULL) {
+pd_PatientListing <- function(
+  dfResults,
+  dfDeath,
+  dfSubjects = NULL,
+  dfExclusion = NULL
+) {
   gsm.core::stop_if(
     cnd = !is.data.frame(dfResults),
     message = "dfResults is not a data.frame"
@@ -170,7 +175,12 @@ pd_PatientListing <- function(dfResults, dfDeath, dfSubjects = NULL) {
   )
   rlang::check_installed("DT", reason = "to run `pd_PatientListing()`")
 
-  dfListing <- pd_PatientListingData(dfResults, dfDeath, dfSubjects)
+  dfListing <- pd_PatientListingData(
+    dfResults,
+    dfDeath,
+    dfSubjects,
+    dfExclusion
+  )
 
   col_names <- character(0)
   if ("studyid" %in% names(dfListing)) {
@@ -191,6 +201,9 @@ pd_PatientListing <- function(dfResults, dfDeath, dfSubjects = NULL) {
     "Reason" = "death_reason",
     "Treatment Related" = "treatment_related"
   )
+  if ("eligibility_status" %in% names(dfListing)) {
+    col_names <- c(col_names, "Eligibility Status" = "eligibility_status")
+  }
 
   # Stamp the DataTables column name so the report's JS site-filter binds with
   # column("invid:name") instead of a hardcoded position. The Site column is now
