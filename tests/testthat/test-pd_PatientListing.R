@@ -258,3 +258,64 @@ test_that("pd_PatientListingData yields NA randomization_date when death data mi
   df <- pd_PatientListingData(dfResultsMissing, dfDeath) # S9 absent from dfDeath
   expect_true(is.na(df$randomization_date))
 })
+
+# --- Eligibility status (#249) ---------------------------------------------
+dfResultsElig <- tibble::tibble(
+  GroupID = c("E1", "E2", "E3", "E4", "E5"),
+  MetricID = "Analysis_pat0015",
+  Flag = 2
+)
+dfDeathElig <- tibble::tibble(
+  subjid = c("E1", "E2", "E3", "E4", "E5"),
+  death_dt = as.Date("2026-02-01"),
+  death_dy = c(10, 20, 30, 40, 50)
+)
+dfExclusionElig <- tibble::tibble(
+  # E5 deliberately absent from the exclusion frame -> Unknown
+  subjid = c("E1", "E2", "E3", "E4"),
+  Source = c(
+    "Neither",
+    "EDC I/E only",
+    "Eligibility PD only",
+    "Ineligible, Both Criteria"
+  )
+)
+
+test_that("eligibility_status maps Source via the kri0014 rule {#249}", {
+  out <- pd_PatientListingData(
+    dfResultsElig,
+    dfDeathElig,
+    dfSubjects = NULL,
+    dfExclusion = dfExclusionElig
+  )
+  es <- setNames(out$eligibility_status, out$subjid)
+  expect_equal(es[["E1"]], "Eligible") # Source == 'Neither'
+  expect_equal(es[["E2"]], "Ineligible") # EDC I/E only
+  expect_equal(es[["E3"]], "Ineligible") # Eligibility PD only (ie_violation is NULL!)
+  expect_equal(es[["E4"]], "Ineligible") # Ineligible, Both Criteria
+  expect_equal(es[["E5"]], "Unknown") # no row in Mapped_EXCLUSION
+})
+
+test_that("eligibility_status column is omitted without dfExclusion {#249}", {
+  df <- pd_PatientListingData(dfResults, dfDeath)
+  expect_false("eligibility_status" %in% names(df))
+})
+
+test_that("eligibility_status column is omitted when Source is absent {#249}", {
+  df <- pd_PatientListingData(
+    dfResults,
+    dfDeath,
+    dfExclusion = tibble::tibble(subjid = "S1")
+  )
+  expect_false("eligibility_status" %in% names(df))
+})
+
+test_that("eligibility_status is the rightmost column {#249}", {
+  out <- pd_PatientListingData(
+    dfResultsElig,
+    dfDeathElig,
+    dfSubjects = NULL,
+    dfExclusion = dfExclusionElig
+  )
+  expect_equal(utils::tail(names(out), 1), "eligibility_status")
+})
