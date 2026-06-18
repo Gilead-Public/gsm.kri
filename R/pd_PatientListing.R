@@ -50,10 +50,21 @@ pd_CheckWindowConsistency <- function(nWindowDays, nPremature, nFlagged) {
 #'   includes `studyid` (when present, as the leftmost column), `invid`, and
 #'   `country` (when present) as visible columns for study-, site-, and
 #'   country-level filtering in the interactive report.
+#' @param dfExclusion `data.frame` (optional) Mapped exclusion data with `subjid`
+#'   and `Source` (as produced by `EXCLUSION.yaml`). When supplied with a
+#'   `Source` column, the output gains a three-valued `eligibility_status`
+#'   column: `"Ineligible"` when `Source != "Neither"` (matching the `kri0014`
+#'   rule), `"Eligible"` when `Source == "Neither"`, and `"Unknown"` when the
+#'   subject has no matching exclusion row.
 #'
 #' @return A `data.frame` of one row per flagged premature-death subject.
 #' @export
-pd_PatientListingData <- function(dfResults, dfDeath, dfSubjects = NULL) {
+pd_PatientListingData <- function(
+  dfResults,
+  dfDeath,
+  dfSubjects = NULL,
+  dfExclusion = NULL
+) {
   for (col in c("death_reason", "deathcls", "aerel")) {
     if (!col %in% names(dfDeath)) {
       dfDeath[[col]] <- NA_character_
@@ -109,6 +120,32 @@ pd_PatientListingData <- function(dfResults, dfDeath, dfSubjects = NULL) {
       )
   }
 
+  if (!is.null(dfExclusion) && "Source" %in% names(dfExclusion)) {
+    df <- df %>%
+      dplyr::left_join(
+        # distinct() guards against listing-row fan-out: Mapped_EXCLUSION is
+        # one-row-per-subject by construction (EXCLUSION.yaml groups by subjid;
+        # kri0014 consumes it as a per-subject denominator), but never let an
+        # unexpected duplicate multiply a subject's death-listing row.
+        dfExclusion %>%
+          dplyr::select("subjid", "Source") %>%
+          dplyr::distinct(.data$subjid, .keep_all = TRUE),
+        by = "subjid"
+      ) %>%
+      dplyr::mutate(
+        # Canonical eligibility rule (kri0014): Source != 'Neither' => ineligible.
+        # NA Source = subject has no Mapped_EXCLUSION row => Unknown (never assert
+        # eligibility we cannot confirm). ie_violation is deliberately NOT used:
+        # it misses the 'Eligibility PD only' path (ie_violation is NULL there).
+        eligibility_status = dplyr::case_when(
+          is.na(.data$Source) ~ "Unknown",
+          .data$Source == "Neither" ~ "Eligible",
+          TRUE ~ "Ineligible"
+        )
+      ) %>%
+      dplyr::select(-"Source")
+  }
+
   df %>%
     dplyr::relocate(dplyr::any_of("studyid")) %>%
     dplyr::relocate(dplyr::any_of(c("country", "invid")), .after = "subjid") %>%
@@ -128,7 +165,12 @@ pd_PatientListingData <- function(dfResults, dfDeath, dfSubjects = NULL) {
 #'
 #' @return A `DT::datatable` htmlwidget.
 #' @export
-pd_PatientListing <- function(dfResults, dfDeath, dfSubjects = NULL) {
+pd_PatientListing <- function(
+  dfResults,
+  dfDeath,
+  dfSubjects = NULL,
+  dfExclusion = NULL
+) {
   gsm.core::stop_if(
     cnd = !is.data.frame(dfResults),
     message = "dfResults is not a data.frame"
@@ -139,7 +181,12 @@ pd_PatientListing <- function(dfResults, dfDeath, dfSubjects = NULL) {
   )
   rlang::check_installed("DT", reason = "to run `pd_PatientListing()`")
 
-  dfListing <- pd_PatientListingData(dfResults, dfDeath, dfSubjects)
+  dfListing <- pd_PatientListingData(
+    dfResults,
+    dfDeath,
+    dfSubjects,
+    dfExclusion
+  )
 
   col_names <- character(0)
   if ("studyid" %in% names(dfListing)) {
@@ -160,6 +207,9 @@ pd_PatientListing <- function(dfResults, dfDeath, dfSubjects = NULL) {
     "Reason" = "death_reason",
     "Treatment Related" = "treatment_related"
   )
+  if ("eligibility_status" %in% names(dfListing)) {
+    col_names <- c(col_names, "Eligibility Status" = "eligibility_status")
+  }
 
   # Stamp the DataTables column name so the report's JS site-filter binds with
   # column("invid:name") instead of a hardcoded position. The Site column is now

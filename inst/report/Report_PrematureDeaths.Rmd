@@ -33,6 +33,7 @@ nWindowDays <- params$nWindowDays
 Mapped_Death <- lListings$Mapped_Death
 Mapped_SUBJ <- lListings$Mapped_SUBJ
 Mapped_STUDCOMP <- lListings$Mapped_STUDCOMP
+Mapped_EXCLUSION <- lListings$Mapped_EXCLUSION
 
 # The premature-death window is anchored on randomization, so a subject without
 # a randomization date has no position on the timeline (NA follow-up / x). Drop
@@ -79,6 +80,7 @@ nEnrolled <- nrow(Mapped_SUBJ)
 nPremature <- nrow(dfPrematureCohort)
 nPrematureRate <- ifelse(nEnrolled > 0, 100 * nPremature / nEnrolled, 0)
 has_premature <- nPremature > 0
+has_eligibility <- !is.null(Mapped_EXCLUSION) && "Source" %in% names(Mapped_EXCLUSION)
 
 # Consistency guard: the charts recompute premature status from Mapped_Death at
 # nWindowDays; the patient listing trusts pat0015 Flag==2 rows (flagged at
@@ -277,11 +279,15 @@ htmltools::div(
 
 ## Patient Listing
 ```{r patient-listing, echo=FALSE}
-pd_PatientListing(dfResults, Mapped_Death, Mapped_SUBJ)
+pd_PatientListing(dfResults, Mapped_Death, Mapped_SUBJ, Mapped_EXCLUSION)
 ```
 
 ```{r patient-listing-note, echo=FALSE, results='asis', eval=has_premature}
 cat("\n> **Treatment Related** is derived from the death classification (`deathcls`) and adverse-event relatedness (`aerel`): **Yes** when the death class is an adverse event (`Adverse Event` / `AE`) *and* `aerel` is `Yes`; **No** when both are recorded but the death is not a treatment-related adverse event (a non-AE death, or an AE death whose relatedness is not `Yes`); **Unknown** when the death class or relatedness is missing.\n")
+```
+
+```{r eligibility-note, echo=FALSE, results='asis', eval=has_premature && has_eligibility}
+cat("\n> **Eligibility Status** is derived from `Mapped_EXCLUSION`: **Ineligible** when an inclusion/exclusion or eligibility protocol-deviation violation is recorded (`Source` != `Neither`); **Eligible** when none is recorded (`Source` == `Neither`); **Unknown** when the subject has no eligibility record.\n")
 ```
 
 ```{r filter-js, echo=FALSE, results='asis', eval=has_premature}
