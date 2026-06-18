@@ -42,6 +42,8 @@ core_mappings <- c(
   "DATACHG",
   "DATAENT",
   "ENROLL",
+  "IE",
+  "EXCLUSION",
   "LB",
   "PD",
   "QUERY",
@@ -121,7 +123,12 @@ dfResults <- lReporting$Reporting_Results |>
 lListings <- list(
   Mapped_SUBJ = lMapped$Mapped_SUBJ,
   Mapped_Death = lMapped$Mapped_Death,
-  Mapped_STUDCOMP = lMapped$Mapped_STUDCOMP
+  Mapped_STUDCOMP = lMapped$Mapped_STUDCOMP,
+  # Mapped_EXCLUSION is built in Step 1 from the real enrolled subjects and keyed
+  # on real subjid. Step 2b's simulation keeps those real subjids, so the patient
+  # listing's eligibility join still matches (mostly Eligible; Unknown only for a
+  # subject with no exclusion row).
+  Mapped_EXCLUSION = lMapped$Mapped_EXCLUSION
 )
 ```
 
