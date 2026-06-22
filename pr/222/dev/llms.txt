@@ -271,6 +271,10 @@ lCharts <- RunWorkflow(
   : Check premature-death window consistency
 - [`pd_Classify()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_Classify.md)
   : Classify enrolled subjects into premature-death categories
+- [`pd_EligibilityStatus()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_EligibilityStatus.md)
+  : Classify eligibility from an exclusion \`Source\`
+- [`pd_OverviewStats()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_OverviewStats.md)
+  : Overview summary statistics for the premature-death report
 - [`pd_PatientListing()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_PatientListing.md)
   : Premature-death patient listing
 - [`pd_PatientListingData()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_PatientListingData.md)
