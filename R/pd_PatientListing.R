@@ -133,15 +133,11 @@ pd_PatientListingData <- function(
         by = "subjid"
       ) %>%
       dplyr::mutate(
-        # Canonical eligibility rule (kri0014): Source != 'Neither' => ineligible.
-        # NA Source = subject has no Mapped_EXCLUSION row => Unknown (never assert
-        # eligibility we cannot confirm). ie_violation is deliberately NOT used:
-        # it misses the 'Eligibility PD only' path (ie_violation is NULL there).
-        eligibility_status = dplyr::case_when(
-          is.na(.data$Source) ~ "Unknown",
-          .data$Source == "Neither" ~ "Eligible",
-          TRUE ~ "Ineligible"
-        )
+        # Canonical eligibility rule (kri0014), shared via pd_EligibilityStatus()
+        # so the patient listing and the Overview table cannot drift. NA Source =
+        # subject has no Mapped_EXCLUSION row => Unknown (never assert eligibility
+        # we cannot confirm).
+        eligibility_status = pd_EligibilityStatus(.data$Source)
       ) %>%
       dplyr::select(-"Source")
   }
