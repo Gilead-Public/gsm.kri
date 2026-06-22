@@ -220,9 +220,82 @@ test_that("Report drops subjects without a randomization date from the cohort {#
     strOutputDir = tempdir()
   )
   html <- paste(readLines(out, warn = FALSE), collapse = "\n")
-  enrolled <- regmatches(
+  # New wide overview table: the value row's first cell is Total enrolled. S4
+  # (NA rgmn_dt) is dropped upstream, so it must read 3, not 4.
+  expect_match(
     html,
-    regexpr("Total enrolled:</strong>[^0-9]*[0-9]+", html)
+    "(?s)<tbody>\\s*<tr>\\s*<td[^>]*>\\s*3\\s*</td>",
+    perl = TRUE
   )
-  expect_match(enrolled, "3$") # S4 excluded -> 3 randomized subjects, not 4
+})
+
+test_that("Overview renders the preamble and 4-column summary table {#250}", {
+  testthat::skip_if_not_installed("plotly")
+  testthat::skip_if_not_installed("DT")
+  out <- Report_PrematureDeaths(
+    dfResults = dfResults,
+    dfMetrics = dfMetrics,
+    dfGroups = dfGroups,
+    lListings = lListings,
+    nWindowDays = 90,
+    strOutputDir = tempdir()
+  )
+  html <- paste(readLines(out, warn = FALSE), collapse = "\n")
+  # Preamble, with the window interpolated from nWindowDays.
+  expect_match(
+    html,
+    "Premature death analysis supports early identification",
+    fixed = TRUE
+  )
+  expect_match(html, "within ≤90 days of randomization", fixed = TRUE)
+  # The four wide-table headers.
+  expect_match(html, "Total enrolled", fixed = TRUE)
+  expect_match(html, "Total sites with enrolled participants", fixed = TRUE)
+  expect_match(html, "Premature Death(s)", fixed = TRUE)
+  expect_match(html, "Ineligible Premature Death(s)", fixed = TRUE)
+  # The removed flag chips / bullets are gone.
+  expect_false(grepl("Alive at Window", html))
+  expect_false(grepl("Configured window", html))
+})
+
+test_that("Overview shows an em-dash for Ineligible when no eligibility data {#250}", {
+  testthat::skip_if_not_installed("plotly")
+  testthat::skip_if_not_installed("DT")
+  # Default lListings carries no Mapped_EXCLUSION -> Ineligible cell is a dash.
+  out <- Report_PrematureDeaths(
+    dfResults = dfResults,
+    dfMetrics = dfMetrics,
+    dfGroups = dfGroups,
+    lListings = lListings,
+    nWindowDays = 90,
+    strOutputDir = tempdir()
+  )
+  html <- paste(readLines(out, warn = FALSE), collapse = "\n")
+  # The Ineligible cell renders as a bare em-dash (—) when there's no eligibility
+  # data. Anchor to the <td> so an em-dash elsewhere can't satisfy this, and note
+  # that this (and the "≤90 days" preamble assertion above) depends on pandoc
+  # emitting literal UTF-8 — the default; a render that entity-encoded would need
+  # "&mdash;"/"&#8212;" instead. The manual render-gate is the real visual check.
+  expect_match(html, "<td[^>]*>\\s*—\\s*</td>", perl = TRUE)
+})
+
+test_that("Overview shows ineligible count and percent when eligibility data present {#250}", {
+  testthat::skip_if_not_installed("plotly")
+  testthat::skip_if_not_installed("DT")
+  lL <- lListings
+  # S1 (death within 30d) ineligible, S2 (death 31-90d) eligible -> 1 of 2 = 50%.
+  lL$Mapped_EXCLUSION <- tibble::tibble(
+    subjid = c("S1", "S2"),
+    Source = c("Ineligible, Both Criteria", "Neither")
+  )
+  out <- Report_PrematureDeaths(
+    dfResults = dfResults,
+    dfMetrics = dfMetrics,
+    dfGroups = dfGroups,
+    lListings = lL,
+    nWindowDays = 90,
+    strOutputDir = tempdir()
+  )
+  html <- paste(readLines(out, warn = FALSE), collapse = "\n")
+  expect_match(html, "1 (50.0%)", fixed = TRUE)
 })
