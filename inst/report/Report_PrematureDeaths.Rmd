@@ -197,6 +197,7 @@ knitr::kable(
     check.names = FALSE
   ),
   format = "html",
+  align = "r",
   table.attr = "class=\"table\""
 )
 ```

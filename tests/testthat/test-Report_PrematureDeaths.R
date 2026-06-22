@@ -299,3 +299,31 @@ test_that("Overview shows ineligible count and percent when eligibility data pre
   html <- paste(readLines(out, warn = FALSE), collapse = "\n")
   expect_match(html, "1 (50.0%)", fixed = TRUE)
 })
+
+test_that("Overview table right-aligns every column, including the string-value headers {#250}", {
+  testthat::skip_if_not_installed("plotly")
+  testthat::skip_if_not_installed("DT")
+  out <- Report_PrematureDeaths(
+    dfResults = dfResults,
+    dfMetrics = dfMetrics,
+    dfGroups = dfGroups,
+    lListings = lListings,
+    nWindowDays = 90,
+    strOutputDir = tempdir()
+  )
+  html <- paste(readLines(out, warn = FALSE), collapse = "\n")
+  # align = "r" makes kable emit text-align:right on every column. The two
+  # string-value columns (Premature / Ineligible) previously defaulted to left;
+  # assert their headers are now right-aligned. Anchor to the text-align:right
+  # style immediately before the header text so a left-aligned cell can't pass.
+  expect_match(
+    html,
+    "text-align:right;\">\\s*Premature Death\\(s\\)",
+    perl = TRUE
+  )
+  expect_match(
+    html,
+    "text-align:right;\">\\s*Ineligible Premature Death\\(s\\)",
+    perl = TRUE
+  )
+})
