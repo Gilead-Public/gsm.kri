@@ -15,6 +15,7 @@ meta:
   AccrualThreshold: 1
   AccrualMetric: Denominator
   WindowDays: 90
+  GenerateRiskSignal: true
 spec:
   Mapped_Death:
     subjid:
