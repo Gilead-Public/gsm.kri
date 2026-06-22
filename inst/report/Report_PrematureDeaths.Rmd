@@ -72,15 +72,20 @@ country_site_map <- Mapped_SUBJ %>%
   tibble::deframe() %>%
   jsonlite::toJSON(auto_unbox = FALSE)
 
-# Premature-death cohort (deaths within nWindowDays, joined to subject country/
-# site), computed once and reused for the premature-death count below.
-dfPrematureCohort <- pd_PrematureCohort(Mapped_Death, Mapped_SUBJ, nWindowDays)
-
-nEnrolled <- nrow(Mapped_SUBJ)
-nPremature <- nrow(dfPrematureCohort)
-nPrematureRate <- ifelse(nEnrolled > 0, 100 * nPremature / nEnrolled, 0)
-has_premature <- nPremature > 0
 has_eligibility <- !is.null(Mapped_EXCLUSION) && "Source" %in% names(Mapped_EXCLUSION)
+
+# Overview summary numbers, computed once from the classified cohort (the single
+# source of truth). Driving nEnrolled / nPremature from here -- not a separate
+# pd_PrematureCohort count -- means the Overview table, the empty-state, every
+# chart's eval=has_premature gate, and the window-consistency guard below all
+# describe the one cohort the bucket bars and scatter render, so they can never
+# drift apart (a duplicate death row or a death for an unmapped subject no longer
+# makes the guard and the table disagree).
+stats <- pd_OverviewStats(dfClassified, Mapped_EXCLUSION, nWindowDays)
+nEnrolled <- stats$nEnrolled
+nPremature <- stats$nPremature
+nPrematureRate <- stats$nPrematureRate
+has_premature <- nPremature > 0
 
 # Study-discontinuation caveat, shared verbatim by the Study Buckets and the
 # Study Rand -> Death tabs (single source of truth so the embedded nWindowDays
@@ -173,24 +178,28 @@ htmltools::tags$div(
 
 ## Overview
 
-::: flag-container
-::: {.flag .flag-red}
-<div> `r nPremature` Premature Death(s) </div>
-:::
+Premature death analysis supports early identification of deaths occurring within ≤`r nWindowDays` days of randomization, enabling timely detection of potential eligibility concerns and emerging safety risks.
 
-::: {.flag .flag-green}
-<div> `r nEnrolled - nPremature` Alive at Window </div>
-:::
-:::
-
-```{r overview, echo=FALSE, results='asis'}
-cat(sprintf(
-  "- **Configured window:** %d days\n
-   - **Total enrolled:** %d\n
-   - **Premature deaths (within window):** %d\n
-   - **Premature death rate:** %.1f%%\n",
-  nWindowDays, nEnrolled, nPremature, nPrematureRate
-))
+```{r overview-table, echo=FALSE}
+# Ineligible needs eligibility data (Mapped_EXCLUSION); when it is absent we show
+# a dash rather than 0, which would falsely assert zero ineligible deaths.
+ineligible_cell <- if (stats$has_eligibility) {
+  sprintf("%d (%.1f%%)", stats$nIneligible, stats$nIneligibleRate)
+} else {
+  "—"
+}
+knitr::kable(
+  data.frame(
+    "Total enrolled" = stats$nEnrolled,
+    "Total sites with enrolled participants" = stats$nSites,
+    "Premature Death(s)" = sprintf("%d (%.1f%%)", stats$nPremature, stats$nPrematureRate),
+    "Ineligible Premature Death(s)" = ineligible_cell,
+    check.names = FALSE
+  ),
+  format = "html",
+  align = "r",
+  table.attr = "class=\"table\""
+)
 ```
 
 ```{r empty-state, echo=FALSE, results='asis', eval=!has_premature}
