@@ -1,9 +1,9 @@
 meta:
   Type: Analysis
   ID: pat0015
-  GroupLevel: Patient
+  GroupLevel: Subject
   Abbreviation: DTH90
-  Metric: Premature Death (Patient)
+  Metric: Premature Death (Subject)
   Numerator: Premature Death in Window
   Denominator: Enrolled Subject
   Model: Identity

@@ -1,6 +1,6 @@
 dfResults <- tibble::tibble(
   GroupID = c("S1", "S2", "S3"),
-  GroupLevel = "Patient",
+  GroupLevel = "Subject",
   MetricID = "Analysis_pat0015",
   Numerator = c(1, 1, 0),
   Denominator = 1,
@@ -280,7 +280,7 @@ test_that("pd_PatientListing labels Study and Randomization Date columns {#221}"
 test_that("pd_PatientListingData yields NA randomization_date when death data missing {#221}", {
   dfResultsMissing <- tibble::tibble(
     GroupID = "S9",
-    GroupLevel = "Patient",
+    GroupLevel = "Subject",
     MetricID = "Analysis_pat0015",
     Numerator = 1,
     Denominator = 1,

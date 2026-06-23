@@ -5,7 +5,7 @@
 #   R --quiet -e 'devtools::load_all("."); source("tests/playwright/render-fixture.R")'
 dfResults <- tibble::tibble(
   GroupID = c("S1", "S2", "S3"),
-  GroupLevel = "Patient",
+  GroupLevel = "Subject",
   MetricID = "Analysis_pat0015",
   Numerator = c(1, 1, 0),
   Denominator = 1,
@@ -16,13 +16,13 @@ dfResults <- tibble::tibble(
 )
 dfMetrics <- tibble::tibble(
   MetricID = "Analysis_pat0015",
-  Metric = "Premature Death (Patient)"
+  Metric = "Premature Death (Subject)"
 )
 dfGroups <- tibble::tibble(
   GroupID = c("S1", "S2", "S3"),
   Param = "subjid",
   Value = c("S1", "S2", "S3"),
-  GroupLevel = "Patient"
+  GroupLevel = "Subject"
 )
 lListings <- list(
   Mapped_SUBJ = tibble::tibble(
