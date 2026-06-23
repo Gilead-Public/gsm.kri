@@ -34,12 +34,14 @@ pd_CheckWindowConsistency <- function(nWindowDays, nPremature, nFlagged) {
 #'
 #' Filters `dfResults` to flagged patient-level premature-death rows
 #' (`MetricID == "Analysis_pat0015"`, `Flag == 2`) and joins `Mapped_Death`
-#' detail. Sorted by `death_dy` ascending. Missing `death_reason` degrades to
-#' `"Unknown"`. The `treatment_related` display column (LIST-1) is derived from
-#' the death class (`deathcls`) and AE relatedness (`aerel`): `"Yes"` iff the
-#' class is an Adverse Event (case-insensitive `"Adverse Event"` / `"AE"`) **and**
-#' `aerel == "Yes"` (case-insensitive); `"Unknown"` when the class or relatedness
-#' is missing; otherwise `"No"`. The raw `deathcls` / `aerel` columns are dropped.
+#' detail. Sorted by `death_dy` ascending. `death_reason` is the death
+#' classification (`deathcls`), falling back to `"Unknown"` when absent.
+#' `treatment_related` is three-valued: `"Yes"` when `deathcls` is an adverse
+#' event AND the subject has a fatal (grade 5) treatment-related AE in `dfAE`;
+#' `"No"` when `deathcls` is an adverse event AND the subject has a fatal
+#' (grade 5) not-treatment-related AE, or when `deathcls` is not an adverse
+#' event AND no fatal treatment-related AE exists;
+#' `"Unknown"` otherwise (mixed signals, or missing `deathcls`/AE evidence).
 #' A `randomization_date` column is derived as `death_dt - death_dy`,
 #' reconstructing the randomization date (`rgmn_dt`) that `death_dy` was counted from.
 #'
@@ -56,6 +58,14 @@ pd_CheckWindowConsistency <- function(nWindowDays, nPremature, nFlagged) {
 #'   column: `"Ineligible"` when `Source != "Neither"` (matching the `kri0014`
 #'   rule), `"Eligible"` when `Source == "Neither"`, and `"Unknown"` when the
 #'   subject has no matching exclusion row.
+#' @param dfAE `data.frame` (optional) Mapped AE data with `subjid`, `aetoxgr`,
+#'   and `aerel` (`"RELATED"`/`"NOT RELATED"`). Used to compute the Treatment
+#'   Related column: `"Yes"` when `deathcls` is an adverse event AND the subject
+#'   has a fatal (`aetoxgr==5`) treatment-related AE; `"No"` when `deathcls` is
+#'   an adverse event AND the subject has a fatal (`aetoxgr==5`) not-treatment-related
+#'   AE, or when `deathcls` is not an AE AND there is no fatal treatment-related
+#'   AE; `"Unknown"` otherwise (mixed signals, or missing `deathcls`/AE
+#'   evidence). `death_reason` is `deathcls` (else `"Unknown"`).
 #'
 #' @return A `data.frame` of one row per flagged premature-death subject.
 #' @export
@@ -63,12 +73,23 @@ pd_PatientListingData <- function(
   dfResults,
   dfDeath,
   dfSubjects = NULL,
-  dfExclusion = NULL
+  dfExclusion = NULL,
+  dfAE = NULL
 ) {
-  for (col in c("death_reason", "deathcls", "aerel")) {
-    if (!col %in% names(dfDeath)) {
-      dfDeath[[col]] <- NA_character_
-    }
+  if (!"deathcls" %in% names(dfDeath)) {
+    dfDeath[["deathcls"]] <- NA_character_
+  }
+
+  # AE-side signal: a fatal (aetoxgr==5) treatment-related (aerel=="RELATED") AE.
+  # Absent dfAE -> nobody qualifies (everything resolves via deathcls alone).
+  dfFatalRel <- if (!is.null(dfAE) && is.data.frame(dfAE)) {
+    pd_SubjectFatalRelatedAE(dfAE)
+  } else {
+    tibble::tibble(
+      subjid = character(0),
+      has_fatal_related_ae = logical(0),
+      has_fatal_unrelated_ae = logical(0)
+    )
   }
 
   df <- dfResults %>%
@@ -76,33 +97,38 @@ pd_PatientListingData <- function(
     dplyr::transmute(subjid = .data$GroupID) %>%
     dplyr::left_join(
       dfDeath %>%
-        dplyr::select(
-          "subjid",
-          "death_dt",
-          "death_dy",
-          "death_reason",
-          "deathcls",
-          "aerel"
-        ),
+        dplyr::select("subjid", "death_dt", "death_dy", "deathcls"),
       by = "subjid"
     ) %>%
+    dplyr::left_join(dfFatalRel, by = "subjid") %>%
     dplyr::mutate(
-      death_reason = dplyr::coalesce(.data$death_reason, "Unknown"),
-      # death_dy was defined upstream (complete_death) as death_dt - rgmn_dt, the
-      # randomization date, so this subtraction reconstructs that exact date.
+      # death_reason is the death classification (SI-3); fallback "Unknown".
+      death_reason = dplyr::coalesce(.data$deathcls, "Unknown"),
+      # death_dy was defined upstream as death_dt - rgmn_dt, so this reconstructs
+      # the randomization date.
       randomization_date = .data$death_dt - .data$death_dy,
-      # LIST-1 (three-valued): "Yes" iff the death class is an Adverse Event
-      # (case-insensitive "Adverse Event" / "AE") AND aerel == "Yes"
-      # (case-insensitive). "Unknown" when we lack the class or the relatedness
-      # needed to decide; "No" when the data is present and it is not a
-      # treatment-related AE death.
+      # Treatment Related: deathcls is the AE-death gate; a fatal treatment-related
+      # AE is the relatedness evidence. Both positive -> Yes; AE death + fatal
+      # not-related AE -> No; both negative -> No; mixed or missing -> Unknown.
+      .is_ae = grepl("a(dverse[ ]*)?e", .data$deathcls, ignore.case = TRUE),
+      .qual_ae = dplyr::coalesce(.data$has_fatal_related_ae, FALSE),
+      .unrel_ae = dplyr::coalesce(.data$has_fatal_unrelated_ae, FALSE),
       treatment_related = dplyr::case_when(
         is.na(.data$deathcls) | trimws(.data$deathcls) == "" ~ "Unknown",
-        !grepl("a(dverse[ ]*)?e", .data$deathcls, ignore.case = TRUE) ~ "No",
-        toupper(trimws(.data$aerel)) == "YES" ~ "Yes",
-        is.na(.data$aerel) | trimws(.data$aerel) == "" ~ "Unknown",
-        TRUE ~ "No"
+        .data$.is_ae & .data$.qual_ae ~ "Yes",
+        .data$.is_ae & .data$.unrel_ae ~ "No",
+        !.data$.is_ae & !.data$.qual_ae ~ "No",
+        TRUE ~ "Unknown"
       )
+    ) %>%
+    dplyr::select(
+      -dplyr::any_of(c(
+        "has_fatal_related_ae",
+        "has_fatal_unrelated_ae",
+        ".is_ae",
+        ".qual_ae",
+        ".unrel_ae"
+      ))
     )
 
   if (
@@ -165,7 +191,8 @@ pd_PatientListing <- function(
   dfResults,
   dfDeath,
   dfSubjects = NULL,
-  dfExclusion = NULL
+  dfExclusion = NULL,
+  dfAE = NULL
 ) {
   gsm.core::stop_if(
     cnd = !is.data.frame(dfResults),
@@ -181,7 +208,8 @@ pd_PatientListing <- function(
     dfResults,
     dfDeath,
     dfSubjects,
-    dfExclusion
+    dfExclusion,
+    dfAE
   )
 
   col_names <- character(0)

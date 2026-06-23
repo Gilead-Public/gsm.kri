@@ -1,11 +1,11 @@
 dfDeath_full <- tibble::tibble(
   subjid = c("S1", "S2", "S3", "S4"),
   death_dy = c(20, 50, 80, 120),
-  death_reason = c(
-    "Cardiac arrest",
-    "Cardiac arrest",
-    "Sepsis",
-    "Cardiac arrest"
+  deathcls = c(
+    "Adverse Event",
+    "Adverse Event",
+    "Disease Progression",
+    "Adverse Event"
   )
 )
 dfDeath_degraded <- dplyr::select(dfDeath_full, subjid, death_dy)
@@ -18,11 +18,11 @@ test_that("pd_ReasonDist returns a plotly object {#223}", {
 
 test_that("pd_ReasonDist counts only premature deaths {#223}", {
   df <- pd_ReasonCounts(dfDeath_full, nWindowDays = 90)
-  expect_equal(df$n[df$death_reason == "Cardiac arrest"], 2) # S1, S2 (S4 is day 120, excluded)
-  expect_equal(df$n[df$death_reason == "Sepsis"], 1)
+  expect_equal(df$n[df$death_reason == "Adverse Event"], 2) # S1, S2 (S4 day120 excluded)
+  expect_equal(df$n[df$death_reason == "Disease Progression"], 1)
 })
 
-test_that("pd_ReasonDist degrades to Unknown without death_reason {#223}", {
+test_that("pd_ReasonDist degrades to Unknown without deathcls {#223}", {
   df <- pd_ReasonCounts(dfDeath_degraded, nWindowDays = 90)
   expect_equal(df$death_reason, "Unknown")
   expect_equal(df$n, 3) # S1, S2, S3 within window
@@ -41,11 +41,11 @@ test_that("pd_ReasonDist validates inputs {#223}", {
 
 test_that("pd_ReasonDist hover text shows count and both percentages {#223}", {
   testthat::skip_if_not_installed("plotly")
-  # premature (<=90): S1, S2 (Cardiac arrest), S3 (Sepsis); S4 @120 excluded.
+  # premature (<=90): S1, S2 (Adverse Event), S3 (Disease Progression); S4 @120 excluded.
   p <- pd_ReasonDist(dfDeath_full, nWindowDays = 90, nEnrolled = 10)
   built <- plotly::plotly_build(p)
   texts <- unlist(lapply(built$x$data, function(d) d$customdata))
-  expect_true(any(grepl("Reason: Cardiac arrest", texts)))
+  expect_true(any(grepl("Reason: Adverse Event", texts)))
   expect_true(any(grepl("% of enrolled: 20.0%", texts))) # 2 / 10
   expect_true(any(grepl("% of premature deaths: 66.7%", texts))) # 2 / 3
 })

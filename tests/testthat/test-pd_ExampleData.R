@@ -1,64 +1,3 @@
-# --- pd_MockCompleteDeathExtension ------------------------------------------
-# S1: CTCAE grade-5 AE -> matched; reason term1, treatment-related.
-# S2: grade-3 AE but ended on death date (<=1 day) -> matched; reason term2.
-# S3: no qualifying AE -> falls back to compreas; not treatment-related.
-dfDeath <- tibble::tibble(
-  subjid = c("S1", "S2", "S3"),
-  death_dt = as.Date(c("2026-02-15", "2026-03-01", "2026-04-01"))
-)
-dfAE <- tibble::tibble(
-  subjid = c("S1", "S2", "S3"),
-  aetoxgr = c(5, 3, 2),
-  aeen_dt = as.Date(c(NA, "2026-03-01", "2026-01-01")),
-  aest_dt = as.Date(c("2026-02-10", "2026-02-20", "2026-01-01")),
-  mdrpt_nsv = c("term1", "term2", "term9"),
-  aerel = c("Y", "N", NA)
-)
-dfStudComp <- tibble::tibble(
-  subjid = c("S1", "S2", "S3"),
-  compreas = c("Death", "Death", "Other")
-)
-
-test_that("pd_MockCompleteDeathExtension enriches Mapped_Death from fatal AE {#223}", {
-  out <- pd_MockCompleteDeathExtension(dfDeath, dfAE, dfStudComp)
-  expect_true(all(
-    c("death_reason", "treatment_related", "ae_pt_at_death") %in% names(out)
-  ))
-  expect_equal(out$death_reason, c("Cardiac arrest", "Sepsis", "Other"))
-  expect_equal(out$treatment_related, c(TRUE, FALSE, FALSE))
-  expect_equal(out$ae_pt_at_death, c("term1", "term2", NA))
-})
-
-test_that("pd_MockCompleteDeathExtension compreas fallback is deterministic {#223}", {
-  # S4: duplicate dfStudComp rows with non-Death reason ordered before Death;
-  #     no qualifying AE -> fallback must prefer "Death" over "Discharged".
-  # S5: no qualifying AE and missing compreas -> fallback must be "Unknown".
-  dfDeath2 <- tibble::tibble(
-    subjid = c("S4", "S5"),
-    death_dt = as.Date(c("2026-05-01", "2026-06-01"))
-  )
-  dfAE2 <- tibble::tibble(
-    subjid = character(0),
-    aetoxgr = integer(0),
-    aeen_dt = as.Date(character(0)),
-    aest_dt = as.Date(character(0)),
-    mdrpt_nsv = character(0),
-    aerel = character(0)
-  )
-  # S4 has two rows: non-Death row intentionally listed first
-  dfStudComp2 <- tibble::tibble(
-    subjid = c("S4", "S4", "S5"),
-    compreas = c("Discharged", "Death", NA_character_)
-  )
-
-  out <- pd_MockCompleteDeathExtension(dfDeath2, dfAE2, dfStudComp2)
-
-  expect_equal(out$death_reason[out$subjid == "S4"], "Death")
-  expect_equal(out$death_reason[out$subjid == "S5"], "Unknown")
-  expect_equal(out$ae_pt_at_death, c(NA_character_, NA_character_))
-  expect_equal(out$treatment_related, c(FALSE, FALSE))
-})
-
 # --- pd_SimulatePrematureDeathCohort ----------------------------------------
 test_that("simulation exposes rgmn_dt and a studcomp frame for all subjects {#246}", {
   subj <- tibble::tibble(studyid = "ST01", subjid = paste0("S", 1:50))
@@ -68,11 +7,14 @@ test_that("simulation exposes rgmn_dt and a studcomp frame for all subjects {#24
     snapshot_date = as.Date("2026-05-01")
   )
   expect_true(all(
-    c("Mapped_Death", "Mapped_SUBJ", "Mapped_STUDCOMP") %in% names(sim)
+    c("Mapped_Death", "Mapped_SUBJ", "Mapped_STUDCOMP", "Mapped_AE") %in%
+      names(sim)
   ))
   expect_true("rgmn_dt" %in% names(sim$Mapped_SUBJ))
-  expect_equal(nrow(sim$Mapped_SUBJ), 50) # follow-up for every subject
-  expect_true(all(c("deathcls", "aerel") %in% names(sim$Mapped_Death)))
+  expect_equal(nrow(sim$Mapped_SUBJ), 50)
+  expect_true("deathcls" %in% names(sim$Mapped_Death))
+  expect_false(any(c("aerel", "death_reason") %in% names(sim$Mapped_Death)))
+  expect_true(all(c("subjid", "aetoxgr", "aerel") %in% names(sim$Mapped_AE)))
 })
 
 test_that("pd_SimulatePrematureDeathCohort returns a censored, schema-stable death frame {#246}", {
@@ -98,9 +40,7 @@ test_that("pd_SimulatePrematureDeathCohort returns a censored, schema-stable dea
       "death_dy",
       "death",
       "pd_date",
-      "death_reason",
-      "deathcls",
-      "aerel"
+      "deathcls"
     )
   )
   expect_gt(nrow(sim$Mapped_Death), 0) # the seed must produce >=1 observed death
