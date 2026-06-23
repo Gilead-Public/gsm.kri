@@ -1,4 +1,4 @@
-lData <- list(
+lData_pat0015 <- list(
   Mapped_SUBJ = tibble::tibble(
     subjid = c("S001", "S002", "S003", "S004"),
     invid = c("INV-1", "INV-1", "INV-2", "INV-2"),
@@ -16,7 +16,7 @@ RunOne <- function(strMetric) {
     strPath = GetDefaultKRIPath(),
     bExact = TRUE
   )[[strMetric]]
-  gsm.core::RunWorkflow(wf, lData)$Analysis_Summary
+  gsm.core::RunWorkflow(wf, lData_pat0015)$Analysis_Summary
 }
 
 test_that("pat0015 emits one row per enrolled subject with Flag=2 only for premature deaths {#221}", {
@@ -37,8 +37,12 @@ test_that("WindowDays override narrows the kri0015 numerator {#221}", {
   wf30 <- wf90
   wf30$meta$WindowDays <- 30
 
-  num90 <- sum(gsm.core::RunWorkflow(wf90, lData)$Analysis_Summary$Numerator)
-  num30 <- sum(gsm.core::RunWorkflow(wf30, lData)$Analysis_Summary$Numerator)
+  num90 <- sum(
+    gsm.core::RunWorkflow(wf90, lData_pat0015)$Analysis_Summary$Numerator
+  )
+  num30 <- sum(
+    gsm.core::RunWorkflow(wf30, lData_pat0015)$Analysis_Summary$Numerator
+  )
 
   expect_equal(num90, 2) # deaths at day 20 and day 50
   expect_equal(num30, 1) # only day 20 survives a 30-day window

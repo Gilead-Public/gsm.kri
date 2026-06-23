@@ -48,7 +48,7 @@ steps:
     params:
       strPrefix: "SELECT * FROM df WHERE death_dy <= "
       nWindow: WindowDays
-  - output: Temp_Death90
+  - output: Temp_DeathWindow
     name: RunQuery
     params:
       df: Mapped_Death
@@ -57,7 +57,7 @@ steps:
     name: gsm.core::Input_Rate
     params:
       dfSubjects: Mapped_SUBJ
-      dfNumerator: Temp_Death90
+      dfNumerator: Temp_DeathWindow
       dfDenominator: Mapped_SUBJ
       strSubjectCol: subjid
       strGroupCol: invid
