@@ -21,5 +21,7 @@ A `plotly` htmlwidget.
 \description{
 `r lifecycle::badge("experimental")`
 
-Horizontal bar of `deathcls` counts among premature deaths.
+Horizontal bar of `deathcls` counts among premature deaths. Each bar is
+labelled with its count (placed inside the bar, or just outside when the bar
+is too narrow to hold the label).
 }

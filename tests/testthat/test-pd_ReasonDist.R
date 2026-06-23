@@ -50,6 +50,14 @@ test_that("pd_ReasonDist hover text shows count and both percentages {#223}", {
   expect_true(any(grepl("% of premature deaths: 66.7%", texts))) # 2 / 3
 })
 
+test_that("pd_ReasonDist labels each bar with its count {#223}", {
+  testthat::skip_if_not_installed("plotly")
+  # premature (<=90): Adverse Event = 2 (S1, S2), Disease Progression = 1 (S3).
+  p <- pd_ReasonDist(dfDeath_full, nWindowDays = 90)
+  built <- plotly::plotly_build(p)
+  expect_setequal(as.character(built$x$data[[1]]$text), c("2", "1"))
+})
+
 test_that("pd_ReasonDist omits enrolled percent when nEnrolled is NULL {#223}", {
   testthat::skip_if_not_installed("plotly")
   p <- pd_ReasonDist(dfDeath_full, nWindowDays = 90)
