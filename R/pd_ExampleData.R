@@ -1,82 +1,3 @@
-#' Mock the gsm.mapping PR1 `complete_death()` AE-match extension (example only)
-#'
-#' @description
-#' Enriches `Mapped_Death` with `death_reason` / `treatment_related` /
-#' `ae_pt_at_death`, reproducing gsm.mapping PR1 (spec section 7.1). Each death is
-#' matched to its most likely fatal AE: CTCAE Grade 5, OR an AE that ended within
-#' +/-1 day of death. Highest grade wins; ties break to earliest start. This is a
-#' temporary stand-in for the unmerged PR1 used only by the Premature Deaths
-#' example article. Delete it (and its call + test) once PR1 merges.
-#'
-#' @param dfDeath `data.frame` Mapped death data (`subjid`, `death_dt`, ...).
-#' @param dfAE `data.frame` Mapped AE data.
-#' @param dfStudComp `data.frame` Mapped study-completion data (`subjid`, `compreas`).
-#'
-#' @return `dfDeath` with `death_reason` / `treatment_related` / `ae_pt_at_death`.
-#' @noRd
-pd_MockCompleteDeathExtension <- function(dfDeath, dfAE, dfStudComp) {
-  fatal_ae <- dfAE %>%
-    dplyr::inner_join(
-      dfDeath %>% dplyr::select("subjid", "death_dt"),
-      by = "subjid"
-    ) %>%
-    dplyr::filter(
-      .data$aetoxgr == 5 |
-        (!is.na(.data$aeen_dt) &
-          abs(as.numeric(.data$aeen_dt - .data$death_dt)) <= 1)
-    ) %>%
-    dplyr::group_by(.data$subjid) %>%
-    dplyr::arrange(dplyr::desc(.data$aetoxgr), .data$aest_dt) %>%
-    dplyr::slice(1) %>%
-    dplyr::ungroup() %>%
-    dplyr::transmute(
-      subjid = .data$subjid,
-      ae_pt_at_death = .data$mdrpt_nsv,
-      ae_rel = .data$aerel
-    )
-
-  # Deterministic per-subject selection: prefer "Death" over other non-missing
-  # compreas values, then other non-missing, then missing. This avoids
-  # order-dependent results when dfStudComp has multiple rows per subject.
-  dfStudCompReason <- dfStudComp %>%
-    dplyr::select("subjid", "compreas") %>%
-    dplyr::mutate(
-      .priority = dplyr::case_when(
-        .data$compreas == "Death" ~ 1L,
-        !is.na(.data$compreas) ~ 2L,
-        .default = 3L
-      )
-    ) %>%
-    dplyr::group_by(.data$subjid) %>%
-    dplyr::arrange(.data$.priority, .by_group = TRUE) %>%
-    dplyr::slice(1) %>%
-    dplyr::ungroup() %>%
-    dplyr::select(-".priority")
-
-  dfDeath %>%
-    dplyr::left_join(fatal_ae, by = "subjid") %>%
-    dplyr::left_join(dfStudCompReason, by = "subjid") %>%
-    dplyr::mutate(
-      treatment_related = .data$ae_rel %in% "Y", # aerel Y/N; related = "Y"
-      death_reason = dplyr::coalesce(
-        .data$ae_pt_at_death,
-        .data$compreas,
-        "Unknown"
-      )
-    ) %>%
-    # Illustrative relabel of clindata's synthetic AE preferred-term codes
-    # (term1 / term2) so the sample report's reason chart reads sensibly.
-    # Mock presentation only.
-    dplyr::mutate(
-      death_reason = dplyr::recode(
-        .data$death_reason,
-        term1 = "Cardiac arrest",
-        term2 = "Sepsis"
-      )
-    ) %>%
-    dplyr::select(-"ae_rel")
-}
-
 #' Simulate a realistic premature-death cohort (example only)
 #'
 #' @description
@@ -102,8 +23,9 @@ pd_MockCompleteDeathExtension <- function(dfDeath, dfAE, dfStudComp) {
 #'   (the gsm.reporting `BindResults` default).
 #'
 #' @return A named `list` of mapped frames: `Mapped_SUBJ` (every subject plus
-#'   `rgmn_dt`), `Mapped_Death` (observed simulated deaths with `death_reason` /
-#'   `deathcls` / `aerel`), and `Mapped_STUDCOMP` (non-death discontinuations
+#'   `rgmn_dt`), `Mapped_Death` (observed simulated deaths with `deathcls`),
+#'   `Mapped_AE` (one synthetic AE row per deceased subject with `subjid`,
+#'   `aetoxgr`, `aerel`), and `Mapped_STUDCOMP` (non-death discontinuations
 #'   dated inside the window) -- the inputs [pd_Classify()] needs to populate all
 #'   five categories.
 #' @noRd
@@ -139,7 +61,6 @@ pd_SimulatePrematureDeathCohort <- function(
   observed <- death_time >= 1 & death_time <= time_on_study
   n_obs <- sum(observed)
 
-  reasons <- c("Cardiac arrest", "Sepsis", "Disease progression", "Unknown")
   deathcls_pool <- c("Adverse Event", "Disease Progression", "Other")
 
   # Follow-up (snapshot - randomization) drives the two "alive" categories, so
@@ -154,19 +75,27 @@ pd_SimulatePrematureDeathCohort <- function(
     death_dy = death_time[observed],
     death = TRUE,
     pd_date = as.Date(NA),
-    death_reason = sample(
-      reasons,
-      n_obs,
-      replace = TRUE,
-      prob = c(0.30, 0.25, 0.30, 0.15)
-    ),
     deathcls = sample(
       deathcls_pool,
       n_obs,
       replace = TRUE,
       prob = c(0.5, 0.3, 0.2)
-    ),
-    aerel = sample(c("Yes", "No"), n_obs, replace = TRUE, prob = c(0.35, 0.65))
+    )
+  )
+
+  # Synthetic AE rows for the deceased subjects so the report's Treatment Related
+  # column exercises Yes / No / Unknown. ~40% get a fatal (grade 5) RELATED AE.
+  ae_grade <- sample(c(5L, 3L), n_obs, replace = TRUE, prob = c(0.4, 0.6))
+  ae_rel <- sample(
+    c("RELATED", "NOT RELATED"),
+    n_obs,
+    replace = TRUE,
+    prob = c(0.5, 0.5)
+  )
+  Mapped_AE <- tibble::tibble(
+    subjid = subj$subjid[observed],
+    aetoxgr = ae_grade,
+    aerel = ae_rel
   )
 
   # Non-death discontinuations: ~8% of the *surviving* subjects discontinue,
@@ -191,6 +120,7 @@ pd_SimulatePrematureDeathCohort <- function(
   list(
     Mapped_SUBJ = Mapped_SUBJ,
     Mapped_Death = Mapped_Death,
+    Mapped_AE = Mapped_AE,
     Mapped_STUDCOMP = Mapped_STUDCOMP
   )
 }
