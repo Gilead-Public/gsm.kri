@@ -67,7 +67,7 @@ test_that("Treatment Related is Yes only for AE death + fatal related AE {#248}"
   out <- pd_PatientListingData(dfResultsTR, dfDeathTR, dfAE = dfAETR)
   tr <- stats::setNames(out$treatment_related, out$subjid)
   expect_equal(tr[["A"]], "Yes") # AE death + fatal(5) RELATED AE
-  expect_equal(tr[["B"]], "Unknown") # AE death but AE is NOT RELATED -> no qualifying AE
+  expect_equal(tr[["B"]], "No") # AE death + fatal(5) NOT RELATED AE -> No
   expect_equal(tr[["C"]], "No") # non-AE death + no qualifying AE (no AE row)
   expect_equal(tr[["D"]], "Unknown") # AE death but AE grade 4 (not fatal)
 })
@@ -104,6 +104,23 @@ test_that("Treatment Related non-AE death with a fatal related AE is Unknown {#2
   dfAETR <- tibble::tibble(subjid = "G", aetoxgr = 5L, aerel = "RELATED")
   out <- pd_PatientListingData(dfResultsTR, dfDeathTR, dfAE = dfAETR)
   expect_equal(out$treatment_related, "Unknown") # contradictory -> Unknown
+})
+
+test_that("Treatment Related AE death with a fatal NOT RELATED AE is No {#248}", {
+  dfResultsTR <- tibble::tibble(
+    GroupID = "H",
+    MetricID = "Analysis_pat0015",
+    Flag = 2
+  )
+  dfDeathTR <- tibble::tibble(
+    subjid = "H",
+    death_dt = as.Date("2026-02-01"),
+    death_dy = 10,
+    deathcls = "Adverse Event"
+  )
+  dfAETR <- tibble::tibble(subjid = "H", aetoxgr = 5L, aerel = "NOT RELATED")
+  out <- pd_PatientListingData(dfResultsTR, dfDeathTR, dfAE = dfAETR)
+  expect_equal(out$treatment_related, "No") # AE death + fatal(5) NOT RELATED AE
 })
 
 dfSubjects <- tibble::tibble(

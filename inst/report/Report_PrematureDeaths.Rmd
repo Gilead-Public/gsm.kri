@@ -317,7 +317,7 @@ pd_PatientListing(dfResults, Mapped_Death, Mapped_SUBJ, Mapped_EXCLUSION, Mapped
 ```
 
 ```{r patient-listing-note, echo=FALSE, results='asis', eval=has_premature}
-cat("\n> **Treatment Related** combines the death classification (`deathcls`) with adverse-event data: **Yes** when the death is classified as an adverse event *and* the subject has a fatal (CTCAE grade 5) treatment-related (`aerel` = `RELATED`) adverse event; **No** when the death is not classified as an adverse event *and* there is no such adverse event; **Unknown** otherwise (mixed signals, or a missing death classification / adverse-event grade or relatedness). Note: the related adverse event is matched by subject, not to the specific event that caused death.\n")
+cat("\n> **Treatment Related** combines the death classification (`deathcls`) with adverse-event data: **Yes** when the death is classified as an adverse event *and* the subject has a fatal (CTCAE grade 5) treatment-related (`aerel` = `RELATED`) adverse event; **No** when either the death is classified as an adverse event *and* the subject has a fatal (grade 5) *not* treatment-related (`aerel` = `NOT RELATED`) adverse event, or the death is not classified as an adverse event *and* there is no fatal treatment-related adverse event; **Unknown** otherwise (e.g. an adverse-event death with no fatal adverse-event evidence, contradictory signals, or a missing death classification / adverse-event grade or relatedness). Note: the adverse event is matched by subject, not to the specific event that caused death.\n")
 ```
 
 ```{r eligibility-note, echo=FALSE, results='asis', eval=has_premature && has_eligibility}

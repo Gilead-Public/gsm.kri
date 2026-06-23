@@ -11,17 +11,19 @@ pd_SubjectFatalRelatedAE(dfAE)
 CTCAE grade) and `aerel` (`"RELATED"` / `"NOT RELATED"`).}
 }
 \value{
-A `tibble` with one row per subject: `subjid` and a logical
-  `has_fatal_related_ae`.
+A `tibble` with one row per subject: `subjid`, a logical
+  `has_fatal_related_ae` (a fatal grade-5 `"RELATED"` AE), and a logical
+  `has_fatal_unrelated_ae` (a fatal grade-5 `"NOT RELATED"` AE).
 }
 \description{
 `r lifecycle::badge("experimental")`
 
 For each subject in `dfAE`, whether they have at least one adverse event that
 is both fatal (`aetoxgr == 5`) and treatment-related (`aerel == "RELATED"`,
-case-insensitive). This is the AE-side signal the premature-death patient
-listing combines with the death classification (`deathcls`) to derive the
-Treatment Related column. Centralizing it keeps the rule in one tested place.
+case-insensitive). Also flags fatal (`aetoxgr == 5`) not-treatment-related
+(`aerel == "NOT RELATED"`) AEs — the AE-side signal for the "No" case in the
+premature-death Treatment Related column. Centralizing both rules keeps them
+in one tested place.
 
 Comparisons are NA-safe: a row with a missing grade or relatedness does not
 qualify and never flips a subject to `TRUE`.

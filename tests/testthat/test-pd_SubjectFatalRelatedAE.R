@@ -10,6 +10,12 @@ test_that("pd_SubjectFatalRelatedAE flags fatal treatment-related AEs {#248}", {
   expect_false(flag[["B"]]) # grade 5 but NOT RELATED
   expect_false(flag[["C"]]) # RELATED but grade 4 (not fatal)
   expect_false(flag[["D"]]) # grade 5 but relatedness missing -> not qualifying
+
+  unrel <- stats::setNames(out$has_fatal_unrelated_ae, out$subjid)
+  expect_false(unrel[["A"]]) # grade-5 is RELATED; grade-3 NOT RELATED row isn't fatal
+  expect_true(unrel[["B"]]) # grade-5 NOT RELATED -> fatal unrelated
+  expect_false(unrel[["C"]]) # grade-4 RELATED -> not fatal, so not unrelated either
+  expect_false(unrel[["D"]]) # grade-5 but relatedness missing -> not qualifying
 })
 
 test_that("pd_SubjectFatalRelatedAE is case-insensitive and trims {#248}", {
@@ -19,12 +25,15 @@ test_that("pd_SubjectFatalRelatedAE is case-insensitive and trims {#248}", {
 
 test_that("pd_SubjectFatalRelatedAE 'NOT RELATED' is never read as related {#248}", {
   dfAE <- tibble::tibble(subjid = "A", aetoxgr = 5L, aerel = "Not Related")
-  expect_false(pd_SubjectFatalRelatedAE(dfAE)$has_fatal_related_ae)
+  out <- pd_SubjectFatalRelatedAE(dfAE)
+  expect_false(out$has_fatal_related_ae)
+  expect_true(out$has_fatal_unrelated_ae)
 })
 
 test_that("pd_SubjectFatalRelatedAE tolerates missing columns {#248}", {
   out <- pd_SubjectFatalRelatedAE(tibble::tibble(subjid = "A"))
   expect_false(out$has_fatal_related_ae)
+  expect_false(out$has_fatal_unrelated_ae)
 })
 
 test_that("pd_SubjectFatalRelatedAE validates input {#248}", {
