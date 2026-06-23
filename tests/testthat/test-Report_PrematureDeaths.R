@@ -34,9 +34,12 @@ lListings <- list(
     subjid = c("S1", "S2"),
     death_dt = as.Date(c("2026-02-15", "2026-03-01")),
     death_dy = c(20, 50),
-    death_reason = c("Cardiac arrest", "Sepsis"),
-    deathcls = c("Adverse Event", "Disease Progression"),
-    aerel = c("Yes", "No")
+    deathcls = c("Adverse Event", "Disease Progression")
+  ),
+  Mapped_AE = tibble::tibble(
+    subjid = c("S1", "S2"),
+    aetoxgr = c(5L, 3L),
+    aerel = c("RELATED", "NOT RELATED")
   ),
   Mapped_STUDCOMP = tibble::tibble(
     studyid = "ST01",
@@ -324,6 +327,56 @@ test_that("Overview table right-aligns every column, including the string-value 
   expect_match(
     html,
     "text-align:right;\">\\s*Ineligible Premature Death\\(s\\)",
+    perl = TRUE
+  )
+})
+
+test_that("Report listing shows Treatment Related Yes for a fatal related AE death {#248}", {
+  testthat::skip_if_not_installed("plotly")
+  testthat::skip_if_not_installed("DT")
+  out <- Report_PrematureDeaths(
+    dfResults = dfResults,
+    dfMetrics = dfMetrics,
+    dfGroups = dfGroups,
+    lListings = lListings,
+    nWindowDays = 90,
+    strOutputDir = tempdir()
+  )
+  html <- paste(readLines(out, warn = FALSE), collapse = "\n")
+  # Assert the DT-serialized listing cell (quoted JSON "Yes"), NOT the prose
+  # note under the table: both the new and the existing (Report_PrematureDeaths.Rmd:312)
+  # notes contain "Yes" as `<strong>Yes</strong>` (unquoted), so a bare
+  # grepl("Yes", html) passes regardless of the listing and can never go red.
+  expect_true(grepl('"Yes"', html, fixed = TRUE)) # S1: deathcls AE + grade-5 RELATED AE
+})
+
+test_that("Report sources rgmn_dt from Mapped_Randomization when Mapped_SUBJ lacks it {#248}", {
+  testthat::skip_if_not_installed("plotly")
+  testthat::skip_if_not_installed("DT")
+  # Production shape: Mapped_SUBJ has NO rgmn_dt; it must be sourced from
+  # Mapped_Randomization (passed in lListings). S3 is absent from
+  # Mapped_Randomization -> NA rgmn_dt -> dropped, so Total enrolled is 2 (S1, S2),
+  # not 3. This is the ONLY path that exercises the production source-then-filter
+  # branch: if it never ran, no subject would carry rgmn_dt, the NA-filter would
+  # be skipped, and the cell would read 3 -- so the test fails closed.
+  lL <- lListings
+  lL$Mapped_SUBJ <- dplyr::select(lListings$Mapped_SUBJ, -"rgmn_dt")
+  lL$Mapped_Randomization <- tibble::tibble(
+    subjid = c("S1", "S2"),
+    rgmn_dt = as.Date(c("2026-01-26", "2026-01-10"))
+  )
+  out <- Report_PrematureDeaths(
+    dfResults = dfResults,
+    dfMetrics = dfMetrics,
+    dfGroups = dfGroups,
+    lListings = lL,
+    nWindowDays = 90,
+    strOutputDir = tempdir()
+  )
+  html <- paste(readLines(out, warn = FALSE), collapse = "\n")
+  expect_match(
+    html,
+    "(?s)<tbody>\\s*<tr>\\s*<td[^>]*>\\s*2\\s*</td>",
     perl = TRUE
   )
 })

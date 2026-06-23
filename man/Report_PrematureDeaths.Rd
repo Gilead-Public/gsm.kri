@@ -23,9 +23,10 @@ Report_PrematureDeaths(
 
 \item{dfGroups}{`data.frame` Analysis groups data.}
 
-\item{lListings}{`list` containing `Mapped_Death` and `Mapped_SUBJ` frames,
-and optionally `Mapped_EXCLUSION` (adds the Eligibility Status column to the
-patient listing).}
+\item{lListings}{`list` containing `Mapped_Death`, `Mapped_SUBJ`,
+`Mapped_STUDCOMP`, and `Mapped_Randomization` frames, plus `Mapped_AE`
+(fuels the Treatment Related column) and optionally `Mapped_EXCLUSION`
+(adds the Eligibility Status column).}
 
 \item{nWindowDays}{`numeric` Premature-death window in days. Default: 90.
 **Must equal the `meta.WindowDays` used when `pat0015` produced `dfResults`.**

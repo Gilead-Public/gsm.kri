@@ -34,12 +34,20 @@ Mapped_Death <- lListings$Mapped_Death
 Mapped_SUBJ <- lListings$Mapped_SUBJ
 Mapped_STUDCOMP <- lListings$Mapped_STUDCOMP
 Mapped_EXCLUSION <- lListings$Mapped_EXCLUSION
+Mapped_AE <- lListings$Mapped_AE
+Mapped_Randomization <- lListings$Mapped_Randomization
 
-# The premature-death window is anchored on randomization, so a subject without
-# a randomization date has no position on the timeline (NA follow-up / x). Drop
-# them from the analysis cohort up front so the Overview count, the bucket bars,
-# and the scatter all describe the same randomized subjects -- otherwise such
-# subjects would be counted in the bars but silently dropped from the scatter.
+# In production Mapped_SUBJ has no randomization date; source it from
+# Mapped_Randomization (passed in lListings). Then drop subjects with no
+# randomization date -- they have no position on the randomization-anchored
+# timeline, so they must not be counted in the bars yet dropped from the scatter.
+if (!"rgmn_dt" %in% names(Mapped_SUBJ) && !is.null(Mapped_Randomization)) {
+  Mapped_SUBJ <- dplyr::left_join(
+    Mapped_SUBJ,
+    dplyr::distinct(dplyr::select(Mapped_Randomization, "subjid", "rgmn_dt")),
+    by = "subjid"
+  )
+}
 if ("rgmn_dt" %in% names(Mapped_SUBJ)) {
   Mapped_SUBJ <- dplyr::filter(Mapped_SUBJ, !is.na(.data$rgmn_dt))
 }
@@ -305,11 +313,11 @@ htmltools::div(
 
 ## Patient Listing
 ```{r patient-listing, echo=FALSE}
-pd_PatientListing(dfResults, Mapped_Death, Mapped_SUBJ, Mapped_EXCLUSION)
+pd_PatientListing(dfResults, Mapped_Death, Mapped_SUBJ, Mapped_EXCLUSION, Mapped_AE)
 ```
 
 ```{r patient-listing-note, echo=FALSE, results='asis', eval=has_premature}
-cat("\n> **Treatment Related** is derived from the death classification (`deathcls`) and adverse-event relatedness (`aerel`): **Yes** when the death class is an adverse event (`Adverse Event` / `AE`) *and* `aerel` is `Yes`; **No** when both are recorded but the death is not a treatment-related adverse event (a non-AE death, or an AE death whose relatedness is not `Yes`); **Unknown** when the death class or relatedness is missing.\n")
+cat("\n> **Treatment Related** combines the death classification (`deathcls`) with adverse-event data: **Yes** when the death is classified as an adverse event *and* the subject has a fatal (CTCAE grade 5) treatment-related (`aerel` = `RELATED`) adverse event; **No** when the death is not classified as an adverse event *and* there is no such adverse event; **Unknown** otherwise (mixed signals, or a missing death classification / adverse-event grade or relatedness). Note: the related adverse event is matched by subject, not to the specific event that caused death.\n")
 ```
 
 ```{r eligibility-note, echo=FALSE, results='asis', eval=has_premature && has_eligibility}
