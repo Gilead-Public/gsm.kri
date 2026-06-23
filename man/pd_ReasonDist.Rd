@@ -8,7 +8,7 @@ pd_ReasonDist(dfDeath, nWindowDays = 90, nEnrolled = NULL)
 }
 \arguments{
 \item{dfDeath}{`data.frame` Mapped death data with `subjid`, `death_dy`, and
-optionally `death_reason`.}
+optionally `deathcls`.}
 
 \item{nWindowDays}{`numeric` Premature-death window in days. Default: 90.}
 
@@ -21,5 +21,5 @@ A `plotly` htmlwidget.
 \description{
 `r lifecycle::badge("experimental")`
 
-Horizontal bar of `death_reason` counts among premature deaths.
+Horizontal bar of `deathcls` counts among premature deaths.
 }

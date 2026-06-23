@@ -3,23 +3,23 @@
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' Counts `death_reason` among premature deaths (`death_dy <= window`). Falls back
-#' to `"Unknown"` for missing reasons or when the `death_reason` column is absent.
+#' Counts `deathcls` among premature deaths (`death_dy <= window`). Falls back
+#' to `"Unknown"` for missing reasons or when the `deathcls` column is absent.
 #'
 #' @param dfDeath `data.frame` Mapped death data with `subjid`, `death_dy`, and
-#'   optionally `death_reason`.
+#'   optionally `deathcls`.
 #' @param nWindowDays `numeric` Premature-death window in days. Default: 90.
 #'
 #' @return A `data.frame` with `death_reason` and `n` columns, sorted by `n` descending.
 #' @export
 pd_ReasonCounts <- function(dfDeath, nWindowDays = 90) {
-  if (!"death_reason" %in% names(dfDeath)) {
-    dfDeath$death_reason <- NA_character_
+  if (!"deathcls" %in% names(dfDeath)) {
+    dfDeath$deathcls <- NA_character_
   }
 
   pd_PrematureCohort(dfDeath, nWindowDays = nWindowDays) %>%
     dplyr::mutate(
-      death_reason = dplyr::coalesce(.data$death_reason, "Unknown")
+      death_reason = dplyr::coalesce(.data$deathcls, "Unknown")
     ) %>%
     dplyr::count(.data$death_reason, name = "n") %>%
     dplyr::arrange(dplyr::desc(.data$n))
@@ -30,7 +30,7 @@ pd_ReasonCounts <- function(dfDeath, nWindowDays = 90) {
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' Horizontal bar of `death_reason` counts among premature deaths.
+#' Horizontal bar of `deathcls` counts among premature deaths.
 #'
 #' @inheritParams pd_ReasonCounts
 #' @param nEnrolled `numeric` Total enrolled subjects, used for the "% of enrolled"
