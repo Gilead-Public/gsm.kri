@@ -37,9 +37,10 @@ Report_PrematureDeaths(
 
 - lListings:
 
-  \`list\` containing \`Mapped_Death\` and \`Mapped_SUBJ\` frames, and
-  optionally \`Mapped_EXCLUSION\` (adds the Eligibility Status column to
-  the patient listing).
+  \`list\` containing \`Mapped_Death\`, \`Mapped_SUBJ\`,
+  \`Mapped_STUDCOMP\`, and \`Mapped_Randomization\` frames, plus
+  \`Mapped_AE\` (fuels the Treatment Related column) and optionally
+  \`Mapped_EXCLUSION\` (adds the Eligibility Status column).
 
 - nWindowDays:
 

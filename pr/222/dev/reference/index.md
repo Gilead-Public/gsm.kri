@@ -115,3 +115,5 @@
   : Premature-death reason counts
 - [`pd_ReasonDist()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_ReasonDist.md)
   : Premature-death reason distribution chart
+- [`pd_SubjectFatalRelatedAE()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_SubjectFatalRelatedAE.md)
+  : Per-subject fatal treatment-related AE flag

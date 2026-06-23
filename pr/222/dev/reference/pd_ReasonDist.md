@@ -2,7 +2,7 @@
 
 \`r lifecycle::badge("experimental")\`
 
-Horizontal bar of \`death_reason\` counts among premature deaths.
+Horizontal bar of \`deathcls\` counts among premature deaths.
 
 ## Usage
 
@@ -15,7 +15,7 @@ pd_ReasonDist(dfDeath, nWindowDays = 90, nEnrolled = NULL)
 - dfDeath:
 
   \`data.frame\` Mapped death data with \`subjid\`, \`death_dy\`, and
-  optionally \`death_reason\`.
+  optionally \`deathcls\`.
 
 - nWindowDays:
 

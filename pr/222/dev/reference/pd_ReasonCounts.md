@@ -2,9 +2,9 @@
 
 \`r lifecycle::badge("experimental")\`
 
-Counts \`death_reason\` among premature deaths (\`death_dy \<=
-window\`). Falls back to \`"Unknown"\` for missing reasons or when the
-\`death_reason\` column is absent.
+Counts \`deathcls\` among premature deaths (\`death_dy \<= window\`).
+Falls back to \`"Unknown"\` for missing reasons or when the \`deathcls\`
+column is absent.
 
 ## Usage
 
@@ -17,7 +17,7 @@ pd_ReasonCounts(dfDeath, nWindowDays = 90)
 - dfDeath:
 
   \`data.frame\` Mapped death data with \`subjid\`, \`death_dy\`, and
-  optionally \`death_reason\`.
+  optionally \`deathcls\`.
 
 - nWindowDays:
 
