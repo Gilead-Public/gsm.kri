@@ -67,3 +67,17 @@ test_that("pd_OverviewStats validates dfClassified {#250}", {
     "dfClassified is not a data.frame"
   )
 })
+
+test_that("pd_OverviewStats splits premature deaths into <=30 and 31-90 day buckets {#252}", {
+  s <- pd_OverviewStats(dfClassified, nWindowDays = 90)
+  # dfClassified fixture: S1 = lv[1] (<=30d), S2 = lv[2] (31-90d).
+  expect_equal(s$nDeath30, 1)
+  expect_equal(s$nDeath3190, 1)
+  expect_equal(s$nDeath30 + s$nDeath3190, s$nPremature) # invariant
+})
+
+test_that("pd_OverviewStats death buckets are zero on an empty cohort {#252}", {
+  s <- pd_OverviewStats(dfClassified[0, ], nWindowDays = 90)
+  expect_equal(s$nDeath30, 0)
+  expect_equal(s$nDeath3190, 0)
+})

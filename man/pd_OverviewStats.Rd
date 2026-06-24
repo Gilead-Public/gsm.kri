@@ -19,7 +19,9 @@ and `Source` (as produced by `EXCLUSION.yaml`). When absent (or lacking a
 }
 \value{
 A named `list`: `nEnrolled`, `nSites`, `nPremature`, `nPrematureRate`,
-  `nIneligible`, `nIneligibleRate`, `has_eligibility`.
+  `nIneligible`, `nIneligibleRate`, `has_eligibility`, `nDeath30` (subjects
+  who died within 30 days), `nDeath3190` (subjects who died within 31-90
+  days). Invariant: `nDeath30 + nDeath3190 == nPremature`.
 }
 \description{
 `r lifecycle::badge("experimental")`
