@@ -217,11 +217,14 @@ ineligible_cell <- if (stats$has_eligibility) {
 } else {
   "—"
 }
-# Headline total with a smaller grey breakdown sub-line (escape = FALSE renders
-# the inline span and the &le; entity). Counts come from the one classified
+# Headline total with a smaller grey breakdown sub-line (escape = FALSE keeps the
+# inline <br>/<span> markup un-escaped). The "less-than-or-equal" mark is a
+# literal ≤ glyph -- like the Overview preamble and the em-dash cell above -- not
+# the &le; HTML entity, which pandoc's html4 output preserves verbatim (entity,
+# not glyph) and so would not render as ≤. Counts come from the one classified
 # cohort, so the split cannot drift from the total.
 premature_cell <- sprintf(
-  "%d (%.1f%%)<br><span style='font-size:smaller;color:#666'><b>%d</b> &le;30 days, <b>%d</b> 31–90 days</span>",
+  "%d (%.1f%%)<br><span style='font-size:smaller;color:#666'><b>%d</b> ≤30 days, <b>%d</b> 31–90 days</span>",
   stats$nPremature, stats$nPrematureRate, stats$nDeath30, stats$nDeath3190
 )
 knitr::kable(
