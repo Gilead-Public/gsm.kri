@@ -52,8 +52,9 @@ pd_BucketCounts <- function(
 #'
 #' Stacked bar of [pd_Classify()] category counts per group. Each point's
 #' `customdata` carries `[count, pct]` so the report can toggle counts/percent
-#' client-side. On-bar `text` shows the bare count (blank for empty buckets). The
-#' two death categories share a "Death within `nWindowDays` days" legend group.
+#' client-side. On-bar `text` shows the bare count (blank for empty buckets).
+#' Each of the five categories is its own legend entry; traces stack bottom-to-top
+#' in `pd_DisplayOrder()` order (best outcome at the base, death-within-30 on top).
 #'
 #' @param dfClassified `data.frame` Output of [pd_Classify()].
 #' @param nWindowDays `numeric` Window in days (legend/color vocabulary). Default 90.
