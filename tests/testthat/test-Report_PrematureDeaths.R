@@ -365,8 +365,8 @@ test_that("Report adds a country-reactive Reasons chart {#254}", {
   expect_true(grepl('id="pd-country-reasons"', html))
   expect_match(html, "reasonByCountry", fixed = TRUE)
   expect_match(html, "function rebuildReasons", fixed = TRUE)
-  expect_match(html, "rebuildReasons(country)", fixed = TRUE) # wired into applyFilter
-  expect_match(html, "rebuildReasons(null)", fixed = TRUE) # wired into reset
+  expect_match(html, "rebuildReasons(country);", fixed = TRUE) # wired into applyFilter
+  expect_match(html, "rebuildReasons(null);", fixed = TRUE) # wired into reset
 })
 
 test_that("Report sources rgmn_dt from Mapped_Randomization when Mapped_SUBJ lacks it {#248}", {
