@@ -162,3 +162,16 @@ test_that("pd_Classify fills missing optional columns with NA {#246}", {
   expect_true(all(is.na(out$country)))
   expect_true(all(is.na(out$invid)))
 })
+
+test_that("pd_DisplayOrder stacks best-outcome first and is a permutation of the levels {#253}", {
+  lv <- pd_CategoryLevels(90)
+  ord <- pd_DisplayOrder(90)
+  expect_equal(ord, lv[c(4, 5, 3, 2, 1)])
+  expect_setequal(ord, lv) # same set, just reordered
+  expect_equal(ord[1], lv[4]) # "Alive at 90 days" at the base
+  expect_equal(ord[5], lv[1]) # "Death within 30 days" on top
+})
+
+test_that("pd_DisplayOrder tracks a non-default window {#253}", {
+  expect_setequal(pd_DisplayOrder(60), pd_CategoryLevels(60))
+})
