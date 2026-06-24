@@ -197,7 +197,7 @@ ineligible_cell <- if (stats$has_eligibility) {
   "—"
 }
 # Headline total with a smaller grey breakdown sub-line (escape = FALSE renders
-# the inline span and the &leq; entity). Counts come from the one classified
+# the inline span and the &le; entity). Counts come from the one classified
 # cohort, so the split cannot drift from the total.
 premature_cell <- sprintf(
   "%d (%.1f%%)<br><span style='font-size:smaller;color:#666'><b>%d</b> &le;30 days, <b>%d</b> 31–90 days</span>",
