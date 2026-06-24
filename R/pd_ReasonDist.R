@@ -89,3 +89,63 @@ pd_ReasonDist <- function(dfDeath, nWindowDays = 90, nEnrolled = NULL) {
       yaxis = list(title = "Reason")
     )
 }
+
+#' Premature-death reason counts by country
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#'
+#' Reason (`deathcls`) counts among premature deaths, split per country, plus an
+#' `"__ALL__"` aggregate over every premature death. Powers the country-reactive
+#' Reasons chart: the report serializes this to JSON and a client handler swaps
+#' the bar to the clicked country's slice. Each slice is sorted by descending
+#' count and carries a prebuilt hover string, so the client needs no arithmetic.
+#'
+#' @inheritParams pd_ReasonCounts
+#' @param dfSubjects `data.frame` Mapped subject data with `subjid` and `country`,
+#'   joined onto each death to attribute it to a country.
+#'
+#' @return A named `list`: one element per country (and `"__ALL__"`), each a
+#'   `list` with `reason`, `n`, and `hover` vectors sorted by descending `n`.
+#' @export
+pd_ReasonByCountry <- function(dfDeath, dfSubjects, nWindowDays = 90) {
+  gsm.core::stop_if(
+    cnd = !is.data.frame(dfDeath),
+    message = "dfDeath is not a data.frame"
+  )
+  coh <- pd_PrematureCohort(dfDeath, dfSubjects, nWindowDays = nWindowDays)
+  if (!"deathcls" %in% names(coh)) {
+    coh$deathcls <- NA_character_
+  }
+  if (!"country" %in% names(coh)) {
+    coh$country <- NA_character_
+  }
+  coh <- dplyr::mutate(
+    coh,
+    death_reason = dplyr::coalesce(.data$deathcls, "Unknown"),
+    country = dplyr::coalesce(as.character(.data$country), "Unknown")
+  )
+
+  slice_for <- function(df) {
+    g <- df %>%
+      dplyr::count(.data$death_reason, name = "n") %>%
+      dplyr::arrange(dplyr::desc(.data$n))
+    total <- sum(g$n)
+    list(
+      reason = g$death_reason,
+      n = g$n,
+      hover = paste0(
+        "Reason: ",
+        g$death_reason,
+        "<br>Subjects: ",
+        g$n,
+        "<br>% of premature deaths: ",
+        pd_PctLabel(g$n, total)
+      )
+    )
+  }
+
+  out <- lapply(split(coh, coh$country), slice_for)
+  out[["__ALL__"]] <- slice_for(coh)
+  out
+}

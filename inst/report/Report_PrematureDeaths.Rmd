@@ -80,6 +80,14 @@ country_site_map <- Mapped_SUBJ %>%
   tibble::deframe() %>%
   jsonlite::toJSON(auto_unbox = FALSE)
 
+# Reason counts split by country (+ "__ALL__"), serialized for the client-side
+# rebuildReasons() handler. auto_unbox = FALSE keeps every field a JSON array so
+# the JS .map() calls never hit a bare scalar for a single-reason country.
+reason_by_country <- jsonlite::toJSON(
+  pd_ReasonByCountry(Mapped_Death, Mapped_SUBJ, nWindowDays),
+  auto_unbox = FALSE
+)
+
 has_eligibility <- !is.null(Mapped_EXCLUSION) && "Source" %in% names(Mapped_EXCLUSION)
 
 # Overview summary numbers, computed once from the classified cohort (the single
@@ -304,6 +312,14 @@ htmltools::div(
 )
 ```
 
+### Reasons
+```{r country-reasons, echo=FALSE, eval=has_premature}
+htmltools::div(
+  id = "pd-country-reasons",
+  pd_ReasonDist(Mapped_Death, nWindowDays)
+)
+```
+
 ## Site {.tabset .tabset-pills}
 
 ### Buckets
@@ -340,6 +356,7 @@ cat(paste0('
 <script>
 (function() {
   var countrySiteMap = ', country_site_map, ';
+  var reasonByCountry = ', reason_by_country, ';
   var activeCountry = null;
   var activeSite = null;
 
@@ -428,6 +445,7 @@ cat(paste0('
 
     // Re-derive the listing from all active filters (site > country precedence).
     applyListingFilter();
+    rebuildReasons(country);
   }
 
   function highlightCountryBar(country) {
@@ -607,6 +625,30 @@ cat(paste0('
     if (PD_BUCKET_CHARTS.indexOf(containerId) >= 0) applyMode(el);
   }
 
+  // Country-reactive reasons bar. Not a bucket chart and not a scatter, so it is
+  // rebuilt from the precomputed per-country lookup (counts are aggregated, so a
+  // point-reindex like the other charts cannot apply). null -> the all-country
+  // aggregate, which restores the initial paint.
+  function rebuildReasons(country) {
+    var el = getPlotlyDiv("pd-country-reasons");
+    if (!el) return;
+    var d = reasonByCountry[country || "__ALL__"] || {reason: [], n: [], hover: []};
+    Plotly.react(el, [{
+      type: "bar", orientation: "h",
+      x: d.n, y: d.reason,
+      text: d.n, textposition: "auto",
+      customdata: d.hover,
+      hovertemplate: "%{customdata}<extra></extra>"
+      // F1: no marker.color -- omitting it uses plotly\'s default colorway[0],
+      // the same color the server-rendered pd_ReasonDist() draws, so the
+      // all-country bar is identical before any interaction and after a
+      // filter -> clear cycle.
+    }], {
+      xaxis: {title: "Premature Deaths"},
+      yaxis: {title: "Reason", categoryorder: "total ascending"}
+    });
+  }
+
   // Numeric-y scatters filter by per-point customdata: index 1 = country,
   // index 2 = invid. Reindex each trace\'s x/y/customdata in lockstep, then
   // react with the CACHED layout so the fixed [x]/[y] range is preserved
@@ -655,6 +697,7 @@ cat(paste0('
 
     // Re-derive the listing from any remaining active filter (keeps a site).
     applyListingFilter();
+    rebuildReasons(null);
   };
 
   function resetPlotlyChart(containerId) {
