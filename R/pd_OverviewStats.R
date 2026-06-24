@@ -19,7 +19,9 @@
 #' @param nWindowDays `numeric` Premature-death window in days. Default 90.
 #'
 #' @return A named `list`: `nEnrolled`, `nSites`, `nPremature`, `nPrematureRate`,
-#'   `nIneligible`, `nIneligibleRate`, `has_eligibility`.
+#'   `nIneligible`, `nIneligibleRate`, `has_eligibility`, `nDeath30` (subjects
+#'   who died within 30 days), `nDeath3190` (subjects who died within 31-90
+#'   days). Invariant: `nDeath30 + nDeath3190 == nPremature`.
 #' @export
 pd_OverviewStats <- function(
   dfClassified,
@@ -35,8 +37,11 @@ pd_OverviewStats <- function(
   nSites <- length(unique(dfClassified$invid[!is.na(dfClassified$invid)]))
 
   death_levels <- pd_CategoryLevels(nWindowDays)[1:2]
-  is_premature <- as.character(dfClassified$Category) %in% death_levels
+  cats <- as.character(dfClassified$Category)
+  is_premature <- cats %in% death_levels
   nPremature <- sum(is_premature)
+  nDeath30 <- sum(cats == death_levels[1])
+  nDeath3190 <- sum(cats == death_levels[2])
   nPrematureRate <- if (nEnrolled > 0) 100 * nPremature / nEnrolled else 0
 
   has_eligibility <- !is.null(dfExclusion) && "Source" %in% names(dfExclusion)
@@ -61,6 +66,8 @@ pd_OverviewStats <- function(
     nPrematureRate = nPrematureRate,
     nIneligible = nIneligible,
     nIneligibleRate = nIneligibleRate,
-    has_eligibility = has_eligibility
+    has_eligibility = has_eligibility,
+    nDeath30 = nDeath30,
+    nDeath3190 = nDeath3190
   )
 }
