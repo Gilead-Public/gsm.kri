@@ -13,14 +13,9 @@
 #' @return A `data.frame` with `death_reason` and `n` columns, sorted by `n` descending.
 #' @export
 pd_ReasonCounts <- function(dfDeath, nWindowDays = 90) {
-  if (!"deathcls" %in% names(dfDeath)) {
-    dfDeath$deathcls <- NA_character_
-  }
-
-  pd_PrematureCohort(dfDeath, nWindowDays = nWindowDays) %>%
-    dplyr::mutate(
-      death_reason = dplyr::coalesce(.data$deathcls, "Unknown")
-    ) %>%
+  coh <- pd_PrematureCohort(dfDeath, nWindowDays = nWindowDays)
+  coh$death_reason <- pd_DeathReason(coh)
+  coh %>%
     dplyr::count(.data$death_reason, name = "n") %>%
     dplyr::arrange(dplyr::desc(.data$n))
 }
@@ -114,15 +109,12 @@ pd_ReasonByCountry <- function(dfDeath, dfSubjects, nWindowDays = 90) {
     message = "dfDeath is not a data.frame"
   )
   coh <- pd_PrematureCohort(dfDeath, dfSubjects, nWindowDays = nWindowDays)
-  if (!"deathcls" %in% names(coh)) {
-    coh$deathcls <- NA_character_
-  }
   if (!"country" %in% names(coh)) {
     coh$country <- NA_character_
   }
+  coh$death_reason <- pd_DeathReason(coh)
   coh <- dplyr::mutate(
     coh,
-    death_reason = dplyr::coalesce(.data$deathcls, "Unknown"),
     country = dplyr::coalesce(as.character(.data$country), "Unknown")
   )
 

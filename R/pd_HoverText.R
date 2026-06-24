@@ -32,3 +32,24 @@ pd_YesNo <- function(x) {
     TRUE ~ "No"
   )
 }
+
+#' Death-reason label with "Unknown" fallback
+#'
+#' @description
+#' Internal helper for premature-death reporting. Returns the `deathcls` column
+#' of `df` as a character vector, substituting `"Unknown"` for missing values
+#' and for an entirely absent column. Single source of truth for the fallback
+#' used by [pd_ReasonCounts()] and [pd_ReasonByCountry()].
+#'
+#' @param df `data.frame` that may or may not carry a `deathcls` column.
+#'
+#' @return A `character` vector of length `nrow(df)`.
+#' @noRd
+pd_DeathReason <- function(df) {
+  cls <- if ("deathcls" %in% names(df)) {
+    as.character(df[["deathcls"]])
+  } else {
+    rep(NA_character_, nrow(df))
+  }
+  dplyr::coalesce(cls, "Unknown")
+}

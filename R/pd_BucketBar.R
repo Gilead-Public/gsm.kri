@@ -134,7 +134,6 @@ pd_BucketBar <- function(
   p <- plotly::plot_ly()
   for (ct in pd_DisplayOrder(nWindowDays)) {
     d <- dplyr::filter(dfCounts, .data$Bucket == ct)
-    meta <- pd_LegendMeta(ct, nWindowDays)
     x <- if (is.null(strOuterCol)) {
       d$GroupID
     } else {
@@ -144,13 +143,8 @@ pd_BucketBar <- function(
       p,
       x = x,
       y = d$n,
-      name = meta$name,
-      legendgroup = meta$group,
-      legendgrouptitle = if (is.null(meta$grouptitle)) {
-        NULL
-      } else {
-        list(text = meta$grouptitle)
-      },
+      name = ct,
+      legendgroup = ct,
       marker = list(color = unname(cat_colors[ct])),
       text = d$label,
       customdata = if (is.null(strOuterCol)) {

@@ -62,24 +62,6 @@ pd_DisplayOrder <- function(nWindowDays) {
   lv[c(4, 5, 3, 2, 1)]
 }
 
-#' Legend presentation for a category
-#'
-#' @description
-#' Maps a category label to its legend `name`, `group`, and optional group title.
-#' Every category -- including the two death categories -- is a separate
-#' top-level legend entry named by its full [pd_CategoryLevels()] label; the two
-#' deaths are no longer joined under a "Death within `nWindowDays` days" heading.
-#'
-#' @param category `character` One value of [pd_CategoryLevels()].
-#' @param nWindowDays `numeric` Premature-death window in days (unused; retained
-#'   so callers can pass the window without special-casing).
-#'
-#' @return A list with `name`, `group`, and `grouptitle` (always `NULL`).
-#' @noRd
-pd_LegendMeta <- function(category, nWindowDays) {
-  list(name = category, group = category, grouptitle = NULL)
-}
-
 #' Classify enrolled subjects into premature-death categories
 #'
 #' @description

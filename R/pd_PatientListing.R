@@ -110,25 +110,19 @@ pd_PatientListingData <- function(
       # Treatment Related: deathcls is the AE-death gate; a fatal treatment-related
       # AE is the relatedness evidence. Both positive -> Yes; AE death + fatal
       # not-related AE -> No; both negative -> No; mixed or missing -> Unknown.
-      .is_ae = grepl("a(dverse[ ]*)?e", .data$deathcls, ignore.case = TRUE),
-      .qual_ae = dplyr::coalesce(.data$has_fatal_related_ae, FALSE),
-      .unrel_ae = dplyr::coalesce(.data$has_fatal_unrelated_ae, FALSE),
       treatment_related = dplyr::case_when(
         is.na(.data$deathcls) | trimws(.data$deathcls) == "" ~ "Unknown",
-        .data$.is_ae & .data$.qual_ae ~ "Yes",
-        .data$.is_ae & .data$.unrel_ae ~ "No",
-        !.data$.is_ae & !.data$.qual_ae ~ "No",
+        grepl("a(dverse[ ]*)?e", .data$deathcls, ignore.case = TRUE) &
+          dplyr::coalesce(.data$has_fatal_related_ae, FALSE) ~ "Yes",
+        grepl("a(dverse[ ]*)?e", .data$deathcls, ignore.case = TRUE) &
+          dplyr::coalesce(.data$has_fatal_unrelated_ae, FALSE) ~ "No",
+        !grepl("a(dverse[ ]*)?e", .data$deathcls, ignore.case = TRUE) &
+          !dplyr::coalesce(.data$has_fatal_related_ae, FALSE) ~ "No",
         TRUE ~ "Unknown"
       )
     ) %>%
     dplyr::select(
-      -dplyr::any_of(c(
-        "has_fatal_related_ae",
-        "has_fatal_unrelated_ae",
-        ".is_ae",
-        ".qual_ae",
-        ".unrel_ae"
-      ))
+      -dplyr::any_of(c("has_fatal_related_ae", "has_fatal_unrelated_ae"))
     )
 
   if (
