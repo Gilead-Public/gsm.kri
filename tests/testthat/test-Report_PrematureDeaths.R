@@ -255,7 +255,7 @@ test_that("Overview renders the preamble and 4-column summary table {#250}", {
   expect_match(html, "Total enrolled", fixed = TRUE)
   expect_match(html, "Total sites with enrolled participants", fixed = TRUE)
   expect_match(html, "Premature Death(s)", fixed = TRUE)
-  expect_match(html, "Ineligible Premature Death(s)", fixed = TRUE)
+  expect_match(html, "Participants Ineligible + Premature Death", fixed = TRUE)
   # The removed flag chips / bullets are gone.
   expect_false(grepl("Alive at Window", html))
   expect_false(grepl("Configured window", html))
@@ -326,9 +326,27 @@ test_that("Overview table right-aligns every column, including the string-value 
   )
   expect_match(
     html,
-    "text-align:right;\">\\s*Ineligible Premature Death\\(s\\)",
+    "text-align:right;\">\\s*Participants Ineligible \\+ Premature Death",
     perl = TRUE
   )
+})
+
+test_that("Overview Premature Death(s) cell shows the <=30 / 31-90 breakdown sub-line {#252}", {
+  testthat::skip_if_not_installed("plotly")
+  testthat::skip_if_not_installed("DT")
+  out <- Report_PrematureDeaths(
+    dfResults = dfResults,
+    dfMetrics = dfMetrics,
+    dfGroups = dfGroups,
+    lListings = lListings,
+    nWindowDays = 90,
+    strOutputDir = tempdir()
+  )
+  html <- paste(readLines(out, warn = FALSE), collapse = "\n")
+  expect_match(html, "≤30 days", fixed = TRUE)
+  expect_match(html, "31–90 days", fixed = TRUE) # en dash
+  expect_match(html, "font-size:smaller", fixed = TRUE)
+  expect_match(html, "Participants Ineligible + Premature Death", fixed = TRUE)
 })
 
 test_that("Report listing shows Treatment Related Yes for a fatal related AE death {#248}", {

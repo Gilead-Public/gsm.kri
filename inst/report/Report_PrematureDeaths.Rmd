@@ -196,15 +196,23 @@ ineligible_cell <- if (stats$has_eligibility) {
 } else {
   "—"
 }
+# Headline total with a smaller grey breakdown sub-line (escape = FALSE renders
+# the inline span and the &leq; entity). Counts come from the one classified
+# cohort, so the split cannot drift from the total.
+premature_cell <- sprintf(
+  "%d (%.1f%%)<br><span style='font-size:smaller;color:#666'><b>%d</b> &leq;30 days, <b>%d</b> 31–90 days</span>",
+  stats$nPremature, stats$nPrematureRate, stats$nDeath30, stats$nDeath3190
+)
 knitr::kable(
   data.frame(
     "Total enrolled" = stats$nEnrolled,
     "Total sites with enrolled participants" = stats$nSites,
-    "Premature Death(s)" = sprintf("%d (%.1f%%)", stats$nPremature, stats$nPrematureRate),
-    "Ineligible Premature Death(s)" = ineligible_cell,
+    "Premature Death(s)" = premature_cell,
+    "Participants Ineligible + Premature Death" = ineligible_cell,
     check.names = FALSE
   ),
   format = "html",
+  escape = FALSE,
   align = "r",
   table.attr = "class=\"table\""
 )
