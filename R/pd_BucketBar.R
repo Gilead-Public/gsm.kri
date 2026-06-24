@@ -131,7 +131,7 @@ pd_BucketBar <- function(
   }
 
   p <- plotly::plot_ly()
-  for (ct in pd_CategoryLevels(nWindowDays)) {
+  for (ct in pd_DisplayOrder(nWindowDays)) {
     d <- dplyr::filter(dfCounts, .data$Bucket == ct)
     meta <- pd_LegendMeta(ct, nWindowDays)
     x <- if (is.null(strOuterCol)) {
