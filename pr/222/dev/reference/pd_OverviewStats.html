@@ -99,7 +99,9 @@ and `Source` (as produced by `EXCLUSION.yaml`). When absent (or lacking a
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A named `list`: `nEnrolled`, `nSites`, `nPremature`, `nPrematureRate`,
-  `nIneligible`, `nIneligibleRate`, `has_eligibility`.</p>
+  `nIneligible`, `nIneligibleRate`, `has_eligibility`, `nDeath30` (subjects
+  who died within 30 days), `nDeath3190` (subjects who died within 31-90
+  days). Invariant: `nDeath30 + nDeath3190 == nPremature`.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

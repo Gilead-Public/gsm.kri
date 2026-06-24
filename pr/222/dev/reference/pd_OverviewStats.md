@@ -39,4 +39,6 @@ pd_OverviewStats(dfClassified, dfExclusion = NULL, nWindowDays = 90)
 
 A named \`list\`: \`nEnrolled\`, \`nSites\`, \`nPremature\`,
 \`nPrematureRate\`, \`nIneligible\`, \`nIneligibleRate\`,
-\`has_eligibility\`.
+\`has_eligibility\`, \`nDeath30\` (subjects who died within 30 days),
+\`nDeath3190\` (subjects who died within 31-90 days). Invariant:
+\`nDeath30 + nDeath3190 == nPremature\`.

@@ -5,8 +5,9 @@
 Stacked bar of \[pd_Classify()\] category counts per group. Each point's
 \`customdata\` carries \`\[count, pct\]\` so the report can toggle
 counts/percent client-side. On-bar \`text\` shows the bare count (blank
-for empty buckets). The two death categories share a "Death within
-\`nWindowDays\` days" legend group.
+for empty buckets). Each of the five categories is its own legend entry;
+traces stack bottom-to-top in \`pd_DisplayOrder()\` order (best outcome
+at the base, death-within-30 on top).
 
 ## Usage
 

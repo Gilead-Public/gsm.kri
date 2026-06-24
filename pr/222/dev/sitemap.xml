@@ -68,12 +68,14 @@
 <url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_CategoryLevels.html</loc></url>
 <url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_CheckWindowConsistency.html</loc></url>
 <url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_Classify.html</loc></url>
+<url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_DisplayOrder.html</loc></url>
 <url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_EligibilityStatus.html</loc></url>
 <url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_OverviewStats.html</loc></url>
 <url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_PatientListing.html</loc></url>
 <url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_PatientListingData.html</loc></url>
 <url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_PrematureCohort.html</loc></url>
 <url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_RandToDeathScatter.html</loc></url>
+<url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_ReasonByCountry.html</loc></url>
 <url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_ReasonCounts.html</loc></url>
 <url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_ReasonDist.html</loc></url>
 <url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_SubjectFatalRelatedAE.html</loc></url>

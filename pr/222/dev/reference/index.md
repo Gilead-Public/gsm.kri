@@ -99,6 +99,8 @@
   : Check premature-death window consistency
 - [`pd_Classify()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_Classify.md)
   : Classify enrolled subjects into premature-death categories
+- [`pd_DisplayOrder()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_DisplayOrder.md)
+  : Premature-death bucket stacking order
 - [`pd_EligibilityStatus()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_EligibilityStatus.md)
   : Classify eligibility from an exclusion \`Source\`
 - [`pd_OverviewStats()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_OverviewStats.md)
@@ -111,6 +113,8 @@
   : Premature-death cohort
 - [`pd_RandToDeathScatter()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_RandToDeathScatter.md)
   : Randomization-to-event scatter
+- [`pd_ReasonByCountry()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_ReasonByCountry.md)
+  : Premature-death reason counts by country
 - [`pd_ReasonCounts()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_ReasonCounts.md)
   : Premature-death reason counts
 - [`pd_ReasonDist()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_ReasonDist.md)
