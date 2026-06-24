@@ -175,3 +175,9 @@ test_that("pd_DisplayOrder stacks best-outcome first and is a permutation of the
 test_that("pd_DisplayOrder tracks a non-default window {#253}", {
   expect_setequal(pd_DisplayOrder(60), pd_CategoryLevels(60))
 })
+
+test_that("pd_CategoryLevels relabels the alive-prior category to 'not yet ... on study' {#253}", {
+  lv <- pd_CategoryLevels(90)
+  expect_equal(lv[5], "Alive, not yet 90 days on study")
+  expect_equal(lv[4], "Alive at 90 days") # unchanged
+})

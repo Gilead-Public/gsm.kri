@@ -17,7 +17,7 @@ pd_CategoryLevels <- function(nWindowDays) {
     paste0("Death within 31\u2013", nWindowDays, " days"),
     paste0("Study discontinuation within ", nWindowDays, " days"),
     paste0("Alive at ", nWindowDays, " days"),
-    paste0("Alive prior to ", nWindowDays, " days")
+    paste0("Alive, not yet ", nWindowDays, " days on study")
   )
 }
 
