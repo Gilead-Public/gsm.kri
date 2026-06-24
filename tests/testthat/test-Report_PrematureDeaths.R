@@ -365,6 +365,19 @@ test_that("Report count/% toggle is sticky and follows scroll {#253}", {
   expect_match(html, "pd-mode-sticky", fixed = TRUE)
   # the toggle buttons live inside the sticky bar
   expect_match(html, "pd-mode-count", fixed = TRUE)
+  # Regression guard: a `position: sticky` element only pins within its PARENT
+  # block, so the toggle must sit in the report's top-level section -- NOT nested
+  # inside the short `## Overview` section, where it would scroll away. Assert it
+  # renders ahead of the Overview preamble (i.e. before the `## Overview`
+  # heading), so its containing block spans the whole report and it actually pins.
+  toggle_at <- regexpr("pd-mode-toggle", html, fixed = TRUE)
+  overview_at <- regexpr(
+    "Premature death analysis supports",
+    html,
+    fixed = TRUE
+  )
+  expect_true(toggle_at > 0 && overview_at > 0)
+  expect_lt(toggle_at, overview_at)
 })
 
 test_that("Report sources rgmn_dt from Mapped_Randomization when Mapped_SUBJ lacks it {#248}", {

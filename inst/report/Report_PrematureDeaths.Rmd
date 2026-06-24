@@ -184,6 +184,19 @@ htmltools::tags$div(
 )
 ```
 
+```{r mode-toggle, echo=FALSE, results='asis', eval=has_premature}
+cat('
+<style>
+.pd-mode-sticky { position: sticky; top: 0; z-index: 1031; display: flex; align-items: center; background:#ffffff; border-bottom: 1px solid #e3e8ef; padding: 8px 4px; margin: 0 0 8px; }
+</style>
+<div class="pd-mode-sticky" id="pd-mode-toggle">
+  <span style="font-size:13px; color:#555; margin-right:8px;">Bucket bars:</span>
+  <button id="pd-mode-count" onclick="pdSetMode(\'count\')" style="background:#1a73e8; color:white; border:none; border-radius:4px; padding:4px 14px; cursor:pointer; font-size:12px;">Count</button>
+  <button id="pd-mode-pct" onclick="pdSetMode(\'pct\')" style="background:#cfd8dc; color:#37474f; border:none; border-radius:4px; padding:4px 14px; cursor:pointer; font-size:12px;">%</button>
+</div>
+')
+```
+
 ## Overview
 
 Premature death analysis supports early identification of deaths occurring within ≤`r nWindowDays` days of randomization, enabling timely detection of potential eligibility concerns and emerging safety risks.
@@ -212,19 +225,6 @@ knitr::kable(
 
 ```{r empty-state, echo=FALSE, results='asis', eval=!has_premature}
 cat("\n> **No premature deaths in window.** All charts and the patient listing are empty for this snapshot.\n")
-```
-
-```{r mode-toggle, echo=FALSE, results='asis', eval=has_premature}
-cat('
-<style>
-.pd-mode-sticky { position: sticky; top: 0; z-index: 1031; display: flex; align-items: center; background:#ffffff; border-bottom: 1px solid #e3e8ef; padding: 8px 4px; margin: 0 0 8px; }
-</style>
-<div class="pd-mode-sticky" id="pd-mode-toggle">
-  <span style="font-size:13px; color:#555; margin-right:8px;">Bucket bars:</span>
-  <button id="pd-mode-count" onclick="pdSetMode(\'count\')" style="background:#1a73e8; color:white; border:none; border-radius:4px; padding:4px 14px; cursor:pointer; font-size:12px;">Count</button>
-  <button id="pd-mode-pct" onclick="pdSetMode(\'pct\')" style="background:#cfd8dc; color:#37474f; border:none; border-radius:4px; padding:4px 14px; cursor:pointer; font-size:12px;">%</button>
-</div>
-')
 ```
 
 ```{r rangeslider-css, echo=FALSE, results='asis', eval=has_premature}
