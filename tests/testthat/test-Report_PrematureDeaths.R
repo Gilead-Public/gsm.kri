@@ -350,6 +350,23 @@ test_that("Report listing shows Treatment Related Yes for a fatal related AE dea
   expect_true(grepl('"Yes"', html, fixed = TRUE)) # S1: deathcls AE + grade-5 RELATED AE
 })
 
+test_that("Report count/% toggle is sticky and follows scroll {#253}", {
+  testthat::skip_if_not_installed("plotly")
+  testthat::skip_if_not_installed("DT")
+  out <- Report_PrematureDeaths(
+    dfResults = dfResults,
+    dfMetrics = dfMetrics,
+    dfGroups = dfGroups,
+    lListings = lListings,
+    nWindowDays = 90,
+    strOutputDir = tempdir()
+  )
+  html <- paste(readLines(out, warn = FALSE), collapse = "\n")
+  expect_match(html, "pd-mode-sticky", fixed = TRUE)
+  # the toggle buttons live inside the sticky bar
+  expect_match(html, "pd-mode-count", fixed = TRUE)
+})
+
 test_that("Report sources rgmn_dt from Mapped_Randomization when Mapped_SUBJ lacks it {#248}", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
