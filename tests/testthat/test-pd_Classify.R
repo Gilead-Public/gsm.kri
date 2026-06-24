@@ -55,7 +55,7 @@ test_that("pd_Classify assigns the five categories by precedence {#246}", {
   expect_equal(cat_by[["C"]], lv[3]) # studcomp non-death ~49d -> discontinuation
   expect_equal(cat_by[["D"]], lv[4]) # alive, follow_up 200 -> Alive at 90
   expect_equal(cat_by[["E"]], lv[4]) # compreas==Death excluded from grey; alive 200 -> Alive at 90
-  expect_equal(cat_by[["F"]], lv[5]) # alive, follow_up 40 -> Alive prior to 90
+  expect_equal(cat_by[["F"]], lv[5]) # alive, follow_up 40 -> Alive, not yet 90 days on study
 })
 
 test_that("pd_Classify x_anchor anchors per category {#246}", {
@@ -143,7 +143,7 @@ test_that("pd_Classify pulls rgmn_dt from dfRand when dfSubjects lacks it {#246}
   )
   cat_by <- setNames(as.character(out$Category), out$subjid)
   expect_equal(cat_by[["A"]], pd_CategoryLevels(90)[1]) # death 20d
-  expect_equal(cat_by[["F"]], pd_CategoryLevels(90)[5]) # alive prior
+  expect_equal(cat_by[["F"]], pd_CategoryLevels(90)[5]) # alive, not yet 90 days on study
 })
 
 test_that("pd_Classify fills missing optional columns with NA {#246}", {
@@ -161,4 +161,23 @@ test_that("pd_Classify fills missing optional columns with NA {#246}", {
   expect_true(all(is.na(out$studyid)))
   expect_true(all(is.na(out$country)))
   expect_true(all(is.na(out$invid)))
+})
+
+test_that("pd_DisplayOrder stacks best-outcome first and is a permutation of the levels {#253}", {
+  lv <- pd_CategoryLevels(90)
+  ord <- pd_DisplayOrder(90)
+  expect_equal(ord, lv[c(4, 5, 3, 2, 1)])
+  expect_setequal(ord, lv) # same set, just reordered
+  expect_equal(ord[1], lv[4]) # "Alive at 90 days" at the base
+  expect_equal(ord[5], lv[1]) # "Death within 30 days" on top
+})
+
+test_that("pd_DisplayOrder tracks a non-default window {#253}", {
+  expect_setequal(pd_DisplayOrder(60), pd_CategoryLevels(60))
+})
+
+test_that("pd_CategoryLevels relabels the alive-prior category to 'not yet ... on study' {#253}", {
+  lv <- pd_CategoryLevels(90)
+  expect_equal(lv[5], "Alive, not yet 90 days on study")
+  expect_equal(lv[4], "Alive at 90 days") # unchanged
 })

@@ -88,14 +88,22 @@ test_that("pd_BucketBar shows count labels and five separate legend categories {
   expect_equal(length(b$x$data), 5)
 })
 
-test_that("pd_BucketBar colors the five categories from pd_CategoryColors {#246}", {
+test_that("pd_BucketBar colors the five categories in display order {#253}", {
   testthat::skip_if_not_installed("plotly")
   b <- plotly::plotly_build(pd_BucketBar(make_classified()))
-  cols <- unname(pd_CategoryColors(90))
-  # traces are added in pd_CategoryLevels() order, so colors line up by index.
+  ord <- pd_DisplayOrder(90)
+  cols <- pd_CategoryColors(90)
+  # traces are added in pd_DisplayOrder() order; color each trace by its category.
   for (i in seq_len(5)) {
-    expect_equal(b$x$data[[i]]$marker$color, cols[i])
+    expect_equal(b$x$data[[i]]$marker$color, unname(cols[ord[i]]))
   }
+})
+
+test_that("pd_BucketBar stacks Alive-at-window first and Death-within-30 last {#253}", {
+  testthat::skip_if_not_installed("plotly")
+  b <- plotly::plotly_build(pd_BucketBar(make_classified()))
+  names <- vapply(b$x$data, function(tr) tr$name, character(1))
+  expect_equal(names, pd_DisplayOrder(90))
 })
 
 test_that("pd_BucketBar hover names the category, count, and percent {#246}", {
