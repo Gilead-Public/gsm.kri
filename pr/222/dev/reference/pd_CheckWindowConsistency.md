@@ -2,10 +2,12 @@
 
 \`r lifecycle::badge("experimental")\`
 
-Emits a warning when the report's \`nWindowDays\` disagrees with the
-window used to produce \`dfResults\` (detected by comparing the live
-premature-death count in \`Mapped_Death\` against the number of
-\`pat0015\` \`Flag == 2\` rows).
+Warns only when the report's \`nWindowDays\` disagrees with the window
+used to produce \`dfResults\` – i.e. when the live premature-death count
+in \`Mapped_Death\` (\`nPremature\`) differs from the number of
+\`pat0015\` \`Flag == 2\` rows (\`nFlagged\`). When the counts agree it
+returns invisibly without warning, so callers (e.g. the report) just
+call it unconditionally.
 
 ## Usage
 
@@ -29,4 +31,5 @@ pd_CheckWindowConsistency(nWindowDays, nPremature, nFlagged)
 
 ## Value
 
-Called for its side-effect (warning); returns \`NULL\` invisibly.
+Called for its side-effect (warning on mismatch); returns \`NULL\`
+invisibly.
