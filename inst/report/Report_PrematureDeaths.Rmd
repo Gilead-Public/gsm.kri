@@ -653,7 +653,7 @@ cat(paste0('
       customdata: d.hover,
       hovertemplate: "%{customdata}<extra></extra>"
       // F1: no marker.color -- omitting it uses plotly\'s default colorway[0],
-      // the same color the server-rendered pd_ReasonDist() draws, so the
+      // the same color the server-rendered pd_ReasonBar() draws, so the
       // all-country bar is identical before any interaction and after a
       // filter -> clear cycle.
     }], {
