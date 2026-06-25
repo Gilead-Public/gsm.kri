@@ -84,14 +84,6 @@ country_site_map <- Mapped_SUBJ %>%
   tibble::deframe() %>%
   jsonlite::toJSON(auto_unbox = FALSE)
 
-# Reason counts split by country (+ "__ALL__"), serialized for the client-side
-# rebuildReasons() handler. auto_unbox = FALSE keeps every field a JSON array so
-# the JS .map() calls never hit a bare scalar for a single-reason country.
-reason_by_country <- jsonlite::toJSON(
-  pd_ReasonByCountry(Mapped_Death, Mapped_SUBJ, nWindowDays),
-  auto_unbox = FALSE
-)
-
 has_eligibility <- !is.null(Mapped_EXCLUSION) && "Source" %in% names(Mapped_EXCLUSION)
 
 # Overview summary numbers, computed once from the classified cohort (the single
@@ -106,6 +98,20 @@ nEnrolled <- stats$nEnrolled
 nPremature <- stats$nPremature
 nPrematureRate <- stats$nPrematureRate
 has_premature <- nPremature > 0
+
+# Per-country enrolled counts off the classified cohort (same basis as nEnrolled),
+# coalescing NA country to "Unknown" to match pd_ReasonByCountry's split.
+enrolled_by_country <- dfClassified %>%
+  dplyr::mutate(country = dplyr::coalesce(as.character(country), "Unknown")) %>%
+  dplyr::count(country, name = "n") %>%
+  tibble::deframe()
+
+# Reason aggregate computed ONCE: per-country slices + "__ALL__", each with prebuilt
+# hover (now incl. % of enrolled). Drives the static charts AND the JS rebuildReasons handler.
+reason_data <- pd_ReasonByCountry(Mapped_Death, Mapped_SUBJ, nWindowDays,
+                                  nEnrolledByCountry = enrolled_by_country,
+                                  nEnrolled = nEnrolled)
+reason_by_country <- jsonlite::toJSON(reason_data, auto_unbox = FALSE)
 
 # Study-discontinuation caveat, shared verbatim by the Study Buckets and the
 # Study Rand -> Death tabs (single source of truth so the embedded nWindowDays
@@ -298,7 +304,7 @@ cat(study_discont_note)
 
 ### Reasons
 ```{r study-reasons, echo=FALSE, eval=has_premature}
-pd_ReasonDist(Mapped_Death, nWindowDays, nEnrolled = nEnrolled)
+pd_ReasonBar(reason_data[["__ALL__"]])
 ```
 
 ## Country {.tabset .tabset-pills}
@@ -323,7 +329,7 @@ htmltools::div(
 ```{r country-reasons, echo=FALSE, eval=has_premature}
 htmltools::div(
   id = "pd-country-reasons",
-  pd_ReasonDist(Mapped_Death, nWindowDays)
+  pd_ReasonBar(reason_data[["__ALL__"]])
 )
 ```
 

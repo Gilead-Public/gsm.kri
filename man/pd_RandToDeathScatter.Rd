@@ -12,7 +12,9 @@ pd_RandToDeathScatter(
 )
 }
 \arguments{
-\item{dfClassified}{`data.frame` Output of [pd_Classify()].}
+\item{dfClassified}{`data.frame` Output of [pd_Classify()]. May already carry
+the `hover`/`pd_customdata` columns built by [pd_ScatterData()] — in that
+case the per-point build is skipped (idempotent).}
 
 \item{nWindowDays}{`numeric` Window in days (color/legend vocabulary). Default 90.}
 

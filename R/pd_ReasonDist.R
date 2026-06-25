@@ -15,9 +15,83 @@
 pd_ReasonCounts <- function(dfDeath, nWindowDays = 90) {
   coh <- pd_PrematureCohort(dfDeath, nWindowDays = nWindowDays)
   coh$death_reason <- pd_DeathReason(coh)
-  coh %>%
+  s <- pd_ReasonSlice(coh)
+  tibble::tibble(death_reason = s$reason, n = s$n)
+}
+
+#' Premature-death reason slice (internal kernel)
+#'
+#' @description
+#' Shared kernel: count -> arrange -> build hover. Returns the slice contract
+#' `list(reason, n, hover)`. The premature-death percentage is over the slice
+#' total. The enrolled-percentage line is conditional on `nEnrolled`.
+#'
+#' @param dfReason `data.frame` with a `death_reason` column.
+#' @param nEnrolled `numeric` or `NULL`. When non-NULL, adds a "% of enrolled"
+#'   hover line using this as the denominator.
+#'
+#' @return A named `list` with `reason`, `n`, and `hover` character/integer vectors.
+#' @noRd
+pd_ReasonSlice <- function(dfReason, nEnrolled = NULL) {
+  g <- dfReason %>%
     dplyr::count(.data$death_reason, name = "n") %>%
     dplyr::arrange(dplyr::desc(.data$n))
+  total <- sum(g$n)
+  hover <- paste0(
+    "Reason: ",
+    g$death_reason,
+    "<br>Subjects: ",
+    g$n,
+    if (!is.null(nEnrolled)) {
+      paste0("<br>% of enrolled: ", pd_PctLabel(g$n, nEnrolled))
+    } else {
+      ""
+    },
+    "<br>% of premature deaths: ",
+    pd_PctLabel(g$n, total)
+  )
+  list(reason = g$death_reason, n = g$n, hover = hover)
+}
+
+#' Premature-death reason bar chart
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#'
+#' Renders a horizontal bar chart from a reason slice produced by
+#' [pd_ReasonByCountry()] or derived inside [pd_ReasonDist()]. Each bar is
+#' labelled with its count (placed inside the bar, or just outside when the bar
+#' is too narrow to hold the label).
+#'
+#' @param slice A named `list` with `reason`, `n`, and `hover` vectors, as
+#'   returned by the internal kernel `pd_ReasonSlice` or elements of the list
+#'   returned by [pd_ReasonByCountry()].
+#'
+#' @return A `plotly` htmlwidget.
+#' @export
+pd_ReasonBar <- function(slice) {
+  rlang::check_installed("plotly", reason = "to run `pd_ReasonBar()`")
+  df <- data.frame(
+    reason = slice$reason,
+    n = slice$n,
+    hover = slice$hover,
+    stringsAsFactors = FALSE
+  )
+  plotly::plot_ly(
+    df,
+    x = ~n,
+    y = ~ stats::reorder(reason, n),
+    type = "bar",
+    orientation = "h",
+    text = ~n,
+    textposition = "auto",
+    customdata = ~hover,
+    hovertemplate = "%{customdata}<extra></extra>"
+  ) %>%
+    plotly::layout(
+      xaxis = list(title = "Premature Deaths"),
+      yaxis = list(title = "Reason")
+    )
 }
 
 #' Premature-death reason distribution chart
@@ -48,41 +122,9 @@ pd_ReasonDist <- function(dfDeath, nWindowDays = 90, nEnrolled = NULL) {
   )
   rlang::check_installed("plotly", reason = "to run `pd_ReasonDist()`")
 
-  dfCounts <- pd_ReasonCounts(dfDeath, nWindowDays)
-  nPremature <- sum(dfCounts$n)
-
-  dfCounts <- dfCounts %>%
-    dplyr::mutate(
-      text = paste0(
-        "Reason: ",
-        .data$death_reason,
-        "<br>Subjects: ",
-        .data$n,
-        if (!is.null(nEnrolled)) {
-          paste0("<br>% of enrolled: ", pd_PctLabel(.data$n, nEnrolled))
-        } else {
-          ""
-        },
-        "<br>% of premature deaths: ",
-        pd_PctLabel(.data$n, nPremature)
-      )
-    )
-
-  plotly::plot_ly(
-    dfCounts,
-    x = ~n,
-    y = ~ stats::reorder(death_reason, n),
-    type = "bar",
-    orientation = "h",
-    text = ~n,
-    textposition = "auto",
-    customdata = ~text,
-    hovertemplate = "%{customdata}<extra></extra>"
-  ) %>%
-    plotly::layout(
-      xaxis = list(title = "Premature Deaths"),
-      yaxis = list(title = "Reason")
-    )
+  coh <- pd_PrematureCohort(dfDeath, nWindowDays = nWindowDays)
+  coh$death_reason <- pd_DeathReason(coh)
+  pd_ReasonBar(pd_ReasonSlice(coh, nEnrolled = nEnrolled))
 }
 
 #' Premature-death reason counts by country
@@ -99,11 +141,25 @@ pd_ReasonDist <- function(dfDeath, nWindowDays = 90, nEnrolled = NULL) {
 #' @inheritParams pd_ReasonCounts
 #' @param dfSubjects `data.frame` Mapped subject data with `subjid` and `country`,
 #'   joined onto each death to attribute it to a country.
+#' @param nEnrolledByCountry `named numeric` or `NULL`. When provided, each
+#'   per-country slice gains a "% of enrolled" hover line using the element
+#'   named by the country as its denominator. Countries absent from the lookup
+#'   receive no enrolled line. Default: `NULL` (no enrolled line; backward-
+#'   compatible with existing callers).
+#' @param nEnrolled `numeric` or `NULL`. When provided, the `"__ALL__"` slice
+#'   gains a "% of enrolled" hover line using this as the denominator.
+#'   Default: `NULL`.
 #'
 #' @return A named `list`: one element per country (and `"__ALL__"`), each a
 #'   `list` with `reason`, `n`, and `hover` vectors sorted by descending `n`.
 #' @export
-pd_ReasonByCountry <- function(dfDeath, dfSubjects, nWindowDays = 90) {
+pd_ReasonByCountry <- function(
+  dfDeath,
+  dfSubjects,
+  nWindowDays = 90,
+  nEnrolledByCountry = NULL,
+  nEnrolled = NULL
+) {
   gsm.core::stop_if(
     cnd = !is.data.frame(dfDeath),
     message = "dfDeath is not a data.frame"
@@ -118,26 +174,14 @@ pd_ReasonByCountry <- function(dfDeath, dfSubjects, nWindowDays = 90) {
     country = dplyr::coalesce(as.character(.data$country), "Unknown")
   )
 
-  slice_for <- function(df) {
-    g <- df %>%
-      dplyr::count(.data$death_reason, name = "n") %>%
-      dplyr::arrange(dplyr::desc(.data$n))
-    total <- sum(g$n)
-    list(
-      reason = g$death_reason,
-      n = g$n,
-      hover = paste0(
-        "Reason: ",
-        g$death_reason,
-        "<br>Subjects: ",
-        g$n,
-        "<br>% of premature deaths: ",
-        pd_PctLabel(g$n, total)
-      )
-    )
-  }
-
-  out <- lapply(split(coh, coh$country), slice_for)
-  out[["__ALL__"]] <- slice_for(coh)
+  groups <- split(coh, coh$country)
+  out <- Map(
+    function(df, ctry) {
+      pd_ReasonSlice(df, nEnrolled = nEnrolledByCountry[[ctry]])
+    },
+    groups,
+    names(groups)
+  )
+  out[["__ALL__"]] <- pd_ReasonSlice(coh, nEnrolled = nEnrolled)
   out
 }

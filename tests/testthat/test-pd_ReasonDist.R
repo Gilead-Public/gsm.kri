@@ -118,3 +118,136 @@ test_that("pd_ReasonByCountry falls back to Unknown country when dfSubjects is N
   expect_setequal(names(res), c("Unknown", "__ALL__"))
   expect_equal(sum(res[["__ALL__"]]$n), 3)
 })
+
+# ---------- new {#254} tests for per-country enrolled line + pd_ReasonBar ----------
+
+test_that("pd_ReasonByCountry per-country hover includes enrolled % when nEnrolledByCountry supplied {#254}", {
+  # premature (<=90): S1 USA AE, S2 CAN AE, S3 USA DP; S4 @120 excluded
+  # USA has 4 enrolled (per nEnrolledByCountry), CAN has 2.
+  # USA premature: AE=1 (S1), DP=1 (S3). 1/4 = 25.0%
+  # CAN premature: AE=1 (S2).             1/2 = 50.0%
+  dfDeath <- tibble::tibble(
+    subjid = c("S1", "S2", "S3", "S4"),
+    death_dy = c(20, 50, 80, 120),
+    deathcls = c(
+      "Adverse Event",
+      "Adverse Event",
+      "Disease Progression",
+      "Adverse Event"
+    )
+  )
+  dfSubjects <- tibble::tibble(
+    subjid = c("S1", "S2", "S3", "S4"),
+    country = c("USA", "CAN", "USA", "USA")
+  )
+  enrolled_by_country <- c(USA = 4L, CAN = 2L)
+  res <- pd_ReasonByCountry(
+    dfDeath,
+    dfSubjects,
+    nWindowDays = 90,
+    nEnrolledByCountry = enrolled_by_country
+  )
+
+  # USA: 1 AE of 4 enrolled = 25.0%
+  usa_ae_idx <- which(res[["USA"]]$reason == "Adverse Event")
+  expect_true(grepl("% of enrolled: 25.0%", res[["USA"]]$hover[usa_ae_idx]))
+
+  # CAN: 1 AE of 2 enrolled = 50.0%
+  can_ae_idx <- which(res[["CAN"]]$reason == "Adverse Event")
+  expect_true(grepl("% of enrolled: 50.0%", res[["CAN"]]$hover[can_ae_idx]))
+
+  # __ALL__ without nEnrolled should NOT have enrolled line
+  expect_false(any(grepl("% of enrolled", res[["__ALL__"]]$hover)))
+})
+
+test_that("pd_ReasonByCountry __ALL__ hover includes enrolled % when nEnrolled supplied {#254}", {
+  # premature (<=90): S1 AE, S2 AE, S3 DP; total enrolled = 10
+  # AE = 2/10 = 20.0%,  DP = 1/10 = 10.0%
+  dfDeath <- tibble::tibble(
+    subjid = c("S1", "S2", "S3", "S4"),
+    death_dy = c(20, 50, 80, 120),
+    deathcls = c(
+      "Adverse Event",
+      "Adverse Event",
+      "Disease Progression",
+      "Adverse Event"
+    )
+  )
+  dfSubjects <- tibble::tibble(
+    subjid = c("S1", "S2", "S3", "S4"),
+    country = c("USA", "CAN", "USA", "USA")
+  )
+  res <- pd_ReasonByCountry(
+    dfDeath,
+    dfSubjects,
+    nWindowDays = 90,
+    nEnrolled = 10L
+  )
+
+  all_ae_idx <- which(res[["__ALL__"]]$reason == "Adverse Event")
+  expect_true(grepl("% of enrolled: 20.0%", res[["__ALL__"]]$hover[all_ae_idx]))
+
+  all_dp_idx <- which(res[["__ALL__"]]$reason == "Disease Progression")
+  expect_true(grepl("% of enrolled: 10.0%", res[["__ALL__"]]$hover[all_dp_idx]))
+
+  # per-country slices (no nEnrolledByCountry) should NOT have enrolled line
+  expect_false(any(grepl("% of enrolled", res[["USA"]]$hover)))
+})
+
+test_that("pd_ReasonBar returns a plotly object with correct bar labels and customdata {#254}", {
+  testthat::skip_if_not_installed("plotly")
+  dfDeath <- tibble::tibble(
+    subjid = c("S1", "S2", "S3"),
+    death_dy = c(20, 50, 80),
+    deathcls = c("Adverse Event", "Adverse Event", "Disease Progression")
+  )
+  dfSubjects <- tibble::tibble(
+    subjid = c("S1", "S2", "S3"),
+    country = c("USA", "USA", "USA")
+  )
+  res <- pd_ReasonByCountry(dfDeath, dfSubjects, nWindowDays = 90)
+  slice <- res[["__ALL__"]]
+  p <- pd_ReasonBar(slice)
+  expect_s3_class(p, "plotly")
+  built <- plotly::plotly_build(p)
+  bar_text <- as.character(built$x$data[[1]]$text)
+  expect_setequal(bar_text, as.character(slice$n))
+  expect_equal(built$x$data[[1]]$customdata, slice$hover, ignore_attr = TRUE)
+})
+
+test_that("pd_ReasonByCountry __ALL__ hover equals study chart hover (dedup lock) {#254}", {
+  testthat::skip_if_not_installed("plotly")
+  # premature (<=90): S1 AE, S2 AE, S3 DP; total enrolled = 10
+  dfDeath <- tibble::tibble(
+    subjid = c("S1", "S2", "S3", "S4"),
+    death_dy = c(20, 50, 80, 120),
+    deathcls = c(
+      "Adverse Event",
+      "Adverse Event",
+      "Disease Progression",
+      "Adverse Event"
+    )
+  )
+  dfSubjects <- tibble::tibble(
+    subjid = c("S1", "S2", "S3", "S4"),
+    country = c("USA", "CAN", "USA", "USA")
+  )
+
+  # Study chart (pd_ReasonDist path)
+  p_study <- pd_ReasonDist(dfDeath, nWindowDays = 90, nEnrolled = 10L)
+  built_study <- plotly::plotly_build(p_study)
+  study_cd <- built_study$x$data[[1]]$customdata
+
+  # Country aggregate path via pd_ReasonByCountry
+  res <- pd_ReasonByCountry(
+    dfDeath,
+    dfSubjects,
+    nWindowDays = 90,
+    nEnrolled = 10L
+  )
+  p_all <- pd_ReasonBar(res[["__ALL__"]])
+  built_all <- plotly::plotly_build(p_all)
+  all_cd <- built_all$x$data[[1]]$customdata
+
+  expect_equal(sort(study_cd), sort(all_cd))
+})
