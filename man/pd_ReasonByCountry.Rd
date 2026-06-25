@@ -4,7 +4,13 @@
 \alias{pd_ReasonByCountry}
 \title{Premature-death reason counts by country}
 \usage{
-pd_ReasonByCountry(dfDeath, dfSubjects, nWindowDays = 90)
+pd_ReasonByCountry(
+  dfDeath,
+  dfSubjects,
+  nWindowDays = 90,
+  nEnrolledByCountry = NULL,
+  nEnrolled = NULL
+)
 }
 \arguments{
 \item{dfDeath}{`data.frame` Mapped death data with `subjid`, `death_dy`, and
@@ -14,6 +20,16 @@ optionally `deathcls`.}
 joined onto each death to attribute it to a country.}
 
 \item{nWindowDays}{`numeric` Premature-death window in days. Default: 90.}
+
+\item{nEnrolledByCountry}{`named numeric` or `NULL`. When provided, each
+per-country slice gains a "% of enrolled" hover line using the element
+named by the country as its denominator. Countries absent from the lookup
+receive no enrolled line. Default: `NULL` (no enrolled line; backward-
+compatible with existing callers).}
+
+\item{nEnrolled}{`numeric` or `NULL`. When provided, the `"__ALL__"` slice
+gains a "% of enrolled" hover line using this as the denominator.
+Default: `NULL`.}
 }
 \value{
 A named `list`: one element per country (and `"__ALL__"`), each a

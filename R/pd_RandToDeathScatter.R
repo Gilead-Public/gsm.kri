@@ -1,3 +1,48 @@
+#' Build per-point hover text and customdata for the scatter
+#'
+#' @description
+#' Adds `hover` (character) and `pd_customdata` (plain list-column) to
+#' `dfClassified`. Idempotent: if both columns are already present the frame is
+#' returned unchanged, so the report can call `pd_ScatterData()` once in the
+#' setup chunk and pass `dfScatter` to every scatter view without redundant work.
+#'
+#' `pd_customdata` is a **plain** list-column (no `I()`). Apply `I()` fresh at
+#' `plotly::add_markers()` time so `dplyr::filter()` inside the loop cannot strip
+#' the `AsIs` class and break the single-point case.
+#'
+#' @param dfClassified `data.frame` Output of [pd_Classify()].
+#'
+#' @return `dfClassified` with columns `hover` and `pd_customdata` added (or
+#'   unchanged if already present).
+#' @noRd
+pd_ScatterData <- function(dfClassified) {
+  if (all(c("hover", "pd_customdata") %in% names(dfClassified))) {
+    return(dfClassified)
+  }
+  df <- dfClassified %>%
+    dplyr::mutate(
+      hover = paste0(
+        "Country: ",
+        .data$country,
+        "<br>Site: ",
+        .data$invid,
+        "<br>Subject: ",
+        .data$subjid,
+        "<br>Category: ",
+        as.character(.data$Category),
+        "<br>Days (x): ",
+        round(.data$x_anchor)
+      )
+    )
+  df$pd_customdata <- Map(
+    function(h, c, s) list(h, c, s),
+    df$hover,
+    ifelse(is.na(df$country), "", df$country),
+    ifelse(is.na(df$invid), "", df$invid)
+  )
+  df
+}
+
 #' Randomization-to-event scatter
 #'
 #' @description
@@ -13,7 +58,9 @@
 #' across the study/country/site views (AXIS-1). Each point's `customdata` packs
 #' `[hover, country, invid]` so the report can filter points client-side.
 #'
-#' @param dfClassified `data.frame` Output of [pd_Classify()].
+#' @param dfClassified `data.frame` Output of [pd_Classify()]. May already carry
+#'   the `hover`/`pd_customdata` columns built by [pd_ScatterData()] — in that
+#'   case the per-point build is skipped (idempotent).
 #' @param nWindowDays `numeric` Window in days (color/legend vocabulary). Default 90.
 #' @param vXRange `numeric(2)` Optional fixed x-axis range. `NULL` autoranges.
 #' @param vYRange `numeric(2)` Optional fixed y-axis range. `NULL` autoranges.
@@ -34,21 +81,7 @@ pd_RandToDeathScatter <- function(
 
   cat_colors <- pd_CategoryColors(nWindowDays)
 
-  df <- dfClassified %>%
-    dplyr::mutate(
-      hover = paste0(
-        "Country: ",
-        .data$country,
-        "<br>Site: ",
-        .data$invid,
-        "<br>Subject: ",
-        .data$subjid,
-        "<br>Category: ",
-        as.character(.data$Category),
-        "<br>Days (x): ",
-        round(.data$x_anchor)
-      )
-    )
+  df <- pd_ScatterData(dfClassified)
 
   # plot_ly() seeds an empty base trace. It is inert in the report -- absent from
   # the legend, its placeholder x renders no marker, and the point filter skips
@@ -68,15 +101,11 @@ pd_RandToDeathScatter <- function(
       # Separate legend entry per category, named by its full label (SI-1).
       name = ct,
       marker = list(color = unname(cat_colors[ct])),
-      # I(Map(...)) keeps customdata a per-point [hover, country, invid] array
-      # under plotly's auto_unbox; the report filters scatter points by
-      # customdata[1] (country) / customdata[2] (invid).
-      customdata = I(Map(
-        function(h, c, s) list(h, c, s),
-        d$hover,
-        ifelse(is.na(d$country), "", d$country),
-        ifelse(is.na(d$invid), "", d$invid)
-      )),
+      # I(d$pd_customdata) keeps customdata a per-point [hover, country, invid]
+      # array under plotly's auto_unbox; the report filters scatter points by
+      # customdata[1] (country) / customdata[2] (invid). I() applied HERE (not
+      # inside pd_ScatterData) so dplyr::filter() cannot strip the AsIs class.
+      customdata = I(d$pd_customdata),
       hovertemplate = "%{customdata[0]}<extra></extra>"
     )
   }
