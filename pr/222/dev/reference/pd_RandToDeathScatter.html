@@ -95,7 +95,9 @@ across the study/country/site views (AXIS-1). Each point's `customdata` packs
 
 
 <dl><dt id="arg-dfclassified">dfClassified<a class="anchor" aria-label="anchor" href="#arg-dfclassified"></a></dt>
-<dd><p>`data.frame` Output of [pd_Classify()].</p></dd>
+<dd><p>`data.frame` Output of [pd_Classify()]. May already carry
+the `hover`/`pd_customdata` columns built by [pd_ScatterData()] — in that
+case the per-point build is skipped (idempotent).</p></dd>
 
 
 <dt id="arg-nwindowdays">nWindowDays<a class="anchor" aria-label="anchor" href="#arg-nwindowdays"></a></dt>

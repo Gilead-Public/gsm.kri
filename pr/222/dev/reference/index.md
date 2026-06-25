@@ -113,6 +113,8 @@
   : Premature-death cohort
 - [`pd_RandToDeathScatter()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_RandToDeathScatter.md)
   : Randomization-to-event scatter
+- [`pd_ReasonBar()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_ReasonBar.md)
+  : Premature-death reason bar chart
 - [`pd_ReasonByCountry()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_ReasonByCountry.md)
   : Premature-death reason counts by country
 - [`pd_ReasonCounts()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_ReasonCounts.md)

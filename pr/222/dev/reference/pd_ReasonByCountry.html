@@ -70,7 +70,13 @@ count and carries a prebuilt hover string, so the client needs no arithmetic.</p
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">pd_ReasonByCountry</span><span class="op">(</span><span class="va">dfDeath</span>, <span class="va">dfSubjects</span>, nWindowDays <span class="op">=</span> <span class="fl">90</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">pd_ReasonByCountry</span><span class="op">(</span></span>
+<span>  <span class="va">dfDeath</span>,</span>
+<span>  <span class="va">dfSubjects</span>,</span>
+<span>  nWindowDays <span class="op">=</span> <span class="fl">90</span>,</span>
+<span>  nEnrolledByCountry <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  nEnrolled <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -89,6 +95,20 @@ joined onto each death to attribute it to a country.</p></dd>
 
 <dt id="arg-nwindowdays">nWindowDays<a class="anchor" aria-label="anchor" href="#arg-nwindowdays"></a></dt>
 <dd><p>`numeric` Premature-death window in days. Default: 90.</p></dd>
+
+
+<dt id="arg-nenrolledbycountry">nEnrolledByCountry<a class="anchor" aria-label="anchor" href="#arg-nenrolledbycountry"></a></dt>
+<dd><p>`named numeric` or `NULL`. When provided, each
+per-country slice gains a "<!-- % of enrolled" hover line using the element -->
+named by the country as its denominator. Countries absent from the lookup
+receive no enrolled line. Default: `NULL` (no enrolled line; backward-
+compatible with existing callers).</p></dd>
+
+
+<dt id="arg-nenrolled">nEnrolled<a class="anchor" aria-label="anchor" href="#arg-nenrolled"></a></dt>
+<dd><p>`numeric` or `NULL`. When provided, the `"__ALL__"` slice
+gains a "<!-- % of enrolled" hover line using this as the denominator. -->
+Default: `NULL`.</p></dd>
 
 </dl></div>
     <div class="section level2">

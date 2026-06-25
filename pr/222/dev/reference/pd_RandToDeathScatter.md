@@ -29,7 +29,9 @@ pd_RandToDeathScatter(
 
 - dfClassified:
 
-  \`data.frame\` Output of \[pd_Classify()\].
+  \`data.frame\` Output of \[pd_Classify()\]. May already carry the
+  \`hover\`/\`pd_customdata\` columns built by \[pd_ScatterData()\] — in
+  that case the per-point build is skipped (idempotent).
 
 - nWindowDays:
 

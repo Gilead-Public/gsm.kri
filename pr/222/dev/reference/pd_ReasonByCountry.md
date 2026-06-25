@@ -12,7 +12,13 @@ so the client needs no arithmetic.
 ## Usage
 
 ``` r
-pd_ReasonByCountry(dfDeath, dfSubjects, nWindowDays = 90)
+pd_ReasonByCountry(
+  dfDeath,
+  dfSubjects,
+  nWindowDays = 90,
+  nEnrolledByCountry = NULL,
+  nEnrolled = NULL
+)
 ```
 
 ## Arguments
@@ -30,6 +36,18 @@ pd_ReasonByCountry(dfDeath, dfSubjects, nWindowDays = 90)
 - nWindowDays:
 
   \`numeric\` Premature-death window in days. Default: 90.
+
+- nEnrolledByCountry:
+
+  \`named numeric\` or \`NULL\`. When provided, each per-country slice
+  gains a " named by the country as its denominator. Countries absent
+  from the lookup receive no enrolled line. Default: \`NULL\` (no
+  enrolled line; backward- compatible with existing callers).
+
+- nEnrolled:
+
+  \`numeric\` or \`NULL\`. When provided, the \`"\_\_ALL\_\_"\` slice
+  gains a " Default: \`NULL\`.
 
 ## Value
 
