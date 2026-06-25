@@ -169,10 +169,9 @@ pd_ReasonByCountry <- function(
     coh$country <- NA_character_
   }
   coh$death_reason <- pd_DeathReason(coh)
-  coh <- dplyr::mutate(
-    coh,
-    country = dplyr::coalesce(as.character(.data$country), "Unknown")
-  )
+  # Same "Unknown" label as dfClassified (pd_CountryLabel) so this per-country
+  # split keys identically to enrolled_by_country and the JS country->site map.
+  coh$country <- pd_CountryLabel(coh$country)
 
   groups <- split(coh, coh$country)
   out <- Map(

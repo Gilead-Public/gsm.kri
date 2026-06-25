@@ -36,6 +36,26 @@ test_that("pd_PatientListing degrades to Unknown without deathcls {#223}", {
   expect_true(all(df$treatment_related == "Unknown")) # no deathcls, no dfAE
 })
 
+test_that("pd_PatientListingData maps blank/whitespace deathcls to Unknown in both death_reason and treatment_related {#221}", {
+  dfResultsBlank <- tibble::tibble(
+    GroupID = c("E", "F", "G"),
+    MetricID = "Analysis_pat0015",
+    Flag = 2
+  )
+  dfDeathBlank <- tibble::tibble(
+    subjid = c("E", "F", "G"),
+    death_dt = as.Date("2026-02-01"),
+    death_dy = c(10, 20, 30),
+    deathcls = c(NA_character_, "", "   ")
+  )
+  out <- pd_PatientListingData(dfResultsBlank, dfDeathBlank)
+  # Consistency the bug violated: a blank deathcls now renders "Unknown" in BOTH
+  # columns (previously death_reason kept the blank while treatment_related said
+  # "Unknown") -- both now route blank/whitespace through the same rule.
+  expect_true(all(out$death_reason == "Unknown"))
+  expect_true(all(out$treatment_related == "Unknown"))
+})
+
 test_that("pd_PatientListing validates inputs {#223}", {
   expect_error(
     pd_PatientListing(as.list(dfResults), dfDeath),

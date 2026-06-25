@@ -146,7 +146,7 @@ test_that("pd_Classify pulls rgmn_dt from dfRand when dfSubjects lacks it {#246}
   expect_equal(cat_by[["F"]], pd_CategoryLevels(90)[["alive_prior"]]) # alive, not yet 90 days on study
 })
 
-test_that("pd_Classify fills missing optional columns with NA {#246}", {
+test_that("pd_Classify labels missing country 'Unknown' and fills other optional columns with NA {#221, #246}", {
   subj <- tibble::tibble(
     subjid = c("A", "F"),
     rgmn_dt = as.Date(c("2025-10-13", "2026-03-22"))
@@ -159,8 +159,25 @@ test_that("pd_Classify fills missing optional columns with NA {#246}", {
     dSnapshotDate = as.Date("2026-05-01")
   )
   expect_true(all(is.na(out$studyid)))
-  expect_true(all(is.na(out$country)))
+  # country is the cross-filter grouping key, so a missing country is labelled
+  # "Unknown" (not NA): the bars, reason split, and site map then share one key.
+  expect_equal(out$country, c("Unknown", "Unknown"))
   expect_true(all(is.na(out$invid)))
+})
+
+test_that("pd_Classify labels a missing country value 'Unknown' but keeps present ones {#221}", {
+  subj <- make_subjects()
+  subj$country[subj$subjid == "A"] <- NA
+  out <- pd_Classify(
+    subj,
+    make_death(),
+    make_studcomp(),
+    nWindowDays = 90,
+    dSnapshotDate = as.Date("2026-05-01")
+  )
+  ctry <- stats::setNames(out$country, out$subjid)
+  expect_equal(ctry[["A"]], "Unknown") # was NA -> labelled
+  expect_equal(ctry[["B"]], "USA") # present countries untouched
 })
 
 test_that("pd_DisplayOrder stacks best-outcome first and is a permutation of the levels {#253}", {

@@ -3,27 +3,31 @@
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' Emits a warning when the report's `nWindowDays` disagrees with the window
-#' used to produce `dfResults` (detected by comparing the live premature-death
-#' count in `Mapped_Death` against the number of `pat0015` `Flag == 2` rows).
+#' Warns only when the report's `nWindowDays` disagrees with the window used to
+#' produce `dfResults` -- i.e. when the live premature-death count in
+#' `Mapped_Death` (`nPremature`) differs from the number of `pat0015`
+#' `Flag == 2` rows (`nFlagged`). When the counts agree it returns invisibly
+#' without warning, so callers (e.g. the report) just call it unconditionally.
 #'
 #' @param nWindowDays `numeric` Window days passed to the report.
 #' @param nPremature `integer` Count of premature deaths in `Mapped_Death`.
 #' @param nFlagged `integer` Count of flagged `pat0015` rows in `dfResults`.
 #'
-#' @return Called for its side-effect (warning); returns `NULL` invisibly.
+#' @return Called for its side-effect (warning on mismatch); returns `NULL` invisibly.
 #' @export
 pd_CheckWindowConsistency <- function(nWindowDays, nPremature, nFlagged) {
-  warning(
-    "Report window (",
-    nWindowDays,
-    "d) disagrees with the window used to produce dfResults: ",
-    nPremature,
-    " premature death(s) in Mapped_Death vs ",
-    nFlagged,
-    " flagged pat0015 row(s). Pass the same nWindowDays used at analysis time (meta.WindowDays).",
-    call. = FALSE
-  )
+  if (nFlagged != nPremature) {
+    warning(
+      "Report window (",
+      nWindowDays,
+      "d) disagrees with the window used to produce dfResults: ",
+      nPremature,
+      " premature death(s) in Mapped_Death vs ",
+      nFlagged,
+      " flagged pat0015 row(s). Pass the same nWindowDays used at analysis time (meta.WindowDays).",
+      call. = FALSE
+    )
+  }
   invisible(NULL)
 }
 
@@ -102,8 +106,9 @@ pd_PatientListingData <- function(
     ) %>%
     dplyr::left_join(dfFatalRel, by = "subjid") %>%
     dplyr::mutate(
-      # death_reason is the death classification (SI-3); fallback "Unknown".
-      death_reason = dplyr::coalesce(.data$deathcls, "Unknown"),
+      # death_reason is the death classification (SI-3); pd_DeathReason is the
+      # single source of truth for the "Unknown" fallback (NA/blank/whitespace).
+      death_reason = pd_DeathReason(dplyr::pick("deathcls")),
       # death_dy was defined upstream as death_dt - rgmn_dt, so this reconstructs
       # the randomization date.
       randomization_date = .data$death_dt - .data$death_dy,

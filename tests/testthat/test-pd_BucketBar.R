@@ -50,6 +50,36 @@ test_that("pd_BucketCounts labels a missing parent 'Unknown' {#246}", {
   expect_true("Unknown" %in% counts$Outer)
 })
 
+test_that("a pd_Classify-normalised missing country yields a clickable 'Unknown' bar resolvable in the site map {#221}", {
+  subj <- tibble::tibble(
+    subjid = c("A", "B"),
+    studyid = "ST01",
+    country = c(NA, "USA"), # A has no country
+    invid = c("S1", "S2"),
+    rgmn_dt = as.Date("2025-10-13")
+  )
+  death <- tibble::tibble(
+    subjid = "A",
+    death_dt = as.Date("2025-11-02"),
+    death_dy = 20
+  )
+  dfC <- pd_Classify(
+    subj,
+    death,
+    NULL,
+    nWindowDays = 90,
+    dSnapshotDate = as.Date("2026-05-01")
+  )
+  # country is the bar's GroupID; the missing country must surface as a labelled
+  # "Unknown" bar (not NA) so its JS click has a key in the country->site map.
+  bar <- pd_BucketCounts(dfC, strGroupCol = "country")
+  expect_true("Unknown" %in% as.character(bar$GroupID))
+  # the report builds the site map from this same cohort, so every clickable bar
+  # key resolves to sites -> the "Unknown" click can never collapse to empty.
+  mapKeys <- unique(dplyr::distinct(dfC, country, invid)$country)
+  expect_true(all(as.character(bar$GroupID) %in% mapKeys))
+})
+
 test_that("pd_BucketBar returns a plotly object {#246}", {
   testthat::skip_if_not_installed("plotly")
   p <- pd_BucketBar(make_classified(), strGroupCol = "invid")
