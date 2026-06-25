@@ -21,9 +21,25 @@
 #'   columns appended when `dfSubjects` is supplied.
 #' @export
 pd_PrematureCohort <- function(dfDeath, dfSubjects = NULL, nWindowDays = 90) {
+  gsm.core::stop_if(
+    cnd = !is.data.frame(dfDeath),
+    message = "dfDeath is not a data.frame"
+  )
+  gsm.core::stop_if(
+    cnd = !(is.numeric(nWindowDays) && length(nWindowDays) == 1 && nWindowDays > 0),
+    message = "nWindowDays must be a positive number"
+  )
+  gsm.core::stop_if(
+    cnd = !is.null(dfSubjects) && !is.data.frame(dfSubjects),
+    message = "dfSubjects is not a data.frame"
+  )
+  gsm.core::stop_if(
+    cnd = !all(c("subjid", "death_dy") %in% names(dfDeath)),
+    message = "dfDeath must contain 'subjid' and 'death_dy'"
+  )
+
   dfCohort <- dfDeath %>%
     dplyr::filter(!is.na(.data$death_dy) & .data$death_dy <= nWindowDays)
-
   if (!is.null(dfSubjects)) {
     # Attach subject identity columns, but skip any already on dfDeath: a death
     # frame that carries its own studyid would otherwise collide into

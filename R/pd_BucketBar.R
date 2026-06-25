@@ -20,6 +20,31 @@ pd_BucketCounts <- function(
   strGroupCol = "studyid",
   strOuterCol = NULL
 ) {
+  gsm.core::stop_if(
+    cnd = !is.data.frame(dfClassified),
+    message = "dfClassified is not a data.frame"
+  )
+  gsm.core::stop_if(
+    cnd = !(is.character(strGroupCol) && length(strGroupCol) == 1),
+    message = "strGroupCol must be a length-1 character"
+  )
+  gsm.core::stop_if(
+    cnd = !strGroupCol %in% names(dfClassified),
+    message = "strGroupCol is not a column in dfClassified"
+  )
+  gsm.core::stop_if(
+    cnd = !"Category" %in% names(dfClassified),
+    message = "dfClassified must contain 'Category'"
+  )
+  gsm.core::stop_if(
+    cnd = !is.null(strOuterCol) && !(is.character(strOuterCol) && length(strOuterCol) == 1),
+    message = "strOuterCol must be NULL or a length-1 character"
+  )
+  gsm.core::stop_if(
+    cnd = !is.null(strOuterCol) && !strOuterCol %in% names(dfClassified),
+    message = "strOuterCol is not a column in dfClassified"
+  )
+
   df <- tibble::tibble(
     GroupID = dfClassified[[strGroupCol]],
     Bucket = dfClassified$Category

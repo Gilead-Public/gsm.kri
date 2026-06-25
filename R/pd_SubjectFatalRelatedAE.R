@@ -25,6 +25,10 @@ pd_SubjectFatalRelatedAE <- function(dfAE) {
     cnd = !is.data.frame(dfAE),
     message = "dfAE is not a data.frame"
   )
+  gsm.core::stop_if(
+    cnd = !"subjid" %in% names(dfAE),
+    message = "dfAE must contain 'subjid'"
+  )
   for (col in c("aetoxgr", "aerel")) {
     if (!col %in% names(dfAE)) {
       dfAE[[col]] <- NA

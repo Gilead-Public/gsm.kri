@@ -13,6 +13,15 @@
 #' @return A `data.frame` with `death_reason` and `n` columns, sorted by `n` descending.
 #' @export
 pd_ReasonCounts <- function(dfDeath, nWindowDays = 90) {
+  gsm.core::stop_if(
+    cnd = !is.data.frame(dfDeath),
+    message = "dfDeath is not a data.frame"
+  )
+  gsm.core::stop_if(
+    cnd = !(is.numeric(nWindowDays) && length(nWindowDays) == 1 && nWindowDays > 0),
+    message = "nWindowDays must be a positive number"
+  )
+
   coh <- pd_PrematureCohort(dfDeath, nWindowDays = nWindowDays)
   coh$death_reason <- pd_DeathReason(coh)
   s <- pd_ReasonSlice(coh)

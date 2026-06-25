@@ -80,6 +80,15 @@ pd_PatientListingData <- function(
   dfExclusion = NULL,
   dfAE = NULL
 ) {
+  gsm.core::stop_if(
+    cnd = !is.data.frame(dfResults),
+    message = "dfResults is not a data.frame"
+  )
+  gsm.core::stop_if(
+    cnd = !is.data.frame(dfDeath),
+    message = "dfDeath is not a data.frame"
+  )
+
   if (!"deathcls" %in% names(dfDeath)) {
     dfDeath[["deathcls"]] <- NA_character_
   }
