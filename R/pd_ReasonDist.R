@@ -177,7 +177,17 @@ pd_ReasonByCountry <- function(
   groups <- split(coh, coh$country)
   out <- Map(
     function(df, ctry) {
-      pd_ReasonSlice(df, nEnrolled = nEnrolledByCountry[[ctry]])
+      # `[[` on a named atomic vector (e.g. tibble::deframe() output) errors on a
+      # missing key, so guard presence: a country absent from the lookup gets no
+      # enrolled line (e.g. an unmapped-subject death coalesced to "Unknown").
+      nEnr <- if (
+        !is.null(nEnrolledByCountry) && ctry %in% names(nEnrolledByCountry)
+      ) {
+        nEnrolledByCountry[[ctry]]
+      } else {
+        NULL
+      }
+      pd_ReasonSlice(df, nEnrolled = nEnr)
     },
     groups,
     names(groups)

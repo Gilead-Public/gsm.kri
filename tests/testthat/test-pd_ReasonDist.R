@@ -251,3 +251,29 @@ test_that("pd_ReasonByCountry __ALL__ hover equals study chart hover (dedup lock
 
   expect_equal(sort(study_cd), sort(all_cd))
 })
+
+test_that("pd_ReasonByCountry skips the enrolled line for a country absent from the lookup {#254}", {
+  testthat::skip_if_not_installed("plotly")
+  # S2 is absent from dfSubjects -> country NA -> coalesced "Unknown", a key the
+  # named-vector lookup does not contain. `[[` would error here before the guard.
+  dfDeath <- tibble::tibble(
+    subjid = c("S1", "S2"),
+    death_dy = c(20, 30),
+    deathcls = c("Adverse Event", "Adverse Event")
+  )
+  dfSubjects <- tibble::tibble(subjid = "S1", country = "USA")
+
+  res <- pd_ReasonByCountry(
+    dfDeath,
+    dfSubjects,
+    nWindowDays = 90,
+    nEnrolledByCountry = c(USA = 4L),
+    nEnrolled = 8L
+  )
+
+  # No crash; present-key USA gets the enrolled line, absent-key Unknown does not,
+  # and __ALL__ uses the study total.
+  expect_true(any(grepl("% of enrolled", res[["USA"]]$hover)))
+  expect_false(any(grepl("% of enrolled", res[["Unknown"]]$hover)))
+  expect_true(any(grepl("% of enrolled", res[["__ALL__"]]$hover)))
+})
