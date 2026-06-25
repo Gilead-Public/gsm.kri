@@ -6,7 +6,8 @@
 #' Computes the four headline numbers shown in the report's Overview table from
 #' the single classified-cohort source of truth ([pd_Classify()] output), so the
 #' table cannot drift from the bucket bars and scatter. "Premature" is the union
-#' of the two death categories ([pd_CategoryLevels()] entries 1-2); the
+#' of the two death categories (the `death30` / `death3190` keys of
+#' [pd_CategoryLevels()]); the
 #' ineligible share is taken over that same premature set, so numerator and
 #' denominator always describe one cohort.
 #'
@@ -36,12 +37,12 @@ pd_OverviewStats <- function(
   nEnrolled <- nrow(dfClassified)
   nSites <- length(unique(dfClassified$invid[!is.na(dfClassified$invid)]))
 
-  death_levels <- pd_CategoryLevels(nWindowDays)[1:2]
+  lv <- pd_CategoryLevels(nWindowDays)
   cats <- as.character(dfClassified$Category)
-  is_premature <- cats %in% death_levels
+  is_premature <- cats %in% lv[c("death30", "death3190")]
   nPremature <- sum(is_premature)
-  nDeath30 <- sum(cats == death_levels[1])
-  nDeath3190 <- sum(cats == death_levels[2])
+  nDeath30 <- sum(cats == lv[["death30"]])
+  nDeath3190 <- sum(cats == lv[["death3190"]])
   nPrematureRate <- if (nEnrolled > 0) 100 * nPremature / nEnrolled else 0
 
   has_eligibility <- !is.null(dfExclusion) && "Source" %in% names(dfExclusion)

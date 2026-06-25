@@ -9,15 +9,17 @@
 #'
 #' @param nWindowDays `numeric` Premature-death window in days.
 #'
-#' @return A length-5 `character` vector of category labels.
+#' @return A named length-5 `character` vector keyed `death30`, `death3190`,
+#'   `discont`, `alive_at`, `alive_prior` (precedence order). The names are a
+#'   stable internal contract; the label strings are what render.
 #' @export
 pd_CategoryLevels <- function(nWindowDays) {
   c(
-    "Death within 30 days",
-    paste0("Death within 31\u2013", nWindowDays, " days"),
-    paste0("Study discontinuation within ", nWindowDays, " days"),
-    paste0("Alive at ", nWindowDays, " days"),
-    paste0("Alive, not yet ", nWindowDays, " days on study")
+    death30 = "Death within 30 days",
+    death3190 = paste0("Death within 31\u2013", nWindowDays, " days"),
+    discont = paste0("Study discontinuation within ", nWindowDays, " days"),
+    alive_at = paste0("Alive at ", nWindowDays, " days"),
+    alive_prior = paste0("Alive, not yet ", nWindowDays, " days on study")
   )
 }
 
@@ -59,7 +61,8 @@ pd_CategoryColors <- function(nWindowDays) {
 #' @export
 pd_DisplayOrder <- function(nWindowDays) {
   lv <- pd_CategoryLevels(nWindowDays)
-  lv[c(4, 5, 3, 2, 1)]
+  # Unnamed: this is a positional stacking order (base -> top), not a keyed lookup.
+  unname(lv[c("alive_at", "alive_prior", "discont", "death3190", "death30")])
 }
 
 #' Classify enrolled subjects into premature-death categories
@@ -154,17 +157,17 @@ pd_Classify <- function(
   is_discont <- !is.na(discont_dy) & discont_dy <= nWindowDays
 
   category <- dplyr::case_when(
-    is_premature & death_dy <= 30 ~ lv[1],
-    is_premature ~ lv[2],
-    is_discont ~ lv[3],
-    follow_up >= nWindowDays ~ lv[4],
-    TRUE ~ lv[5]
+    is_premature & death_dy <= 30 ~ lv[["death30"]],
+    is_premature ~ lv[["death3190"]],
+    is_discont ~ lv[["discont"]],
+    follow_up >= nWindowDays ~ lv[["alive_at"]],
+    TRUE ~ lv[["alive_prior"]]
   )
 
   x_anchor <- dplyr::case_when(
     is_premature ~ death_dy,
     is_discont ~ discont_dy,
-    category == lv[4] ~ as.numeric(nWindowDays),
+    category == lv[["alive_at"]] ~ as.numeric(nWindowDays),
     TRUE ~ follow_up
   )
 

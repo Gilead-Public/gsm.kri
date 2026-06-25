@@ -1,11 +1,20 @@
 # Minimal classified-cohort fixture (only the columns pd_OverviewStats reads).
-# lv[1] = "Death within 30 days", lv[2] = "Death within 31-90 days" are the two
-# premature-death categories; lv[3:5] are non-premature.
+# death30 = "Death within 30 days", death3190 = "Death within 31-90 days" are the
+# two premature-death categories; discont / alive_at / alive_prior are non-premature.
 lv <- pd_CategoryLevels(90)
 dfClassified <- tibble::tibble(
   subjid = c("S1", "S2", "S3", "S4", "S5"),
   invid = c("INV-1", "INV-1", "INV-2", "INV-3", NA),
-  Category = factor(c(lv[1], lv[2], lv[3], lv[4], lv[5]), levels = lv)
+  Category = factor(
+    c(
+      lv[["death30"]],
+      lv[["death3190"]],
+      lv[["discont"]],
+      lv[["alive_at"]],
+      lv[["alive_prior"]]
+    ),
+    levels = lv
+  )
 )
 
 test_that("pd_OverviewStats counts enrolled, sites and premature from the cohort {#250}", {
@@ -52,7 +61,7 @@ test_that("pd_OverviewStats gives 0 ineligible rate when there are no premature 
   noDeaths <- tibble::tibble(
     subjid = c("A", "B"),
     invid = c("INV-9", "INV-9"),
-    Category = factor(c(lv[4], lv[5]), levels = lv)
+    Category = factor(c(lv[["alive_at"]], lv[["alive_prior"]]), levels = lv)
   )
   dfExclusion <- tibble::tibble(subjid = "A", Source = "Neither")
   s <- pd_OverviewStats(noDeaths, dfExclusion, nWindowDays = 90)
@@ -70,7 +79,7 @@ test_that("pd_OverviewStats validates dfClassified {#250}", {
 
 test_that("pd_OverviewStats splits premature deaths into <=30 and 31-90 day buckets {#252}", {
   s <- pd_OverviewStats(dfClassified, nWindowDays = 90)
-  # dfClassified fixture: S1 = lv[1] (<=30d), S2 = lv[2] (31-90d).
+  # dfClassified fixture: S1 = death30 (<=30d), S2 = death3190 (31-90d).
   expect_equal(s$nDeath30, 1)
   expect_equal(s$nDeath3190, 1)
   expect_equal(s$nDeath30 + s$nDeath3190, s$nPremature) # invariant

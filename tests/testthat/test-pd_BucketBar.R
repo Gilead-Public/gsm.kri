@@ -5,7 +5,7 @@ make_classified <- function() {
     country = c("USA", "USA", "CAN", "CAN", "USA"),
     invid = c("S1", "S1", "S2", "S2", "S1"),
     Category = factor(
-      pd_CategoryLevels(90)[c(1, 2, 3, 4, 5)],
+      pd_CategoryLevels(90),
       levels = pd_CategoryLevels(90)
     ),
     death_dy = c(20, 70, NA, NA, NA),
@@ -17,7 +17,7 @@ make_classified <- function() {
 
 test_that("pd_BucketCounts counts all five categories per group {#246}", {
   counts <- pd_BucketCounts(make_classified(), strGroupCol = "invid")
-  expect_setequal(levels(counts$Bucket), pd_CategoryLevels(90))
+  expect_setequal(levels(counts$Bucket), unname(pd_CategoryLevels(90)))
   # every (group, bucket) cell present thanks to .drop = FALSE
   expect_equal(nrow(counts), length(unique(make_classified()$invid)) * 5)
   s1 <- dplyr::filter(counts, GroupID == "S1")
@@ -84,7 +84,7 @@ test_that("pd_BucketBar shows count labels and five separate legend categories {
 
   # Each of the five categories is its own legend entry, named by its full label.
   names <- vapply(b$x$data, function(tr) tr$name, character(1))
-  expect_setequal(names, pd_CategoryLevels(90))
+  expect_setequal(names, unname(pd_CategoryLevels(90)))
   expect_equal(length(b$x$data), 5)
 })
 

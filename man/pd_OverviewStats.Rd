@@ -29,7 +29,8 @@ A named `list`: `nEnrolled`, `nSites`, `nPremature`, `nPrematureRate`,
 Computes the four headline numbers shown in the report's Overview table from
 the single classified-cohort source of truth ([pd_Classify()] output), so the
 table cannot drift from the bucket bars and scatter. "Premature" is the union
-of the two death categories ([pd_CategoryLevels()] entries 1-2); the
+of the two death categories (the `death30` / `death3190` keys of
+[pd_CategoryLevels()]); the
 ineligible share is taken over that same premature set, so numerator and
 denominator always describe one cohort.
 }
