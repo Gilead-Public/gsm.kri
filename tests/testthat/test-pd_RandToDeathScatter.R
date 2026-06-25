@@ -94,3 +94,21 @@ test_that("scatter validates dfClassified is a data.frame {#247}", {
     "dfClassified is not a data.frame"
   )
 })
+
+test_that("pd_ScatterData idempotency: pre-enriched frame yields same traces as raw frame {#247}", {
+  testthat::skip_if_not_installed("plotly")
+  # Build hover+pd_customdata once (simulates setup-chunk call in the Rmd).
+  dfEnriched <- gsm.kri:::pd_ScatterData(dfC)
+  # Both frames should produce identical per-point customdata in the built plotly object.
+  b_raw <- plotly::plotly_build(pd_RandToDeathScatter(dfC, nWindowDays = 90))
+  b_pre <- plotly::plotly_build(pd_RandToDeathScatter(
+    dfEnriched,
+    nWindowDays = 90
+  ))
+  # Same number of traces.
+  expect_equal(length(b_pre$x$data), length(b_raw$x$data))
+  # customdata of the first point in each trace is identical.
+  for (i in seq_along(b_raw$x$data)) {
+    expect_equal(b_pre$x$data[[i]]$customdata, b_raw$x$data[[i]]$customdata)
+  }
+})
