@@ -20,4 +20,6 @@ pd_CategoryLevels(nWindowDays)
 
 ## Value
 
-A length-5 \`character\` vector of category labels.
+A named length-5 \`character\` vector keyed \`death30\`, \`death3190\`,
+\`discont\`, \`alive_at\`, \`alive_prior\` (precedence order). The names
+are a stable internal contract; the label strings are what render.
