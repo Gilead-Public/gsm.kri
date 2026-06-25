@@ -80,6 +80,33 @@ test_that("Report_PrematureDeaths warns when nWindowDays disagrees with dfResult
   )
 })
 
+test_that("pd_CheckWindowConsistency is silent when the counts agree {#223}", {
+  # The mismatch comparison now lives inside the helper, so an agreeing call
+  # (nPremature == nFlagged) returns invisibly with no warning.
+  expect_no_warning(
+    pd_CheckWindowConsistency(nWindowDays = 90, nPremature = 2, nFlagged = 2)
+  )
+})
+
+test_that("Report_PrematureDeaths renders the dynamic subtitle, not literal pseudo-front-matter {#223}", {
+  testthat::skip_if_not_installed("plotly")
+  testthat::skip_if_not_installed("DT")
+  out <- Report_PrematureDeaths(
+    dfResults = dfResults,
+    dfMetrics = dfMetrics,
+    dfGroups = dfGroups,
+    lListings = lListings,
+    nWindowDays = 90,
+    strOutputDir = tempdir()
+  )
+  html <- paste(readLines(out, warn = FALSE), collapse = "\n")
+  # The results='asis' subtitle renders as real content (snapshot date shown)...
+  expect_true(grepl("Snapshot Date: 2026-05-01", html, fixed = TRUE))
+  # ...and the old mid-document "--- subtitle:/date: ---" block (which pandoc only
+  # honours in the top header, so it leaked as a literal "subtitle:" line) is gone.
+  expect_false(grepl("subtitle:", html, fixed = TRUE))
+})
+
 test_that("Report_PrematureDeaths renders the studcomp discontinuation note {#246}", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")

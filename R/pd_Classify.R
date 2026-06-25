@@ -176,7 +176,10 @@ pd_Classify <- function(
   tibble::tibble(
     subjid = subj$subjid,
     studyid = pick("studyid"),
-    country = pick("country"),
+    # Label missing country "Unknown" here -- the one upstream place -- so the
+    # country bucket bar (country is the GroupID), the scatter customdata, the
+    # enrolled-count lookup, and the JS click->site map all share one keyspace.
+    country = pd_CountryLabel(pick("country")),
     invid = pick("invid"),
     Category = factor(category, levels = lv),
     death_dy = death_dy,

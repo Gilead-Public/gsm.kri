@@ -1,4 +1,9 @@
 ---
+# pagetitle sets only the HTML <head><title> (browser tab); it does NOT render a
+# visible heading, so it neither duplicates the body H1 nor affects the
+# knit_child pkgdown embed (which ignores this front matter). The visible title +
+# dynamic subtitle are emitted in the body.
+pagetitle: "Premature Deaths Overview"
 output:
   html_document:
     mathjax: null
@@ -76,8 +81,11 @@ y_max <- max(c(dfClassified$follow_up, nWindowDays), na.rm = TRUE)
 vXRange <- c(0, x_max * 1.05)
 vYRange <- c(0, y_max * 1.05)
 
-# Country → site lookup for JS filtering (all enrolled sites in the country)
-country_site_map <- Mapped_SUBJ %>%
+# Country → site lookup for JS filtering (all enrolled sites in the country).
+# Built from dfClassified -- the same cohort the bucket bars use -- so its keys
+# are exactly the bars' country labels (incl. "Unknown"); clicking any bar always
+# resolves to that country's sites instead of an empty filter.
+country_site_map <- dfClassified %>%
   dplyr::distinct(country, invid) %>%
   dplyr::group_by(country) %>%
   dplyr::summarise(sites = list(invid), .groups = "drop") %>%
@@ -99,10 +107,10 @@ nPremature <- stats$nPremature
 nPrematureRate <- stats$nPrematureRate
 has_premature <- nPremature > 0
 
-# Per-country enrolled counts off the classified cohort (same basis as nEnrolled),
-# coalescing NA country to "Unknown" to match pd_ReasonByCountry's split.
+# Per-country enrolled counts off the classified cohort (same basis as nEnrolled).
+# dfClassified$country is already "Unknown"-labelled (pd_Classify), so these keys
+# match pd_ReasonByCountry's split and the country->site map by construction.
 enrolled_by_country <- dfClassified %>%
-  dplyr::mutate(country = dplyr::coalesce(as.character(country), "Unknown")) %>%
   dplyr::count(country, name = "n") %>%
   tibble::deframe()
 
@@ -134,18 +142,23 @@ nFlagged <- sum(
   dfResults$MetricID == "Analysis_pat0015" & dfResults$Flag == 2,
   na.rm = TRUE
 )
-if (nFlagged != nPremature) {
-  pd_CheckWindowConsistency(nWindowDays, nPremature, nFlagged)
-}
+# Warns only on a mismatch; the comparison lives inside the helper now.
+pd_CheckWindowConsistency(nWindowDays, nPremature, nFlagged)
 ```
 
----
-title: "Premature Deaths Overview"
-subtitle: "Study: `r unique(Mapped_SUBJ$studyid)`"
-date: "Snapshot Date: `r latest_snapshot`"
----
-
 # Premature Deaths Overview
+
+```{r overview-subtitle, echo=FALSE, results='asis'}
+# Dynamic subtitle emitted as real markdown. A second "--- title/subtitle/date ---"
+# block here is NOT front matter -- pandoc only honours the top header, so it would
+# render as a literal "title:" line + rule. The H1 above is the title; this chunk
+# renders in both the standalone report and the knit_child pkgdown embed.
+cat(sprintf(
+  "**Study:** %s  \n*Snapshot Date: %s*\n\n",
+  paste(unique(Mapped_SUBJ$studyid), collapse = ", "),
+  latest_snapshot
+))
+```
 
 ```{r filter-strip-css, echo=FALSE, results='asis'}
 # The chip strip's styling ships as an inline <style> block HERE, not via

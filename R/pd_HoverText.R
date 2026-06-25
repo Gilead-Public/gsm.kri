@@ -37,9 +37,9 @@ pd_YesNo <- function(x) {
 #'
 #' @description
 #' Internal helper for premature-death reporting. Returns the `deathcls` column
-#' of `df` as a character vector, substituting `"Unknown"` for missing values
-#' and for an entirely absent column. Single source of truth for the fallback
-#' used by [pd_ReasonCounts()] and [pd_ReasonByCountry()].
+#' of `df` as a character vector, substituting `"Unknown"` for missing, blank, or
+#' whitespace-only values and for an entirely absent column. Single source of
+#' truth for the fallback used by [pd_ReasonCounts()] and [pd_ReasonByCountry()].
 #'
 #' @param df `data.frame` that may or may not carry a `deathcls` column.
 #'
@@ -51,5 +51,24 @@ pd_DeathReason <- function(df) {
   } else {
     rep(NA_character_, nrow(df))
   }
-  dplyr::coalesce(cls, "Unknown")
+  # Treat blank / whitespace-only deathcls as missing (not a real reason) so the
+  # reason bars and the listing's treatment_related column agree on "no class".
+  dplyr::coalesce(dplyr::na_if(trimws(cls), ""), "Unknown")
+}
+
+#' Country label with "Unknown" fallback
+#'
+#' @description
+#' Internal helper for premature-death reporting. Coalesces a country vector to
+#' `"Unknown"` for missing, blank, or whitespace-only values. Single source of
+#' truth so the bucket bars, the per-country reason split, the enrolled-count
+#' lookup, and the JS country->site click map all key on the same label -- so an
+#' "Unknown" bar resolves to the unmapped-subject sites instead of an empty filter.
+#'
+#' @param x A vector coercible to `character` (e.g. `Mapped_SUBJ$country`).
+#'
+#' @return A `character` vector the length of `x`.
+#' @noRd
+pd_CountryLabel <- function(x) {
+  dplyr::coalesce(dplyr::na_if(trimws(as.character(x)), ""), "Unknown")
 }
