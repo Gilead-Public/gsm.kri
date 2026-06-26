@@ -87,6 +87,7 @@ GetDefaultKRIPath <- function() {
 domains <- c(gsub("Raw_", "", names(lSource)), "COUNTRY", "EXCLUSION")
 mappings_wf <- workr::MakeWorkflowList(
   strNames = domains,
+  strPath = "workflow/1_mappings",
   strPackage= "gsm.mapping"
 )
 

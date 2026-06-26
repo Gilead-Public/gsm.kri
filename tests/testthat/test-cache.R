@@ -75,6 +75,7 @@ test_that("cached mapped data is generated correctly (#182)", {
   # Create minimal mapping workflows
   test_mappings_wf <- workr::MakeWorkflowList(
     strNames = c("^SUBJ", "^AE"),
+    strPath = "workflow/1_mappings",
     strPackage = "gsm.mapping"
   )
   
@@ -109,6 +110,7 @@ test_that("mapping output caching works (#182)", {
   
   test_mappings_wf <- workr::MakeWorkflowList(
     strNames = c("^SUBJ", "^AE"),
+    strPath = "workflow/1_mappings",
     strPackage = "gsm.mapping"
   )
   
