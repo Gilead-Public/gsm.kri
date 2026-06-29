@@ -1,0 +1,57 @@
+meta:
+  Type: Report
+  ID: report_prematuredeath
+  Output: html
+  Name: Premature Deaths Report
+  Description: A premature-deaths domain report (buckets, rand->death scatter, reasons, patient listing)
+  Active: true
+  WindowDays: 90
+spec:
+  Mapped_Death:
+    _all:
+      required: true
+  Mapped_SUBJ:
+    _all:
+      required: true
+  Mapped_STUDCOMP:
+    _all:
+      required: true
+  Mapped_Randomization:
+    _all:
+      required: true
+  Mapped_AE:
+    _all:
+      required: true
+  Mapped_EXCLUSION:
+    _all:
+      required: false
+  Reporting_Results:
+    _all:
+      required: true
+  Reporting_Metrics:
+    _all:
+      required: true
+  Reporting_Groups:
+    _all:
+      required: true
+steps:
+  - output: lListings
+    name: list
+    params:
+      Mapped_Death: Mapped_Death
+      Mapped_SUBJ: Mapped_SUBJ
+      Mapped_STUDCOMP: Mapped_STUDCOMP
+      Mapped_Randomization: Mapped_Randomization
+      Mapped_AE: Mapped_AE
+      Mapped_EXCLUSION: Mapped_EXCLUSION
+  - output: strOutputDir
+    name: getwd
+  - output: lReport
+    name: gsm.kri::Report_PrematureDeaths
+    params:
+      dfResults: Reporting_Results
+      dfMetrics: Reporting_Metrics
+      dfGroups: Reporting_Groups
+      lListings: lListings
+      nWindowDays: WindowDays
+      strOutputDir: strOutputDir
