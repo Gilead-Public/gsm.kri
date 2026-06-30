@@ -240,14 +240,26 @@ ineligible_cell <- if (stats$has_eligibility) {
 } else {
   "—"
 }
-# Headline total with a smaller grey breakdown sub-line (escape = FALSE keeps the
-# inline <br>/<span> markup un-escaped). The "less-than-or-equal" mark is a
-# literal ≤ glyph -- like the Overview preamble and the em-dash cell above -- not
-# the &le; HTML entity, which pandoc's html4 output preserves verbatim (entity,
-# not glyph) and so would not render as ≤. Counts come from the one classified
-# cohort, so the split cannot drift from the total.
+# Headline total over a severity-keyed ledger: the two windows stack as child
+# rows under the total, each led by its bucket colour (death30 =
+# colorScheme("red","dark") #FF5859, death3190 = colorScheme("amber","dark")
+# #FEAA02 -- the exact hues the bucket bars and scatter use), so the cell doubles
+# as their legend. The table's full-grid borders fence the cell and right-
+# aligned counts make 22 + 24 = 46 read as additive. Literal ≤/– glyphs (not
+# &le;/&ndash;) because pandoc's html4 output preserves entities verbatim;
+# swatches are styled <div>s, so no entities and no unimported font weights are
+# relied on. Counts come from the one classified cohort, so the split cannot
+# drift from the total.
 premature_cell <- sprintf(
-  "%d (%.1f%%)<br><span style='font-size:smaller;color:#666'><b>%d</b> ≤30 days, <b>%d</b> 31–90 days</span>",
+  paste0(
+    "<div style='font-size:1.1em'>%d <span style='color:#666;font-size:smaller'>(%.1f%%)</span></div>",
+    "<div style='display:inline-block;text-align:left;margin-top:3px;font-size:smaller'>",
+    "<div><span style='display:inline-block;width:9px;height:9px;background:#FF5859;margin-right:6px'></span>",
+    "<b style='display:inline-block;min-width:1.4em;text-align:right'>%d</b> ≤30 days</div>",
+    "<div><span style='display:inline-block;width:9px;height:9px;background:#FEAA02;margin-right:6px'></span>",
+    "<b style='display:inline-block;min-width:1.4em;text-align:right'>%d</b> 31–90 days</div>",
+    "</div>"
+  ),
   stats$nPremature, stats$nPrematureRate, stats$nDeath30, stats$nDeath3190
 )
 knitr::kable(
@@ -261,7 +273,7 @@ knitr::kable(
   format = "html",
   escape = FALSE,
   align = "r",
-  table.attr = "class=\"table\""
+  table.attr = "class=\"table table-bordered\""
 )
 ```
 
@@ -374,7 +386,15 @@ cat("\n> **Treatment Related** combines the death classification (`deathcls`) wi
 ```
 
 ```{r eligibility-note, echo=FALSE, results='asis', eval=has_premature && has_eligibility}
-cat("\n> **Eligibility Status** is derived from `Mapped_EXCLUSION`: **Ineligible** when an inclusion/exclusion or eligibility protocol-deviation violation is recorded (`Source` != `Neither`); **Eligible** when none is recorded (`Source` == `Neither`); **Unknown** when the subject has no eligibility record.\n")
+cat(
+  "\n",
+  "> The Eligibility Status summarizes whether an enrolled participant met the study eligibility criteria, derived by combining data from the **IE** CRF  and **Protocol Deviations** reported in CTMS. It is determined as follows:\n",
+  ">\n",
+  "> - **Ineligible:** The participant triggered **at least one** of the eligibility signals. This applies whether they had an EDC I/E violation only, an eligibility protocol deviation only, or met both criteria.\n",
+  "> - **Eligible:** The participant triggered **neither** of the eligibility signals (they have no EDC I/E violations and no eligibility-related protocol deviations).\n",
+  "> - **Unknown:** The participant has no exclusion record available to evaluate.\n",
+  sep = ""
+)
 ```
 
 ```{r filter-js, echo=FALSE, results='asis', eval=has_premature}
