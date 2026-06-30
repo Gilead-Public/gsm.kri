@@ -36,6 +36,7 @@ Imports:
     purrr,
     rlang,
     rmarkdown,
+    stats,
     stringr,
     tibble,
     tidyr
@@ -47,6 +48,7 @@ Suggests:
     here,
     knitr,
     lubridate,
+    plotly,
     qcthat,
     testthat (>= 3.0.0),
     withr,
