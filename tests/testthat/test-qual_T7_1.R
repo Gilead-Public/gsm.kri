@@ -1,5 +1,5 @@
 ## Test Setup
-kri_workflows <- MakeWorkflowList(
+kri_workflows <- workr::MakeWorkflowList(
   c("kri0003", "kri0004", "cou0003", "cou0004"),
   GetDefaultKRIPath()
 )

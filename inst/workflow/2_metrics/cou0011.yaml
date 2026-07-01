@@ -36,7 +36,7 @@ steps:
     params:
       strThreshold: Flag
   - output: Temp_CHANGED
-    name: RunQuery
+    name: workr::RunQuery
     params:
       df: Mapped_DATACHG
       strQuery: "SELECT * FROM df WHERE n_changes > 0"

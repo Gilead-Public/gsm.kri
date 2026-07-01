@@ -33,7 +33,7 @@ steps:
     params:
       strThreshold: Threshold
   - output: Temp_SAE
-    name: RunQuery
+    name: workr::RunQuery
     params:
       df: Mapped_AE
       strQuery: "SELECT * FROM df WHERE aeser = 'Y'"

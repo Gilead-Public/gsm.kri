@@ -40,12 +40,12 @@ spec:
       type: numeric
 steps:
   - output: Reporting_Results_Site
-    name: gsm.core::RunQuery
+    name: workr::RunQuery
     params:
       df: Reporting_Results
       strQuery: "SELECT * FROM df WHERE GroupLevel == 'Site'"
   - output: Reporting_Metrics_Site
-    name: gsm.core::RunQuery
+    name: workr::RunQuery
     params:
       df: Reporting_Metrics
       strQuery: "SELECT * FROM df WHERE GroupLevel == 'Site'"

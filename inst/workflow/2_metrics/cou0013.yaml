@@ -37,7 +37,7 @@ steps:
       strThreshold: Flag
       bSort: false
   - output: PK_Collected
-    name: gsm.core::RunQuery
+    name: workr::RunQuery
     params:
       df: Mapped_PK
       strQuery: "SELECT * FROM df WHERE pkperf = 'Yes'"

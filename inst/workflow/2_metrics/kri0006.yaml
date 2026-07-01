@@ -43,7 +43,7 @@ steps:
       strThreshold: Flag
       bSort: false
   - output: Temp_DROPOUT
-    name: RunQuery
+    name: workr::RunQuery
     params:
       df: Mapped_STUDCOMP
       strQuery: "SELECT * FROM df WHERE compyn = 'N'"

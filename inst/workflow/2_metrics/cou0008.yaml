@@ -39,7 +39,7 @@ steps:
     params:
       strThreshold: Flag
   - output: Temp_QUERY
-    name: RunQuery
+    name: workr::RunQuery
     params:
       df: Mapped_QUERY
       strQuery: "SELECT * FROM df WHERE querystatus IN ('Open','Answered','Closed')"

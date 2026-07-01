@@ -91,8 +91,8 @@ lRaw <- list(
 Filter, aggregate and join raw data to create mapped data layer.
 
 ```{r create-mapped-data, results='hide', warning=FALSE, message=FALSE}
-mappings_wf <- MakeWorkflowList(strNames = core_mappings, strPath = "workflow/1_mappings", strPackage = "gsm.mapping")
-mapped <- RunWorkflows(mappings_wf, lRaw)
+mappings_wf <- workr::MakeWorkflowList(strNames = core_mappings, strPath = "workflow/1_mappings", strPackage = "gsm.mapping")
+mapped <- workr::RunWorkflows(mappings_wf, lRaw)
 ```
 
 ### Step 2 - Create Metrics
@@ -100,8 +100,8 @@ mapped <- RunWorkflows(mappings_wf, lRaw)
 Calculate metrics using mapped data.
 
 ```{r create-metrics, results='hide', warning=FALSE, message=FALSE}
-metrics_wf <- MakeWorkflowList(strPath = "inst/workflow/2_metrics", strPackage = "gsm.kri")
-analyzed <- RunWorkflows(metrics_wf, c(mapped, list(lWorkflows = metrics_wf)))
+metrics_wf <- workr::MakeWorkflowList(strPath = "workflow/2_metrics", strPackage = "gsm.kri")
+analyzed <- workr::RunWorkflows(metrics_wf, c(mapped, list(lWorkflows = metrics_wf)))
 ```
 
 ### Step 3 - Create Reporting Layer
@@ -109,8 +109,8 @@ analyzed <- RunWorkflows(metrics_wf, c(mapped, list(lWorkflows = metrics_wf)))
 Create reports using metrics data.
 
 ```{r create-reporting, results='hide', warning=FALSE, message=FALSE}
-reporting_wf <- MakeWorkflowList(strPath = "workflow/3_reporting", strPackage = "gsm.reporting")
-reporting <- RunWorkflows(reporting_wf, c(mapped, list(
+reporting_wf <- workr::MakeWorkflowList(strPath = "workflow/3_reporting", strPackage = "gsm.reporting")
+reporting <- workr::RunWorkflows(reporting_wf, c(mapped, list(
   lAnalyzed = analyzed,
   lWorkflows = metrics_wf
 )))
@@ -121,8 +121,8 @@ reporting <- RunWorkflows(reporting_wf, c(mapped, list(
 Create KRI Site and Country reports using reporting data.
 
 ```{r create-kri-reports, results='hide', warning=FALSE, message=FALSE}
-module_wf <- MakeWorkflowList("kri", strPath = "inst/workflow/4_modules", strPackage = "gsm.kri")
-lReports <- RunWorkflows(module_wf, reporting)
+module_wf <- workr::MakeWorkflowList("kri", strPath = "workflow/4_modules", strPackage = "gsm.kri")
+lReports <- workr::RunWorkflows(module_wf, reporting)
 ```
 
 ## Example 3.3 - Site-Level KRI Report with multiple SnapshotDate
@@ -165,8 +165,8 @@ historical <- gsm.core::reportingResults %>% filter(SnapshotDate == "2025-03-01"
 ### Re-run reporting model and KRI report with historical data
 
 ```{r reporting-with-historical-3-4, results='hide', warning=FALSE, message=FALSE}
-reporting_long <- gsm.core::RunWorkflows(reporting_wf, c(mapped, list(lAnalyzed = analyzed, Reporting_Results_Longitudinal = historical, lWorkflows = metrics_wf)))
-lReports_long <- gsm.core::RunWorkflows(module_wf, reporting_long)
+reporting_long <- workr::RunWorkflows(reporting_wf, c(mapped, list(lAnalyzed = analyzed, Reporting_Results_Longitudinal = historical, lWorkflows = metrics_wf)))
+lReports_long <- workr::RunWorkflows(module_wf, reporting_long)
 ```
 
 ## Example 3.5 - Reading and Writing from External Data Sources
@@ -261,8 +261,8 @@ lConfig <- list(
 core_mappings <- c("AE", "COUNTRY", "DATACHG", "DATAENT", "ENROLL", "LB",
                    "PD", "QUERY", "STUDY", "STUDCOMP", "SDRGCOMP", "SITE", "SUBJ")
 
-lMappedData <- RunWorkflows(
-    MakeWorkflowList(strNames = core_mappings, strPath = 'workflow/1_mappings', strPackage = "gsm.mapping"),
+lMappedData <- workr::RunWorkflows(
+  workr::MakeWorkflowList(strNames = core_mappings, strPath = 'workflow/1_mappings', strPackage = "gsm.mapping"),
     lConfig = lConfig
 )
 ```

@@ -43,12 +43,12 @@ steps:
       strThreshold: Flag
       bSort: false
   - output: Temp_ABNORMAL
-    name: RunQuery
+    name: workr::RunQuery
     params:
       df: Mapped_LB
       strQuery: "SELECT * FROM df WHERE toxgrg_nsv IN ('3', '4')"
   - output: Temp_LB
-    name: RunQuery
+    name: workr::RunQuery
     params:
       df: Mapped_LB
       strQuery: "SELECT * FROM df WHERE toxgrg_nsv IN ('0', '1', '2', '3', '4')"

@@ -28,7 +28,7 @@ steps:
     params:
       strThreshold: Threshold
   - output: Temp_SCREENED
-    name: RunQuery
+    name: workr::RunQuery
     params:
       df: Mapped_ENROLL
       strQuery: "SELECT * FROM df WHERE enrollyn = 'N'"

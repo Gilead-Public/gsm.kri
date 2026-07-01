@@ -20,7 +20,7 @@ spec:
       required: true
 steps:
   - output: IE_num
-    name: gsm.core::RunQuery
+    name: workr::RunQuery
     params:
       df: Mapped_EXCLUSION
       strQuery: "SELECT * FROM df WHERE Source != 'Neither'"
