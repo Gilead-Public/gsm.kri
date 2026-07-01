@@ -1584,7 +1584,7 @@ border-radius: 0px;
 
 
 <h1 class="title toc-ignore">Cookbook - Reporting Workflow Examples</h1>
-<h4 class="date">2026-06-30 14:58:05 UTC</h4>
+<h4 class="date">2026-07-01 18:14:25 UTC</h4>
 
 </div>
 
@@ -1651,20 +1651,20 @@ lRaw &lt;- list(
 <div id="step-1---create-mapped-data-layer" class="section level3">
 <h3>Step 1 - Create Mapped Data Layer</h3>
 <p>Filter, aggregate and join raw data to create mapped data layer.</p>
-<pre class="r"><code>mappings_wf &lt;- MakeWorkflowList(strNames = core_mappings, strPath = &quot;workflow/1_mappings&quot;, strPackage = &quot;gsm.mapping&quot;)
-mapped &lt;- RunWorkflows(mappings_wf, lRaw)</code></pre>
+<pre class="r"><code>mappings_wf &lt;- workr::MakeWorkflowList(strNames = core_mappings, strPath = &quot;workflow/1_mappings&quot;, strPackage = &quot;gsm.mapping&quot;)
+mapped &lt;- workr::RunWorkflows(mappings_wf, lRaw)</code></pre>
 </div>
 <div id="step-2---create-metrics" class="section level3">
 <h3>Step 2 - Create Metrics</h3>
 <p>Calculate metrics using mapped data.</p>
-<pre class="r"><code>metrics_wf &lt;- MakeWorkflowList(strPath = &quot;inst/workflow/2_metrics&quot;, strPackage = &quot;gsm.kri&quot;)
-analyzed &lt;- RunWorkflows(metrics_wf, c(mapped, list(lWorkflows = metrics_wf)))</code></pre>
+<pre class="r"><code>metrics_wf &lt;- workr::MakeWorkflowList(strPath = &quot;workflow/2_metrics&quot;, strPackage = &quot;gsm.kri&quot;)
+analyzed &lt;- workr::RunWorkflows(metrics_wf, c(mapped, list(lWorkflows = metrics_wf)))</code></pre>
 </div>
 <div id="step-3---create-reporting-layer" class="section level3">
 <h3>Step 3 - Create Reporting Layer</h3>
 <p>Create reports using metrics data.</p>
-<pre class="r"><code>reporting_wf &lt;- MakeWorkflowList(strPath = &quot;workflow/3_reporting&quot;, strPackage = &quot;gsm.reporting&quot;)
-reporting &lt;- RunWorkflows(reporting_wf, c(mapped, list(
+<pre class="r"><code>reporting_wf &lt;- workr::MakeWorkflowList(strPath = &quot;workflow/3_reporting&quot;, strPackage = &quot;gsm.reporting&quot;)
+reporting &lt;- workr::RunWorkflows(reporting_wf, c(mapped, list(
   lAnalyzed = analyzed,
   lWorkflows = metrics_wf
 )))</code></pre>
@@ -1672,8 +1672,8 @@ reporting &lt;- RunWorkflows(reporting_wf, c(mapped, list(
 <div id="step-4---create-kri-reports" class="section level3">
 <h3>Step 4 - Create KRI Reports</h3>
 <p>Create KRI Site and Country reports using reporting data.</p>
-<pre class="r"><code>module_wf &lt;- MakeWorkflowList(&quot;kri&quot;, strPath = &quot;inst/workflow/4_modules&quot;, strPackage = &quot;gsm.kri&quot;)
-lReports &lt;- RunWorkflows(module_wf, reporting)</code></pre>
+<pre class="r"><code>module_wf &lt;- workr::MakeWorkflowList(&quot;kri&quot;, strPath = &quot;workflow/4_modules&quot;, strPackage = &quot;gsm.kri&quot;)
+lReports &lt;- workr::RunWorkflows(module_wf, reporting)</code></pre>
 </div>
 </div>
 <div id="example-3.3---site-level-kri-report-with-multiple-snapshotdate" class="section level2">
@@ -1710,8 +1710,8 @@ highlight changes from previous snapshots.</p>
 </div>
 <div id="re-run-reporting-model-and-kri-report-with-historical-data" class="section level3">
 <h3>Re-run reporting model and KRI report with historical data</h3>
-<pre class="r"><code>reporting_long &lt;- gsm.core::RunWorkflows(reporting_wf, c(mapped, list(lAnalyzed = analyzed, Reporting_Results_Longitudinal = historical, lWorkflows = metrics_wf)))
-lReports_long &lt;- gsm.core::RunWorkflows(module_wf, reporting_long)</code></pre>
+<pre class="r"><code>reporting_long &lt;- workr::RunWorkflows(reporting_wf, c(mapped, list(lAnalyzed = analyzed, Reporting_Results_Longitudinal = historical, lWorkflows = metrics_wf)))
+lReports_long &lt;- workr::RunWorkflows(module_wf, reporting_long)</code></pre>
 </div>
 </div>
 <div id="example-3.5---reading-and-writing-from-external-data-sources" class="section level2">
@@ -1806,8 +1806,8 @@ lConfig &lt;- list(
 core_mappings &lt;- c(&quot;AE&quot;, &quot;COUNTRY&quot;, &quot;DATACHG&quot;, &quot;DATAENT&quot;, &quot;ENROLL&quot;, &quot;LB&quot;,
                    &quot;PD&quot;, &quot;QUERY&quot;, &quot;STUDY&quot;, &quot;STUDCOMP&quot;, &quot;SDRGCOMP&quot;, &quot;SITE&quot;, &quot;SUBJ&quot;)
 
-lMappedData &lt;- RunWorkflows(
-    MakeWorkflowList(strNames = core_mappings, strPath = &#39;workflow/1_mappings&#39;, strPackage = &quot;gsm.mapping&quot;),
+lMappedData &lt;- workr::RunWorkflows(
+  workr::MakeWorkflowList(strNames = core_mappings, strPath = &#39;workflow/1_mappings&#39;, strPackage = &quot;gsm.mapping&quot;),
     lConfig = lConfig
 )</code></pre>
 </div>
