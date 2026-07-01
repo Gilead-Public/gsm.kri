@@ -10,3 +10,4 @@
 ^\.positai$
 ^\.claude$
 ^AGENTS\.md$
+^tests/playwright$
