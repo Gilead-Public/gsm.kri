@@ -8,8 +8,9 @@
 #'
 #' @param dfResults `data.frame` A data frame containing results from multiple studies.
 #' @param strGroupLevel `character` The group level to summarize. Default is 'Site'.
-#' @param dfGroups `data.frame` Optional. A data frame containing group metadata (for InvestigatorName lookup). Must include StudyID, GroupID, Param, and Value columns.
+#' @param dfGroups `data.frame` Optional. A data frame containing group metadata (for InvestigatorName and enrollment lookup). Must include StudyID, GroupID, Param, and Value columns.
 #' @param strNameCol `character` The column name in dfGroups to use for investigator names. Default is 'InvestigatorLastName'.
+#' @param strEnrollmentCol `character` The Param value in dfGroups to use for site enrollment counts. Default is 'ParticipantCount'.
 #'
 #' @return `data.frame` Summary table with the following columns:
 #' - GroupID: Site identifier
@@ -17,6 +18,7 @@
 #' - AvgRiskScore: Average site risk score across studies
 #' - MaxRiskScore: Maximum site risk score across studies
 #' - InvestigatorName: Investigator name (if dfGroups provided)
+#' - TotalEnrollment: Total enrollment count across studies (if dfGroups provided)
 #'
 #' @examples
 #' \dontrun{
@@ -27,7 +29,8 @@ SummarizeCrossStudy <- function(
   dfResults,
   strGroupLevel = "Site",
   dfGroups = NULL,
-  strNameCol = "InvestigatorLastName"
+  strNameCol = "InvestigatorLastName",
+  strEnrollmentCol = "ParticipantCount"
 ) {
   stopifnot(is.data.frame(dfResults))
   stopifnot(is.character(strGroupLevel) && length(strGroupLevel) == 1)
@@ -127,6 +130,28 @@ SummarizeCrossStudy <- function(
 
       cross_study_summary <- cross_study_summary %>%
         dplyr::left_join(investigator_names, by = "GroupID")
+
+      # Sum enrollment (e.g. ParticipantCount) across a site's studies.
+      # dfGroups often carries ParticipantCount at multiple GroupLevels (e.g.
+      # Study totals as well as Site totals), so restrict to strGroupLevel
+      # where available to avoid mixing those values together.
+      enrollment_source <- dfGroups
+      if ("GroupLevel" %in% colnames(dfGroups)) {
+        enrollment_source <- enrollment_source %>%
+          dplyr::filter(.data$GroupLevel == strGroupLevel)
+      }
+
+      enrollment_by_site <- enrollment_source %>%
+        dplyr::filter(.data$Param == strEnrollmentCol) %>%
+        dplyr::mutate(Value = suppressWarnings(as.numeric(.data$Value))) %>%
+        dplyr::group_by(.data$GroupID) %>%
+        dplyr::summarise(
+          TotalEnrollment = sum(.data$Value, na.rm = TRUE),
+          .groups = "drop"
+        )
+
+      cross_study_summary <- cross_study_summary %>%
+        dplyr::left_join(enrollment_by_site, by = "GroupID")
     }
   }
 

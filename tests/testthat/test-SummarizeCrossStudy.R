@@ -226,6 +226,53 @@ test_that("Validates input types (#71, #144)", {
   )
 })
 
+test_that("Adds TotalEnrollment summed across studies when dfGroups provided (#256)", {
+  dfResults <- create_test_results()
+  dfGroups <- tibble::tibble(
+    GroupID = rep(c("Site001", "Site002", "Site003"), each = 2),
+    GroupLevel = "Site",
+    StudyID = rep(c("Study1", "Study2"), 3),
+    Param = "ParticipantCount",
+    Value = c("10", "15", "20", "20", "5", "5")
+  )
+
+  result <- SummarizeCrossStudy(dfResults, dfGroups = dfGroups)
+
+  expect_true("TotalEnrollment" %in% names(result))
+  expect_equal(result$TotalEnrollment[result$GroupID == "Site001"], 25)
+  expect_equal(result$TotalEnrollment[result$GroupID == "Site002"], 40)
+  expect_equal(result$TotalEnrollment[result$GroupID == "Site003"], 10)
+})
+
+test_that("Only sums ParticipantCount at the requested GroupLevel (#256)", {
+  dfResults <- create_test_results()
+  dfGroups <- tibble::tibble(
+    GroupID = c("Site001", "Site001", "Study1"),
+    GroupLevel = c("Site", "Site", "Study"),
+    StudyID = c("Study1", "Study2", "Study1"),
+    Param = "ParticipantCount",
+    # Study-level total (900) should not be mixed into the Site001 sum
+    Value = c("10", "15", "900")
+  )
+
+  result <- SummarizeCrossStudy(dfResults, dfGroups = dfGroups)
+
+  expect_equal(result$TotalEnrollment[result$GroupID == "Site001"], 25)
+})
+
+test_that("TotalEnrollment is NA when ParticipantCount is absent from dfGroups (#256)", {
+  dfResults <- create_test_results()
+  dfGroups <- create_test_groups() # only has InvestigatorLastName
+
+  # Suppress expected warning about Site003 having multiple names
+  suppressWarnings({
+    result <- SummarizeCrossStudy(dfResults, dfGroups = dfGroups)
+  })
+
+  expect_true("TotalEnrollment" %in% names(result))
+  expect_true(all(is.na(result$TotalEnrollment)))
+})
+
 test_that("Works with custom strNameCol parameter (#71, #144)", {
   dfResults <- create_test_results()
   dfGroups <- tibble::tibble(
