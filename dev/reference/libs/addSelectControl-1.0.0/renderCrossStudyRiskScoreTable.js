@@ -39,6 +39,14 @@ function renderCrossStudyRiskScoreTable(el, input) {
 
     // Create controls and table
     let html = '<div class="cross-study-container">';
+    // gsmViz's groupOverview table attaches mouseover/mouseout handlers to every
+    // detail row that set/clear an inline background-color for its own hover
+    // effect (see addRowHighlighting.js), which would otherwise wipe out our
+    // "selected study" highlight on mouseout. `!important` here beats that
+    // inline (non-important) override regardless of hover state. Unscoped to
+    // match this file's other widget classes (.gsm-srs, .site-summary, etc.),
+    // since the table itself ends up outside the .cross-study-container div.
+    html += '<style>.study-row-selected { background-color: #fff3cd !important; border-left: 4px solid #f5a623; }</style>';
     html += '<h3>Cross-Study Site Risk Score Summary</h3>';
     
     // Add filter controls
@@ -90,6 +98,8 @@ function renderCrossStudyRiskScoreTable(el, input) {
     html += '<option value="max-srs-asc">Max SRS (Low to High)</option>';
     html += '<option value="studies-desc">Study Count (High to Low)</option>';
     html += '<option value="studies-asc">Study Count (Low to High)</option>';
+    html += '<option value="enrollment-desc">Enrollment Count (High to Low)</option>';
+    html += '<option value="enrollment-asc">Enrollment Count (Low to High)</option>';
     html += '<option value="site-asc">Site ID (A to Z)</option>';
     html += '<option value="site-desc">Site ID (Z to A)</option>';
     html += '<option value="investigator-asc">Investigator (A to Z)</option>';
@@ -140,10 +150,12 @@ function renderCrossStudyRiskScoreTable(el, input) {
         
         // Create site summary row
         const investigatorName = siteRow.InvestigatorName || 'Unknown';
-        const avgRiskBadge = getRiskScoreBadge(siteRow.AvgRiskScore, 'Avg');
-        const maxRiskBadge = getRiskScoreBadge(siteRow.MaxRiskScore, 'Max');
+        const hasEnrollment = siteRow.TotalEnrollment !== undefined && siteRow.TotalEnrollment !== null && !isNaN(siteRow.TotalEnrollment);
+        const avgRiskBadge = getRiskScoreBadge(siteRow.AvgRiskScore, 'Avg', 'avg');
+        const maxRiskBadge = getRiskScoreBadge(siteRow.MaxRiskScore, 'Max', 'max');
         const studyCountBadge = getStudyCountBadge(siteRow.NumStudies);
-        
+        const enrollmentBadge = hasEnrollment ? getEnrollmentBadge(siteRow.TotalEnrollment) : '';
+
         const summaryRow = document.createElement('tr');
         summaryRow.className = 'site-summary';
         summaryRow.style.cssText = 'background:#bbb; font-weight:bold; cursor:pointer;';
@@ -151,6 +163,7 @@ function renderCrossStudyRiskScoreTable(el, input) {
         summaryRow.dataset.avgRiskScore = siteRow.AvgRiskScore;
         summaryRow.dataset.maxRiskScore = siteRow.MaxRiskScore;
         summaryRow.dataset.numStudies = siteRow.NumStudies;
+        summaryRow.dataset.enrollmentCount = hasEnrollment ? siteRow.TotalEnrollment : 0;
         summaryRow.dataset.siteId = siteRow.GroupID || '';
         summaryRow.dataset.investigatorName = investigatorName;
         summaryRow.innerHTML = `
@@ -159,6 +172,7 @@ function renderCrossStudyRiskScoreTable(el, input) {
                 ${siteRow.GroupID} (${investigatorName})
                 <span style="float:right;">
                     ${studyCountBadge}
+                    ${enrollmentBadge}
                     ${avgRiskBadge}
                     ${maxRiskBadge}
                 </span>
@@ -200,9 +214,25 @@ function renderCrossStudyRiskScoreTable(el, input) {
         }));
 
         // Prepare Metadata - Show study info on hover, but use enrollment info for the specific study
-        const siteCounts = input.dfGroups.filter(d => 
+        const siteCounts = input.dfGroups.filter(d =>
             d.GroupID === siteRow.GroupID && d.GroupLevel === 'Site' && d.Param == "ParticipantCount"
         );
+
+        // Per-study SRS and enrollment, so the summary badges can be recalculated
+        // for just the studies selected in the "Filter by Study" control.
+        const srsByStudy = {};
+        siteResults
+            .filter(d => d.MetricID === 'Analysis_srs0001')
+            .forEach(d => { srsByStudy[d.StudyID] = parseFloat(d.Score); });
+
+        const enrollmentByStudy = {};
+        siteCounts.forEach(c => { enrollmentByStudy[c.StudyID] = parseFloat(c.Value); });
+
+        summaryRow.dataset.srsByStudy = JSON.stringify(srsByStudy);
+        summaryRow.dataset.enrollmentByStudy = JSON.stringify(enrollmentByStudy);
+        summaryRow.dataset.baselineAvgRiskScore = siteRow.AvgRiskScore;
+        summaryRow.dataset.baselineMaxRiskScore = siteRow.MaxRiskScore;
+        summaryRow.dataset.baselineEnrollmentCount = hasEnrollment ? siteRow.TotalEnrollment : NaN;
 
         const studyGroups = input.dfGroups.filter(d => 
             d.GroupLevel === 'Study'
@@ -259,7 +289,20 @@ function renderCrossStudyRiskScoreTable(el, input) {
                     const gsmVizTbody = gsmVizTable.querySelector('tbody');
                     if (gsmVizTbody) {
                         const rows = Array.from(gsmVizTbody.querySelectorAll('tr'));
-                        
+
+                        // Tag each row with its StudyID so the "Filter by Study" control can
+                        // highlight/reorder it later. gsmViz sorts rows internally (by flag
+                        // counts, not input order), so we can't infer StudyID from row
+                        // position. Instead, read it straight out of the row's own Group
+                        // label cell, whose text is "{StudyID} {siteGroupID} (nickname)"
+                        // since transformedResults set GroupID to that same string.
+                        rows.forEach(row => {
+                            const groupLabelCell = row.querySelector('.group-overview--GroupLabel');
+                            const labelText = groupLabelCell ? groupLabelCell.textContent : '';
+                            const siteIdIndex = labelText.indexOf(siteRow.GroupID);
+                            row.dataset.studyId = siteIdIndex > 0 ? labelText.slice(0, siteIdIndex).trim() : '';
+                        });
+
                         // Sort rows by SRS (high to low)
                         rows.sort((a, b) => {
                             // Get SRS from the siteRiskScore column
@@ -322,6 +365,7 @@ function setupFilters(el, dfSummary) {
                 srs: parseFloat(summaryRow.dataset.avgRiskScore),
                 maxSrs: parseFloat(summaryRow.dataset.maxRiskScore),
                 studies: parseInt(summaryRow.dataset.numStudies),
+                enrollment: parseFloat(summaryRow.dataset.enrollmentCount),
                 siteId: (summaryRow.dataset.siteId || '').toLowerCase(),
                 investigator: (summaryRow.dataset.investigatorName || '').toLowerCase()
             };
@@ -342,6 +386,10 @@ function setupFilters(el, dfSummary) {
                     return b.studies - a.studies;
                 case 'studies-asc':
                     return a.studies - b.studies;
+                case 'enrollment-desc':
+                    return b.enrollment - a.enrollment;
+                case 'enrollment-asc':
+                    return a.enrollment - b.enrollment;
                 case 'site-asc':
                     return a.siteId.localeCompare(b.siteId);
                 case 'site-desc':
@@ -439,7 +487,137 @@ function setupFilters(el, dfSummary) {
             filterInfo.innerHTML = `Showing all ${totalCount} sites`;
         }
     }
-    
+
+    // Recalculate each site's Avg/Max SRS and Enrollment badges from only the
+    // studies selected in "Filter by Study" (falls back to the all-study values
+    // when nothing is selected). Also keeps the sort-by data attributes in sync
+    // so sorting reflects whatever is currently displayed.
+    function updateSiteMetrics(selectedStudies) {
+        const allTbodies = el.querySelectorAll('tbody[id^="site-tbody-"]');
+
+        allTbodies.forEach(tbody => {
+            const summaryRow = tbody.querySelector('.site-summary');
+            if (!summaryRow) return;
+
+            const siteStudies = JSON.parse(summaryRow.dataset.studies || '[]');
+            const srsByStudy = JSON.parse(summaryRow.dataset.srsByStudy || '{}');
+            const enrollmentByStudy = JSON.parse(summaryRow.dataset.enrollmentByStudy || '{}');
+            const baselineAvg = parseFloat(summaryRow.dataset.baselineAvgRiskScore);
+            const baselineMax = parseFloat(summaryRow.dataset.baselineMaxRiskScore);
+            const baselineEnrollment = parseFloat(summaryRow.dataset.baselineEnrollmentCount);
+            const totalStudyCount = siteStudies.length;
+            const totalStudyLabel = totalStudyCount === 1 ? 'study' : 'studies';
+
+            const matchingStudies = selectedStudies.filter(s => siteStudies.includes(s));
+            const isFiltered = matchingStudies.length > 0;
+
+            let displayAvg = baselineAvg;
+            let displayMax = baselineMax;
+            let displayEnrollment = baselineEnrollment;
+            let avgTitle = `${isNaN(baselineAvg) ? '—' : baselineAvg.toFixed(1)} Avg SRS across all ${totalStudyCount} ${totalStudyLabel}`;
+            let maxTitle = `${isNaN(baselineMax) ? '—' : baselineMax.toFixed(1)} Max SRS across all ${totalStudyCount} ${totalStudyLabel}`;
+            let enrollmentTitle = `${isNaN(baselineEnrollment) ? '—' : baselineEnrollment} enrolled across all ${totalStudyCount} ${totalStudyLabel}`;
+
+            if (isFiltered) {
+                const n = matchingStudies.length;
+                const selectedLabel = n === 1 ? 'study' : 'studies';
+                const scores = matchingStudies
+                    .map(s => srsByStudy[s])
+                    .filter(v => v !== undefined && !isNaN(v));
+                const enrollments = matchingStudies
+                    .map(s => enrollmentByStudy[s])
+                    .filter(v => v !== undefined && !isNaN(v));
+
+                if (scores.length > 0) {
+                    displayAvg = scores.reduce((a, b) => a + b, 0) / scores.length;
+                    displayMax = Math.max(...scores);
+                    avgTitle = `${displayAvg.toFixed(1)} for ${n} selected ${selectedLabel}. ${isNaN(baselineAvg) ? '—' : baselineAvg.toFixed(1)} for all ${totalStudyCount} ${totalStudyLabel}.`;
+                    maxTitle = `${displayMax.toFixed(1)} for ${n} selected ${selectedLabel}. ${isNaN(baselineMax) ? '—' : baselineMax.toFixed(1)} for all ${totalStudyCount} ${totalStudyLabel}.`;
+                }
+
+                if (enrollments.length > 0) {
+                    displayEnrollment = enrollments.reduce((a, b) => a + b, 0);
+                    enrollmentTitle = `${displayEnrollment} for ${n} selected ${selectedLabel}. ${isNaN(baselineEnrollment) ? '—' : baselineEnrollment} for all ${totalStudyCount} ${totalStudyLabel}.`;
+                }
+            }
+
+            // Keep sort/filter data attributes in sync with what's displayed
+            summaryRow.dataset.avgRiskScore = displayAvg;
+            summaryRow.dataset.maxRiskScore = displayMax;
+            summaryRow.dataset.enrollmentCount = isNaN(displayEnrollment) ? 0 : displayEnrollment;
+
+            const avgBadge = summaryRow.querySelector('.gsm-srs[data-role="avg"]');
+            if (avgBadge && !isNaN(displayAvg)) {
+                const colors = getRiskScoreColors(displayAvg);
+                avgBadge.textContent = `${displayAvg.toFixed(1)} Avg`;
+                avgBadge.title = avgTitle;
+                avgBadge.style.backgroundColor = colors.bg;
+                avgBadge.style.color = colors.text;
+            }
+
+            const maxBadge = summaryRow.querySelector('.gsm-srs[data-role="max"]');
+            if (maxBadge && !isNaN(displayMax)) {
+                const colors = getRiskScoreColors(displayMax);
+                maxBadge.textContent = `${displayMax.toFixed(1)} Max`;
+                maxBadge.title = maxTitle;
+                maxBadge.style.backgroundColor = colors.bg;
+                maxBadge.style.color = colors.text;
+            }
+
+            const enrollmentBadge = summaryRow.querySelector('.gsm-enrollmentCount');
+            if (enrollmentBadge && !isNaN(displayEnrollment)) {
+                enrollmentBadge.textContent = `${displayEnrollment} Enrolled`;
+                enrollmentBadge.title = enrollmentTitle;
+            }
+
+            summaryRow.style.outline = isFiltered ? '2px solid #f5a623' : '';
+        });
+    }
+
+    // Highlight the per-study detail rows belonging to the selected studies and
+    // move them to the top of each site's expanded list (secondary sort by SRS,
+    // matching the widget's default row order).
+    function applyStudyRowHighlighting(selectedStudies) {
+        const allTbodies = el.querySelectorAll('tbody[id^="site-tbody-"]');
+
+        allTbodies.forEach(tbody => {
+            const detailRows = Array.from(tbody.querySelectorAll('tr:not(.site-summary)'));
+
+            detailRows.forEach(row => {
+                const isSelected = selectedStudies.length > 0 && selectedStudies.includes(row.dataset.studyId);
+                row.classList.toggle('study-row-selected', isSelected);
+            });
+
+            if (selectedStudies.length > 0) {
+                detailRows.sort((a, b) => {
+                    const aSelected = selectedStudies.includes(a.dataset.studyId) ? 1 : 0;
+                    const bSelected = selectedStudies.includes(b.dataset.studyId) ? 1 : 0;
+                    if (aSelected !== bSelected) return bSelected - aSelected;
+
+                    const srsColA = a.querySelector('.group-overview--siteRiskScore');
+                    const srsColB = b.querySelector('.group-overview--siteRiskScore');
+                    const srsA = srsColA ? parseFloat(srsColA.textContent || 0) : 0;
+                    const srsB = srsColB ? parseFloat(srsColB.textContent || 0) : 0;
+                    return srsB - srsA;
+                });
+
+                detailRows.forEach(row => tbody.appendChild(row));
+            }
+        });
+    }
+
+    function getSelectedStudies() {
+        return Array.from(studyFilter.selectedOptions || []).map(option => option.value).filter(Boolean);
+    }
+
+    function handleStudyFilterChange() {
+        const selectedStudies = getSelectedStudies();
+        updateSiteMetrics(selectedStudies);
+        applyStudyRowHighlighting(selectedStudies);
+        applySorting();
+        applyFilters();
+    }
+
     // Update SRS slider values
     srsMinSlider.addEventListener('input', function() {
         const minVal = parseFloat(this.value);
@@ -462,10 +640,10 @@ function setupFilters(el, dfSummary) {
     });
     
     studyCountFilter.addEventListener('input', applyFilters);
-    studyFilter.addEventListener('change', applyFilters);
+    studyFilter.addEventListener('change', handleStudyFilterChange);
     searchBox.addEventListener('input', applyFilters);
     sortBy.addEventListener('change', applySorting);
-    
+
     // Reset button
     resetButton.addEventListener('click', function() {
         srsMinSlider.value = srsMinSlider.min;
@@ -478,6 +656,8 @@ function setupFilters(el, dfSummary) {
         });
         searchBox.value = '';
         sortBy.value = 'srs-desc';
+        updateSiteMetrics([]);
+        applyStudyRowHighlighting([]);
         applySorting();
         applyFilters();
     });
@@ -525,26 +705,24 @@ function setupFilters(el, dfSummary) {
     applyFilters();
 }
 
-function getRiskScoreBadge(score, label = 'SRS') {
-    let bgColor, textColor;
-    if (score >= 75) {
-        bgColor = '#d32f2f'; // Red
-        textColor = '#fff';
-    } else if (score >= 50) {
-        bgColor = '#f57c00'; // Orange
-        textColor = '#fff';
-    } else if (score >= 25) {
-        bgColor = '#ffa726'; // Amber
-        textColor = '#000';
-    } else {
-        bgColor = '#388e3c'; // Green
-        textColor = '#fff';
-    }
-    
-    return `<span class="gsm-srs" style="background-color:${bgColor};color:${textColor};padding:4px 8px; border-radius:4px;font-weight:bold;font-size:12px;margin-left:5px;">${score.toFixed(1)} ${label}</span>`;
+function getRiskScoreColors(score) {
+    if (score >= 75) return { bg: '#d32f2f', text: '#fff' }; // Red
+    if (score >= 50) return { bg: '#f57c00', text: '#fff' }; // Orange
+    if (score >= 25) return { bg: '#ffa726', text: '#000' }; // Amber
+    return { bg: '#388e3c', text: '#fff' }; // Green
+}
+
+function getRiskScoreBadge(score, label = 'SRS', role = '') {
+    const colors = getRiskScoreColors(score);
+    const roleAttr = role ? ` data-role="${role}"` : '';
+    return `<span class="gsm-srs"${roleAttr} title="${score.toFixed(1)} ${label} across all studies" style="background-color:${colors.bg};color:${colors.text};padding:4px 8px; border-radius:4px;font-weight:bold;font-size:12px;margin-left:5px;">${score.toFixed(1)} ${label}</span>`;
 }
 
 function getStudyCountBadge(count) {
     const studyLabel = count === 1 ? 'Study' : 'Studies';
     return `<span class="gsm-studyCount" style="background-color:#757575;color:#fff;padding:4px 8px;border-radius:4px;font-weight:bold;font-size:12px;margin-left:8px;">${count} ${studyLabel}</span>`;
+}
+
+function getEnrollmentBadge(count) {
+    return `<span class="gsm-enrollmentCount" title="${count} enrolled across all studies" style="background-color:#757575;color:#fff;padding:4px 8px;border-radius:4px;font-weight:bold;font-size:12px;margin-left:8px;">${count} Enrolled</span>`;
 }
