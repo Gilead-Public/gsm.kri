@@ -60,7 +60,7 @@ Remotes:
     gsm.core=Gilead-BioStats/gsm.core@gsm.core-v1.3.0-rc,
     gsm.mapping=Gilead-BioStats/gsm.mapping@gsm.mapping-v1.1.5-rc,
     gsm.qtl=Gilead-BioStats/gsm.qtl@rc-v1.3.0,
-    gsm.reporting=Gilead-BioStats/gsm.reporting@gsm.reporting-v1.1.4-rc,
+    gsm.reporting=Gilead-BioStats/gsm.reporting@gsm.reporting-v1.1.6-rc,
     workr=Gilead-BioStats/workr@rc-v1.1.0,
     qcthat=Gilead-BioStats/qcthat@*release
 Config/roxygen2/version: 8.0.0
