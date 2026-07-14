@@ -31,7 +31,6 @@ Imports:
     htmlwidgets,
     jsonlite,
     lifecycle,
-    log4r,
     magrittr,
     purrr,
     rlang,
@@ -54,6 +53,7 @@ Suggests:
 VignetteBuilder: 
     knitr
 Remotes:
+    log4r=r-lib/log4r,
     gsm.core=Gilead-BioStats/gsm.core@main,
     gsm.mapping=Gilead-BioStats/gsm.mapping@main,
     gsm.qtl=Gilead-BioStats/gsm.qtl@main,
