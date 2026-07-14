@@ -10,8 +10,7 @@ meta:
   Model: Normal Approximation
   Score: Adjusted Z-Score
   AnalysisType: rate
-  # Calibration values are placeholders cloned from the NormalApprox country
-  # sibling (cou0003); pending business sign-off (gsm.kri#258).
+  # Calibration values are placeholders pending business sign-off (gsm.kri#258).
   Threshold: -2,-1,2,3
   Flag: "-2,-1,0,1,2"
   AccrualThreshold: 30
