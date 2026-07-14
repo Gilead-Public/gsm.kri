@@ -62,7 +62,8 @@ Remotes:
     gsm.qtl=Gilead-BioStats/gsm.qtl@rc-v1.3.0,
     gsm.reporting=Gilead-BioStats/gsm.reporting@gsm.reporting-v1.1.6-rc,
     workr=Gilead-BioStats/workr@rc-v1.1.0,
-    qcthat=Gilead-BioStats/qcthat@*release
+    qcthat=Gilead-BioStats/qcthat@*release,
+    log4r=r-lib/log4r
 Config/roxygen2/version: 8.0.0
 Config/testthat/edition: 3
 Config/testthat/parallel: false
