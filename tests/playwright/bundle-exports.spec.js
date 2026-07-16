@@ -5,9 +5,13 @@ const path = require('path');
 const LIB_DIR = path.resolve(__dirname, '..', '..', 'inst', 'htmlwidgets', 'lib');
 
 function currentBundleDir() {
-  const dir = fs.readdirSync(LIB_DIR).find((d) => d.startsWith('gsm.viz-'));
-  if (!dir) throw new Error('No gsm.viz-* bundle found under ' + LIB_DIR);
-  return path.join(LIB_DIR, dir);
+  const dirs = fs.readdirSync(LIB_DIR).filter((d) => d.startsWith('gsm.viz-'));
+  if (dirs.length !== 1) {
+    throw new Error(
+      'Expected exactly one gsm.viz-* bundle under ' + LIB_DIR + ', found: ' + dirs.join(', ')
+    );
+  }
+  return path.join(LIB_DIR, dirs[0]);
 }
 
 // esbuild builds the bundle with --global-name=gsmViz, so loading index.js sets
