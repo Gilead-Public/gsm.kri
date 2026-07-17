@@ -85,27 +85,38 @@ GetDefaultKRIPath <- function() {
 
 ## Get Mapped data
 domains <- c(gsub("Raw_", "", names(lSource)), "COUNTRY", "EXCLUSION")
-mappings_wf <- MakeWorkflowList(
+mappings_wf <- workr::MakeWorkflowList(
   strNames = domains,
+  strPath = "workflow/1_mappings",
   strPackage= "gsm.mapping"
 )
 
 ConsoleAppender <- log4r::console_appender(layout = gsm.core::cli_fmt)
-gsm.core::SetLogger(log4r::logger(
-  threshold = "WARN",
-  appenders = ConsoleAppender
-))
 
-# Use cached mapped data to speed up load times
-mapped_data <- get_cached_mapped_data(lData, mappings_wf)
+# Build qualification fixtures lazily so unrelated tests do not pay the full
+# workflow setup cost during helper sourcing.
+delayedAssign(
+  "mapped_data",
+  {
+    gsm.core::SetLogger(log4r::logger(
+      threshold = "WARN",
+      appenders = ConsoleAppender
+    ))
+    on.exit(
+      gsm.core::SetLogger(log4r::logger(
+        "DEBUG",
+        appenders = ConsoleAppender
+      )),
+      add = TRUE
+    )
+    get_cached_mapped_data(lData, mappings_wf)
+  }
+)
 
-gsm.core::SetLogger(log4r::logger(
-  "DEBUG",
-  appenders = ConsoleAppender
-))
-
-# Use cached mapping output
-mapping_output <- get_cached_mapping_output(mappings_wf)
+delayedAssign(
+  "mapping_output",
+  get_cached_mapping_output(mappings_wf)
+)
 
 # Robust version of Runworkflow no config that will always run even with errors,
 # and can be specified for specific steps in workflow to run
@@ -162,7 +173,7 @@ robust_runworkflow <- function(
     # ))
 
     result0 <- purrr::safely(
-      ~ gsm.core::RunStep(
+      ~ workr::RunStep(
         lStep = steps,
         lData = lWorkflow$lData,
         lMeta = lWorkflow$meta

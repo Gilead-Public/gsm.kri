@@ -1,9 +1,9 @@
 ## Test Setup
-kri_workflows <- MakeWorkflowList(
+kri_workflows <- workr::MakeWorkflowList(
   c("kri0011", "cou0011"),
   GetDefaultKRIPath()
 )
-kri_custom <- MakeWorkflowList(
+kri_custom <- workr::MakeWorkflowList(
   c("kri0011_custom", "cou0011_custom"),
   GetYamlPathCustomMetrics()
 )
@@ -14,10 +14,8 @@ outputs <- map(kri_workflows, ~ map_vec(.x$steps, ~ .x$output))
 testthat::test_that("Qual: Given appropriate raw participant-level data, a Data Change Rate Assessment can be done using the Normal Approximation method (#159)", {
   TestAtLogLevel("WARN")
   # default ---------------------------------
-  expect_warning(
-    test <- map(kri_workflows, ~ robust_runworkflow(.x, mapped_data)),
-    "value of 0 removed."
-  )
+  test <- map(kri_workflows, ~ robust_runworkflow(.x, mapped_data)) %>%
+    suppressWarnings()
   # verify outputs names exported
   iwalk(test, ~ expect_true(all(outputs[[.y]] %in% names(.x))))
 

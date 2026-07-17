@@ -1,4 +1,5 @@
 meta:
+  Active: true
   Type: Analysis
   ID: kri0014
   GroupLevel: Site
@@ -15,6 +16,7 @@ meta:
   RiskScoreWeight: "0,8,16" # need RAs to set value for red flag
   AccrualThreshold: 3
   AccrualMetric: Denominator # Probably only run once 3 participants enrolled
+  GenerateRiskSignal: true
 spec:
   Mapped_EXCLUSION:
     subjid:
@@ -49,7 +51,7 @@ steps:
       strThreshold: Flag
       bSort: false
   - output: numerator_df
-    name: gsm.core::RunQuery
+    name: workr::RunQuery
     params:
       df: Mapped_EXCLUSION
       strQuery: "SELECT * FROM df WHERE Source != 'Neither'"

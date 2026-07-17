@@ -4,6 +4,7 @@ meta:
   Output: html
   Name: CTQ Eligibility Report
   Description: A report summarizing CTQ
+  Active: true
 spec:
   Mapped_EXCLUSION:
     _all:
@@ -19,7 +20,7 @@ spec:
       required: true
 steps:
   - output: IE_num
-    name: gsm.core::RunQuery
+    name: workr::RunQuery
     params:
       df: Mapped_EXCLUSION
       strQuery: "SELECT * FROM df WHERE Source != 'Neither'"

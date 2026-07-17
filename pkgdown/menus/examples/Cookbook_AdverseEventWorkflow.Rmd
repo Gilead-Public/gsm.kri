@@ -118,7 +118,7 @@ AE_data <-list(
   Mapped_SUBJ= dm,
   Mapped_AE= ae
 )
-AE_KRI <- RunWorkflow(lWorkflow = AE_workflow, lData = AE_data)
+AE_KRI <- workr::RunWorkflow(lWorkflow = AE_workflow, lData = AE_data)
 
 # Create labels for visualizations
 labels <- list(
@@ -172,7 +172,7 @@ AE_country_workflow <- AE_workflow
 AE_country_workflow$meta$GroupLevel <- "Country"
 AE_country_workflow$steps[[2]]$params$strGroupCol <- "country"
 
-AE_country_KRI <- RunWorkflow(lWorkflow = AE_country_workflow, lData = AE_data)
+AE_country_KRI <- workr::RunWorkflow(lWorkflow = AE_country_workflow, lData = AE_data)
 ```
 
 ```{r example-2-2-barchart, results='asis'}
@@ -192,7 +192,7 @@ SAE_workflow$meta$Numerator <- "Serious Adverse Events"
 
 # Add a step to filter out non-serious AEs `RunQuery`
 filterStep <- list(list(
-  name = "RunQuery",
+  name = "workr::RunQuery",
   output = "Mapped_AE",
   params= list(
     df= "Mapped_AE",
@@ -202,7 +202,7 @@ filterStep <- list(list(
 SAE_workflow$steps <- SAE_workflow$steps %>% append(filterStep, after=0)
 
 # Run the updated workflow
-SAE_KRI <- RunWorkflow(lWorkflow = SAE_workflow, lData = AE_data)
+SAE_KRI <- workr::RunWorkflow(lWorkflow = SAE_workflow, lData = AE_data)
 ```
 
 ```{r example-2-3-barchart, results='asis'}

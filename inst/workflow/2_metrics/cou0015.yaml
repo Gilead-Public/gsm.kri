@@ -1,4 +1,5 @@
 meta:
+  Active: true
   Type: Analysis
   ID: cou0015
   GroupLevel: Country
@@ -11,8 +12,11 @@ meta:
   AnalysisType: identity
   Threshold: "1,2"
   Flag: "0,1,2"
+  RiskScoreWeight: "0,8,16"
   AccrualThreshold: 1
   AccrualMetric: Denominator
+  WindowDays: 90
+  GenerateRiskSignal: true
 spec:
   Mapped_Death:
     subjid:
@@ -29,26 +33,26 @@ steps:
     name: gsm.core::ParseThreshold
     params:
       strThreshold: Threshold
-  - output: vRiskScoreWeight
-    name: gsm.core::ParseThreshold
-    params:
-      strThreshold: RiskScoreWeight
-      bSort: false
   - output: vFlag
     name: gsm.core::ParseThreshold
     params:
       strThreshold: Flag
       bSort: false
-  - output: Temp_Death90
+  - output: strDeathQuery
+    name: paste0
+    params:
+      strPrefix: "SELECT * FROM df WHERE death_dy <= "
+      nWindow: WindowDays
+  - output: Temp_DeathWindow
     name: RunQuery
     params:
       df: Mapped_Death
-      strQuery: "SELECT * FROM df WHERE death_dy <= 90"
+      strQuery: strDeathQuery
   - output: Analysis_Input
     name: gsm.core::Input_Rate
     params:
       dfSubjects: Mapped_SUBJ
-      dfNumerator: Temp_Death90
+      dfNumerator: Temp_DeathWindow
       dfDenominator: Mapped_SUBJ
       strSubjectCol: subjid
       strGroupCol: country
@@ -70,7 +74,6 @@ steps:
       dfAnalyzed: Analysis_Analyzed
       vThreshold: vThreshold
       vFlag: vFlag
-      vRiskScoreWeight: vRiskScoreWeight
       nAccrualThreshold: AccrualThreshold
       strAccrualMetric: AccrualMetric
   - output: Analysis_Summary
