@@ -60,7 +60,7 @@ Remotes:
     gsm.core=Gilead-BioStats/gsm.core@main,
     gsm.mapping=Gilead-BioStats/gsm.mapping@main,
     gsm.qtl=Gilead-BioStats/gsm.qtl@main,
-    gsm.reporting=Gilead-BioStats/gsm.reporting@gsm.reporting-v1.1.6-rc,
+    gsm.reporting=Gilead-BioStats/gsm.reporting@main,
     workr=Gilead-BioStats/workr@main,
     qcthat=Gilead-BioStats/qcthat@main,
     log4r=r-lib/log4r
