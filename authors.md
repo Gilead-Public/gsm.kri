@@ -17,13 +17,13 @@ Source:
 [`DESCRIPTION`](https://github.com/Gilead-BioStats/gsm.kri/blob/main/DESCRIPTION)
 
 Wildfire J, Maxwell L, Childress S (2026). *gsm.kri: Good Statistical
-Monitoring KRIs*. R package version 1.5.2,
+Monitoring KRIs*. R package version 1.6.0,
 <https://github.com/Gilead-BioStats/gsm.kri>.
 
     @Manual{,
       title = {gsm.kri: Good Statistical Monitoring KRIs},
       author = {Jeremy Wildfire and Laura Maxwell and Spencer Childress},
       year = {2026},
-      note = {R package version 1.5.2},
+      note = {R package version 1.6.0},
       url = {https://github.com/Gilead-BioStats/gsm.kri},
     }

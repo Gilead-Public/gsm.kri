@@ -1,5 +1,65 @@
 # Changelog
 
+## gsm.kri v1.6.0
+
+This minor release introduces the Premature Deaths reporting module and
+adds cross-study sorting and filtering capabilities.
+
+**New Features:**
+
+- Add Premature Deaths report module with interactive charts and patient
+  listing
+  ([\#221](https://github.com/Gilead-BioStats/gsm.kri/issues/221),
+  [\#223](https://github.com/Gilead-BioStats/gsm.kri/issues/223))
+  - Five-category classification of death timing via
+    [`pd_Classify()`](https://gilead-biostats.github.io/gsm.kri/reference/pd_Classify.md)
+    ([\#246](https://github.com/Gilead-BioStats/gsm.kri/issues/246))
+  - Bucket bar charts with count/percent toggle, on-bar labels, and
+    range slider
+    ([\#223](https://github.com/Gilead-BioStats/gsm.kri/issues/223),
+    [\#246](https://github.com/Gilead-BioStats/gsm.kri/issues/246),
+    [\#253](https://github.com/Gilead-BioStats/gsm.kri/issues/253))
+  - Randomization-to-death scatter plot with fixed shared range across
+    study/country/site views
+    ([\#247](https://github.com/Gilead-BioStats/gsm.kri/issues/247))
+  - Death-reason distribution chart with country-reactive filtering
+    ([\#254](https://github.com/Gilead-BioStats/gsm.kri/issues/254))
+  - Patient listing with site/country filter, eligibility status, and
+    download button
+    ([\#249](https://github.com/Gilead-BioStats/gsm.kri/issues/249))
+  - Overview preamble with death-breakdown sub-line and ≤30 / 31–90 day
+    split
+    ([\#250](https://github.com/Gilead-BioStats/gsm.kri/issues/250),
+    [\#252](https://github.com/Gilead-BioStats/gsm.kri/issues/252))
+  - Sticky bucket-bar count/percent toggle and chip-strip filter UI
+    ([\#253](https://github.com/Gilead-BioStats/gsm.kri/issues/253))
+- Add patient-level premature-death workflow `pat0015` with configurable
+  window
+  ([\#221](https://github.com/Gilead-BioStats/gsm.kri/issues/221))
+- Derive Treatment Related status from `deathcls` + fatal related AE
+  ([\#248](https://github.com/Gilead-BioStats/gsm.kri/issues/248))
+- Add eligibility status derivation via
+  [`pd_EligibilityStatus()`](https://gilead-biostats.github.io/gsm.kri/reference/pd_EligibilityStatus.md)
+  ([\#249](https://github.com/Gilead-BioStats/gsm.kri/issues/249),
+  [\#250](https://github.com/Gilead-BioStats/gsm.kri/issues/250))
+- Add sort-by-enrollment option to Cross-Study Site Risk Score widget
+- Recalculate site metrics from the cross-study study filter selection
+
+**Bug Fixes:**
+
+- Fix country cross-filter and absent country key guard in
+  premature-death charts
+  ([\#222](https://github.com/Gilead-BioStats/gsm.kri/issues/222))
+- Fix `cou0015` to exclude subjects without a randomization date from
+  the cohort
+  ([\#247](https://github.com/Gilead-BioStats/gsm.kri/issues/247))
+- Fix plotly scalar-text bug by using `customdata` for hover tooltips
+- Remove risk score weight from `cou0015` workflow
+- Fix overlapping sticky bucket toggle placement in report
+  ([\#253](https://github.com/Gilead-BioStats/gsm.kri/issues/253))
+- Ignore inactive workflows
+  ([\#237](https://github.com/Gilead-BioStats/gsm.kri/issues/237))
+
 ## gsm.kri v1.5.2
 
 This patch release fixes report display issues on the pkgdown site and

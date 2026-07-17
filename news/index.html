@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">gsm.kri</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -28,6 +28,7 @@
     <li><a class="dropdown-item" href="../examples/Example_CountryReport.html">Country KRI Report</a></li>
     <li><a class="dropdown-item" href="../examples/Example_Eligibility.html">Eligibility Report</a></li>
     <li><a class="dropdown-item" href="../examples/Example_CrossStudySRS.html">Cross-Study KRI Report</a></li>
+    <li><a class="dropdown-item" href="../examples/Example_PrematureDeaths.html">Premature Deaths Report</a></li>
     <li><a class="dropdown-item" href="../examples/Cookbook_AdverseEventKRI.html">Cookbook - Adverse Event KRI Report</a></li>
     <li><a class="dropdown-item" href="../examples/Cookbook_AdverseEventWorkflow.html">Cookbook - Adverse Event Workflow Examples</a></li>
     <li><a class="dropdown-item" href="../examples/Cookbook_ReportingWorkflow.html">Cookbook - Reporting Workflow Examples</a></li>
@@ -47,6 +48,32 @@
       <small>Source: <a href="https://github.com/Gilead-BioStats/gsm.kri/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.6.0" id="gsmkri-v160">gsm.kri v1.6.0<a class="anchor" aria-label="anchor" href="#gsmkri-v160"></a></h2>
+<p>This minor release introduces the Premature Deaths reporting module and adds cross-study sorting and filtering capabilities.</p>
+<p><strong>New Features:</strong></p>
+<ul><li>Add Premature Deaths report module with interactive charts and patient listing (<a href="https://github.com/Gilead-BioStats/gsm.kri/issues/221" class="external-link">#221</a>, <a href="https://github.com/Gilead-BioStats/gsm.kri/issues/223" class="external-link">#223</a>)
+<ul><li>Five-category classification of death timing via <code><a href="../reference/pd_Classify.html">pd_Classify()</a></code> (<a href="https://github.com/Gilead-BioStats/gsm.kri/issues/246" class="external-link">#246</a>)</li>
+<li>Bucket bar charts with count/percent toggle, on-bar labels, and range slider (<a href="https://github.com/Gilead-BioStats/gsm.kri/issues/223" class="external-link">#223</a>, <a href="https://github.com/Gilead-BioStats/gsm.kri/issues/246" class="external-link">#246</a>, <a href="https://github.com/Gilead-BioStats/gsm.kri/issues/253" class="external-link">#253</a>)</li>
+<li>Randomization-to-death scatter plot with fixed shared range across study/country/site views (<a href="https://github.com/Gilead-BioStats/gsm.kri/issues/247" class="external-link">#247</a>)</li>
+<li>Death-reason distribution chart with country-reactive filtering (<a href="https://github.com/Gilead-BioStats/gsm.kri/issues/254" class="external-link">#254</a>)</li>
+<li>Patient listing with site/country filter, eligibility status, and download button (<a href="https://github.com/Gilead-BioStats/gsm.kri/issues/249" class="external-link">#249</a>)</li>
+<li>Overview preamble with death-breakdown sub-line and ≤30 / 31–90 day split (<a href="https://github.com/Gilead-BioStats/gsm.kri/issues/250" class="external-link">#250</a>, <a href="https://github.com/Gilead-BioStats/gsm.kri/issues/252" class="external-link">#252</a>)</li>
+<li>Sticky bucket-bar count/percent toggle and chip-strip filter UI (<a href="https://github.com/Gilead-BioStats/gsm.kri/issues/253" class="external-link">#253</a>)</li>
+</ul></li>
+<li>Add patient-level premature-death workflow <code>pat0015</code> with configurable window (<a href="https://github.com/Gilead-BioStats/gsm.kri/issues/221" class="external-link">#221</a>)</li>
+<li>Derive Treatment Related status from <code>deathcls</code> + fatal related AE (<a href="https://github.com/Gilead-BioStats/gsm.kri/issues/248" class="external-link">#248</a>)</li>
+<li>Add eligibility status derivation via <code><a href="../reference/pd_EligibilityStatus.html">pd_EligibilityStatus()</a></code> (<a href="https://github.com/Gilead-BioStats/gsm.kri/issues/249" class="external-link">#249</a>, <a href="https://github.com/Gilead-BioStats/gsm.kri/issues/250" class="external-link">#250</a>)</li>
+<li>Add sort-by-enrollment option to Cross-Study Site Risk Score widget</li>
+<li>Recalculate site metrics from the cross-study study filter selection</li>
+</ul><p><strong>Bug Fixes:</strong></p>
+<ul><li>Fix country cross-filter and absent country key guard in premature-death charts (<a href="https://github.com/Gilead-BioStats/gsm.kri/issues/222" class="external-link">#222</a>)</li>
+<li>Fix <code>cou0015</code> to exclude subjects without a randomization date from the cohort (<a href="https://github.com/Gilead-BioStats/gsm.kri/issues/247" class="external-link">#247</a>)</li>
+<li>Fix plotly scalar-text bug by using <code>customdata</code> for hover tooltips</li>
+<li>Remove risk score weight from <code>cou0015</code> workflow</li>
+<li>Fix overlapping sticky bucket toggle placement in report (<a href="https://github.com/Gilead-BioStats/gsm.kri/issues/253" class="external-link">#253</a>)</li>
+<li>Ignore inactive workflows (<a href="https://github.com/Gilead-BioStats/gsm.kri/issues/237" class="external-link">#237</a>)</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.5.2" id="gsmkri-v152">gsm.kri v1.5.2<a class="anchor" aria-label="anchor" href="#gsmkri-v152"></a></h2>
 <p>This patch release fixes report display issues on the pkgdown site and renders missing examples.</p>
@@ -170,7 +197,7 @@ A new vignette has been added that provides a step-by-step guide on how to add a
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>

@@ -18,7 +18,9 @@ MakeWeights(dfMetrics)
   \`data.frame\` Metrics metadata containing at least \`MetricID\`,
   \`Flag\`, and \`RiskScoreWeight\` columns. The \`Flag\` and
   \`RiskScoreWeight\` columns should contain comma-separated values that
-  will be parsed into individual rows.
+  will be parsed into individual rows. If an \`Active\` column is
+  present, rows where \`Active == FALSE\` are excluded before
+  processing.
 
 ## Value
 
