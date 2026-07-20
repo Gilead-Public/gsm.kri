@@ -61,7 +61,7 @@ Remotes:
     gsm.mapping=Gilead-BioStats/gsm.mapping@main,
     gsm.qtl=Gilead-BioStats/gsm.qtl@main,
     gsm.reporting=Gilead-BioStats/gsm.reporting@main,
-    workr=Gilead-BioStats/workr@f1df4ed,
+    workr=Gilead-BioStats/workr@main,
     qcthat=Gilead-BioStats/qcthat@main,
     log4r=r-lib/log4r
 Config/roxygen2/version: 8.0.0
