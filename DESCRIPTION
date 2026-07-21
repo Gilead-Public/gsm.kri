@@ -57,7 +57,7 @@ VignetteBuilder:
 Remotes:
     gsm.core=Gilead-BioStats/gsm.core@eliminate-log4r,
     gsm.mapping=Gilead-BioStats/gsm.mapping@fix-143-remove-log4r,
-    gsm.qtl=Gilead-BioStats/gsm.qtl@main,
+    gsm.qtl=Gilead-BioStats/gsm.qtl@remove-riskmetric,
     gsm.reporting=Gilead-BioStats/gsm.reporting@fix-66-remove-log4r,
     qcthat=Gilead-BioStats/qcthat@main
 Config/roxygen2/version: 8.0.0
