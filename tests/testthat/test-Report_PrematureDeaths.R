@@ -104,7 +104,9 @@ test_that("Report_PrematureDeaths renders the dynamic subtitle, not literal pseu
   expect_true(grepl("Snapshot Date: 2026-05-01", html, fixed = TRUE))
   # ...and the old mid-document "--- subtitle:/date: ---" block (which pandoc only
   # honours in the top header, so it leaked as a literal "subtitle:" line) is gone.
-  expect_false(grepl("subtitle:", html, fixed = TRUE))
+  # Exclude the gsm.viz bundle's `subtitle: {` JS config (a Chart.js plugin key,
+  # not a leaked YAML line) by requiring a non-`{` char after the colon.
+  expect_false(grepl("subtitle: [^{]", html))
 })
 
 test_that("Report_PrematureDeaths renders the studcomp discontinuation note {#246}", {
@@ -123,7 +125,7 @@ test_that("Report_PrematureDeaths renders the studcomp discontinuation note {#24
   expect_true(grepl("studcomp", html, ignore.case = TRUE))
 })
 
-test_that("Report bucket-bar toggle updates labels and autoranges both modes {#246}", {
+test_that("Report bucket-bar count/% toggle drives the gsm.viz charts (#264)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
   out <- Report_PrematureDeaths(
@@ -135,16 +137,11 @@ test_that("Report bucket-bar toggle updates labels and autoranges both modes {#2
     strOutputDir = tempdir()
   )
   html <- paste(readLines(out, warn = FALSE), collapse = "\n")
-  # applyMode rebuilds the on-bar text per mode (count vs %) and pushes it with y.
-  expect_match(html, "var texts =", fixed = TRUE)
-  expect_match(html, "text: texts", fixed = TRUE)
-  # % mode autoranges the y-axis (no pinned [0, 100]) so a legend deselect
-  # rescales the bars, consistent with count mode.
-  expect_match(
-    html,
-    '"yaxis.ticksuffix": "%", "yaxis.autorange": true',
-    fixed = TRUE
-  )
+  # The migrated toggle: pdSetMode swaps the y mapping (n <-> pct) and axis label
+  # on the gsm.viz charts via updateSpec (runtime behavior covered by Playwright
+  # pd-buckets.spec.js).
+  expect_match(html, "helpers.updateSpec", fixed = TRUE)
+  expect_match(html, "Percent of group", fixed = TRUE)
 })
 
 test_that("Report_PrematureDeaths includes country filter JS and banner {#246}", {
@@ -175,9 +172,12 @@ test_that("Report_PrematureDeaths includes country filter JS and banner {#246}",
   expect_true(grepl("pd-filter-country-chip", html))
   expect_false(grepl("sites with at least 1 premature death", html))
 
-  # Chart container IDs present
-  expect_true(grepl('id="pd-country-buckets"', html))
-  expect_true(grepl('id="pd-site-buckets"', html))
+  # Chart container IDs present. The gsm.viz bucket widgets set their element id
+  # at runtime (el.id = metadata.chartId), so the chartId lands in the serialized
+  # metadata rather than a static id= attribute; the scatter div is still an
+  # htmltools div carrying id= server-side.
+  expect_true(grepl("pd-country-buckets", html))
+  expect_true(grepl("pd-site-buckets", html))
   expect_true(grepl('id="pd-site-scatter"', html))
 })
 
@@ -194,10 +194,11 @@ test_that("Report_PrematureDeaths wires the site-barchart listing filter {#221}"
   )
   html <- paste(readLines(out, warn = FALSE), collapse = "\n")
 
-  # Site click is wired as a second, independent filter source.
-  expect_match(html, "attachSiteClick", fixed = TRUE)
-  expect_match(html, "function applySiteFilter", fixed = TRUE)
-  expect_match(html, "highlightSiteBar", fixed = TRUE)
+  # Site click is wired as a second, independent filter source via the gsm.viz
+  # pdBucketClick event and its handler (which branches on detail.level "site").
+  expect_match(html, "pdBucketClick", fixed = TRUE)
+  expect_match(html, "function pdApplyBucketFilter", fixed = TRUE)
+  expect_match(html, "pdHighlightBuckets", fixed = TRUE)
   # Both filters route through one listing owner.
   expect_match(html, "function applyListingFilter", fixed = TRUE)
   # Site chip + its reset.
@@ -444,8 +445,10 @@ test_that("Report adds a country-reactive Reasons chart {#254}", {
   expect_true(grepl('id="pd-country-reasons"', html))
   expect_match(html, "reasonByCountry", fixed = TRUE)
   expect_match(html, "function rebuildReasons", fixed = TRUE)
-  expect_match(html, "rebuildReasons(country);", fixed = TRUE) # wired into applyFilter
-  expect_match(html, "rebuildReasons(null);", fixed = TRUE) # wired into reset
+  # Phase 1: reasons stay Plotly, kept country-reactive off the bucket filter
+  # event (reset carries country null). Migrates to the reason widget in #264 Phase 2.
+  expect_match(html, "rebuildReasons(e.detail.country)", fixed = TRUE)
+  expect_match(html, "pdBucketFilterChanged", fixed = TRUE)
 })
 
 test_that("Report sources rgmn_dt from Mapped_Randomization when Mapped_SUBJ lacks it {#248}", {
