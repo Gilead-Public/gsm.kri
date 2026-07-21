@@ -1,0 +1,67 @@
+make_bucket_inputs <- function(
+  strGroupCol = "invid",
+  strOuterCol = NULL,
+  level = "site",
+  bFacet = FALSE
+) {
+  dfC <- tibble::tibble(
+    subjid = c("A", "B", "C", "D", "E"),
+    studyid = "ST01",
+    country = c("USA", "USA", "CAN", "CAN", "USA"),
+    invid = c("S1", "S1", "S2", "S2", "S1"),
+    Category = factor(pd_CategoryLevels(90), levels = pd_CategoryLevels(90)),
+    death_dy = c(20, 70, NA, NA, NA)
+  )
+  list(
+    data = pd_BucketRows(dfC, 90, strGroupCol, strOuterCol),
+    spec = pd_BucketBarSpec(90, "Site", level, bFacet),
+    metadata = list(chartId = "pd-site-buckets", level = level)
+  )
+}
+
+test_that("Widget_PrematureDeathBucketBar returns a gsm.kri htmlwidget (#264)", {
+  i <- make_bucket_inputs()
+  w <- Widget_PrematureDeathBucketBar(i$data, i$spec, i$metadata)
+  expect_s3_class(w, c("Widget_PrematureDeathBucketBar", "htmlwidget"))
+})
+
+test_that("Widget_PrematureDeathBucketBar serializes data/spec/metadata payloads (#264)", {
+  i <- make_bucket_inputs()
+  w <- Widget_PrematureDeathBucketBar(i$data, i$spec, i$metadata)
+  # createWidget wraps each input as a JSON string on w$x
+  data_back <- jsonlite::fromJSON(w$x$data)
+  spec_back <- jsonlite::fromJSON(w$x$spec, simplifyVector = FALSE)
+  meta_back <- jsonlite::fromJSON(w$x$metadata, simplifyVector = FALSE)
+  expect_true(all(
+    c("GroupID", "Category", "n", "pct", "Level") %in% names(data_back)
+  ))
+  expect_equal(spec_back$orientation, "vertical")
+  expect_equal(spec_back$mapping$y, "n")
+  expect_equal(meta_back$chartId, "pd-site-buckets")
+})
+
+test_that("Widget_PrematureDeathBucketBar validates inputs (#264)", {
+  i <- make_bucket_inputs()
+  expect_error(
+    Widget_PrematureDeathBucketBar(as.list(i$data), i$spec),
+    "data is not a data.frame"
+  )
+  expect_error(
+    Widget_PrematureDeathBucketBar(i$data, i$data),
+    "spec must be a list"
+  )
+  expect_error(
+    Widget_PrematureDeathBucketBar(i$data, i$spec, bDebug = 1),
+    "bDebug must be logical"
+  )
+})
+
+test_that("Widget_PrematureDeathBucketBar wires the gsm.viz 2.4.0 dependency (#264)", {
+  y <- yaml::read_yaml(system.file(
+    "htmlwidgets/Widget_PrematureDeathBucketBar.yaml",
+    package = "gsm.kri"
+  ))
+  gv <- Filter(function(d) identical(d$name, "gsmViz"), y$dependencies)[[1]]
+  expect_equal(as.character(gv$version), "2.4.0")
+  expect_equal(gv$src, "htmlwidgets/lib/gsm.viz-2.4.0")
+})
