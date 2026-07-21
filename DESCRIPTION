@@ -55,10 +55,10 @@ Suggests:
 VignetteBuilder: 
     knitr
 Remotes:
-    gsm.core=Gilead-BioStats/gsm.core#162,
-    gsm.mapping=Gilead-BioStats/gsm.mapping#148,
-    gsm.qtl=Gilead-BioStats/gsm.qtl#127,
-    gsm.reporting=Gilead-BioStats/gsm.reporting#67,
+    gsm.core=Gilead-BioStats/gsm.core@eliminate-log4r,
+    gsm.mapping=Gilead-BioStats/gsm.mapping@fix-143-remove-log4r,
+    gsm.qtl=Gilead-BioStats/gsm.qtl@remove-riskmetric,
+    gsm.reporting=Gilead-BioStats/gsm.reporting@fix-66-remove-log4r,
     qcthat=Gilead-BioStats/qcthat@main
 Config/roxygen2/version: 8.0.0
 Config/testthat/edition: 3
