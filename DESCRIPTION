@@ -35,7 +35,6 @@ Imports:
     purrr,
     rlang,
     rmarkdown,
-    stats,
     stringr,
     tibble,
     tidyr,
@@ -58,10 +57,9 @@ VignetteBuilder:
 Remotes:
     gsm.core=Gilead-BioStats/gsm.core#162,
     gsm.mapping=Gilead-BioStats/gsm.mapping#148,
-    gsm.qtl=Gilead-BioStats/gsm.qtl@main,
+    gsm.qtl=Gilead-BioStats/gsm.qtl#127,
     gsm.reporting=Gilead-BioStats/gsm.reporting#67,
-    workr=Gilead-BioStats/workr@main,
-    qcthat=Gilead-BioStats/qcthat@dev
+    qcthat=Gilead-BioStats/qcthat@main
 Config/roxygen2/version: 8.0.0
 Config/testthat/edition: 3
 Config/testthat/parallel: false
