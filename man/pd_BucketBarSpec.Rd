@@ -4,24 +4,15 @@
 \alias{pd_BucketBarSpec}
 \title{Serializable gsm.viz `bars` spec for the premature-death bucket chart}
 \usage{
-pd_BucketBarSpec(
-  nWindowDays = 90,
-  strGroupLabel = "Group",
-  strLevel = "study",
-  bFacet = FALSE
-)
+pd_BucketBarSpec(nWindowDays = 90, strGroupLabel = "Group")
 }
 \arguments{
 \item{nWindowDays}{`numeric` Window in days (color/order vocabulary).}
 
 \item{strGroupLabel}{`character` Category-axis label.}
-
-\item{strLevel}{`character` `"study"`, `"country"`, or `"site"`.}
-
-\item{bFacet}{`logical` Add a `facet` block (country/site) vs flat `bars` (study).}
 }
 \value{
-A named `list` — a `gsm.viz` `bars`/`facetBars` spec without callbacks.
+A named `list` — a `gsm.viz` `bars` spec without callbacks.
 }
 \description{
 The data-driven half of the spec (mapping, orientation, position, stat,

@@ -34,18 +34,12 @@ HTMLWidgets.widget({
           }
         });
 
-        if (meta.level === 'study') {
-          spec.callbacks = Object.assign({}, spec.callbacks, { onClick: function (p) { dispatch(p); } });
-          el.gsmChart = gsmViz.default.bars(el, input.data, spec);
-        } else {
-          // facetBars forwards TOP-LEVEL spec.callbacks.onClick to each sub-chart
-          // with an extended (point, facetValue, event) signature — there is no
-          // spec.facet.callbacks.
-          spec.callbacks = Object.assign({}, spec.callbacks, {
-            onClick: function (p /*, facetValue, event */) { dispatch(p); }
-          });
-          el.gsmChart = gsmViz.default.facetBars(el, input.data, spec);
-        }
+        // All three bucket charts are flat `bars`; the country->site drilldown
+        // narrows the site chart via helpers.updateData (driven by the report),
+        // so keep the original rows here for that reactive re-slice.
+        el.pdAllData = input.data;
+        spec.callbacks = Object.assign({}, spec.callbacks, { onClick: function (p) { dispatch(p); } });
+        el.gsmChart = gsmViz.default.bars(el, input.data, spec);
       },
       resize: function (width, height) {}
     };

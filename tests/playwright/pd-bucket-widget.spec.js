@@ -20,14 +20,19 @@ test('study widget renders a canvas and exposes all load-bearing helpers (#264)'
   expect(ok).toBe(true);
 });
 
-test('faceted site widget renders per-panel charts with selectCategory (#264)', async ({ page }) => {
+test('site widget renders a flat canvas, exposes helpers + keeps original rows (#264)', async ({ page }) => {
   await page.goto(fileUrl);
   await page.waitForSelector('#pd-site-buckets canvas', { timeout: 20000 });
   const ok = await page.evaluate(() => {
     const el = document.querySelector('#pd-site-buckets');
-    const r = el.gsmChart;
-    return !!(r && Array.isArray(r.charts) && r.charts.length >= 1 &&
-      typeof r.charts[0].helpers.selectCategory === 'function');
+    const c = el.gsmChart;
+    // Flat bars (a single Chart.js instance, not a facet {charts}), plus the
+    // pdAllData rows the report re-slices for the country->site drilldown.
+    return !!(c && !Array.isArray(c.charts) &&
+      typeof c.helpers.selectCategory === 'function' &&
+      typeof c.helpers.updateData === 'function' &&
+      Array.isArray(el.pdAllData) && el.pdAllData.length > 0 &&
+      'OuterGroupID' in el.pdAllData[0]);
   });
   expect(ok).toBe(true);
 });
@@ -46,17 +51,19 @@ test('clicking a study bar dispatches pdBucketClick with a datum payload (#264)'
   expect(detail).toHaveProperty('level', 'study');
 });
 
-test('clicking a faceted site bar dispatches pdBucketClick (level=site) (#264)', async ({ page }) => {
+test('clicking a site bar dispatches pdBucketClick (level=site) with its country (#264)', async ({ page }) => {
   await page.goto(fileUrl);
   await page.waitForSelector('#pd-site-buckets canvas');
+  // The site chart sits below the study chart; scroll it into view so the raw
+  // mouse.click below lands on a bar rather than off-screen.
+  await page.locator('#pd-site-buckets').scrollIntoViewIfNeeded();
   await page.evaluate(() => {
     window.__pd = null;
     document.addEventListener('pdBucketClick', (e) => { window.__pd = e.detail; });
   });
-  // Facet sub-charts are small, so target the exact center of the first
-  // non-empty bar segment (from chart metadata) rather than a guessed pixel.
+  // Target the exact center of the first non-empty bar segment (from metadata).
   const pt = await page.evaluate(() => {
-    const chart = document.querySelector('#pd-site-buckets').gsmChart.charts[0];
+    const chart = document.querySelector('#pd-site-buckets').gsmChart;
     const rect = chart.canvas.getBoundingClientRect();
     for (let ds = 0; ds < chart.data.datasets.length; ds++) {
       const bar = chart.getDatasetMeta(ds).data.find((b) => Math.abs(b.base - b.y) > 1);
@@ -69,4 +76,6 @@ test('clicking a faceted site bar dispatches pdBucketClick (level=site) (#264)',
   const detail = await page.evaluate(() => window.__pd);
   expect(detail).not.toBeNull();
   expect(detail).toHaveProperty('level', 'site');
+  // Site clicks carry the site's country (from OuterGroupID) for the drilldown.
+  expect(detail.country).toBeTruthy();
 });

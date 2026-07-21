@@ -18,13 +18,15 @@ pd_BucketRows(
 
 \item{strGroupCol}{`character` Column rendered on the category axis.}
 
-\item{strOuterCol}{`character` Optional parent column for facets. Default `NULL`.}
+\item{strOuterCol}{`character` Optional parent column carried as `OuterGroupID`
+(the site chart passes `"country"` so its rows drive the country->site
+click-filter narrowing and the click payload). Default `NULL`.}
 }
 \value{
 `data.frame` with `GroupID`, `OuterGroupID`, `Category`, `n`, `pct`, `Level`.
 }
 \description{
 Adapts [pd_BucketCounts()] to one row per (group, category) with within-group
-`pct`, plus stable `OuterGroupID` / `Level` keys for faceting and drilldown.
-`.drop = FALSE` zero-count cells are preserved.
+`pct`, plus stable `OuterGroupID` / `Level` keys for the country->site
+click-filter drilldown. `.drop = FALSE` zero-count cells are preserved.
 }

@@ -1,8 +1,7 @@
 make_bucket_inputs <- function(
   strGroupCol = "invid",
-  strOuterCol = NULL,
-  level = "site",
-  bFacet = FALSE
+  strOuterCol = "country",
+  level = "site"
 ) {
   dfC <- tibble::tibble(
     subjid = c("A", "B", "C", "D", "E"),
@@ -14,7 +13,7 @@ make_bucket_inputs <- function(
   )
   list(
     data = pd_BucketRows(dfC, 90, strGroupCol, strOuterCol),
-    spec = pd_BucketBarSpec(90, "Site", level, bFacet),
+    spec = pd_BucketBarSpec(90, "Site"),
     metadata = list(chartId = "pd-site-buckets", level = level)
   )
 }

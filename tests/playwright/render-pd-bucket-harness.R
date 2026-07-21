@@ -1,5 +1,5 @@
-# Renders both a flat (study) and faceted (site) bucket widget into one HTML
-# page so Playwright can assert canvas render + handle shape without the report.
+# Renders a study and a site bucket widget (both flat `bars`) into one HTML page
+# so Playwright can assert canvas render + handle shape without the report.
 devtools::load_all(".", quiet = TRUE)
 dfC <- tibble::tibble(
   subjid = paste0("S", 1:8),
@@ -14,12 +14,12 @@ dfC <- tibble::tibble(
 )
 study <- Widget_PrematureDeathBucketBar(
   pd_BucketRows(dfC, 90, "studyid"),
-  pd_BucketBarSpec(90, "Study", "study", FALSE),
+  pd_BucketBarSpec(90, "Study"),
   list(chartId = "pd-study-buckets", level = "study")
 )
 site <- Widget_PrematureDeathBucketBar(
   pd_BucketRows(dfC, 90, "invid", "country"),
-  pd_BucketBarSpec(90, "Site", "site", TRUE),
+  pd_BucketBarSpec(90, "Site"),
   list(chartId = "pd-site-buckets", level = "site")
 )
 htmltools::save_html(

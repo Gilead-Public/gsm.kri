@@ -35,13 +35,8 @@ test_that("pd_BucketRows carries OuterGroupID when strOuterCol set (#264)", {
   expect_setequal(unique(rows$OuterGroupID), c("USA", "CAN"))
 })
 
-test_that("pd_BucketBarSpec builds a vertical stacked identity spec with fixed colors/order (#264)", {
-  spec <- pd_BucketBarSpec(
-    90,
-    strGroupLabel = "Site",
-    strLevel = "site",
-    bFacet = FALSE
-  )
+test_that("pd_BucketBarSpec builds a flat vertical stacked identity spec with fixed colors/order (#264)", {
+  spec <- pd_BucketBarSpec(90, strGroupLabel = "Site")
   expect_equal(spec$mapping, list(x = "GroupID", y = "n", fill = "Category"))
   expect_equal(spec$orientation, "vertical")
   expect_equal(spec$position, "stack")
@@ -51,12 +46,6 @@ test_that("pd_BucketBarSpec builds a vertical stacked identity spec with fixed c
   # colors keyed by category label; fill order = display order (base->top)
   expect_equal(spec$scales$fill$colors, as.list(pd_CategoryColors(90)))
   expect_equal(unlist(spec$scales$fill$order), pd_DisplayOrder(90))
-})
-
-test_that("pd_BucketBarSpec adds a facet block only when bFacet = TRUE (#264)", {
-  flat <- pd_BucketBarSpec(90, "Study", "study", bFacet = FALSE)
-  faceted <- pd_BucketBarSpec(90, "Site", "site", bFacet = TRUE)
-  expect_null(flat$facet)
-  expect_equal(faceted$facet$field, "OuterGroupID")
-  expect_false(faceted$facet$scales$x$free) # shared category domain (accepted-loss behavior)
+  # No faceting: country/site charts are flat bars, narrowed by click-filter.
+  expect_null(spec$facet)
 })

@@ -2,13 +2,15 @@
 #'
 #' @description
 #' Adapts [pd_BucketCounts()] to one row per (group, category) with within-group
-#' `pct`, plus stable `OuterGroupID` / `Level` keys for faceting and drilldown.
-#' `.drop = FALSE` zero-count cells are preserved.
+#' `pct`, plus stable `OuterGroupID` / `Level` keys for the country->site
+#' click-filter drilldown. `.drop = FALSE` zero-count cells are preserved.
 #'
 #' @param dfClassified `data.frame` Output of [pd_Classify()].
 #' @param nWindowDays `numeric` Window in days.
 #' @param strGroupCol `character` Column rendered on the category axis.
-#' @param strOuterCol `character` Optional parent column for facets. Default `NULL`.
+#' @param strOuterCol `character` Optional parent column carried as `OuterGroupID`
+#'   (the site chart passes `"country"` so its rows drive the country->site
+#'   click-filter narrowing and the click payload). Default `NULL`.
 #'
 #' @return `data.frame` with `GroupID`, `OuterGroupID`, `Category`, `n`, `pct`, `Level`.
 #' @export
@@ -63,18 +65,11 @@ pd_BucketRows <- function(
 #'
 #' @param nWindowDays `numeric` Window in days (color/order vocabulary).
 #' @param strGroupLabel `character` Category-axis label.
-#' @param strLevel `character` `"study"`, `"country"`, or `"site"`.
-#' @param bFacet `logical` Add a `facet` block (country/site) vs flat `bars` (study).
 #'
-#' @return A named `list` — a `gsm.viz` `bars`/`facetBars` spec without callbacks.
+#' @return A named `list` — a `gsm.viz` `bars` spec without callbacks.
 #' @export
-pd_BucketBarSpec <- function(
-  nWindowDays = 90,
-  strGroupLabel = "Group",
-  strLevel = "study",
-  bFacet = FALSE
-) {
-  spec <- list(
+pd_BucketBarSpec <- function(nWindowDays = 90, strGroupLabel = "Group") {
+  list(
     mapping = list(x = "GroupID", y = "n", fill = "Category"),
     orientation = "vertical",
     position = "stack",
@@ -89,11 +84,4 @@ pd_BucketBarSpec <- function(
       )
     )
   )
-  if (bFacet) {
-    spec$facet <- list(
-      field = "OuterGroupID",
-      scales = list(x = list(free = FALSE), y = list(free = FALSE))
-    )
-  }
-  spec
 }
