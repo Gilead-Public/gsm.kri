@@ -14,16 +14,6 @@ test('all three bucket charts render Chart.js canvases, not Plotly (#264)', asyn
   }
 });
 
-test('count/% toggle swaps the bucket y-axis label (#264)', async ({ page }) => {
-  const yLabel = () => page.evaluate(() => {
-    const el = document.querySelector('#pd-study-buckets');
-    return el.gsmChart.options.scales.y.title.text;
-  });
-  expect(await yLabel()).toMatch(/Subjects/);
-  await page.locator('#pd-mode-pct').click();          // existing percent toggle id
-  await expect.poll(yLabel).toMatch(/%|Percent/);
-});
-
 test('country→site→listing drilldown filters the DT listing (#264)', async ({ page }) => {
   const rowsBefore = await page.locator('table.dataTable tbody tr').count();
   await page.evaluate(() => document.querySelector('#pd-country-buckets')
@@ -104,18 +94,29 @@ test('a real site-bar click still drills down with zoom/pan active (#264)', asyn
   await expect.poll(() => page.evaluate(() => window.__pd && window.__pd.level)).toBe('site');
 });
 
-test('count/% toggle survives a country filter (#264)', async ({ page }) => {
-  // Assert on the SITE chart: it is the one narrowing drives through
-  // helpers.updateData, which re-reads the live _spec_ the toggle already
-  // flipped to y="pct". If updateData reverted to the base spec the site bars
-  // would drop back to counts, so this guards mode persistence across a filter.
-  const siteYLabel = () => page.evaluate(() =>
-    document.querySelector('#pd-site-buckets').gsmChart.options.scales.y.title.text);
-  await page.locator('#pd-mode-pct').click();
-  await expect.poll(siteYLabel).toMatch(/%|Percent/);
+test('native percent (fill) mode survives a country filter (#264)', async ({ page }) => {
+  // The native fill button issues updateSpec({position:'stack', stat:'percent'});
+  // the country->site narrow re-applies the LIVE _spec_ via helpers.updateData,
+  // so percent must persist. Guards the report's updateData path, not gsm.viz.
+  const siteStat = () => page.evaluate(() =>
+    document.querySelector('#pd-site-buckets').gsmChart.data._spec_.stat);
+  await page.evaluate(() => {
+    const c = document.querySelector('#pd-site-buckets').gsmChart;
+    c.helpers.updateSpec(c, { position: 'stack', stat: 'percent' });
+  });
+  await expect.poll(siteStat).toBe('percent');
   await page.evaluate(() => document.querySelector('#pd-country-buckets')
     .dispatchEvent(new CustomEvent('pdBucketClick', { bubbles: true,
       detail: { level: 'country', groupId: 'USA', country: 'USA' } })));
   await page.waitForTimeout(300);
-  expect(await siteYLabel()).toMatch(/%|Percent/);       // mode persisted across the updateData narrow
+  expect(await siteStat()).toBe('percent');   // persisted across the updateData narrow
+});
+
+test('the custom sticky toggle is gone; buckets keep the gsm.viz native control (#264)', async ({ page }) => {
+  expect(await page.locator('#pd-mode-toggle').count()).toBe(0);   // custom sticky removed
+  const enabled = await page.evaluate(() => {
+    const s = document.querySelector('#pd-study-buckets').gsmChart.data._spec_;
+    return !!(s.mapping && s.mapping.fill) && s.interactive !== false;
+  });
+  expect(enabled).toBe(true);   // native positionToggle (stack/dodge/fill) will render
 });
