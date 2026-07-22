@@ -47,7 +47,8 @@ test_that("pd_ReasonDist carries the reason hover (with %s) through to the widge
   hover <- reason_widget_data(
     pd_ReasonDist(dfDeath_full, nWindowDays = 90, nEnrolled = 10)
   )$hover
-  expect_true(any(grepl("Reason: Adverse Event", hover)))
+  expect_false(any(grepl("Reason:", hover, fixed = TRUE))) # reason is in the tooltip title, not the body
+  expect_true(any(grepl("Subjects: 2", hover))) # Adverse Event = 2
   expect_true(any(grepl("% of enrolled: 20.0%", hover))) # 2 / 10
   expect_true(any(grepl("% of premature deaths: 66.7%", hover))) # 2 / 3
 })

@@ -48,10 +48,9 @@ pd_ReasonSlice <- function(dfReason, nEnrolled = NULL) {
     dplyr::count(.data$death_reason, name = "n") %>%
     dplyr::arrange(dplyr::desc(.data$n))
   total <- sum(g$n)
+  # No "Reason: <x>" line — the reason is the tooltip title (the bar's category).
   hover <- paste0(
-    "Reason: ",
-    g$death_reason,
-    "<br>Subjects: ",
+    "Subjects: ",
     g$n,
     if (!is.null(nEnrolled)) {
       paste0("<br>% of enrolled: ", pd_PctLabel(g$n, nEnrolled))

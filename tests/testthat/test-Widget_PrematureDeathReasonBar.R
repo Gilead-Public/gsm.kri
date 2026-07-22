@@ -3,8 +3,8 @@ reason_inputs <- function() {
     reason = c("Disease progression", "AE"),
     n = c(4L, 2L),
     hover = c(
-      "Reason: Disease progression<br>Subjects: 4",
-      "Reason: AE<br>Subjects: 2"
+      "Subjects: 4<br>% of premature deaths: 66.7%",
+      "Subjects: 2<br>% of premature deaths: 33.3%"
     )
   )
   list(
