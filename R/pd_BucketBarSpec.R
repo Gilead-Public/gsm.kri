@@ -32,7 +32,7 @@ pd_BucketRows <- function(
     dplyr::group_by(.data$GroupID) %>%
     # Materialize the group total as a column so the if_else condition is
     # vectorized (dplyr::if_else rejects a scalar `sum()` condition against a
-    # vector branch); mirrors the GroupTotal pattern in pd_BucketBar().
+    # vector branch).
     dplyr::mutate(GroupTotal = sum(.data$n)) %>%
     dplyr::ungroup() %>%
     dplyr::mutate(
