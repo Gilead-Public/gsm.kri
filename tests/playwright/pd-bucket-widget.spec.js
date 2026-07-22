@@ -55,8 +55,11 @@ test('clicking a site bar dispatches pdBucketClick (level=site) with its country
   await page.goto(fileUrl);
   await page.waitForSelector('#pd-site-buckets canvas');
   // The site chart sits below the study chart; scroll it into view so the raw
-  // mouse.click below lands on a bar rather than off-screen.
+  // mouse.click below lands on a bar rather than off-screen. Settle first: the
+  // study chart above can still be sizing, which shifts this chart's position
+  // between the coordinate read and the click.
   await page.locator('#pd-site-buckets').scrollIntoViewIfNeeded();
+  await page.waitForTimeout(300);
   await page.evaluate(() => {
     window.__pd = null;
     document.addEventListener('pdBucketClick', (e) => { window.__pd = e.detail; });
