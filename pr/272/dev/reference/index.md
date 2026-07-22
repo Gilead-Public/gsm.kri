@@ -97,8 +97,6 @@
   : Time Series Widget
 - [`add_Groups_metadata()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/add_Groups_metadata.md)
   : Add group meta data for report
-- [`pd_BucketBar()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_BucketBar.md)
-  : Premature-death bucket bar chart
 - [`pd_BucketBarSpec()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_BucketBarSpec.md)
   : Serializable gsm.viz \`bars\` spec for the premature-death bucket
   chart
