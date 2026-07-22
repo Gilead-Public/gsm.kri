@@ -125,7 +125,7 @@ test_that("Report_PrematureDeaths renders the studcomp discontinuation note {#24
   expect_true(grepl("studcomp", html, ignore.case = TRUE))
 })
 
-test_that("Report bucket-bar count/% toggle drives the gsm.viz charts (#264)", {
+test_that("Report no longer emits the custom count/% toggle scaffolding (#264)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
   out <- Report_PrematureDeaths(
@@ -137,11 +137,11 @@ test_that("Report bucket-bar count/% toggle drives the gsm.viz charts (#264)", {
     strOutputDir = tempdir()
   )
   html <- paste(readLines(out, warn = FALSE), collapse = "\n")
-  # The migrated toggle: pdSetMode swaps the y mapping (n <-> pct) and axis label
-  # on the gsm.viz charts via updateSpec (runtime behavior covered by Playwright
-  # pd-buckets.spec.js).
-  expect_match(html, "helpers.updateSpec", fixed = TRUE)
-  expect_match(html, "Percent of group", fixed = TRUE)
+  # The hand-rolled sticky toggle is gone; the bucket charts rely on gsm.viz's
+  # native stack/dodge/fill control. None of its markers may survive.
+  expect_false(grepl("pd-mode-sticky", html, fixed = TRUE))
+  expect_false(grepl("pd-mode-count", html, fixed = TRUE))
+  expect_false(grepl("pdSetMode", html, fixed = TRUE))
 })
 
 test_that("Report_PrematureDeaths includes country filter JS and banner {#246}", {
@@ -407,36 +407,6 @@ test_that("Report listing shows Treatment Related Yes for a fatal related AE dea
   # notes contain "Yes" as `<strong>Yes</strong>` (unquoted), so a bare
   # grepl("Yes", html) passes regardless of the listing and can never go red.
   expect_true(grepl('"Yes"', html, fixed = TRUE)) # S1: deathcls AE + grade-5 RELATED AE
-})
-
-test_that("Report count/% toggle is sticky and follows scroll {#253}", {
-  testthat::skip_if_not_installed("plotly")
-  testthat::skip_if_not_installed("DT")
-  out <- Report_PrematureDeaths(
-    dfResults = dfResults,
-    dfMetrics = dfMetrics,
-    dfGroups = dfGroups,
-    lListings = lListings,
-    nWindowDays = 90,
-    strOutputDir = tempdir()
-  )
-  html <- paste(readLines(out, warn = FALSE), collapse = "\n")
-  expect_match(html, "pd-mode-sticky", fixed = TRUE)
-  # the toggle buttons live inside the sticky bar
-  expect_match(html, "pd-mode-count", fixed = TRUE)
-  # Regression guard: a `position: sticky` element only pins within its PARENT
-  # block, so the toggle must sit in the report's top-level section -- NOT nested
-  # inside the short `## Overview` section, where it would scroll away. Assert it
-  # renders ahead of the Overview preamble (i.e. before the `## Overview`
-  # heading), so its containing block spans the whole report and it actually pins.
-  toggle_at <- regexpr("pd-mode-toggle", html, fixed = TRUE)
-  overview_at <- regexpr(
-    "Premature death analysis supports",
-    html,
-    fixed = TRUE
-  )
-  expect_true(toggle_at > 0 && overview_at > 0)
-  expect_lt(toggle_at, overview_at)
 })
 
 test_that("Report renders a country-reactive Reasons chart via the gsm.viz widget {#254} {#264}", {

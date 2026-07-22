@@ -166,8 +166,7 @@ cat(sprintf(
 # styles.css, but the pkgdown example embeds this report through knit_child and
 # does NOT load styles.css -- there the chips would render unstyled and
 # non-sticky. Literal hex (no var(--...) tokens) for the same reason: the :root
-# tokens defined in styles.css aren't present in the embedded context. Same
-# inline-<style> pattern the mode-toggle chunk below uses.
+# tokens defined in styles.css aren't present in the embedded context.
 cat('
 <style>
 .pd-filter-strip { position: sticky; top: 48px; z-index: 1029; display: none; align-items: center; flex-wrap: wrap; gap: 10px; background-color: #f1f7fe; border-bottom: 1px solid #cfe3fb; padding: 8px 14px; margin: 0 0 16px; }
@@ -213,19 +212,6 @@ htmltools::tags$div(
     )
   )
 )
-```
-
-```{r mode-toggle, echo=FALSE, results='asis', eval=has_premature}
-cat('
-<style>
-.pd-mode-sticky { position: sticky; top: 0; z-index: 1031; display: flex; align-items: center; background:#ffffff; border-bottom: 1px solid #e3e8ef; padding: 8px 4px; margin: 0 0 8px; }
-</style>
-<div class="pd-mode-sticky" id="pd-mode-toggle">
-  <span style="font-size:13px; color:#555; margin-right:8px;">Bucket bars:</span>
-  <button id="pd-mode-count" onclick="pdSetMode(\'count\')" style="background:#1a73e8; color:white; border:none; border-radius:4px; padding:4px 14px; cursor:pointer; font-size:12px;">Count</button>
-  <button id="pd-mode-pct" onclick="pdSetMode(\'pct\')" style="background:#cfd8dc; color:#37474f; border:none; border-radius:4px; padding:4px 14px; cursor:pointer; font-size:12px;">%</button>
-</div>
-')
 ```
 
 ## Overview
@@ -510,7 +496,7 @@ cat(paste0('
 
   // ---- gsm.viz bucket charts (#264) ---------------------------------------
   var PD_BUCKET_IDS = ["pd-study-buckets", "pd-country-buckets", "pd-site-buckets"];
-  var pdBucketState = { activeCountry: null, activeSite: null, mode: "count" };
+  var pdBucketState = { activeCountry: null, activeSite: null };
 
   // Every bucket chart is a flat gsm.viz `bars` (a single Chart.js instance).
   function pdChartsFor(id) {
@@ -531,27 +517,6 @@ cat(paste0('
       : el.pdAllData;
     el.gsmChart.helpers.updateData(el.gsmChart, rows, el.gsmChart.data._spec_);
   }
-
-  // Count <-> % toggle. Reuses the existing #pd-mode-count / #pd-mode-pct
-  // buttons (their inline onclick calls this global) and the #253 sticky toggle
-  // styling; drives the gsm.viz charts via updateSpec (y mapping + axis label).
-  window.pdSetMode = function(mode) {
-    pdBucketState.mode = mode;
-    // Flip button colors with the active side (white-on-light would be illegible).
-    var btnCount = document.getElementById("pd-mode-count");
-    var btnPct = document.getElementById("pd-mode-pct");
-    btnCount.style.background = mode === "count" ? "#1a73e8" : "#cfd8dc";
-    btnCount.style.color = mode === "count" ? "white" : "#37474f";
-    btnPct.style.background = mode === "pct" ? "#1a73e8" : "#cfd8dc";
-    btnPct.style.color = mode === "pct" ? "white" : "#37474f";
-    var y = mode === "pct" ? "pct" : "n";
-    var label = mode === "pct" ? "Percent of group" : "Subjects";
-    PD_BUCKET_IDS.forEach(function(id) {
-      pdChartsFor(id).forEach(function(c) {
-        c.helpers.updateSpec(c, { mapping: { y: y }, scales: { y: { label: label } } });
-      });
-    });
-  };
 
   // Highlight the active group across the bucket charts. Single-owner
   // precedence: site > country > none. Only charts whose category axis actually
