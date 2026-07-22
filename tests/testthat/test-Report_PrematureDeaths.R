@@ -162,7 +162,6 @@ test_that("Report_PrematureDeaths includes country filter JS and banner {#246}",
 
   # JS controller present
   expect_true(grepl("pdResetFilter", html))
-  expect_true(grepl("plotly_click", html))
 
   # Country-site map JSON present
   expect_true(grepl("countrySiteMap", html))
@@ -222,6 +221,15 @@ test_that("Report wires the numeric-y scatter point filter {#247}", {
   expect_match(html, "function filterScatterChart", fixed = TRUE)
   expect_match(html, "pd-country-scatter", fixed = TRUE)
   expect_match(html, "pd-site-scatter", fixed = TRUE)
+})
+
+test_that("Report_PrematureDeaths still guards on plotly for the deferred scatter (#264)", {
+  # Buckets and reasons moved to gsm.viz (Chart.js), but the rand->death scatter
+  # stays on Plotly (migration deferred with #120), so the report entrypoint must
+  # still require plotly. Assert the guard at its source, not in the rendered
+  # HTML where the vendored plotly.js bundle would match "plotly" incidentally.
+  src <- readLines(test_path("../../R/Report_PrematureDeaths.R"))
+  expect_true(any(grepl('check_installed\\("plotly"', src, perl = TRUE)))
 })
 
 test_that("Report drops subjects without a randomization date from the cohort {#247}", {
