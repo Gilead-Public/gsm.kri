@@ -4,12 +4,17 @@
 \alias{pd_BucketBarSpec}
 \title{Serializable gsm.viz `bars` spec for the premature-death bucket chart}
 \usage{
-pd_BucketBarSpec(nWindowDays = 90, strGroupLabel = "Group")
+pd_BucketBarSpec(nWindowDays = 90, strGroupLabel = "Group", zoom = NULL)
 }
 \arguments{
 \item{nWindowDays}{`numeric` Window in days (color/order vocabulary).}
 
 \item{strGroupLabel}{`character` Category-axis label.}
+
+\item{zoom}{`list` or `NULL` Optional `gsm.viz` zoom spec (e.g.
+`list(enabled = TRUE, mode = "x")`). Attached only when non-`NULL`; the
+site chart opts in so its many bars can be zoomed, the study/country charts
+do not. Default `NULL` (no zoom).}
 }
 \value{
 A named `list` — a `gsm.viz` `bars` spec without callbacks.

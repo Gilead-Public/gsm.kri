@@ -48,4 +48,11 @@ test_that("pd_BucketBarSpec builds a flat vertical stacked identity spec with fi
   expect_equal(unlist(spec$scales$fill$order), pd_DisplayOrder(90))
   # No faceting: country/site charts are flat bars, narrowed by click-filter.
   expect_null(spec$facet)
+  # Zoom is opt-in: the default (study/country) charts carry no zoom key.
+  expect_null(spec$zoom)
+})
+
+test_that("pd_BucketBarSpec emits zoom only when requested (#264)", {
+  z <- list(enabled = TRUE, mode = "x")
+  expect_equal(pd_BucketBarSpec(90, "Site", zoom = z)$zoom, z)
 })

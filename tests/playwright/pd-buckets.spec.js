@@ -64,6 +64,44 @@ test('country click narrows the flat site chart to that country only (#264)', as
   expect((await siteLabels()).length).toBe(before.length);
 });
 
+test('site bucket chart enables x-axis zoom; study chart does not (#264)', async ({ page }) => {
+  const zoomOf = (id) => page.evaluate((id) => {
+    const z = document.querySelector('#' + id).gsmChart.options.plugins.zoom;
+    if (!z || !z.zoom) return { mode: null, wheel: false };
+    return { mode: z.zoom.mode, wheel: !!(z.zoom.wheel && z.zoom.wheel.enabled) };
+  }, id);
+  const site = await zoomOf('pd-site-buckets');
+  expect(site.mode).toBe('x');
+  expect(site.wheel).toBe(true);
+  // Study chart carries only the zoom plugin's inert defaults (zoom disabled).
+  expect((await zoomOf('pd-study-buckets')).wheel).toBe(false);
+});
+
+test('a real site-bar click still drills down with zoom/pan active (#264)', async ({ page }) => {
+  await page.evaluate(() => {
+    window.__pd = null;
+    document.addEventListener('pdBucketClick', (e) => { window.__pd = e.detail; });
+  });
+  await page.locator('#pd-site-buckets').scrollIntoViewIfNeeded();
+  // Click the center of a real (non-zero) site bar via its Chart.js element pixel.
+  const pt = await page.evaluate(() => {
+    const c = document.querySelector('#pd-site-buckets').gsmChart;
+    const r = c.canvas.getBoundingClientRect();
+    for (let ds = 0; ds < c.data.datasets.length; ds++) {
+      const arr = c.data.datasets[ds].data, meta = c.getDatasetMeta(ds);
+      for (let i = 0; i < arr.length; i++) {
+        if (arr[i] && arr[i]._datum && arr[i]._datum.n > 0 && meta.data[i]) {
+          return { x: r.left + meta.data[i].x, y: r.top + meta.data[i].y };
+        }
+      }
+    }
+    return null;
+  });
+  expect(pt).not.toBeNull();
+  await page.mouse.click(pt.x, pt.y);
+  await expect.poll(() => page.evaluate(() => window.__pd && window.__pd.level)).toBe('site');
+});
+
 test('count/% toggle survives a country filter (#264)', async ({ page }) => {
   // Assert on the SITE chart: it is the one narrowing drives through
   // helpers.updateData, which re-reads the live _spec_ the toggle already

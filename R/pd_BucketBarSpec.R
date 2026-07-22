@@ -65,11 +65,19 @@ pd_BucketRows <- function(
 #'
 #' @param nWindowDays `numeric` Window in days (color/order vocabulary).
 #' @param strGroupLabel `character` Category-axis label.
+#' @param zoom `list` or `NULL` Optional `gsm.viz` zoom spec (e.g.
+#'   `list(enabled = TRUE, mode = "x")`). Attached only when non-`NULL`; the
+#'   site chart opts in so its many bars can be zoomed, the study/country charts
+#'   do not. Default `NULL` (no zoom).
 #'
 #' @return A named `list` — a `gsm.viz` `bars` spec without callbacks.
 #' @export
-pd_BucketBarSpec <- function(nWindowDays = 90, strGroupLabel = "Group") {
-  list(
+pd_BucketBarSpec <- function(
+  nWindowDays = 90,
+  strGroupLabel = "Group",
+  zoom = NULL
+) {
+  spec <- list(
     mapping = list(x = "GroupID", y = "n", fill = "Category"),
     orientation = "vertical",
     position = "stack",
@@ -84,4 +92,8 @@ pd_BucketBarSpec <- function(nWindowDays = 90, strGroupLabel = "Group") {
       )
     )
   )
+  if (!is.null(zoom)) {
+    spec$zoom <- zoom
+  }
+  spec
 }
