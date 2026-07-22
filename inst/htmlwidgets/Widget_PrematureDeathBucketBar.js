@@ -38,7 +38,7 @@ HTMLWidgets.widget({
         // narrows the site chart via helpers.updateData (driven by the report),
         // so keep the original rows here for that reactive re-slice.
         el.pdAllData = input.data;
-        spec.callbacks = Object.assign({}, spec.callbacks, { onClick: function (p) { dispatch(p); } });
+        spec.callbacks = Object.assign({}, spec.callbacks, { onClick: dispatch });
         el.gsmChart = gsmViz.default.bars(el, input.data, spec);
       },
       resize: function (width, height) {}
