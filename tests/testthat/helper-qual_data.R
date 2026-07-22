@@ -91,22 +91,14 @@ mappings_wf <- workr::MakeWorkflowList(
   strPackage= "gsm.mapping"
 )
 
-ConsoleAppender <- log4r::console_appender(layout = gsm.core::cli_fmt)
-
 # Build qualification fixtures lazily so unrelated tests do not pay the full
 # workflow setup cost during helper sourcing.
 delayedAssign(
   "mapped_data",
   {
-    gsm.core::SetLogger(log4r::logger(
-      threshold = "WARN",
-      appenders = ConsoleAppender
-    ))
+    gsm.core::SetLogLevel("WARN")
     on.exit(
-      gsm.core::SetLogger(log4r::logger(
-        "DEBUG",
-        appenders = ConsoleAppender
-      )),
+      gsm.core::SetLogLevel("DEBUG"),
       add = TRUE
     )
     get_cached_mapped_data(lData, mappings_wf)
