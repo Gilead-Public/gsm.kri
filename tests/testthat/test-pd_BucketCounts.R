@@ -76,25 +76,3 @@ test_that("a pd_Classify-normalised missing country yields a clickable 'Unknown'
   mapKeys <- unique(dplyr::distinct(dfC, country, invid)$country)
   expect_true(all(as.character(bar$GroupID) %in% mapKeys))
 })
-
-# pd_BucketBar() is retained (Plotly) but no longer used by the report, which now
-# renders buckets via Widget_PrematureDeathBucketBar / pd_BucketBarSpec. The
-# report-shape guarantees (fill colors/order, stacking, hover, drilldown payload)
-# now live in test-pd_BucketBarSpec.R and test-Widget_PrematureDeathBucketBar.R;
-# only a smoke test and input validation remain here.
-test_that("pd_BucketBar returns a plotly object {#246}", {
-  testthat::skip_if_not_installed("plotly")
-  p <- pd_BucketBar(make_classified(), strGroupCol = "invid")
-  expect_s3_class(p, "plotly")
-})
-
-test_that("pd_BucketBar validates inputs {#246}", {
-  expect_error(
-    pd_BucketBar(as.list(make_classified())),
-    "dfClassified is not a data.frame"
-  )
-  expect_error(
-    pd_BucketBar(make_classified(), bRangeSlider = 1),
-    "bRangeSlider must be logical"
-  )
-})
