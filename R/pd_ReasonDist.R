@@ -18,7 +18,9 @@ pd_ReasonCounts <- function(dfDeath, nWindowDays = 90) {
     message = "dfDeath is not a data.frame"
   )
   gsm.core::stop_if(
-    cnd = !(is.numeric(nWindowDays) && length(nWindowDays) == 1 && nWindowDays > 0),
+    cnd = !(is.numeric(nWindowDays) &&
+      length(nWindowDays) == 1 &&
+      nWindowDays > 0),
     message = "nWindowDays must be a positive number"
   )
 
@@ -67,40 +69,24 @@ pd_ReasonSlice <- function(dfReason, nEnrolled = NULL) {
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' Renders a horizontal bar chart from a reason slice produced by
-#' [pd_ReasonByCountry()] or derived inside [pd_ReasonDist()]. Each bar is
-#' labelled with its count (placed inside the bar, or just outside when the bar
-#' is too narrow to hold the label).
+#' Renders the horizontal reason distribution from a reason slice produced by
+#' [pd_ReasonByCountry()] or derived inside [pd_ReasonDist()], via the `gsm.viz`
+#' reason widget.
 #'
 #' @param slice A named `list` with `reason`, `n`, and `hover` vectors, as
 #'   returned by the internal kernel `pd_ReasonSlice` or elements of the list
 #'   returned by [pd_ReasonByCountry()].
 #'
-#' @return A `plotly` htmlwidget.
+#' @return A `Widget_PrematureDeathReasonBar` htmlwidget.
 #' @export
 pd_ReasonBar <- function(slice) {
-  rlang::check_installed("plotly", reason = "to run `pd_ReasonBar()`")
-  df <- data.frame(
-    reason = slice$reason,
-    n = slice$n,
-    hover = slice$hover,
-    stringsAsFactors = FALSE
+  Widget_PrematureDeathReasonBar(
+    data = pd_ReasonRows(slice),
+    # slice is arranged desc(n), so its reason vector pins the count sort the
+    # former Plotly chart got from stats::reorder(reason, n).
+    spec = pd_ReasonBarSpec(reason_order = slice$reason),
+    metadata = list(level = "study")
   )
-  plotly::plot_ly(
-    df,
-    x = ~n,
-    y = ~ stats::reorder(reason, n),
-    type = "bar",
-    orientation = "h",
-    text = ~n,
-    textposition = "auto",
-    customdata = ~hover,
-    hovertemplate = "%{customdata}<extra></extra>"
-  ) %>%
-    plotly::layout(
-      xaxis = list(title = "Premature Deaths"),
-      yaxis = list(title = "Reason")
-    )
 }
 
 #' Premature-death reason distribution chart
@@ -108,15 +94,14 @@ pd_ReasonBar <- function(slice) {
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' Horizontal bar of `deathcls` counts among premature deaths. Each bar is
-#' labelled with its count (placed inside the bar, or just outside when the bar
-#' is too narrow to hold the label).
+#' Horizontal bar of `deathcls` counts among premature deaths, rendered via the
+#' `gsm.viz` reason widget.
 #'
 #' @inheritParams pd_ReasonCounts
 #' @param nEnrolled `numeric` Total enrolled subjects, used for the "% of enrolled"
 #'   tooltip line. When `NULL` (default) that line is omitted. Default: `NULL`.
 #'
-#' @return A `plotly` htmlwidget.
+#' @return A `Widget_PrematureDeathReasonBar` htmlwidget.
 #' @export
 pd_ReasonDist <- function(dfDeath, nWindowDays = 90, nEnrolled = NULL) {
   gsm.core::stop_if(
@@ -129,7 +114,6 @@ pd_ReasonDist <- function(dfDeath, nWindowDays = 90, nEnrolled = NULL) {
       nWindowDays > 0),
     message = "nWindowDays must be a positive number"
   )
-  rlang::check_installed("plotly", reason = "to run `pd_ReasonDist()`")
 
   coh <- pd_PrematureCohort(dfDeath, nWindowDays = nWindowDays)
   coh$death_reason <- pd_DeathReason(coh)

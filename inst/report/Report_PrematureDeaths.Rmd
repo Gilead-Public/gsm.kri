@@ -115,11 +115,11 @@ enrolled_by_country <- dfClassified %>%
   tibble::deframe()
 
 # Reason aggregate computed ONCE: per-country slices + "__ALL__", each with prebuilt
-# hover (now incl. % of enrolled). Drives the static charts AND the JS rebuildReasons handler.
+# hover (incl. % of enrolled). The country-reasons widget receives these rows as
+# its reactive map and swaps slices client-side on a country click.
 reason_data <- pd_ReasonByCountry(Mapped_Death, Mapped_SUBJ, nWindowDays,
                                   nEnrolledByCountry = enrolled_by_country,
                                   nEnrolled = nEnrolled)
-reason_by_country <- jsonlite::toJSON(reason_data, auto_unbox = FALSE)
 
 # Study-discontinuation caveat, shared verbatim by the Study Buckets and the
 # Study Rand -> Death tabs (single source of truth so the embedded nWindowDays
@@ -310,7 +310,13 @@ cat(study_discont_note)
 
 ### Reasons
 ```{r study-reasons, echo=FALSE, eval=has_premature}
-pd_ReasonBar(reason_data[["__ALL__"]])
+Widget_PrematureDeathReasonBar(
+  data = pd_ReasonRows(reason_data[["__ALL__"]]),
+  # reason_order pins the study-wide count sort as a stable axis; the country
+  # tab reuses the same order so its bar keeps position when a country is picked.
+  spec = pd_ReasonBarSpec(reason_order = reason_data[["__ALL__"]]$reason),
+  metadata = list(chartId = "pd-study-reasons", level = "study")
+)
 ```
 
 ## Country {.tabset .tabset-pills}
@@ -334,9 +340,17 @@ htmltools::div(
 
 ### Reasons
 ```{r country-reasons, echo=FALSE, eval=has_premature}
-htmltools::div(
-  id = "pd-country-reasons",
-  pd_ReasonBar(reason_data[["__ALL__"]])
+# reactive: one row frame per country (+ __ALL__). A country bucket click
+# broadcasts pdBucketFilterChanged, and the widget swaps to that slice via
+# helpers.updateData — no per-country spec, no rebuildReasons.
+reason_rows_by_country <- lapply(reason_data, pd_ReasonRows)
+Widget_PrematureDeathReasonBar(
+  data = reason_rows_by_country[["__ALL__"]],
+  spec = pd_ReasonBarSpec(reason_order = reason_data[["__ALL__"]]$reason),
+  metadata = list(
+    chartId = "pd-country-reasons", level = "country",
+    reactive = reason_rows_by_country
+  )
 )
 ```
 
@@ -387,7 +401,6 @@ cat(paste0('
 <script>
 (function() {
   var countrySiteMap = ', country_site_map, ';
-  var reasonByCountry = ', reason_by_country, ';
   // activeCountry / activeSite are retained ONLY as mirrors of pdBucketState so
   // the kept scatter helpers (applySiteScatterFilter) keep working unchanged.
   var activeCountry = null;
@@ -489,25 +502,6 @@ cat(paste0('
     var el = getPlotlyDiv(containerId);
     if (!el || !originalData[containerId]) return;
     Plotly.react(el, originalData[containerId], originalLayout[containerId] || el.layout);
-  }
-
-  // Country-reactive reasons bar (still Plotly in Phase 1; migrated to gsm.viz
-  // in #264 Phase 2). Rebuilt from the precomputed per-country lookup. null ->
-  // the all-country aggregate, which restores the initial paint.
-  function rebuildReasons(country) {
-    var el = getPlotlyDiv("pd-country-reasons");
-    if (!el) return;
-    var d = reasonByCountry[country || "__ALL__"] || {reason: [], n: [], hover: []};
-    Plotly.react(el, [{
-      type: "bar", orientation: "h",
-      x: d.n, y: d.reason,
-      text: d.n, textposition: "auto",
-      customdata: d.hover,
-      hovertemplate: "%{customdata}<extra></extra>"
-    }], {
-      xaxis: {title: "Premature Deaths"},
-      yaxis: {title: "Reason", categoryorder: "total ascending"}
-    });
   }
 
   // ---- gsm.viz bucket charts (#264) ---------------------------------------
@@ -632,9 +626,6 @@ cat(paste0('
   };
 
   document.addEventListener("pdBucketClick", function(e) { pdApplyBucketFilter(e.detail); });
-  // Phase 1 bridge: the reasons chart is still Plotly; keep it country-reactive
-  // off the same event the reason widget will consume in #264 Phase 2.
-  document.addEventListener("pdBucketFilterChanged", function(e) { rebuildReasons(e.detail.country); });
 })();
 </script>
 '))

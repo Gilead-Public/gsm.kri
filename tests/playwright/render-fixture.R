@@ -28,8 +28,11 @@ lListings <- list(
   Mapped_SUBJ = tibble::tibble(
     studyid = "ST01",
     subjid = c("S1", "S2", "S3"),
-    invid = c("INV-1", "INV-1", "INV-2"),
-    country = c("USA", "USA", "CAN"),
+    # S1/USA and S2/CAN each own one death with a distinct reason, so a country
+    # click narrows the reasons bar to a strict subset of the study-wide slice
+    # (the country-reactive swap the reasons spec exercises).
+    invid = c("INV-1", "INV-2", "INV-2"),
+    country = c("USA", "CAN", "CAN"),
     # pd_Classify() anchors the death window on randomization, so rgmn_dt is
     # required on every subject (it errors otherwise).
     rgmn_dt = as.Date(c("2026-01-26", "2026-01-10", "2026-04-15"))

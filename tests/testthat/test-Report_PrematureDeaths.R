@@ -430,7 +430,7 @@ test_that("Report count/% toggle is sticky and follows scroll {#253}", {
   expect_lt(toggle_at, overview_at)
 })
 
-test_that("Report adds a country-reactive Reasons chart {#254}", {
+test_that("Report renders a country-reactive Reasons chart via the gsm.viz widget {#254} {#264}", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
   out <- Report_PrematureDeaths(
@@ -442,13 +442,15 @@ test_that("Report adds a country-reactive Reasons chart {#254}", {
     strOutputDir = tempdir()
   )
   html <- paste(readLines(out, warn = FALSE), collapse = "\n")
-  expect_true(grepl('id="pd-country-reasons"', html))
-  expect_match(html, "reasonByCountry", fixed = TRUE)
-  expect_match(html, "function rebuildReasons", fixed = TRUE)
-  # Phase 1: reasons stay Plotly, kept country-reactive off the bucket filter
-  # event (reset carries country null). Migrates to the reason widget in #264 Phase 2.
-  expect_match(html, "rebuildReasons(e.detail.country)", fixed = TRUE)
+  # chartId is stamped on the element at runtime; statically it lives in the
+  # reason widget's serialized metadata.
+  expect_match(html, "pd-country-reasons", fixed = TRUE)
+  expect_match(html, "Widget_PrematureDeathReasonBar", fixed = TRUE)
+  # The reason bar swaps to the clicked country's slice via updateData on the
+  # bucket filter event, replacing the old Plotly rebuildReasons bridge.
   expect_match(html, "pdBucketFilterChanged", fixed = TRUE)
+  expect_match(html, "helpers.updateData", fixed = TRUE)
+  expect_false(grepl("function rebuildReasons", html, fixed = TRUE))
 })
 
 test_that("Report sources rgmn_dt from Mapped_Randomization when Mapped_SUBJ lacks it {#248}", {
