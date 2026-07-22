@@ -9,11 +9,13 @@ HTMLWidgets.widget({
         var spec = input.spec || {};
         if (meta.chartId) el.id = meta.chartId;
 
-        // Tooltip: reuse the prebuilt hover string R attached to each row.
+        // Tooltip: reuse the prebuilt hover string R attached to each row. It is
+        // built with <br> separators (Plotly rendered those as line breaks);
+        // Chart.js renders a label ARRAY as one line per element, so split it.
         spec.tooltip = Object.assign({}, spec.tooltip, {
           formatter: function (count, context, details) {
             var d = (details && details.datum) || {};
-            return d.hover;
+            return d.hover ? String(d.hover).split('<br>') : '';
           }
         });
         el.gsmChart = gsmViz.default.bars(el, input.data, spec);

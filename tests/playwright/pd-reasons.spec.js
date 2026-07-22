@@ -17,6 +17,21 @@ test('reason charts render Chart.js canvases, not Plotly (#264)', async ({ page 
   }
 });
 
+test('reason tooltip is multi-line with no literal <br> (#264)', async ({ page }) => {
+  // Chart.js renders a label array as one line per element; the server hover is
+  // built with <br> separators, so the formatter must split it (not return a
+  // single string, which would show the literal <br> tags on one line).
+  const out = await page.evaluate(() => {
+    const chart = document.querySelector('#pd-study-reasons').gsmChart;
+    const label = chart.options.plugins.tooltip.callbacks.label;
+    return label({ dataset: chart.data.datasets[0], dataIndex: 0, chart });
+  });
+  expect(Array.isArray(out)).toBe(true);
+  expect(out.length).toBeGreaterThan(1);
+  expect(out.join('|')).not.toContain('<br>');
+  expect(out.join(' ')).toContain('Subjects'); // still carries the hover content
+});
+
 test('selecting a country swaps the country reason slice (#264)', async ({ page }) => {
   const labels = () => page.evaluate(() => {
     const c = document.querySelector('#pd-country-reasons').gsmChart;
