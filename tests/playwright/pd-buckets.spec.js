@@ -63,3 +63,19 @@ test('country click narrows the flat site chart to that country only (#264)', as
   await page.waitForTimeout(300);
   expect((await siteLabels()).length).toBe(before.length);
 });
+
+test('count/% toggle survives a country filter (#264)', async ({ page }) => {
+  // Assert on the SITE chart: it is the one narrowing drives through
+  // helpers.updateData, which re-reads the live _spec_ the toggle already
+  // flipped to y="pct". If updateData reverted to the base spec the site bars
+  // would drop back to counts, so this guards mode persistence across a filter.
+  const siteYLabel = () => page.evaluate(() =>
+    document.querySelector('#pd-site-buckets').gsmChart.options.scales.y.title.text);
+  await page.locator('#pd-mode-pct').click();
+  await expect.poll(siteYLabel).toMatch(/%|Percent/);
+  await page.evaluate(() => document.querySelector('#pd-country-buckets')
+    .dispatchEvent(new CustomEvent('pdBucketClick', { bubbles: true,
+      detail: { level: 'country', groupId: 'USA', country: 'USA' } })));
+  await page.waitForTimeout(300);
+  expect(await siteYLabel()).toMatch(/%|Percent/);       // mode persisted across the updateData narrow
+});
