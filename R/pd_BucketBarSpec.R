@@ -60,8 +60,11 @@ pd_BucketRows <- function(
 #'
 #' @description
 #' The data-driven half of the spec (mapping, orientation, position, stat,
-#' scales, legend). Non-serializable pieces (tooltip formatter, click/hover
-#' callbacks) are attached in `Widget_PrematureDeathBucketBar.js`.
+#' scales, legend, value labels). Non-serializable pieces (tooltip formatter,
+#' click/hover callbacks) are attached in `Widget_PrematureDeathBucketBar.js`.
+#'
+#' Each segment carries its value on the bar: counts in the stack and dodge
+#' views, percentages in the native fill (100%) view.
 #'
 #' @param nWindowDays `numeric` Window in days (color/order vocabulary).
 #' @param strGroupLabel `character` Category-axis label.
@@ -90,6 +93,13 @@ pd_BucketBarSpec <- function(
         order = as.list(pd_DisplayOrder(nWindowDays)),
         label = "Category"
       )
+    ),
+    # gsm.viz "auto" follows the native position control: raw counts while stat
+    # is identity, percentages once the fill (100%) button sets stat = "percent".
+    # Segments below gsm.viz's 16px floor stay blank, which also suppresses the
+    # .drop = FALSE zero cells.
+    annotations = list(
+      labels = list(segment = list(display = TRUE, value = "auto"))
     )
   )
   if (!is.null(zoom)) {

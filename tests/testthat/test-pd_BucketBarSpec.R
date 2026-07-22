@@ -56,3 +56,18 @@ test_that("pd_BucketBarSpec emits zoom only when requested (#264)", {
   z <- list(enabled = TRUE, mode = "x")
   expect_equal(pd_BucketBarSpec(90, "Site", zoom = z)$zoom, z)
 })
+
+test_that("pd_BucketBarSpec turns on auto value labels (#264)", {
+  spec <- pd_BucketBarSpec(90, strGroupLabel = "Site")
+  # "auto" follows the native position control: counts while stat is identity,
+  # percentages once the fill (100%) button sets stat = "percent".
+  expect_equal(
+    spec$annotations$labels$segment,
+    list(display = TRUE, value = "auto")
+  )
+})
+
+test_that("pd_BucketBarSpec keeps value labels when zoom is requested (#264)", {
+  spec <- pd_BucketBarSpec(90, "Site", zoom = list(enabled = TRUE, mode = "x"))
+  expect_true(spec$annotations$labels$segment$display)
+})
