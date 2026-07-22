@@ -325,7 +325,9 @@ Widget_PrematureDeathReasonBar(
 ```{r country-buckets, echo=FALSE, eval=has_premature}
 Widget_PrematureDeathBucketBar(
   data = pd_BucketRows(dfClassified, nWindowDays, strGroupCol = "country"),
-  spec = pd_BucketBarSpec(nWindowDays, "Country"),
+  # Country and site charts opt into zoom/pan (x-axis) — a multinational study
+  # can carry many country bars; the single-bar study chart stays zoom-free.
+  spec = pd_BucketBarSpec(nWindowDays, "Country", zoom = list(enabled = TRUE, mode = "x")),
   metadata = list(chartId = "pd-country-buckets", level = "country")
 )
 ```
@@ -362,7 +364,8 @@ Widget_PrematureDeathBucketBar(
   # strOuterCol = "country" keeps each row's OuterGroupID so the country->site
   # drilldown can re-slice this chart to one country's sites (see filter-js).
   data = pd_BucketRows(dfClassified, nWindowDays, strGroupCol = "invid", strOuterCol = "country"),
-  # Site chart alone opts into zoom/pan (x-axis) — it can carry many site bars.
+  # Zoom/pan (x-axis): the site chart always renders every enrolled site (see
+  # the country chart chunk for the shared rationale).
   spec = pd_BucketBarSpec(nWindowDays, "Site", zoom = list(enabled = TRUE, mode = "x")),
   metadata = list(chartId = "pd-site-buckets", level = "site")
 )

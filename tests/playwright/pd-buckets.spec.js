@@ -64,15 +64,17 @@ test('country click narrows the flat site chart to that country only (#264)', as
   expect((await siteLabels()).length).toBe(before.length);
 });
 
-test('site bucket chart enables x-axis zoom; study chart does not (#264)', async ({ page }) => {
+test('site and country bucket charts enable x-axis zoom; study chart does not (#264)', async ({ page }) => {
   const zoomOf = (id) => page.evaluate((id) => {
     const z = document.querySelector('#' + id).gsmChart.options.plugins.zoom;
     if (!z || !z.zoom) return { mode: null, wheel: false };
     return { mode: z.zoom.mode, wheel: !!(z.zoom.wheel && z.zoom.wheel.enabled) };
   }, id);
-  const site = await zoomOf('pd-site-buckets');
-  expect(site.mode).toBe('x');
-  expect(site.wheel).toBe(true);
+  for (const id of ['pd-site-buckets', 'pd-country-buckets']) {
+    const z = await zoomOf(id);
+    expect(z.mode).toBe('x');
+    expect(z.wheel).toBe(true);
+  }
   // Study chart carries only the zoom plugin's inert defaults (zoom disabled).
   expect((await zoomOf('pd-study-buckets')).wheel).toBe(false);
 });
