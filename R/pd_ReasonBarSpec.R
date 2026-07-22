@@ -25,7 +25,8 @@ pd_ReasonRows <- function(slice) {
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' Horizontal single-series bars. The tooltip formatter and callbacks are
+#' Horizontal single-series bars, each carrying its count on the bar when the
+#' bar is long enough to hold the label. The tooltip formatter and callbacks are
 #' attached in `Widget_PrematureDeathReasonBar.js`; this returns only the
 #' serializable spec.
 #'
@@ -51,6 +52,13 @@ pd_ReasonBarSpec <- function(reason_order = NULL) {
     scales = list(
       x = x,
       y = list(label = "Premature Deaths")
+    ),
+    # Counts centered in each bar. gsm.viz can also place them past the bar end,
+    # but the longest bar reaches the axis maximum, so its label lands outside
+    # the canvas and is clipped. The cost of centering: gsm.viz blanks a label
+    # whose bar is under 16px long instead of nudging it outside.
+    annotations = list(
+      labels = list(segment = list(display = TRUE))
     )
   )
 }

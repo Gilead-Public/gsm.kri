@@ -20,7 +20,8 @@ A named `list` — a `gsm.viz` `bars` spec without callbacks.
 \description{
 `r lifecycle::badge("experimental")`
 
-Horizontal single-series bars. The tooltip formatter and callbacks are
+Horizontal single-series bars, each carrying its count on the bar when the
+bar is long enough to hold the label. The tooltip formatter and callbacks are
 attached in `Widget_PrematureDeathReasonBar.js`; this returns only the
 serializable spec.
 }

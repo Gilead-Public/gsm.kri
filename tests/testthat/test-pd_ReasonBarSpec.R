@@ -27,3 +27,13 @@ test_that("pd_ReasonBarSpec pins the category order when reason_order is supplie
     list("Disease progression", "AE", "Unknown")
   )
 })
+
+test_that("pd_ReasonBarSpec turns on in-bar count labels (#264)", {
+  spec <- pd_ReasonBarSpec()
+  expect_equal(spec$annotations$labels$segment, list(display = TRUE))
+})
+
+test_that("pd_ReasonBarSpec keeps value labels when the order is pinned (#264)", {
+  spec <- pd_ReasonBarSpec(reason_order = c("Disease progression", "AE"))
+  expect_true(spec$annotations$labels$segment$display)
+})
