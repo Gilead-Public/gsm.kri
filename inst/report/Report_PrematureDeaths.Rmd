@@ -573,20 +573,18 @@ cat(paste0('
     activeCountry = pdBucketState.activeCountry;
     activeSite = pdBucketState.activeSite;
 
-    var cChip = document.getElementById("pd-filter-country-chip");
-    if (pdBucketState.activeCountry) {
-      cChip.style.display = "inline-flex";
-      document.getElementById("pd-filter-country-value").textContent = pdBucketState.activeCountry;
-    } else {
-      cChip.style.display = "none";
+    // Show a chip and set its label when its filter value is active; hide otherwise.
+    function setChip(chipId, valueId, value) {
+      var chip = document.getElementById(chipId);
+      if (value) {
+        chip.style.display = "inline-flex";
+        document.getElementById(valueId).textContent = value;
+      } else {
+        chip.style.display = "none";
+      }
     }
-    var sChip = document.getElementById("pd-filter-site-chip");
-    if (pdBucketState.activeSite) {
-      sChip.style.display = "inline-flex";
-      document.getElementById("pd-filter-site-value").textContent = pdBucketState.activeSite;
-    } else {
-      sChip.style.display = "none";
-    }
+    setChip("pd-filter-country-chip", "pd-filter-country-value", pdBucketState.activeCountry);
+    setChip("pd-filter-site-chip", "pd-filter-site-value", pdBucketState.activeSite);
     updateBannerVisibility();
     pdNarrowSiteChart();
     pdHighlightBuckets();

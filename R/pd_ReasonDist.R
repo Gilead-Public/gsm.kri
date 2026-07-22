@@ -13,6 +13,21 @@
 #' @return A `data.frame` with `death_reason` and `n` columns, sorted by `n` descending.
 #' @export
 pd_ReasonCounts <- function(dfDeath, nWindowDays = 90) {
+  coh <- pd_PrematureReasonCohort(dfDeath, nWindowDays)
+  s <- pd_ReasonSlice(coh)
+  tibble::tibble(death_reason = s$reason, n = s$n)
+}
+
+#' Premature-death reason cohort (internal)
+#'
+#' @description
+#' Validate `dfDeath`/`nWindowDays`, build the premature-death cohort, and label
+#' each death's reason. Shared preamble for [pd_ReasonCounts()] and
+#' [pd_ReasonDist()] so the input contract lives in one place.
+#'
+#' @return The premature cohort `data.frame` with a `death_reason` column.
+#' @noRd
+pd_PrematureReasonCohort <- function(dfDeath, nWindowDays) {
   gsm.core::stop_if(
     cnd = !is.data.frame(dfDeath),
     message = "dfDeath is not a data.frame"
@@ -26,8 +41,7 @@ pd_ReasonCounts <- function(dfDeath, nWindowDays = 90) {
 
   coh <- pd_PrematureCohort(dfDeath, nWindowDays = nWindowDays)
   coh$death_reason <- pd_DeathReason(coh)
-  s <- pd_ReasonSlice(coh)
-  tibble::tibble(death_reason = s$reason, n = s$n)
+  coh
 }
 
 #' Premature-death reason slice (internal kernel)
@@ -103,19 +117,7 @@ pd_ReasonBar <- function(slice) {
 #' @return A `Widget_PrematureDeathReasonBar` htmlwidget.
 #' @export
 pd_ReasonDist <- function(dfDeath, nWindowDays = 90, nEnrolled = NULL) {
-  gsm.core::stop_if(
-    cnd = !is.data.frame(dfDeath),
-    message = "dfDeath is not a data.frame"
-  )
-  gsm.core::stop_if(
-    cnd = !(is.numeric(nWindowDays) &&
-      length(nWindowDays) == 1 &&
-      nWindowDays > 0),
-    message = "nWindowDays must be a positive number"
-  )
-
-  coh <- pd_PrematureCohort(dfDeath, nWindowDays = nWindowDays)
-  coh$death_reason <- pd_DeathReason(coh)
+  coh <- pd_PrematureReasonCohort(dfDeath, nWindowDays)
   pd_ReasonBar(pd_ReasonSlice(coh, nEnrolled = nEnrolled))
 }
 

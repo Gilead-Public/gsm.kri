@@ -28,41 +28,7 @@ Widget_PrematureDeathReasonBar <- function(
   metadata = list(),
   bDebug = FALSE
 ) {
-  gsm.core::stop_if(
-    cnd = !is.data.frame(data),
-    message = "data is not a data.frame"
-  )
-  gsm.core::stop_if(
-    cnd = !(is.list(spec) && !is.data.frame(spec)),
-    message = "spec must be a list"
-  )
-  gsm.core::stop_if(
-    cnd = !(is.list(metadata) && !is.data.frame(metadata)),
-    message = "metadata must be a list"
-  )
-  gsm.core::stop_if(
-    cnd = !is.logical(bDebug),
-    message = "bDebug must be logical"
-  )
-
-  lInput <- list(data = data, spec = spec, metadata = metadata, bDebug = bDebug)
-
-  lWidget <- htmlwidgets::createWidget(
-    name = "Widget_PrematureDeathReasonBar",
-    purrr::map(
-      lInput,
-      ~ jsonlite::toJSON(.x, null = "null", na = "string", auto_unbox = TRUE)
-    ),
-    package = "gsm.kri"
-  )
-
-  if (bDebug) {
-    viewer <- getOption("viewer")
-    options(viewer = NULL)
-    print(lWidget)
-    options(viewer = viewer)
-  }
-  lWidget
+  pd_BarWidget("Widget_PrematureDeathReasonBar", data, spec, metadata, bDebug)
 }
 
 #' Shiny bindings for Widget_PrematureDeathReasonBar

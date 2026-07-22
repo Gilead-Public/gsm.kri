@@ -9,7 +9,7 @@ Widget_PrematureDeathBucketBar(data, spec, metadata = list(), bDebug = FALSE)
 \arguments{
 \item{data}{`data.frame` Long rows from [pd_BucketRows()].}
 
-\item{spec}{`list` Serializable `bars`/`facetBars` spec from [pd_BucketBarSpec()].}
+\item{spec}{`list` Serializable `bars` spec from [pd_BucketBarSpec()].}
 
 \item{metadata}{`list` Report keys (`chartId`, `level`, ...) for linked filtering.}
 
@@ -21,8 +21,8 @@ A `Widget_PrematureDeathBucketBar` htmlwidget.
 \description{
 `r lifecycle::badge("experimental")`
 
-htmlwidget wrapper that renders premature-death category counts via
-`gsm.viz` `bars` (study) or `facetBars` (country/site). Serializes long rows
+htmlwidget wrapper that renders premature-death category counts via a flat
+`gsm.viz` `bars` chart (one per study/country/site view). Serializes long rows
 from [pd_BucketRows()] plus the serializable spec from [pd_BucketBarSpec()];
 the widget JS attaches the tooltip formatter and click/hover callbacks.
 }
