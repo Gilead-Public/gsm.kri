@@ -7,7 +7,7 @@ callbacks) are attached in \`Widget_PrematureDeathBucketBar.js\`.
 ## Usage
 
 ``` r
-pd_BucketBarSpec(nWindowDays = 90, strGroupLabel = "Group")
+pd_BucketBarSpec(nWindowDays = 90, strGroupLabel = "Group", zoom = NULL)
 ```
 
 ## Arguments
@@ -19,6 +19,13 @@ pd_BucketBarSpec(nWindowDays = 90, strGroupLabel = "Group")
 - strGroupLabel:
 
   \`character\` Category-axis label.
+
+- zoom:
+
+  \`list\` or \`NULL\` Optional \`gsm.viz\` zoom spec (e.g.
+  \`list(enabled = TRUE, mode = "x")\`). Attached only when
+  non-\`NULL\`; the site chart opts in so its many bars can be zoomed,
+  the study/country charts do not. Default \`NULL\` (no zoom).
 
 ## Value
 
