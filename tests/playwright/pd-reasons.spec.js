@@ -46,3 +46,31 @@ test('selecting a country swaps the country reason slice (#264)', async ({ page 
   const after = await labels();
   expect(after).not.toEqual(before);
 });
+
+test('reason bars wide enough for a label carry their count (#264)', async ({ page }) => {
+  const rows = await page.evaluate(() => {
+    const c = document.querySelector('#pd-study-reasons').gsmChart;
+    // Raw config: reading chart.options.plugins.datalabels resolves scriptables
+    // against a contextless object and throws.
+    const seg = c.config.options.plugins.datalabels.labels.segment;
+    const dataset = c.data.datasets[0];
+    const meta = c.getDatasetMeta(0);
+    return dataset.data.map((p, i) => {
+      const ctx = { chart: c, dataset, datasetIndex: 0, dataIndex: i };
+      return {
+        text: seg.formatter(p, ctx),
+        shown: seg.display(ctx),
+        n: p._datum.n,
+        // On a horizontal chart gsm.viz's 16px floor measures bar LENGTH, so a
+        // short reason drops its label outright instead of moving it just
+        // outside the bar the way Plotly's textposition="auto" did.
+        wide: meta.data[i].width >= 16
+      };
+    });
+  });
+  expect(rows.length).toBeGreaterThan(0);
+  for (const row of rows) {
+    expect(row.text).toBe(String(row.n));
+    expect(row.shown).toBe(row.wide);
+  }
+});

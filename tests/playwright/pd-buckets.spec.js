@@ -120,3 +120,65 @@ test('the custom sticky toggle is gone; buckets keep the gsm.viz native control 
   });
   expect(enabled).toBe(true);   // native positionToggle (stack/dodge/fill) will render
 });
+
+// Chart.js draws labels to canvas, so there is no DOM text to query. Resolve the
+// label the way the plugin does instead: call the formatter with a real context.
+// Read the RAW config -- chart.options.plugins.datalabels proxies scriptable
+// options and would invoke the formatter with a contextless object.
+function readLabel(page, id) {
+  return page.evaluate((id) => {
+    const c = document.querySelector('#' + id).gsmChart;
+    const seg = c.config.options.plugins.datalabels.labels.segment;
+    let best = null;
+    for (let d = 0; d < c.data.datasets.length; d++) {
+      const dataset = c.data.datasets[d];
+      for (let i = 0; i < dataset.data.length; i++) {
+        const p = dataset.data[i];
+        if (!p || !p._datum || !(p._datum.n > 0)) continue;
+        if (best && p._datum.n <= best.n) continue;
+        const ctx = { chart: c, dataset, datasetIndex: d, dataIndex: i };
+        best = { text: seg.formatter(p, ctx), shown: seg.display(ctx),
+                 n: p._datum.n, pct: p._datum.pct };
+      }
+    }
+    return best;
+  }, id);
+}
+
+test('bucket segments carry counts that become percentages in fill mode (#264)', async ({ page }) => {
+  const counts = await readLabel(page, 'pd-study-buckets');
+  expect(counts).not.toBeNull();
+  expect(counts.text).toBe(String(counts.n));   // stack mode: raw count
+  expect(counts.shown).toBe(true);              // largest segment clears the 16px floor
+
+  // The native fill button issues exactly this update.
+  await page.evaluate(() => {
+    const c = document.querySelector('#pd-study-buckets').gsmChart;
+    c.helpers.updateSpec(c, { position: 'stack', stat: 'percent' });
+  });
+  const pct = await readLabel(page, 'pd-study-buckets');
+  // Shape and value, not an exact string: R serializes pct at 4 dp while
+  // gsm.viz recomputes the within-group share at full precision, so an exact
+  // compare can straddle a one-decimal rounding boundary.
+  expect(pct.text).toMatch(/^\d+\.\d%$/);
+  expect(parseFloat(pct.text)).toBeCloseTo(pct.pct, 1);
+
+  // Returning to counts restores the raw value.
+  await page.evaluate(() => {
+    const c = document.querySelector('#pd-study-buckets').gsmChart;
+    c.helpers.updateSpec(c, { position: 'stack', stat: 'count' });
+  });
+  expect((await readLabel(page, 'pd-study-buckets')).text).toBe(String(counts.n));
+});
+
+test('site labels survive the country to site narrow (#264)', async ({ page }) => {
+  expect(await readLabel(page, 'pd-site-buckets')).not.toBeNull();
+  await page.evaluate(() => document.querySelector('#pd-country-buckets')
+    .dispatchEvent(new CustomEvent('pdBucketClick', { bubbles: true,
+      detail: { level: 'country', groupId: 'USA', country: 'USA' } })));
+  await page.waitForTimeout(300);
+  // helpers.updateData re-runs getPlugins, so the label config is rebuilt.
+  const after = await readLabel(page, 'pd-site-buckets');
+  expect(after).not.toBeNull();
+  expect(after.text).toBe(String(after.n));
+});
