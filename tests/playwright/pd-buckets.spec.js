@@ -289,3 +289,24 @@ test('re-clicking the active site bar clears the site but keeps its country (#26
   expect(await shown(page, 'pd-filter-country-chip')).toBe(true);   // parent survives
   expect((await siteChartLabels(page)).length).toBeLessThan(allSites.length);
 });
+
+test('the site bucket tooltip names the parent country; study and country do not (#264)', async ({ page }) => {
+  // Chart.js draws tooltips on the canvas, so there is no DOM to assert on:
+  // invoke the label callback directly, the same way pd-reasons.spec.js does.
+  const label = (id) => page.evaluate((id) => {
+    const chart = document.querySelector('#' + id).gsmChart;
+    const fn = chart.options.plugins.tooltip.callbacks.label;
+    return fn({ dataset: chart.data.datasets[0], dataIndex: 0, chart });
+  }, id);
+
+  const site = [].concat(await label('pd-site-buckets'));
+  expect(site.some((l) => /^Country: \S/.test(l))).toBe(true);
+  expect(site.join('|')).toContain('Subjects');          // still carries the counts
+  expect(site.join('|')).not.toContain('Country: NA');
+
+  // The other two tiers have no parent, so they get no country line at all.
+  for (const id of ['pd-study-buckets', 'pd-country-buckets']) {
+    const lines = [].concat(await label(id));
+    expect(lines.some((l) => l.startsWith('Country:'))).toBe(false);
+  }
+});

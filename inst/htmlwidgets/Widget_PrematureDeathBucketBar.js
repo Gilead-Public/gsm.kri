@@ -29,11 +29,22 @@ HTMLWidgets.widget({
           el.dispatchEvent(new CustomEvent('pdBucketClick', { bubbles: true, detail: payload(point) }));
         }
 
-        // Tooltip: "Category — Subjects: n (pct%)". details.datum carries n and pct.
+        // Tooltip: "Category — Subjects: n (pct%)", plus the parent country on
+        // the site chart. gsm.viz titles the tooltip with the x-axis category
+        // (the site id) only, and the site chart shows every country's sites
+        // until one is picked, so the parent has to be named explicitly.
+        // Chart.js renders a returned array as one line per element.
         spec.tooltip = Object.assign({}, spec.tooltip, {
           formatter: function (count, context, details) {
             var d = (details && details.datum) || {};
-            return d.Category + ' — Subjects: ' + d.n + ' (' + Number(d.pct).toFixed(1) + '%)';
+            var lines = [d.Category + ' — Subjects: ' + d.n + ' (' + Number(d.pct).toFixed(1) + '%)'];
+            // Only the site chart has a parent tier. The study and country
+            // charts carry a missing OuterGroupID, which the widget's JSON
+            // serializer (na = "string") writes as the literal string "NA".
+            if (d.OuterGroupID && d.OuterGroupID !== 'NA') {
+              lines.push('Country: ' + d.OuterGroupID);
+            }
+            return lines;
           }
         });
 
