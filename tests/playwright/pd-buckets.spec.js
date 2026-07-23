@@ -310,3 +310,21 @@ test('the site bucket tooltip names the parent country; study and country do not
     expect(lines.some((l) => l.startsWith('Country:'))).toBe(false);
   }
 });
+
+test('re-clicking the active country bar drops an active site with it (#264)', async ({ page }) => {
+  const usa = { level: 'country', groupId: 'USA', country: 'USA' };
+  const inv1 = { level: 'site', groupId: 'INV-1', invid: 'INV-1', country: 'USA' };
+
+  // A site click adopts its parent country, so this reaches the one state the
+  // other toggle tests never build: both filters active at once.
+  await clickBucket(page, 'pd-site-buckets', inv1);
+  await page.waitForTimeout(300);
+  expect(await shown(page, 'pd-filter-site-chip')).toBe(true);
+  expect(await shown(page, 'pd-filter-country-chip')).toBe(true);
+
+  await clickBucket(page, 'pd-country-buckets', usa);   // the active country bar
+  await page.waitForTimeout(300);
+  expect(await shown(page, 'pd-filter-country-chip')).toBe(false);
+  expect(await shown(page, 'pd-filter-site-chip')).toBe(false);   // dropped with its country
+  expect(await shown(page, 'pd-filter-banner')).toBe(false);
+});
