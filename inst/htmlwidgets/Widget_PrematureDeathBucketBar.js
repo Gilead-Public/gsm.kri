@@ -1,3 +1,6 @@
+// Breathing room, in px, required on each side of an on-bar label.
+var LABEL_FIT_PAD = 2;
+
 HTMLWidgets.widget({
   name: 'Widget_PrematureDeathBucketBar',
   type: 'output',
@@ -33,6 +36,33 @@ HTMLWidgets.widget({
             return d.Category + ' — Subjects: ' + d.n + ' (' + Number(d.pct).toFixed(1) + '%)';
           }
         });
+
+        // gsm.viz's segment-label floor (annotations.labels.segment.minSize)
+        // measures the value axis only, so a hair-thin bar that is tall enough
+        // keeps a label wider than the bar itself, spilling over its neighbours
+        // -- every label on a study with many sites. Blank a label that does not
+        // fit across the bar; returning null makes the plugin skip it. Zooming
+        // in widens the bars, so the labels come back.
+        var segment = ((spec.annotations || {}).labels || {}).segment;
+        if (segment) {
+          segment.formatter = function (value, context, details) {
+            // Mirrors gsm.viz's default text for value: "auto" (counts, or
+            // one-decimal percentages once the fill button sets stat).
+            var text = details.valueType === 'percent'
+              ? Number(value).toFixed(1) + '%'
+              : String(value);
+            var bar = context.chart.getDatasetMeta(context.datasetIndex).data[context.dataIndex];
+            if (!bar) return text;
+            var font = context.chart.options.font || {};
+            var c2d = context.chart.ctx;
+            c2d.save();
+            c2d.font = (font.size || 12) + 'px ' + (font.family || 'sans-serif');
+            var textWidth = c2d.measureText(text).width;
+            c2d.restore();
+            // Bucket charts are vertical, so the bar's thickness is its width.
+            return textWidth + LABEL_FIT_PAD <= bar.width ? text : null;
+          };
+        }
 
         // All three bucket charts are flat `bars`; the country->site drilldown
         // narrows the site chart via helpers.updateData (driven by the report),

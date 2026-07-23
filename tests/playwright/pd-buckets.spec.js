@@ -182,3 +182,41 @@ test('site labels survive the country to site narrow (#264)', async ({ page }) =
   expect(after).not.toBeNull();
   expect(after.text).toBe(String(after.n));
 });
+
+test('a bar too thin to hold its label drops it (#264)', async ({ page }) => {
+  // The fixture's two sites are wide, so their labels draw.
+  const wide = await readLabel(page, 'pd-site-buckets');
+  expect(wide.text).toBe(String(wide.n));
+
+  // Densify to the shape of a real study. gsm.viz's own minSize floor measures
+  // the VALUE axis, so these bars stay tall and clear it -- only a category-axis
+  // check can drop them. Going through updateData also proves the fit check
+  // survives the config rebuild, since a lost formatter would relabel the bars.
+  await page.evaluate(() => {
+    const el = document.querySelector('#pd-site-buckets');
+    // A non-zero row, so the bar runs the full height of the plot and clears
+    // the value-axis floor; a two-digit count is wider than the ~7px bar.
+    const proto = el.pdAllData.find((r) => r.n > 0);
+    const rows = Array.from({ length: 80 }, (_, i) =>
+      Object.assign({}, proto, { GroupID: 'SITE-' + i, n: 10 }));
+    el.gsmChart.helpers.updateData(el.gsmChart, rows, el.gsmChart.data._spec_);
+  });
+  await page.waitForTimeout(400);
+
+  const thin = await page.evaluate(() => {
+    const c = document.querySelector('#pd-site-buckets').gsmChart;
+    const seg = c.config.options.plugins.datalabels.labels.segment;
+    const dataset = c.data.datasets[0];
+    const meta = c.getDatasetMeta(0);
+    const ctx = { chart: c, dataset, datasetIndex: 0, dataIndex: 0 };
+    return {
+      text: seg.formatter(dataset.data[0], ctx),
+      shownByMinSize: seg.display(ctx),
+      barW: meta.data[0].width,
+      barH: meta.data[0].height
+    };
+  });
+  expect(thin.barW).toBeLessThan(16);      // far too thin for a digit
+  expect(thin.shownByMinSize).toBe(true);  // the value-axis floor lets it through
+  expect(thin.text).toBeNull();            // the fit check is what drops it
+});
