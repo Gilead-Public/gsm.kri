@@ -220,3 +220,20 @@ test('a bar too thin to hold its label drops it (#264)', async ({ page }) => {
   expect(thin.shownByMinSize).toBe(true);  // the value-axis floor lets it through
   expect(thin.text).toBeNull();            // the fit check is what drops it
 });
+
+test('the zoomable bucket charts caption scroll-to-zoom (#264)', async ({ page }) => {
+  // gsm.viz renders labels.captions through Chart.js's subtitle plugin.
+  const subtitle = (id) => page.evaluate((id) => {
+    const s = document.querySelector('#' + id).gsmChart.config.options.plugins.subtitle;
+    return { display: s.display, text: s.text };
+  }, id);
+
+  for (const id of ['pd-country-buckets', 'pd-site-buckets']) {
+    expect(await subtitle(id)).toEqual({
+      display: true,
+      text: ['Scroll to zoom in; drag to pan.']
+    });
+  }
+  // The study chart is one bar with no zoom, so it must not advertise it.
+  expect((await subtitle('pd-study-buckets')).display).toBe(false);
+});

@@ -71,7 +71,8 @@ pd_BucketRows <- function(
 #' @param zoom `list` or `NULL` Optional `gsm.viz` zoom spec (e.g.
 #'   `list(enabled = TRUE, mode = "x")`). Attached only when non-`NULL`; the
 #'   site chart opts in so its many bars can be zoomed, the study/country charts
-#'   do not. Default `NULL` (no zoom).
+#'   do not. Enabling it also captions the chart with the scroll-to-zoom
+#'   affordance. Default `NULL` (no zoom).
 #'
 #' @return A named `list` — a `gsm.viz` `bars` spec without callbacks.
 #' @export
@@ -104,6 +105,12 @@ pd_BucketBarSpec <- function(
   )
   if (!is.null(zoom)) {
     spec$zoom <- zoom
+    # Zoom is opt-in on the dense charts, where bars can be too thin to carry
+    # their value label -- zooming widens them and the labels return. gsm.viz
+    # builds no zoom config unless `enabled`, so only advertise it when it is on.
+    if (isTRUE(zoom$enabled)) {
+      spec$labels <- list(captions = "Scroll to zoom in; drag to pan.")
+    }
   }
   spec
 }

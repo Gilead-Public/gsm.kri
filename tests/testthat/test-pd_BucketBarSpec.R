@@ -71,3 +71,17 @@ test_that("pd_BucketBarSpec keeps value labels when zoom is requested (#264)", {
   spec <- pd_BucketBarSpec(90, "Site", zoom = list(enabled = TRUE, mode = "x"))
   expect_true(spec$annotations$labels$segment$display)
 })
+
+test_that("pd_BucketBarSpec captions scroll-to-zoom on zoomable charts (#264)", {
+  # The study chart is a single bar with no zoom, so there is nothing to note.
+  expect_null(pd_BucketBarSpec(90, "Study")$labels)
+
+  spec <- pd_BucketBarSpec(90, "Site", zoom = list(enabled = TRUE, mode = "x"))
+  expect_equal(spec$labels$captions, "Scroll to zoom in; drag to pan.")
+})
+
+test_that("pd_BucketBarSpec drops the zoom caption when zoom is off (#264)", {
+  # gsm.viz builds no zoom config unless enabled, so the note would be a lie.
+  spec <- pd_BucketBarSpec(90, "Site", zoom = list(enabled = FALSE, mode = "x"))
+  expect_null(spec$labels)
+})
