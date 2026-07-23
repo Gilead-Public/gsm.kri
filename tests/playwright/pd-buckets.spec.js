@@ -237,3 +237,55 @@ test('the zoomable bucket charts caption scroll-to-zoom (#264)', async ({ page }
   // The study chart is one bar with no zoom, so it must not advertise it.
   expect((await subtitle('pd-study-buckets')).display).toBe(false);
 });
+
+// Helpers shared by the two toggle tests below. Filter state is driven through
+// the pdBucketClick CustomEvent rather than a canvas click: the event is the
+// widget's public contract with the report, and a synthetic click would depend
+// on bar geometry that zoom/pan can move.
+const clickBucket = (page, chartId, detail) => page.evaluate(([chartId, detail]) =>
+  document.querySelector('#' + chartId)
+    .dispatchEvent(new CustomEvent('pdBucketClick', { bubbles: true, detail })),
+  [chartId, detail]);
+
+// Named siteChartLabels, not siteLabels: an existing test in this file already
+// declares a no-arg siteLabels inside its own scope.
+const siteChartLabels = (page) => page.evaluate(() =>
+  document.querySelector('#pd-site-buckets').gsmChart.data.labels.slice());
+
+// The chips carry an inline display style; the banner gets one from
+// updateBannerVisibility() on the first state change.
+const shown = (page, id) => page.evaluate((id) =>
+  document.getElementById(id).style.display !== 'none', id);
+
+test('re-clicking the active country bar clears the whole drilldown (#264)', async ({ page }) => {
+  const usa = { level: 'country', groupId: 'USA', country: 'USA' };
+  const allSites = await siteChartLabels(page);
+
+  await clickBucket(page, 'pd-country-buckets', usa);
+  await page.waitForTimeout(300);
+  expect(await shown(page, 'pd-filter-country-chip')).toBe(true);
+  expect((await siteChartLabels(page)).length).toBeLessThan(allSites.length);
+
+  await clickBucket(page, 'pd-country-buckets', usa);   // same bar again
+  await page.waitForTimeout(300);
+  expect(await shown(page, 'pd-filter-country-chip')).toBe(false);
+  expect(await shown(page, 'pd-filter-banner')).toBe(false);
+  expect(await siteChartLabels(page)).toEqual(allSites);     // site chart un-narrowed
+});
+
+test('re-clicking the active site bar clears the site but keeps its country (#264)', async ({ page }) => {
+  const inv1 = { level: 'site', groupId: 'INV-1', invid: 'INV-1', country: 'USA' };
+  const allSites = await siteChartLabels(page);
+
+  // A site click adopts the site's country, so both chips light up.
+  await clickBucket(page, 'pd-site-buckets', inv1);
+  await page.waitForTimeout(300);
+  expect(await shown(page, 'pd-filter-site-chip')).toBe(true);
+  expect(await shown(page, 'pd-filter-country-chip')).toBe(true);
+
+  await clickBucket(page, 'pd-site-buckets', inv1);     // same bar again
+  await page.waitForTimeout(300);
+  expect(await shown(page, 'pd-filter-site-chip')).toBe(false);
+  expect(await shown(page, 'pd-filter-country-chip')).toBe(true);   // parent survives
+  expect((await siteChartLabels(page)).length).toBeLessThan(allSites.length);
+});

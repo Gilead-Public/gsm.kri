@@ -569,13 +569,25 @@ cat(paste0('
   }
 
   // Bucket click handler: derive the new state from the clicked datum, then sync.
+  // Clicking the bar that is already active toggles it off -- gsm.viz has a
+  // deselect path of its own, but it is gated on spec.selection, which these
+  // charts do not enable. Unlike a chip\'s reset button (which owns exactly one
+  // filter), the country bar owns the drilldown, so toggling it off drops the
+  // site with it.
   function pdApplyBucketFilter(detail) {
     if (detail.level === "country") {
-      pdBucketState.activeCountry = detail.country || detail.groupId;
+      var country = detail.country || detail.groupId;
+      pdBucketState.activeCountry = country === pdBucketState.activeCountry ? null : country;
       pdBucketState.activeSite = null;
     } else if (detail.level === "site") {
-      pdBucketState.activeSite = detail.invid || detail.groupId;
-      pdBucketState.activeCountry = detail.country || pdBucketState.activeCountry;
+      var invid = detail.invid || detail.groupId;
+      // The site is the leaf: toggling it off steps back to its country.
+      if (invid === pdBucketState.activeSite) {
+        pdBucketState.activeSite = null;
+      } else {
+        pdBucketState.activeSite = invid;
+        pdBucketState.activeCountry = detail.country || pdBucketState.activeCountry;
+      }
     }
     pdSyncBucketFilters();
   }
