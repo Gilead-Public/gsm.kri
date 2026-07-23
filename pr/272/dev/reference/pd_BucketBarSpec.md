@@ -29,7 +29,8 @@ pd_BucketBarSpec(nWindowDays = 90, strGroupLabel = "Group", zoom = NULL)
   \`list\` or \`NULL\` Optional \`gsm.viz\` zoom spec (e.g.
   \`list(enabled = TRUE, mode = "x")\`). Attached only when
   non-\`NULL\`; the site chart opts in so its many bars can be zoomed,
-  the study/country charts do not. Default \`NULL\` (no zoom).
+  the study/country charts do not. Enabling it also captions the chart
+  with the scroll-to-zoom affordance. Default \`NULL\` (no zoom).
 
 ## Value
 
