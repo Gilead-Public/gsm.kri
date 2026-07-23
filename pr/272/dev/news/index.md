@@ -1,5 +1,7 @@
 # Changelog
 
+## gsm.kri (development version)
+
 ## gsm.kri v1.6.0
 
 This minor release introduces the Premature Deaths reporting module and
