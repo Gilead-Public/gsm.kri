@@ -6,9 +6,9 @@
 \usage{
 Flag_Duplicates(
   df,
-  strSubjectCol,
-  strDateCol,
   strValueCol,
+  strSubjectCol = "subjid",
+  strDateCol = "vs_dt",
   strMeasureCol = NULL,
   strMeasureVal = NULL
 )
@@ -17,14 +17,14 @@ Flag_Duplicates(
 \item{df}{`data.frame` Input data containing at least the subject, date,
 and value columns.}
 
+\item{strValueCol}{`character` Column containing the measurement value to
+check for duplicates (e.g. `"weight"`, `"rptresn"`).}
+
 \item{strSubjectCol}{`character` Column identifying the subject (e.g.
 `"subjid"`).}
 
 \item{strDateCol}{`character` Column used to order records chronologically
 (e.g. `"vs_dt"`).}
-
-\item{strValueCol}{`character` Column containing the measurement value to
-check for duplicates (e.g. `"weight"`, `"rptresn"`).}
 
 \item{strMeasureCol}{`character` Optional column containing the measure
 name, used to filter to a specific test in long-format data (e.g.
@@ -45,5 +45,30 @@ Record-level helper that marks measurement records as duplicates when
 their value matches any previously recorded value for the same subject.
 Supports both wide-format data (e.g. vitals, where each measure is its
 own column) and long-format data (e.g. labs, where the measure name is a
-row value) via the optional `strMeasureCol`/`strMeasureVal` arguments.
+row value).
+}
+\examples{
+# Wide-format (vitals): each measure is its own column.
+dfVitals <- data.frame(
+  subjid = c("001", "001", "001"),
+  vs_dt = as.Date(c("2024-01-01", "2024-02-01", "2024-03-01")),
+  weight = c(72.3, 72.3, 73.1)
+)
+Flag_Duplicates(df = dfVitals, strValueCol = "weight")
+
+# Long-format (labs): measure name is a row value.
+dfLabs <- data.frame(
+  subjid = c("001", "001", "001", "001"),
+  lb_dt = as.Date(c("2024-01-01", "2024-01-01", "2024-02-01", "2024-02-01")),
+  lbtstnam = c("ALT (SGPT)", "AST (SGOT)", "ALT (SGPT)", "AST (SGOT)"),
+  rptresn = c(20, 20, 20, 30)
+)
+Flag_Duplicates(
+  df = dfLabs,
+  strValueCol = "rptresn",
+  strDateCol = "lb_dt",
+  strMeasureCol = "lbtstnam",
+  strMeasureVal = "ALT (SGPT)"
+)
+
 }
