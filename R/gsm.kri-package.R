@@ -4,16 +4,17 @@
 ## usethis namespace: start
 #' @import dplyr
 #' @import ggplot2
-#' @import gsm.core
 #' @import gt
 #' @import purrr
 #' @import tidyr
+#' @importFrom cli pluralize
+#' @importFrom cli qty
 #' @importFrom DT datatable
 #' @importFrom DT formatStyle
 #' @importFrom DT styleInterval
-#' @importFrom cli pluralize
-#' @importFrom cli qty
 #' @importFrom glue glue
+#' @importFrom gsm.core Flag
+#' @importFrom gsm.core LogMessage
 #' @importFrom htmltools h1
 #' @importFrom htmltools h2
 #' @importFrom htmltools h3
@@ -37,5 +38,6 @@
 #' @importFrom stats setNames
 #' @importFrom tibble enframe
 #' @importFrom tibble tibble
+#' @importFrom workr RunQuery
 ## usethis namespace: end
 NULL
