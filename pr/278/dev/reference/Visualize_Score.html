@@ -25,6 +25,7 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-examples" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Examples</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-examples"><li><a class="dropdown-item" href="../examples/Example_SiteReport.html">Site KRI Report</a></li>
+    <li><a class="dropdown-item" href="../examples/Example_CountryReport.html">Country KRI Report</a></li>
     <li><a class="dropdown-item" href="../examples/Example_Eligibility.html">Eligibility Report</a></li>
     <li><a class="dropdown-item" href="../examples/Example_CrossStudySRS.html">Cross-Study KRI Report</a></li>
     <li><a class="dropdown-item" href="../examples/Example_PrematureDeaths.html">Premature Deaths Report</a></li>
@@ -103,21 +104,21 @@ Created by passing a list of results returned by [Summarize()] to
 <span class="r-in"><span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">MetricID</span> <span class="op">==</span> <span class="st">"Analysis_kri0001"</span> <span class="op">&amp;</span> <span class="va">SnapshotDate</span> <span class="op">==</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">SnapshotDate</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu">Visualize_Score</span><span class="op">(</span>dfResults <span class="op">=</span> <span class="va">reportingResults_filter</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in ggplot(., aes(x = reorder(.data$GroupID, -.data$Metric), y = .data$Metric,     fill = as.factor(.data$FlagAbs), text = .data$tooltip)):</span> could not find function "ggplot"</span>
+<span class="r-plt img"><img src="Visualize_Score-1.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## Only show Flagged Groups</span></span></span>
 <span class="r-in"><span><span class="fu">Visualize_Score</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  dfResults <span class="op">=</span> <span class="va">reportingResults_filter</span>,</span></span>
 <span class="r-in"><span>  bFlagFilter <span class="op">=</span> <span class="cn">TRUE</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in ggplot(., aes(x = reorder(.data$GroupID, -.data$Metric), y = .data$Metric,     fill = as.factor(.data$FlagAbs), text = .data$tooltip)):</span> could not find function "ggplot"</span>
+<span class="r-plt img"><img src="Visualize_Score-2.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## Custom Title</span></span></span>
 <span class="r-in"><span><span class="fu">Visualize_Score</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  dfResults <span class="op">=</span> <span class="va">reportingResults_filter</span>,</span></span>
 <span class="r-in"><span>  strTitle <span class="op">=</span> <span class="st">"Custom Title"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in ggplot(., aes(x = reorder(.data$GroupID, -.data$Metric), y = .data$Metric,     fill = as.factor(.data$FlagAbs), text = .data$tooltip)):</span> could not find function "ggplot"</span>
+<span class="r-plt img"><img src="Visualize_Score-3.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
