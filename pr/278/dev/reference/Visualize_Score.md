@@ -53,19 +53,19 @@ reportingResults_filter <- gsm.core::reportingResults %>%
   dplyr::filter(MetricID == "Analysis_kri0001" & SnapshotDate == max(SnapshotDate))
 
 Visualize_Score(dfResults = reportingResults_filter)
-
+#> Error in ggplot(., aes(x = reorder(.data$GroupID, -.data$Metric), y = .data$Metric,     fill = as.factor(.data$FlagAbs), text = .data$tooltip)): could not find function "ggplot"
 
 ## Only show Flagged Groups
 Visualize_Score(
   dfResults = reportingResults_filter,
   bFlagFilter = TRUE
 )
-
+#> Error in ggplot(., aes(x = reorder(.data$GroupID, -.data$Metric), y = .data$Metric,     fill = as.factor(.data$FlagAbs), text = .data$tooltip)): could not find function "ggplot"
 
 ## Custom Title
 Visualize_Score(
   dfResults = reportingResults_filter,
   strTitle = "Custom Title"
 )
-
+#> Error in ggplot(., aes(x = reorder(.data$GroupID, -.data$Metric), y = .data$Metric,     fill = as.factor(.data$FlagAbs), text = .data$tooltip)): could not find function "ggplot"
 ```

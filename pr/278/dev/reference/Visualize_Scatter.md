@@ -75,9 +75,7 @@ Visualize_Scatter(
   dfBounds = reportingBounds_filter %>%
     dplyr::filter(SnapshotDate == max(SnapshotDate))
 )
-#> Warning: Removed 252 rows containing missing values or values outside the scale range
-#> (`geom_line()`).
-
+#> Error in ggplot(., aes(x = log(.data$Denominator), y = .data$Numerator,     color = as.factor(.data$FlagAbs), text = .data$tooltip)): could not find function "ggplot"
 
 ## Create Faceted output on snapshot date
 Visualize_Scatter(
@@ -86,9 +84,7 @@ Visualize_Scatter(
   strGroupCol = "SnapshotDate",
   strGroupLabel = "Snapshot Date"
 )
-#> Warning: Removed 757 rows containing missing values or values outside the scale range
-#> (`geom_line()`).
-
+#> Error in ggplot(., aes(x = log(.data$Denominator), y = .data$Numerator,     color = as.factor(.data$FlagAbs), text = .data$tooltip)): could not find function "ggplot"
 
 ## Custom Colors
 Visualize_Scatter(
@@ -98,7 +94,5 @@ Visualize_Scatter(
     dplyr::filter(SnapshotDate == max(SnapshotDate)),
   vColors = c("#F4E7E7", "#C17070", "#981212")
 )
-#> Warning: Removed 252 rows containing missing values or values outside the scale range
-#> (`geom_line()`).
-
+#> Error in ggplot(., aes(x = log(.data$Denominator), y = .data$Numerator,     color = as.factor(.data$FlagAbs), text = .data$tooltip)): could not find function "ggplot"
 ```
