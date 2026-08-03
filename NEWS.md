@@ -1,3 +1,35 @@
+# gsm.kri (development version)
+
+# gsm.kri v1.6.0
+
+This minor release introduces the Premature Deaths reporting module and adds cross-study sorting and filtering capabilities.
+
+**New Features:**
+
+- Add Premature Deaths report module with interactive charts and patient listing (#221, #223)
+  - Five-category classification of death timing via `pd_Classify()` (#246)
+  - Bucket bar charts with count/percent toggle, on-bar labels, and range slider (#223, #246, #253)
+  - Randomization-to-death scatter plot with fixed shared range across study/country/site views (#247)
+  - Death-reason distribution chart with country-reactive filtering (#254)
+  - Patient listing with site/country filter, eligibility status, and download button (#249)
+  - Overview preamble with death-breakdown sub-line and ≤30 / 31–90 day split (#250, #252)
+  - Sticky bucket-bar count/percent toggle and chip-strip filter UI (#253)
+- Add patient-level premature-death workflow `pat0015` with configurable window (#221)
+- Derive Treatment Related status from `deathcls` + fatal related AE (#248)
+- Add eligibility status derivation via `pd_EligibilityStatus()` (#249, #250)
+- Add sort-by-enrollment option to Cross-Study Site Risk Score widget
+- Recalculate site metrics from the cross-study study filter selection
+
+**Bug Fixes:**
+
+- Fix country cross-filter and absent country key guard in premature-death charts (#222)
+- Fix `cou0015` to exclude subjects without a randomization date from the cohort (#247)
+- Fix plotly scalar-text bug by using `customdata` for hover tooltips
+- Remove risk score weight from `cou0015` workflow
+- Fix overlapping sticky bucket toggle placement in report (#253)
+- Ignore inactive workflows (#237)
+
+
 # gsm.kri v1.5.2
 
 This patch release fixes report display issues on the pkgdown site and renders missing examples.
