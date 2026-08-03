@@ -3,15 +3,16 @@
 # Self-contained: builds the mapping -> metric pipeline directly from lSource so
 # it does not depend on the cached qualification fixture. Requires the co-landing
 # foundation (gsm.mapping#139 specs + NonStarter.yaml, and the regenerated
-# gsm.core::lSource from gsm.core#156).
+# gsm.core::lSource from gsm.core#156, whose STUDCOMP rows carry compreas).
 
 NEVER_DOSED <- "Subject Never Dosed with Study Drug"
 
 test_that("Qual: IP non-starter metrics count confirmed non-starters over lSource-derived data {#258}", {
+  # sdrgreas is the only sentinel that distinguishes the regenerated lSource from
+  # the shipped one: compreas exists in both, so guarding on it would let this
+  # test run against un-regenerated data and fail instead of skipping.
   skip_if_not(
-    "sdrgreas" %in%
-      names(gsm.core::lSource$Raw_SDRGCOMP) &&
-      "colendat" %in% names(gsm.core::lSource$Raw_STUDCOMP),
+    "sdrgreas" %in% names(gsm.core::lSource$Raw_SDRGCOMP),
     "requires the regenerated gsm.core::lSource (gsm.core#156)"
   )
 
@@ -50,9 +51,11 @@ test_that("Qual: IP non-starter metrics count confirmed non-starters over lSourc
   subj <- mapped$Mapped_SUBJ
   never_dosed <- subj$subjid[is.na(subj$firstdosedate)]
   sdrg <- mapped$Mapped_SDRGCOMP
-  sdrg_ns <- sdrg$subjid[!is.na(sdrg$sdrgreas) & sdrg$sdrgreas == NEVER_DOSED]
+  sdrg_ns <- sdrg$subjid[
+    !is.na(sdrg$sdrgreas) & toupper(sdrg$sdrgreas) == toupper(NEVER_DOSED)
+  ]
   stud <- mapped$Mapped_STUDCOMP
-  stud_ns <- stud$subjid[!is.na(stud$colendat)]
+  stud_ns <- stud$subjid[!is.na(stud$compreas) & trimws(stud$compreas) != ""]
   indep_confirmed <- length(intersect(never_dosed, union(sdrg_ns, stud_ns)))
 
   expect_gt(indep_confirmed, 0)
