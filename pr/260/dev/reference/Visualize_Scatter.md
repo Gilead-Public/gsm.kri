@@ -75,7 +75,7 @@ Visualize_Scatter(
   dfBounds = reportingBounds_filter %>%
     dplyr::filter(SnapshotDate == max(SnapshotDate))
 )
-#> Warning: Removed 252 rows containing missing values or values outside the scale range
+#> Warning: Removed 253 rows containing missing values or values outside the scale range
 #> (`geom_line()`).
 
 
@@ -86,7 +86,7 @@ Visualize_Scatter(
   strGroupCol = "SnapshotDate",
   strGroupLabel = "Snapshot Date"
 )
-#> Warning: Removed 757 rows containing missing values or values outside the scale range
+#> Warning: Removed 759 rows containing missing values or values outside the scale range
 #> (`geom_line()`).
 
 
@@ -98,7 +98,7 @@ Visualize_Scatter(
     dplyr::filter(SnapshotDate == max(SnapshotDate)),
   vColors = c("#F4E7E7", "#C17070", "#981212")
 )
-#> Warning: Removed 252 rows containing missing values or values outside the scale range
+#> Warning: Removed 253 rows containing missing values or values outside the scale range
 #> (`geom_line()`).
 
 ```
