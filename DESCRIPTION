@@ -57,8 +57,8 @@ VignetteBuilder:
 Remotes:
     gsm.core=Gilead-BioStats/gsm.core@feature-156-lsource-nonstarter,
     gsm.mapping=Gilead-BioStats/gsm.mapping@feature-139-nonstarter-mapping,
-    gsm.qtl=Gilead-BioStats/gsm.qtl@dev,
-    gsm.reporting=Gilead-BioStats/gsm.reporting@dev,
+    gsm.qtl=Gilead-BioStats/gsm.qtl@for-gsm.kri-258,
+    gsm.reporting=Gilead-BioStats/gsm.reporting@for-gsm.kri-258,
     qcthat=Gilead-BioStats/qcthat@main
 Config/roxygen2/version: 8.0.0
 Config/testthat/edition: 3
