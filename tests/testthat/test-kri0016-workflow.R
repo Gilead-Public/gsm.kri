@@ -54,6 +54,17 @@ test_that("cou0016 counts confirmed non-starters per country {#258}", {
   expect_equal(den[["CAN"]], 3)
 })
 
+test_that("kri0016/cou0016 score groups at realistic enrollment {#258}", {
+  # The denominator counts enrolled subjects, so the accrual threshold must be
+  # on that scale: cloning kri0001's 30 (a Days-on-Study metric) left every
+  # group below accrual and therefore unscored.
+  for (strMetric in c("kri0016", "cou0016")) {
+    out <- RunOne(strMetric)
+    expect_false(any(is.na(out$Score)), label = strMetric)
+    expect_false(any(is.na(out$Flag)), label = strMetric)
+  }
+})
+
 test_that("pat0016 reports confirmed non-starter status per enrolled subject {#258}", {
   out <- RunOne("pat0016")
   expect_equal(nrow(out), 6) # one row per enrolled subject

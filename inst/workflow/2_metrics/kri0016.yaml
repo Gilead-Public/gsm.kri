@@ -15,7 +15,9 @@ meta:
   Threshold: -2,-1,2,3
   Flag: "-2,-1,0,1,2"
   RiskScoreWeight: "32,16,0,1,2"
-  AccrualThreshold: 30
+  # Accrual follows kri0015, not kri0001: this denominator counts enrolled
+  # subjects, so a site-level threshold of 30 would leave every site unscored.
+  AccrualThreshold: 1
   AccrualMetric: Denominator
   GenerateRiskSignal: true
 spec:

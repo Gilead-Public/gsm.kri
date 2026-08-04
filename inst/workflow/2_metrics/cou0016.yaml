@@ -13,7 +13,9 @@ meta:
   # Calibration values are placeholders pending business sign-off (gsm.kri#258).
   Threshold: -2,-1,2,3
   Flag: "-2,-1,0,1,2"
-  AccrualThreshold: 30
+  # Accrual matches cou0015, the sibling with the same enrolled-subject
+  # denominator.
+  AccrualThreshold: 1
   AccrualMetric: Denominator
   GenerateRiskSignal: true
 spec:
