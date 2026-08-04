@@ -8,11 +8,11 @@
 #' @import gt
 #' @import purrr
 #' @import tidyr
+#' @importFrom cli pluralize
+#' @importFrom cli qty
 #' @importFrom DT datatable
 #' @importFrom DT formatStyle
 #' @importFrom DT styleInterval
-#' @importFrom cli pluralize
-#' @importFrom cli qty
 #' @importFrom glue glue
 #' @importFrom htmltools h1
 #' @importFrom htmltools h2
@@ -37,5 +37,6 @@
 #' @importFrom stats setNames
 #' @importFrom tibble enframe
 #' @importFrom tibble tibble
+#' @importFrom workr FilterWorkflows
 ## usethis namespace: end
 NULL
