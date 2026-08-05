@@ -191,7 +191,7 @@ test('a bar too thin to hold its label drops it (#264)', async ({ page }) => {
   // Densify to the shape of a real study. gsm.viz's own minSize floor measures
   // the VALUE axis, so these bars stay tall and clear it -- only a category-axis
   // check can drop them. Going through updateData also proves the fit check
-  // survives the config rebuild, since a lost formatter would relabel the bars.
+  // survives the config rebuild, since a lost check would redraw the labels.
   await page.evaluate(() => {
     const el = document.querySelector('#pd-site-buckets');
     // A non-zero row, so the bar runs the full height of the plot and clears
@@ -210,15 +210,18 @@ test('a bar too thin to hold its label drops it (#264)', async ({ page }) => {
     const meta = c.getDatasetMeta(0);
     const ctx = { chart: c, dataset, datasetIndex: 0, dataIndex: 0 };
     return {
+      // gsm.viz still RESOLVES the text; the category-axis check gates whether
+      // it is drawn, so the evidence is display(), not a blanked formatter.
       text: seg.formatter(dataset.data[0], ctx),
-      shownByMinSize: seg.display(ctx),
+      shown: seg.display(ctx),
       barW: meta.data[0].width,
       barH: meta.data[0].height
     };
   });
-  expect(thin.barW).toBeLessThan(16);      // far too thin for a digit
-  expect(thin.shownByMinSize).toBe(true);  // the value-axis floor lets it through
-  expect(thin.text).toBeNull();            // the fit check is what drops it
+  expect(thin.barW).toBeLessThan(16);          // far too thin for a digit
+  expect(thin.barH).toBeGreaterThanOrEqual(16); // the value-axis floor (minSize) lets it through
+  expect(thin.text).toBe('10');                // the label still resolves...
+  expect(thin.shown).toBe(false);              // ...the category-axis check drops it
 });
 
 test('the zoomable bucket charts caption scroll-to-zoom (#264)', async ({ page }) => {
