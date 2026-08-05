@@ -50,11 +50,20 @@ test_that("pd_BucketBarSpec builds a flat vertical stacked identity spec with fi
   expect_null(spec$facet)
   # Zoom is opt-in: the default (study/country) charts carry no zoom key.
   expect_null(spec$zoom)
+  # Theme is opt-in too, so gsm.viz's own theme defaults apply untouched.
+  expect_null(spec$theme)
 })
 
 test_that("pd_BucketBarSpec emits zoom only when requested (#264)", {
   z <- list(enabled = TRUE, mode = "x")
   expect_equal(pd_BucketBarSpec(90, "Site", zoom = z)$zoom, z)
+})
+
+test_that("pd_BucketBarSpec passes theme through untouched (#264)", {
+  # A passthrough rather than a per-option argument: gsm.viz owns the theme
+  # vocabulary, so a new key there needs no change here.
+  th <- list(dynamicCategoryAxis = TRUE)
+  expect_equal(pd_BucketBarSpec(90, "Site", theme = th)$theme, th)
 })
 
 test_that("pd_BucketBarSpec turns on auto value labels (#264)", {

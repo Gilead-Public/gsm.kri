@@ -351,8 +351,15 @@ Widget_PrematureDeathBucketBar(
   # drilldown can re-slice this chart to one country's sites (see filter-js).
   data = pd_BucketRows(dfClassified, nWindowDays, strGroupCol = "invid", strOuterCol = "country"),
   # Zoom/pan (x-axis): the site chart always renders every enrolled site (see
-  # the country chart chunk for the shared rationale).
-  spec = pd_BucketBarSpec(nWindowDays, "Site", zoom = list(enabled = TRUE, mode = "x")),
+  # the country chart chunk for the shared rationale). dynamicCategoryAxis drops
+  # a site off the axis once a disabled legend entry leaves it with nothing to
+  # show, so hiding a death window thins the axis instead of leaving blank slots.
+  spec = pd_BucketBarSpec(
+    nWindowDays,
+    "Site",
+    zoom = list(enabled = TRUE, mode = "x"),
+    theme = list(dynamicCategoryAxis = TRUE)
+  ),
   metadata = list(chartId = "pd-site-buckets", level = "site")
 )
 ```

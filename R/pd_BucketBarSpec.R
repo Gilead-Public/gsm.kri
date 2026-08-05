@@ -73,13 +73,19 @@ pd_BucketRows <- function(
 #'   site chart opts in so its many bars can be zoomed, the study/country charts
 #'   do not. Enabling it also captions the chart with the scroll-to-zoom
 #'   affordance. Default `NULL` (no zoom).
+#' @param theme `list` or `NULL` Optional `gsm.viz` theme spec, passed through
+#'   untouched (e.g. `list(dynamicCategoryAxis = TRUE)`, which drops categories
+#'   off the axis once a disabled legend entry leaves them empty — the site
+#'   chart opts in so hiding a death window thins its many bars). Omitted when
+#'   `NULL`, leaving gsm.viz's own theme defaults in place. Default `NULL`.
 #'
 #' @return A named `list` — a `gsm.viz` `bars` spec without callbacks.
 #' @export
 pd_BucketBarSpec <- function(
   nWindowDays = 90,
   strGroupLabel = "Group",
-  zoom = NULL
+  zoom = NULL,
+  theme = NULL
 ) {
   spec <- list(
     mapping = list(x = "GroupID", y = "n", fill = "Category"),
@@ -103,6 +109,9 @@ pd_BucketBarSpec <- function(
       labels = list(segment = list(display = TRUE, value = "auto"))
     )
   )
+  if (!is.null(theme)) {
+    spec$theme <- theme
+  }
   if (!is.null(zoom)) {
     spec$zoom <- zoom
     # Zoom is opt-in on the dense charts, where bars can be too thin to carry

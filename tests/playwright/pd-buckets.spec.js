@@ -331,3 +331,42 @@ test('re-clicking the active country bar drops an active site with it (#264)', a
   expect(await shown(page, 'pd-filter-site-chip')).toBe(false);   // dropped with its country
   expect(await shown(page, 'pd-filter-banner')).toBe(false);
 });
+
+test('only the site chart opts into the dynamic category axis (#264)', async ({ page }) => {
+  // The dense chart is the one that gains from thinning; the study chart is a
+  // single bar and the country chart holds few enough bars to stay readable.
+  const themes = await page.evaluate(() =>
+    ['pd-study-buckets', 'pd-country-buckets', 'pd-site-buckets'].map(
+      (id) => !!document.querySelector('#' + id).gsmChart.data._spec_.theme?.dynamicCategoryAxis
+    )
+  );
+  expect(themes).toEqual([false, false, true]);
+});
+
+test('disabling a legend category drops the sites it emptied off the axis (#264)', async ({ page }) => {
+  // Give two sites one death window each, so hiding that window has an
+  // unambiguous victim. gsm.viz keys the axis off the visible datasets' cached
+  // source rows, so this also pins that updateData reseeded that cache from the
+  // narrowed rows rather than the original ones.
+  const out = await page.evaluate(() => {
+    const el = document.querySelector('#pd-site-buckets');
+    const c = el.gsmChart;
+    const cats = c.data.datasets.map((d) => d.label);
+    const proto = el.pdAllData.find((r) => r.n > 0);
+    c.helpers.updateData(c, [
+      Object.assign({}, proto, { GroupID: 'SITE-A', Category: cats[0], n: 5 }),
+      Object.assign({}, proto, { GroupID: 'SITE-B', Category: cats[1], n: 5 })
+    ], c.data._spec_);
+
+    const before = [...c.data.labels];
+    // Drive the real legend handler rather than a synthetic canvas click:
+    // enabling the theme is precisely what swaps this onClick in.
+    const idx = c.data.datasets.findIndex((d) => d.label === cats[0]);
+    c.options.plugins.legend.onClick(null, { datasetIndex: idx }, { chart: c });
+
+    return { before, after: [...c.data.labels] };
+  });
+
+  expect(out.before).toEqual(['SITE-A', 'SITE-B']);
+  expect(out.after).toEqual(['SITE-B']);   // SITE-A had nothing left to show
+});
