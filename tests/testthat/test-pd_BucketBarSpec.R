@@ -9,15 +9,17 @@ make_classified <- function() {
   )
 }
 
-test_that("pd_BucketRows returns long rows with n, pct, Level and preserves zero cells (#264)", {
+test_that("pd_BucketRows returns long rows with n, pct, Level and no empty cells (#264)", {
   rows <- pd_BucketRows(make_classified(), 90, strGroupCol = "invid")
   expect_setequal(
     names(rows),
     c("GroupID", "OuterGroupID", "Category", "n", "pct", "Level")
   )
-  # .drop = FALSE: every site x 5 categories present, incl zero cells.
-  expect_equal(nrow(rows), length(unique(make_classified()$invid)) * 5)
-  expect_true(any(rows$n == 0))
+  # .drop = TRUE: only the category cells a site actually has. S1 holds A/B/E
+  # (3 categories), S2 holds C/D (2). A category nobody lands in is absent from
+  # the payload entirely, so gsm.viz builds no legend entry for it.
+  expect_equal(nrow(rows), 5)
+  expect_false(any(rows$n == 0))
   expect_equal(unique(rows$Level), "site")
   s1 <- rows[rows$GroupID == "S1", ]
   expect_equal(sum(s1$n), 3) # A, B, E at S1

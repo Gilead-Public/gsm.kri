@@ -4,8 +4,10 @@
 #' `r lifecycle::badge("experimental")`
 #'
 #' Counts the [pd_Classify()] category of each enrolled subject per
-#' `strGroupCol`. `.drop = FALSE` keeps every category present for every group so
-#' the stacked bar and its colors stay aligned.
+#' `strGroupCol`. `.drop = TRUE` emits only the (group, category) pairs that
+#' actually occur; the `Bucket` factor still carries the full level vocabulary,
+#' so colors and display order stay aligned. A category nobody lands in is
+#' therefore absent from the counts, and downstream gets no legend entry for it.
 #'
 #' @param dfClassified `data.frame` Output of [pd_Classify()].
 #' @param strGroupCol `character` Column to group by. Default "studyid".
@@ -53,7 +55,7 @@ pd_BucketCounts <- function(
 
   if (is.null(strOuterCol)) {
     return(
-      dplyr::count(df, .data$GroupID, .data$Bucket, name = "n", .drop = FALSE)
+      dplyr::count(df, .data$GroupID, .data$Bucket, name = "n", .drop = TRUE)
     )
   }
 
@@ -66,7 +68,7 @@ pd_BucketCounts <- function(
       .data$GroupID,
       .data$Bucket,
       name = "n",
-      .drop = FALSE
+      .drop = TRUE
     ) %>%
     dplyr::arrange(.data$Outer, .data$GroupID)
 }

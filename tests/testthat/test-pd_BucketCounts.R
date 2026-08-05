@@ -12,11 +12,15 @@ make_classified <- function() {
   )
 }
 
-test_that("pd_BucketCounts counts all five categories per group {#246}", {
+test_that("pd_BucketCounts emits only the category cells that occur {#246}", {
   counts <- pd_BucketCounts(make_classified(), strGroupCol = "invid")
+  # The Bucket factor still carries the whole vocabulary -- .drop = TRUE drops
+  # unused (group, bucket) COMBINATIONS, not the levels themselves -- so colour
+  # and display order still key off all five.
   expect_setequal(levels(counts$Bucket), unname(pd_CategoryLevels(90)))
-  # every (group, bucket) cell present thanks to .drop = FALSE
-  expect_equal(nrow(counts), length(unique(make_classified()$invid)) * 5)
+  # One row per observed pair: S1 holds A/B/E (3 categories), S2 holds C/D (2).
+  expect_equal(nrow(counts), 5)
+  expect_false(any(counts$n == 0))
   s1 <- dplyr::filter(counts, GroupID == "S1")
   expect_equal(sum(s1$n), 3) # A, B, E are at S1
 })
@@ -28,12 +32,11 @@ test_that("pd_BucketCounts carries a contiguous Outer tier when strOuterCol set 
     strOuterCol = "country"
   )
   expect_true("Outer" %in% names(counts))
-  # 2 sites x 5 categories, every cell kept by .drop = FALSE.
-  expect_equal(nrow(counts), 10)
+  # Only observed (Outer, group, bucket) cells: S1 holds 3 categories, S2 holds 2.
+  expect_equal(nrow(counts), 5)
   # Rows are arranged by Outer, so each group's category rows stay together.
   expect_false(is.unsorted(counts$Outer))
-  # Every site keeps all five category rows (stack alignment depends on this).
-  expect_true(all(table(counts$GroupID) == 5))
+  expect_equal(as.vector(table(counts$GroupID)[c("S1", "S2")]), c(3L, 2L))
 })
 
 test_that("pd_BucketCounts labels a missing parent 'Unknown' {#246}", {

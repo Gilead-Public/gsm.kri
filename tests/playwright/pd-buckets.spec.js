@@ -344,29 +344,43 @@ test('only the site chart opts into the dynamic category axis (#264)', async ({ 
 });
 
 test('disabling a legend category drops the sites it emptied off the axis (#264)', async ({ page }) => {
-  // Give two sites one death window each, so hiding that window has an
-  // unambiguous victim. gsm.viz keys the axis off the visible datasets' cached
-  // source rows, so this also pins that updateData reseeded that cache from the
-  // narrowed rows rather than the original ones.
+  // Runs on the report's OWN rows, not synthetic ones. pd_BucketRows emits only
+  // the categories a site actually has, so some site's sole category is a real
+  // victim -- the whole point being that a chart built from real data reaches
+  // this state. Feeding hand-built rows here would pass even if it never could.
   const out = await page.evaluate(() => {
     const el = document.querySelector('#pd-site-buckets');
     const c = el.gsmChart;
-    const cats = c.data.datasets.map((d) => d.label);
-    const proto = el.pdAllData.find((r) => r.n > 0);
-    c.helpers.updateData(c, [
-      Object.assign({}, proto, { GroupID: 'SITE-A', Category: cats[0], n: 5 }),
-      Object.assign({}, proto, { GroupID: 'SITE-B', Category: cats[1], n: 5 })
-    ], c.data._spec_);
-
+    const bySite = {};
+    el.pdAllData.forEach((r) => {
+      (bySite[r.GroupID] = bySite[r.GroupID] || new Set()).add(r.Category);
+    });
+    const victim = Object.keys(bySite).find((s) => bySite[s].size === 1);
+    const category = [...bySite[victim]][0];
     const before = [...c.data.labels];
     // Drive the real legend handler rather than a synthetic canvas click:
     // enabling the theme is precisely what swaps this onClick in.
-    const idx = c.data.datasets.findIndex((d) => d.label === cats[0]);
+    const idx = c.data.datasets.findIndex((d) => d.label === category);
     c.options.plugins.legend.onClick(null, { datasetIndex: idx }, { chart: c });
-
-    return { before, after: [...c.data.labels] };
+    return { victim, category, before, after: [...c.data.labels] };
   });
 
-  expect(out.before).toEqual(['SITE-A', 'SITE-B']);
-  expect(out.after).toEqual(['SITE-B']);   // SITE-A had nothing left to show
+  expect(out.victim).toBeTruthy();          // a site whose only entry is one category
+  expect(out.before).toContain(out.victim);
+  expect(out.after).not.toContain(out.victim);
+  expect(out.after).toHaveLength(out.before.length - 1);
+});
+
+test('bucket payloads carry no empty category cells (#264)', async ({ page }) => {
+  // The counterpart to the legend trim: dropping unused (site, category) pairs
+  // is what lets a disabled legend entry actually empty a site. A zero-filled
+  // payload would silently make the test above unreachable on real data.
+  const zeros = await page.evaluate(() =>
+    ['pd-study-buckets', 'pd-country-buckets', 'pd-site-buckets'].map((id) => {
+      const rows = document.querySelector('#' + id).pdAllData;
+      return { id, rows: rows.length, empty: rows.filter((r) => r.n === 0).length };
+    })
+  );
+  for (const z of zeros) expect(z).toMatchObject({ empty: 0 });
+  expect(zeros.every((z) => z.rows > 0)).toBe(true);
 });

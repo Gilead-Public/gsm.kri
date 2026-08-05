@@ -3,7 +3,7 @@
 #' @description
 #' Adapts [pd_BucketCounts()] to one row per (group, category) with within-group
 #' `pct`, plus stable `OuterGroupID` / `Level` keys for the country->site
-#' click-filter drilldown. `.drop = FALSE` zero-count cells are preserved.
+#' click-filter drilldown. Only categories a group actually has get a row.
 #'
 #' @param dfClassified `data.frame` Output of [pd_Classify()].
 #' @param nWindowDays `numeric` Window in days.
@@ -103,8 +103,7 @@ pd_BucketBarSpec <- function(
     ),
     # gsm.viz "auto" follows the native position control: raw counts while stat
     # is identity, percentages once the fill (100%) button sets stat = "percent".
-    # Segments below gsm.viz's 16px floor stay blank, which also suppresses the
-    # .drop = FALSE zero cells.
+    # Segments below gsm.viz's 16px floor stay blank.
     annotations = list(
       labels = list(segment = list(display = TRUE, value = "auto"))
     )
