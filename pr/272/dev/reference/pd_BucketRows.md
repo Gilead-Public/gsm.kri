@@ -2,8 +2,8 @@
 
 Adapts \[pd_BucketCounts()\] to one row per (group, category) with
 within-group \`pct\`, plus stable \`OuterGroupID\` / \`Level\` keys for
-the country-\>site click-filter drilldown. \`.drop = FALSE\` zero-count
-cells are preserved.
+the country-\>site click-filter drilldown. Only categories a group
+actually has get a row.
 
 ## Usage
 
