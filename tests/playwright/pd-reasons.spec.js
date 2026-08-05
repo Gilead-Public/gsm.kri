@@ -67,6 +67,11 @@ test('reason bars wide enough for a label carry their count (#264)', async ({ pa
         // textposition="auto" did. The category-axis check (gsm.viz #550)
         // measures bar THICKNESS against the label's own width. A label draws
         // only when it clears both.
+        //
+        // Measured against the ambient canvas font on purpose: gsm.viz only
+        // overrides ctx.font when the segment label config carries one, and
+        // pd_ReasonBarSpec() sets none -- so it measures ambient too. Pinning a
+        // font here would measure against something the library never uses.
         wide: meta.data[i].width >= 16,
         fits: c.ctx.measureText(String(p._datum.n)).width <= meta.data[i].height
       };
