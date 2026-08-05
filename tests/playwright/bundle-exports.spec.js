@@ -35,3 +35,12 @@ test('vendored bundle registers the chartjs zoom plugin', () => {
   const src = fs.readFileSync(path.join(currentBundleDir(), 'index.js'), 'utf8');
   expect(src).toContain('chartjs-plugin-zoom');
 });
+
+// The category-axis overlap heuristic (gsm.viz #550) is what replaces the
+// hand-rolled label-fit formatter in Widget_PrematureDeathBucketBar.js. Like the
+// zoom plugin above it is not a key on the export object, so a source marker is
+// the reliable check that the vendored bundle actually carries it.
+test('vendored bundle carries the category-axis overlap heuristic', () => {
+  const src = fs.readFileSync(path.join(currentBundleDir(), 'index.js'), 'utf8');
+  expect(src).toContain('avoidCategoryOverlap');
+});

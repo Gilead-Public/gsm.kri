@@ -61,16 +61,20 @@ test('reason bars wide enough for a label carry their count (#264)', async ({ pa
         text: seg.formatter(p, ctx),
         shown: seg.display(ctx),
         n: p._datum.n,
-        // On a horizontal chart gsm.viz's 16px floor measures bar LENGTH, so a
-        // short reason drops its label outright instead of moving it just
-        // outside the bar the way Plotly's textposition="auto" did.
-        wide: meta.data[i].width >= 16
+        // Two independent gates. The 16px minSize floor measures bar LENGTH
+        // (the value axis), so a short reason drops its label outright instead
+        // of moving it just outside the bar the way Plotly's
+        // textposition="auto" did. The category-axis check (gsm.viz #550)
+        // measures bar THICKNESS against the label's own width. A label draws
+        // only when it clears both.
+        wide: meta.data[i].width >= 16,
+        fits: c.ctx.measureText(String(p._datum.n)).width <= meta.data[i].height
       };
     });
   });
   expect(rows.length).toBeGreaterThan(0);
   for (const row of rows) {
     expect(row.text).toBe(String(row.n));
-    expect(row.shown).toBe(row.wide);
+    expect(row.shown).toBe(row.wide && row.fits);
   }
 });
