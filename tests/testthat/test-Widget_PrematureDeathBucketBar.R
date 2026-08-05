@@ -55,12 +55,14 @@ test_that("Widget_PrematureDeathBucketBar validates inputs (#264)", {
   )
 })
 
-test_that("Widget_PrematureDeathBucketBar wires the gsm.viz 2.4.0 dependency (#264)", {
+test_that("Widget_PrematureDeathBucketBar wires the pinned gsm.viz dependency (#264)", {
   y <- yaml::read_yaml(system.file(
     "htmlwidgets/Widget_PrematureDeathBucketBar.yaml",
     package = "gsm.kri"
   ))
   gv <- Filter(function(d) identical(d$name, "gsmViz"), y$dependencies)[[1]]
-  expect_equal(as.character(gv$version), "2.4.0")
-  expect_equal(gv$src, "htmlwidgets/lib/gsm.viz-2.4.0")
+  # "2.4.0-550" (not the directory name) because htmltools parses this field with
+  # package_version(), which rejects letters -- "2.4.0-pr550.3925cba" errors.
+  expect_equal(as.character(gv$version), "2.4.0-550")
+  expect_equal(gv$src, "htmlwidgets/lib/gsm.viz-2.4.0-pr550.3925cba")
 })
