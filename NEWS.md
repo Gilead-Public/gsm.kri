@@ -1,5 +1,13 @@
 # gsm.kri (development version)
 
+- Added `CalculateActionRiskScore()` and the `srs0002` workflow for an
+  action-status-weighted Site Risk Score. Open, closed, and awaiting-triage
+  findings are included by default; no-action findings are excluded; missing
+  nonzero action states fail unless an explicit fallback is configured. The
+  full raw SRS denominator is retained (#280).
+- Added configurable risk-score MetricIDs to the cross-study summary and widget
+  APIs while retaining `Analysis_srs0001` as the default (#280).
+
 # gsm.kri v1.6.0
 
 This minor release introduces the Premature Deaths reporting module and adds cross-study sorting and filtering capabilities.

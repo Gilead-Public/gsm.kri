@@ -1,0 +1,63 @@
+meta:
+  Active: true
+  Type: Analysis
+  ID: srs0002
+  GroupLevel: Site
+  Abbreviation: Action-weighted SRS
+  Metric: Action-weighted Site Risk Score
+  Numerator: Action-weighted KRI weights
+  Denominator: Maximum Weights
+  Model: Identity
+  Score: Normalized Action-weighted Risk Score
+  AnalysisType: identity
+  Priority: 4
+  GenerateRiskSignal: true
+  ActionFactors:
+    Open Action: 1
+    Closed Action: 1
+    Awaiting Triage: 1
+    No Action: 0
+  MissingActionState: error
+spec:
+  Analysis_Summary:
+    _all:
+      required: true
+  Reporting_ActionLog:
+    _all:
+      required: true
+steps:
+  - output: dfResults
+    name: workr::RunQuery
+    params:
+      df: Analysis_Summary
+      strQuery: |
+        SELECT *
+        FROM df
+        WHERE GroupLevel = 'Site'
+          AND MetricID LIKE 'Analysis_kri%'
+  - output: lWorkflows
+    name: workr::MakeWorkflowList
+    params:
+      strPath: ./workflow/2_metrics
+      strPackage: null
+  - output: dfMetrics
+    name: gsm.reporting::MakeMetric
+    params:
+      lWorkflows: lWorkflows
+  - output: dfWeights
+    name: gsm.kri::MakeWeights
+    params:
+      dfMetrics: dfMetrics
+  - output: dfRiskScore
+    name: gsm.kri::CalculateActionRiskScore
+    params:
+      dfResults: dfResults
+      dfWeights: dfWeights
+      dfActionLog: Reporting_ActionLog
+      lActionFactors: ActionFactors
+      strMissingState: MissingActionState
+  - output: lAnalysis
+    name: list
+    params:
+      ID: ID
+      Analysis_Summary: dfRiskScore
