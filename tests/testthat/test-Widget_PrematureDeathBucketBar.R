@@ -61,8 +61,7 @@ test_that("Widget_PrematureDeathBucketBar wires the pinned gsm.viz dependency (#
     package = "gsm.kri"
   ))
   gv <- Filter(function(d) identical(d$name, "gsmViz"), y$dependencies)[[1]]
-  # "2.4.0-550" (not the directory name) because htmltools parses this field with
-  # package_version(), which rejects letters -- "2.4.0-pr550.3925cba" errors.
-  expect_equal(as.character(gv$version), "2.4.0-550")
-  expect_equal(gv$src, "htmlwidgets/lib/gsm.viz-2.4.0-pr550.3925cba")
+    # Release-mode pin: yaml version and directory both track gsm.viz 2.4.1.
+  expect_equal(as.character(gv$version), "2.4.1")
+  expect_equal(gv$src, "htmlwidgets/lib/gsm.viz-2.4.1")
 })

@@ -24569,9 +24569,7 @@ var gsmViz = (() => {
       );
     }
     if (spec.stat !== void 0 && spec.stat !== "count" && spec.stat !== "identity" && spec.stat !== "percent") {
-      throw new Error(
-        "spec.stat must be 'count', 'identity', or 'percent'"
-      );
+      throw new Error("spec.stat must be 'count', 'identity', or 'percent'");
     }
     if (spec.orientation !== void 0 && spec.orientation !== "vertical" && spec.orientation !== "horizontal") {
       throw new Error("spec.orientation must be 'vertical' or 'horizontal'");
@@ -25633,6 +25631,7 @@ var gsmViz = (() => {
   function resolveFontString(font) {
     if (!font) return void 0;
     if (typeof font === "string") return font;
+    if (typeof font === "function") return void 0;
     const size = font.size ?? 12;
     const family = font.family ?? "'Helvetica Neue', Helvetica, Arial, sans-serif";
     const style = font.style ? `${font.style} ` : "";
@@ -26644,9 +26643,7 @@ var gsmViz = (() => {
       const multiple = spec.selection.multiple;
       if (current.type === "category" && current.values.includes(category)) {
         if (multiple) {
-          const remaining = current.values.filter(
-            (v) => v !== category
-          );
+          const remaining = current.values.filter((v) => v !== category);
           if (remaining.length === 0) {
             clearSelection(chart, event);
           } else {

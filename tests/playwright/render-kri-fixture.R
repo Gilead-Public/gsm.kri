@@ -1,6 +1,6 @@
 # Renders a site-level Standard KRI report to fixture/Report_KRI.html using the
 # bundled gsm.core reporting example data (mirrors Report_KRI @examples). This
-# report exercises the in-use gsm.viz entrypoints re-based by the 2.4.0 upgrade:
+# report exercises the in-use gsm.viz entrypoints re-based by the 2.4.1 upgrade:
 # barChart, scatterPlot, timeSeries, and groupOverview.
 # Source this with the gsm.kri package loaded and the working directory at the
 # package root so the relative fixture path resolves.

@@ -4,7 +4,7 @@ dependencies:
     src: htmlwidgets/lib
     script: renderCrossStudyRiskScoreTable.js
   - name: gsmViz
-    version: 2.4.0-550
-    src: 'htmlwidgets/lib/gsm.viz-2.4.0-pr550.3925cba'
+    version: 2.4.1
+    src: 'htmlwidgets/lib/gsm.viz-2.4.1'
     script: 'index.js'
     stylesheet: 'main.css'

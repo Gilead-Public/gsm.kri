@@ -35,5 +35,5 @@ test_that("Widget_PrematureDeathReasonBar wires the pinned gsm.viz dependency (#
     package = "gsm.kri"
   ))
   gv <- Filter(function(d) identical(d$name, "gsmViz"), y$dependencies)[[1]]
-  expect_equal(as.character(gv$version), "2.4.0-550")
+  expect_equal(as.character(gv$version), "2.4.1")
 })

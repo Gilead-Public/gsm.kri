@@ -41,7 +41,7 @@ test('vendored bundle exposes bars + facetBars alongside the existing entrypoint
 });
 
 // zoomPlugin is registered via Chart.register(...) inside the bundle (it is NOT a
-// key on the gsmViz export object). The 2.4.0 bundle contains the plugin source;
+// key on the gsmViz export object). The 2.4.1 bundle contains the plugin source;
 // 2.3.0 does not. A source marker is the reliable, framework-agnostic check.
 test('vendored bundle registers the chartjs zoom plugin', () => {
   expect(bundleSource()).toContain('chartjs-plugin-zoom');
