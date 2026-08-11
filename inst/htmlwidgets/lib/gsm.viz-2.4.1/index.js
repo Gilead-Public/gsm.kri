@@ -24569,9 +24569,7 @@ var gsmViz = (() => {
       );
     }
     if (spec.stat !== void 0 && spec.stat !== "count" && spec.stat !== "identity" && spec.stat !== "percent") {
-      throw new Error(
-        "spec.stat must be 'count', 'identity', or 'percent'"
-      );
+      throw new Error("spec.stat must be 'count', 'identity', or 'percent'");
     }
     if (spec.orientation !== void 0 && spec.orientation !== "vertical" && spec.orientation !== "horizontal") {
       throw new Error("spec.orientation must be 'vertical' or 'horizontal'");
@@ -24817,6 +24815,7 @@ var gsmViz = (() => {
           format: void 0,
           formatter: void 0,
           minSize: 16,
+          avoidCategoryOverlap: true,
           color: void 0,
           font: void 0
         },
@@ -24825,6 +24824,7 @@ var gsmViz = (() => {
           placement: "outside",
           format: void 0,
           formatter: void 0,
+          avoidCategoryOverlap: true,
           color: void 0,
           font: void 0
         }
@@ -25614,13 +25614,66 @@ var gsmViz = (() => {
     }
     return false;
   }
-  function isLargeEnoughForSegment(context, options) {
+  function getElement(context) {
+    return context.chart.getDatasetMeta?.(context.datasetIndex)?.data?.[context.dataIndex];
+  }
+  function isLargeEnoughForValueAxis(context, options) {
     const minSize = options.minSize ?? 0;
     if (!minSize) return true;
-    const element = context.chart.getDatasetMeta?.(context.datasetIndex)?.data?.[context.dataIndex];
+    const element = getElement(context);
     if (!element) return true;
     const size = context.chart.options?.indexAxis === "y" ? element.width : element.height;
     return size === void 0 || size >= minSize;
+  }
+  function getCategoryThickness(context, element) {
+    return context.chart.options?.indexAxis === "y" ? element.height : element.width;
+  }
+  function resolveFontString(font) {
+    if (!font) return void 0;
+    if (typeof font === "string") return font;
+    if (typeof font === "function") return void 0;
+    const size = font.size ?? 12;
+    const family = font.family ?? "'Helvetica Neue', Helvetica, Arial, sans-serif";
+    const style = font.style ? `${font.style} ` : "";
+    const weight = font.weight ? `${font.weight} ` : "";
+    return `${style}${weight}${size}px ${family}`;
+  }
+  function resolveLabelText(context, options, mode, spec) {
+    const cacheKey = `_${mode}LabelText`;
+    if (Object.prototype.hasOwnProperty.call(context, cacheKey)) {
+      return context[cacheKey];
+    }
+    const point = getPoint3(context);
+    const text = formatLabel(point, context, options, mode, spec);
+    context[cacheKey] = text;
+    return text;
+  }
+  function fitsCategoryAxis(context, options, mode, spec) {
+    if (options.avoidCategoryOverlap === false) return true;
+    const ctx = context.chart.ctx;
+    if (!ctx || typeof ctx.measureText !== "function") return true;
+    const element = getElement(context);
+    if (!element) return true;
+    const thickness = getCategoryThickness(context, element);
+    if (thickness === void 0) return true;
+    const text = resolveLabelText(context, options, mode, spec);
+    if (text === void 0 || text === null) return true;
+    const font = resolveFontString(options.font);
+    const previousFont = font !== void 0 ? ctx.font : void 0;
+    if (font !== void 0) {
+      ctx.font = font;
+    }
+    const { width: textWidth } = ctx.measureText(String(text));
+    if (font !== void 0) {
+      ctx.font = previousFont;
+    }
+    return textWidth <= thickness;
+  }
+  function isLargeEnoughForSegment(context, options, spec) {
+    return isLargeEnoughForValueAxis(context, options) && fitsCategoryAxis(context, options, "segment", spec);
+  }
+  function isLargeEnoughForTotal(context, options, spec) {
+    return isLastVisibleDatasetForCategory(context) && fitsCategoryAxis(context, options, "total", spec);
   }
   function withStyle(config, options) {
     return {
@@ -25633,8 +25686,8 @@ var gsmViz = (() => {
     const placement = options.placement ?? "center";
     const isEnd = placement === "end";
     const config = {
-      display: (context) => isLargeEnoughForSegment(context, options),
-      formatter: (value, context) => formatLabel(value, context, options, "segment", spec),
+      display: (context) => isLargeEnoughForSegment(context, options, spec),
+      formatter: (value, context) => resolveLabelText(context, options, "segment", spec),
       anchor: () => "end",
       align: isEnd ? (context) => context.chart.options?.indexAxis === "y" ? "right" : "end" : () => "center"
     };
@@ -25658,8 +25711,8 @@ var gsmViz = (() => {
     const align = placement === "inside" ? () => "start" : () => "end";
     return withStyle(
       {
-        display: (context) => isLastVisibleDatasetForCategory(context),
-        formatter: (value, context) => formatLabel(value, context, options, "total", spec),
+        display: (context) => isLargeEnoughForTotal(context, options, spec),
+        formatter: (value, context) => resolveLabelText(context, options, "total", spec),
         anchor: () => "end",
         align,
         offset: 4
@@ -26590,9 +26643,7 @@ var gsmViz = (() => {
       const multiple = spec.selection.multiple;
       if (current.type === "category" && current.values.includes(category)) {
         if (multiple) {
-          const remaining = current.values.filter(
-            (v) => v !== category
-          );
+          const remaining = current.values.filter((v) => v !== category);
           if (remaining.length === 0) {
             clearSelection(chart, event);
           } else {
