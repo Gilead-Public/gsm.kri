@@ -225,17 +225,17 @@ item in Flag than thresholds - that is
 flag value. Default: <code>NULL</code>.</li>
 </ul>
 <p>When <code>vRiskScoreWeight</code> is provided, the
-<code><a href="https://gilead-biostats.github.io/gsm.core/reference/Flag.html" class="external-link">Flag()</a></code> output will include additional columns capturing
+<code><a href="https://rdrr.io/pkg/gsm.core/man/Flag.html" class="external-link">Flag()</a></code> output will include additional columns capturing
 <code>Weight</code> and <code>MaxWeight</code> with the corresponding
 weight for each KRI.</p>
 <p>These parameters allow for flexible configuration of the relative
 risk for different metrics in a study. While single metrics can be run
-via direct calls to <code><a href="https://gilead-biostats.github.io/gsm.core/reference/Flag.html" class="external-link">Flag()</a></code>, <a href="https://gilead-biostats.github.io/gsm.kri/articles/AddingKRIs.html">YAML
+via direct calls to <code><a href="https://rdrr.io/pkg/gsm.core/man/Flag.html" class="external-link">Flag()</a></code>, <a href="https://gilead-biostats.github.io/gsm.kri/articles/AddingKRIs.html">YAML
 workflows are recommended for reusable implementations</a>. As such, all
 standard KRIs include default thresholds, flags and weights. For
 reference, the relevant sections of the <a href="https://github.com/Gilead-BioStats/gsm.kri/blob/main/inst/workflow/2_metrics/kri0001.yaml" class="external-link">Adverse
 Event KRI YAML</a>, including the default flag and weight values and
-<code><a href="https://gilead-biostats.github.io/gsm.core/reference/Flag.html" class="external-link">Flag()</a></code> function call are shown below for reference:</p>
+<code><a href="https://rdrr.io/pkg/gsm.core/man/Flag.html" class="external-link">Flag()</a></code> function call are shown below for reference:</p>
 <pre><code>meta:
   Type: Analysis
   ID: kri0001
@@ -279,9 +279,9 @@ steps:
   ...</code></pre>
 <p>First, <code>Threshold</code>, <code>Flag</code>, and
 <code>RiskScoreWeight</code> values provided in the metadata are parsed
-from strings to vectors using <code><a href="https://gilead-biostats.github.io/gsm.core/reference/ParseThreshold.html" class="external-link">gsm.core::ParseThreshold()</a></code>.
+from strings to vectors using <code><a href="https://rdrr.io/pkg/gsm.core/man/ParseThreshold.html" class="external-link">gsm.core::ParseThreshold()</a></code>.
 These parsed vectors are then passed to the
-<code><a href="https://gilead-biostats.github.io/gsm.core/reference/Flag.html" class="external-link">gsm.core::Flag()</a></code> function to compute flags and weights for
+<code><a href="https://rdrr.io/pkg/gsm.core/man/Flag.html" class="external-link">gsm.core::Flag()</a></code> function to compute flags and weights for
 each site.</p>
 </div>
 <div class="section level2">
@@ -386,12 +386,12 @@ automatically.</p>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Step 1: Prepare KRI results (filter to single study/snapshot)</span></span>
-<span><span class="va">dfResults</span> <span class="op">&lt;-</span> <span class="fu">gsm.core</span><span class="fu">::</span><span class="va"><a href="https://gilead-biostats.github.io/gsm.core/reference/reportingResults.html" class="external-link">reportingResults</a></span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<span><span class="va">dfResults</span> <span class="op">&lt;-</span> <span class="fu">gsm.core</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/gsm.core/man/reportingResults.html" class="external-link">reportingResults</a></span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">grepl</a></span><span class="op">(</span><span class="st">"srs0001"</span>, <span class="va">MetricID</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="../reference/FilterByLatestSnapshotDate.html">FilterByLatestSnapshotDate</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Step 2: Create weights table from metric metadata</span></span>
-<span><span class="va">dfWeights</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/MakeWeights.html">MakeWeights</a></span><span class="op">(</span><span class="fu">gsm.core</span><span class="fu">::</span><span class="va"><a href="https://gilead-biostats.github.io/gsm.core/reference/reportingMetrics.html" class="external-link">reportingMetrics</a></span><span class="op">)</span></span>
+<span><span class="va">dfWeights</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/MakeWeights.html">MakeWeights</a></span><span class="op">(</span><span class="fu">gsm.core</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/gsm.core/man/reportingMetrics.html" class="external-link">reportingMetrics</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Step 3: Calculate risk scores</span></span>
 <span><span class="va">dfRiskScore</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/CalculateRiskScore.html">CalculateRiskScore</a></span><span class="op">(</span></span>
@@ -401,7 +401,7 @@ automatically.</p>
 <span><span class="op">)</span></span></code></pre></div>
 <p>The <code><a href="../reference/MakeWeights.html">MakeWeights()</a></code> function parses the <code>Flag</code>
 and <code>RiskScoreWeight</code> columns from the metrics metadata
-(e.g., <code><a href="https://gilead-biostats.github.io/gsm.core/reference/reportingMetrics.html" class="external-link">gsm.core::reportingMetrics</a></code>) to create a weight
+(e.g., <code><a href="https://rdrr.io/pkg/gsm.core/man/reportingMetrics.html" class="external-link">gsm.core::reportingMetrics</a></code>) to create a weight
 lookup table. This table contains one row per MetricID-Flag combination
 with corresponding weights and maximum weights.</p>
 </div>
@@ -462,7 +462,7 @@ metadata to create the interactive visualization</li>
 <code class="sourceCode R"><span><span class="co"># Example: Create cross-study risk score widget</span></span>
 <span><span class="va">cross_study_widget</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Widget_CrossStudyRiskScore.html">Widget_CrossStudyRiskScore</a></span><span class="op">(</span></span>
 <span>  dfResults <span class="op">=</span> <span class="va">multi_study_results</span>,  <span class="co"># Must include Analysis_srs0001</span></span>
-<span>  dfMetrics <span class="op">=</span> <span class="fu">gsm.core</span><span class="fu">::</span><span class="va"><a href="https://gilead-biostats.github.io/gsm.core/reference/reportingMetrics.html" class="external-link">reportingMetrics</a></span>,</span>
+<span>  dfMetrics <span class="op">=</span> <span class="fu">gsm.core</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/gsm.core/man/reportingMetrics.html" class="external-link">reportingMetrics</a></span>,</span>
 <span>  dfGroups <span class="op">=</span> <span class="va">multi_study_groups</span>,</span>
 <span>  strGroupLevel <span class="op">=</span> <span class="st">"Site"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
