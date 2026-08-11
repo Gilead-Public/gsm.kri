@@ -60,7 +60,7 @@
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json">
 </form></li>
-<li class="nav-item"><a class="external-link nav-link" href="https://github.com/gilead-biostats/gsm.kri"><span class="fa fab fa-github"></span></a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/gilead-public/gsm.kri"><span class="fa fab fa-github"></span></a></li>
       </ul>
 </div>
 
@@ -128,14 +128,14 @@ specified as the first step to incorporating the KRI into a final
 report. The first step in this process is to ensure that the data is
 programmatically available to be pulled down from a centralized data
 store. Once this is confirmed, an issue is to be filed in
-<a href="https://github.com/Gilead-BioStats/gsm.mapping" class="external-link">gsm.mapping</a> repo using the <code>Add New Domain</code>
+<a href="https://github.com/Gilead-Public/gsm.mapping" class="external-link">gsm.mapping</a> repo using the <code>Add New Domain</code>
 issue template and filling in the relevant information.</p>
 <p>With the issue filed, and the requirements laid out, a specification
 mapping file is created that indicates the name of each data source, and
 all required fields from each respective data source along with their
 data types. An example of this specification yaml file is below. More
 details about the construction of these files can be found in
-<a href="https://github.com/Gilead-BioStats/gsm.mapping" class="external-link">gsm.mapping</a> package documentation.</p>
+<a href="https://github.com/Gilead-Public/gsm.mapping" class="external-link">gsm.mapping</a> package documentation.</p>
 <pre><code>meta:
   Type: Mapped
   ID: PD
@@ -155,7 +155,7 @@ steps:
       lhs: Mapped_PD
       rhs: Raw_PD</code></pre>
 <p>It is possible that some of the domains that are needed for a given
-KRI may already be mapped in <a href="https://github.com/Gilead-BioStats/gsm.mapping" class="external-link">gsm.mapping</a>. In this case,
+KRI may already be mapped in <a href="https://github.com/Gilead-Public/gsm.mapping" class="external-link">gsm.mapping</a>. In this case,
 check the existing spec for that domain for all relevant fields, and if
 any are missing, create an issue to
 <code>Request New Domain or Variable</code>, and fill in all fields.
