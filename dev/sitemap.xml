@@ -51,6 +51,10 @@
 <url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/Widget_FlagOverTime.html</loc></url>
 <url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/Widget_GroupOverview-shiny.html</loc></url>
 <url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/Widget_GroupOverview.html</loc></url>
+<url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/Widget_PrematureDeathBucketBar-shiny.html</loc></url>
+<url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/Widget_PrematureDeathBucketBar.html</loc></url>
+<url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/Widget_PrematureDeathReasonBar-shiny.html</loc></url>
+<url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/Widget_PrematureDeathReasonBar.html</loc></url>
 <url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/Widget_ScatterPlot-shiny.html</loc></url>
 <url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/Widget_ScatterPlot.html</loc></url>
 <url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/Widget_TimeSeries-shiny.html</loc></url>
@@ -62,8 +66,9 @@
 <url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/gt-shared.html</loc></url>
 <url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/gt_style.html</loc></url>
 <url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/index.html</loc></url>
-<url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_BucketBar.html</loc></url>
+<url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_BucketBarSpec.html</loc></url>
 <url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_BucketCounts.html</loc></url>
+<url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_BucketRows.html</loc></url>
 <url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_CategoryColors.html</loc></url>
 <url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_CategoryLevels.html</loc></url>
 <url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_CheckWindowConsistency.html</loc></url>
@@ -76,9 +81,11 @@
 <url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_PrematureCohort.html</loc></url>
 <url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_RandToDeathScatter.html</loc></url>
 <url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_ReasonBar.html</loc></url>
+<url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_ReasonBarSpec.html</loc></url>
 <url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_ReasonByCountry.html</loc></url>
 <url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_ReasonCounts.html</loc></url>
 <url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_ReasonDist.html</loc></url>
+<url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_ReasonRows.html</loc></url>
 <url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/pd_SubjectFatalRelatedAE.html</loc></url>
 <url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/pipe.html</loc></url>
 <url><loc>https://gilead-biostats.github.io/gsm.kri/dev/reference/shared-params.html</loc></url>

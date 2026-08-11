@@ -86,56 +86,56 @@ passing CTMS site and study data to [MakeLongMeta()]. Expected columns:
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu">MakeStudyInfo</span><span class="op">(</span><span class="fu">gsm.core</span><span class="fu">::</span><span class="va"><a href="https://gilead-biostats.github.io/gsm.core/reference/reportingGroups.html" class="external-link">reportingGroups</a></span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                          Param             Value                   Description</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1                      studyid    AA-AA-000-0000                       Studyid</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2                     nickname            OAK-38                      Nickname</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3               protocol_title  Protocol Title P                Protocol Title</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4                       status            Active                        Status</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5                num_plan_site               150                 Num Plan Site</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6                num_plan_subj              1000                 Num Plan Subj</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 7                     act_fpfv        2012-01-02                      Act Fpfv</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 8                     est_fpfv        2012-01-07                      Est Fpfv</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 9                     est_lplv        2012-07-22                      Est Lplv</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 10                    est_lpfv        2012-03-24                      Est Lpfv</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 11                  db_lock_dt        2012-03-29                    Db Lock Dt</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 12            therapeutic_area          Virology              Therapeutic Area</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 13         protocol_indication        Hematology           Protocol Indication</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 14                       phase                P2                         Phase</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 15                     product   Product Name 14                       Product</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 16                  SiteTarget               150                   Site Target</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 17           ParticipantTarget              1000            Participant Target</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 18            ParticipantCount               760         Participants Enrolled</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 19                   SiteCount               148                Sites Enrolled</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 20       PercentSitesActivated              98.7       Percent Sites Activated</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 21              SiteActivation 148 / 150 (98.7%)               Site Activation</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 22 PercentParticipantsEnrolled                76 Percent Participants Enrolled</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 23       ParticipantEnrollment  760 / 1000 (76%)        Participant Enrollment</span>
-<span class="r-in"><span><span class="fu">MakeStudyInfo</span><span class="op">(</span><span class="fu">gsm.core</span><span class="fu">::</span><span class="va"><a href="https://gilead-biostats.github.io/gsm.core/reference/reportingGroups.html" class="external-link">reportingGroups</a></span>, <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>SiteCount <span class="op">=</span> <span class="st">"# Sites"</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                          Param             Value                   Description</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1                      studyid    AA-AA-000-0000                       Studyid</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2                     nickname            OAK-38                      Nickname</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3               protocol_title  Protocol Title P                Protocol Title</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4                       status            Active                        Status</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5                num_plan_site               150                 Num Plan Site</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6                num_plan_subj              1000                 Num Plan Subj</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 7                     act_fpfv        2012-01-02                      Act Fpfv</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 8                     est_fpfv        2012-01-07                      Est Fpfv</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 9                     est_lplv        2012-07-22                      Est Lplv</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 10                    est_lpfv        2012-03-24                      Est Lpfv</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 11                  db_lock_dt        2012-03-29                    Db Lock Dt</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 12            therapeutic_area          Virology              Therapeutic Area</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 13         protocol_indication        Hematology           Protocol Indication</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 14                       phase                P2                         Phase</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 15                     product   Product Name 14                       Product</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 16                  SiteTarget               150                   Site Target</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 17           ParticipantTarget              1000            Participant Target</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 18            ParticipantCount               760             Participant Count</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 19                   SiteCount               148                       # Sites</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 20       PercentSitesActivated              98.7       Percent Sites Activated</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 21              SiteActivation 148 / 150 (98.7%)               Site Activation</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 22 PercentParticipantsEnrolled                76 Percent Participants Enrolled</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 23       ParticipantEnrollment  760 / 1000 (76%)        Participant Enrollment</span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu">MakeStudyInfo</span><span class="op">(</span><span class="fu">gsm.core</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/gsm.core/man/reportingGroups.html" class="external-link">reportingGroups</a></span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          Param              Value                   Description</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1                      studyid     AA-AA-000-0000                       Studyid</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2                     nickname             OAK-38                      Nickname</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3               protocol_title   Protocol Title P                Protocol Title</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4                       status             Active                        Status</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5                num_plan_site                150                 Num Plan Site</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6                num_plan_subj               1000                 Num Plan Subj</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7                     act_fpfv         2012-01-02                      Act Fpfv</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8                     est_fpfv         2012-01-07                      Est Fpfv</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 9                     est_lplv         2012-07-22                      Est Lplv</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10                    est_lpfv         2012-03-24                      Est Lpfv</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 11                  db_lock_dt         2012-03-29                    Db Lock Dt</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 12            therapeutic_area           Virology              Therapeutic Area</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 13         protocol_indication         Hematology           Protocol Indication</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 14                       phase                 P2                         Phase</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 15                     product    Product Name 14                       Product</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 16                  SiteTarget                150                   Site Target</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 17           ParticipantTarget               1000            Participant Target</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 18            ParticipantCount                758         Participants Enrolled</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 19                   SiteCount                146                Sites Enrolled</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 20       PercentSitesActivated               97.3       Percent Sites Activated</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 21              SiteActivation  146 / 150 (97.3%)               Site Activation</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 22 PercentParticipantsEnrolled               75.8 Percent Participants Enrolled</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 23       ParticipantEnrollment 758 / 1000 (75.8%)        Participant Enrollment</span>
+<span class="r-in"><span><span class="fu">MakeStudyInfo</span><span class="op">(</span><span class="fu">gsm.core</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/gsm.core/man/reportingGroups.html" class="external-link">reportingGroups</a></span>, <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>SiteCount <span class="op">=</span> <span class="st">"# Sites"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          Param              Value                   Description</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1                      studyid     AA-AA-000-0000                       Studyid</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2                     nickname             OAK-38                      Nickname</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3               protocol_title   Protocol Title P                Protocol Title</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4                       status             Active                        Status</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5                num_plan_site                150                 Num Plan Site</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6                num_plan_subj               1000                 Num Plan Subj</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7                     act_fpfv         2012-01-02                      Act Fpfv</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8                     est_fpfv         2012-01-07                      Est Fpfv</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 9                     est_lplv         2012-07-22                      Est Lplv</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10                    est_lpfv         2012-03-24                      Est Lpfv</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 11                  db_lock_dt         2012-03-29                    Db Lock Dt</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 12            therapeutic_area           Virology              Therapeutic Area</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 13         protocol_indication         Hematology           Protocol Indication</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 14                       phase                 P2                         Phase</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 15                     product    Product Name 14                       Product</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 16                  SiteTarget                150                   Site Target</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 17           ParticipantTarget               1000            Participant Target</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 18            ParticipantCount                758             Participant Count</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 19                   SiteCount                146                       # Sites</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 20       PercentSitesActivated               97.3       Percent Sites Activated</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 21              SiteActivation  146 / 150 (97.3%)               Site Activation</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 22 PercentParticipantsEnrolled               75.8 Percent Participants Enrolled</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 23       ParticipantEnrollment 758 / 1000 (75.8%)        Participant Enrollment</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

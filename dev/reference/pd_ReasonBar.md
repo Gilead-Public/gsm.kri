@@ -2,10 +2,9 @@
 
 \`r lifecycle::badge("experimental")\`
 
-Renders a horizontal bar chart from a reason slice produced by
-\[pd_ReasonByCountry()\] or derived inside \[pd_ReasonDist()\]. Each bar
-is labelled with its count (placed inside the bar, or just outside when
-the bar is too narrow to hold the label).
+Renders the horizontal reason distribution from a reason slice produced
+by \[pd_ReasonByCountry()\] or derived inside \[pd_ReasonDist()\], via
+the \`gsm.viz\` reason widget.
 
 ## Usage
 
@@ -23,4 +22,4 @@ pd_ReasonBar(slice)
 
 ## Value
 
-A \`plotly\` htmlwidget.
+A \`Widget_PrematureDeathReasonBar\` htmlwidget.
