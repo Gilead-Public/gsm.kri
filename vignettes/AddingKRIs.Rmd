@@ -61,20 +61,20 @@ steps:
       rhs: Raw_PD
 ```
 
-It is possible that some of the domains that are needed for a given KRI may already be mapped in `{gsm.mapping}`. In this case, check the existing spec for that domain for all relevant fields, and if any are missing, create an issue to `Request New Domain or Variable`, and fill in all fields. Once the edits have been made following the [Contributor Guidelines](https://gilead-biostats.github.io/gsm.core/articles/ContributorGuidelines.html), submit a Pull Request to merge in the edits required for adding this new KRI.
+It is possible that some of the domains that are needed for a given KRI may already be mapped in `{gsm.mapping}`. In this case, check the existing spec for that domain for all relevant fields, and if any are missing, create an issue to `Request New Domain or Variable`, and fill in all fields. Once the edits have been made following the [Contributor Guidelines](https://gilead-public.github.io/gsm.core/articles/ContributorGuidelines.html), submit a Pull Request to merge in the edits required for adding this new KRI.
 
 Add support for new tables in `gsm.datasim` for use in the gismo test environment.
   
 ### Creating a KRI Workflow
 
-To implement a new Key Risk Indicator (KRI) within the system, we must establish workflows and update several existing analytical functions to align with the new requirements. This process ensures that the new KRI is accurately integrated into our analytics framework and reporting structure. A more in depth discussion of the Analytics pipeline is outlined in this [vignette](https://gilead-biostats.github.io/gsm.core/articles/DataAnalysis.html)
+To implement a new Key Risk Indicator (KRI) within the system, we must establish workflows and update several existing analytical functions to align with the new requirements. This process ensures that the new KRI is accurately integrated into our analytics framework and reporting structure. A more in depth discussion of the Analytics pipeline is outlined in this [vignette](https://gilead-public.github.io/gsm.core/articles/DataAnalysis.html)
 
 #### Creating and Customizing YAML Workflow Files
 The first step is to create or modify YAML workflow files that define the new KRI. These files include:
 
 - **Metric Metadata:** Define key details such as the metric’s description, numerator, denominator, and other relevant specifications. Each KRI must have a unique identifier that follows the existing naming convention (e.g., `kri0013` for `{gsm.kri}` or `kri0002ep` for `{gsm.endpoints}`).
 - **Metric Data Specification:** Ensure the data specifications align with updates made to the data model. This step guarantees consistency in data interpretation and calculation.
-- **Metric Workflow Definition:** Specify the functions and parameters required to calculate the metric. This typically follows the standard `{gsm.core}` [analysis workflow](https://gilead-biostats.github.io/gsm.core/articles/DataAnalysis.html), ensuring consistency with existing metrics.
+- **Metric Workflow Definition:** Specify the functions and parameters required to calculate the metric. This typically follows the standard `{gsm.core}` [analysis workflow](https://gilead-public.github.io/gsm.core/articles/DataAnalysis.html), ensuring consistency with existing metrics.
 
 #### Creating Country-Level Workflows (If Applicable)
 If country-level metrics are needed, parallel workflows must be created within the `{gsm.kri}` package. These workflows allow for localized risk assessment and reporting, providing granularity in data analysis.
@@ -90,7 +90,7 @@ By following these steps, we ensure that the new metric is seamlessly integrated
 #### Add qualification test(s) 
 
 To ensure that the metric is behaving as expected for test data, a new test or multiple tests must be written and documented in the
-`{gsm.qc}` package. `{gsm.qc}` uses the `{qcthat}` framework, which is detailed in the package documentation [here](https://gilead-biostats.github.io/qcthat/).
+`{gsm.qc}` package. `{gsm.qc}` uses the `{qcthat}` framework, which is detailed in the package documentation [here](https://gilead-public.github.io/qcthat/).
 
 
 ### Steps to Incorporate a Metric into Reporting Outputs

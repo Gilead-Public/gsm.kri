@@ -14,9 +14,9 @@ Description: The Good Statistical Monitoring or 'gsm' suite of R packages
     provides workflows to generate metrics and functionality to visualize
     and report on these metrics.
 License: Apache License (>= 2)
-URL: https://github.com/Gilead-BioStats/gsm.kri,
-    https://gilead-biostats.github.io/gsm.kri
-BugReports: https://github.com/Gilead-BioStats/gsm.kri/issues
+URL: https://github.com/Gilead-Public/gsm.kri,
+    https://gilead-public.github.io/gsm.kri
+BugReports: https://github.com/Gilead-Public/gsm.kri/issues
 Depends:
     R (>= 4.0)
 Imports: 
@@ -55,11 +55,11 @@ Suggests:
 VignetteBuilder: 
     knitr
 Remotes:
-    gsm.core=Gilead-BioStats/gsm.core@dev,
-    gsm.mapping=Gilead-BioStats/gsm.mapping@dev,
-    gsm.qtl=Gilead-BioStats/gsm.qtl@dev,
-    gsm.reporting=Gilead-BioStats/gsm.reporting@dev,
-    qcthat=Gilead-BioStats/qcthat@main
+    gsm.core=Gilead-Public/gsm.core@dev,
+    gsm.mapping=Gilead-Public/gsm.mapping@dev,
+    gsm.qtl=Gilead-Public/gsm.qtl@dev,
+    gsm.reporting=Gilead-Public/gsm.reporting@dev,
+    qcthat=Gilead-Public/qcthat@main
 Config/roxygen2/version: 8.0.0
 Config/testthat/edition: 3
 Config/testthat/parallel: false
