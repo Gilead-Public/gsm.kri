@@ -1,5 +1,7 @@
 # gsm.kri (development version)
 
+This patch release removes the log4r package dependency, because the log4r package was archived on CRAN (#262).
+
 # gsm.kri v1.6.0
 
 This minor release introduces the Premature Deaths reporting module and adds cross-study sorting and filtering capabilities.
