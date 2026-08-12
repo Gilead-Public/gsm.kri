@@ -60,7 +60,7 @@
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json">
 </form></li>
-<li class="nav-item"><a class="external-link nav-link" href="https://github.com/gilead-biostats/gsm.kri"><span class="fa fab fa-github"></span></a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/gilead-public/gsm.kri"><span class="fa fab fa-github"></span></a></li>
       </ul>
 </div>
 
@@ -77,7 +77,7 @@
       <h1>Step-by-Step Guide to add a new KRI</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/Gilead-BioStats/gsm.kri/blob/dev/vignettes/AddingKRIs.Rmd" class="external-link"><code>vignettes/AddingKRIs.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/Gilead-Public/gsm.kri/blob/dev/vignettes/AddingKRIs.Rmd" class="external-link"><code>vignettes/AddingKRIs.Rmd</code></a></small>
       <div class="d-none name"><code>AddingKRIs.Rmd</code></div>
     </div>
 
@@ -128,14 +128,14 @@ specified as the first step to incorporating the KRI into a final
 report. The first step in this process is to ensure that the data is
 programmatically available to be pulled down from a centralized data
 store. Once this is confirmed, an issue is to be filed in
-<a href="https://github.com/Gilead-BioStats/gsm.mapping" class="external-link">gsm.mapping</a> repo using the <code>Add New Domain</code>
+<a href="https://github.com/Gilead-Public/gsm.mapping" class="external-link">gsm.mapping</a> repo using the <code>Add New Domain</code>
 issue template and filling in the relevant information.</p>
 <p>With the issue filed, and the requirements laid out, a specification
 mapping file is created that indicates the name of each data source, and
 all required fields from each respective data source along with their
 data types. An example of this specification yaml file is below. More
 details about the construction of these files can be found in
-<a href="https://github.com/Gilead-BioStats/gsm.mapping" class="external-link">gsm.mapping</a> package documentation.</p>
+<a href="https://github.com/Gilead-Public/gsm.mapping" class="external-link">gsm.mapping</a> package documentation.</p>
 <pre><code>meta:
   Type: Mapped
   ID: PD
@@ -155,11 +155,11 @@ steps:
       lhs: Mapped_PD
       rhs: Raw_PD</code></pre>
 <p>It is possible that some of the domains that are needed for a given
-KRI may already be mapped in <a href="https://github.com/Gilead-BioStats/gsm.mapping" class="external-link">gsm.mapping</a>. In this case,
+KRI may already be mapped in <a href="https://github.com/Gilead-Public/gsm.mapping" class="external-link">gsm.mapping</a>. In this case,
 check the existing spec for that domain for all relevant fields, and if
 any are missing, create an issue to
 <code>Request New Domain or Variable</code>, and fill in all fields.
-Once the edits have been made following the <a href="https://gilead-biostats.github.io/gsm.core/articles/ContributorGuidelines.html" class="external-link">Contributor
+Once the edits have been made following the <a href="https://gilead-public.github.io/gsm.core/articles/ContributorGuidelines.html" class="external-link">Contributor
 Guidelines</a>, submit a Pull Request to merge in the edits required for
 adding this new KRI.</p>
 <p>Add support for new tables in <code>gsm.datasim</code> for use in the
@@ -173,7 +173,7 @@ must establish workflows and update several existing analytical
 functions to align with the new requirements. This process ensures that
 the new KRI is accurately integrated into our analytics framework and
 reporting structure. A more in depth discussion of the Analytics
-pipeline is outlined in this <a href="https://gilead-biostats.github.io/gsm.core/articles/DataAnalysis.html" class="external-link">vignette</a></p>
+pipeline is outlined in this <a href="https://gilead-public.github.io/gsm.core/articles/DataAnalysis.html" class="external-link">vignette</a></p>
 <div class="section level4">
 <h4 id="creating-and-customizing-yaml-workflow-files">Creating and Customizing YAML Workflow Files<a class="anchor" aria-label="anchor" href="#creating-and-customizing-yaml-workflow-files"></a>
 </h4>
@@ -185,7 +185,7 @@ the new KRI. These files include:</p>
 metric’s description, numerator, denominator, and other relevant
 specifications. Each KRI must have a unique identifier that follows the
 existing naming convention (e.g., <code>kri0013</code> for
-<a href="https://github.com/Gilead-BioStats/gsm.kri" class="external-link">gsm.kri</a> or <code>kri0002ep</code> for
+<a href="https://github.com/Gilead-Public/gsm.kri" class="external-link">gsm.kri</a> or <code>kri0002ep</code> for
 <code>{gsm.endpoints}</code>).</li>
 <li>
 <strong>Metric Data Specification:</strong> Ensure the data
@@ -194,7 +194,7 @@ guarantees consistency in data interpretation and calculation.</li>
 <li>
 <strong>Metric Workflow Definition:</strong> Specify the functions
 and parameters required to calculate the metric. This typically follows
-the standard <a href="https://gilead-biostats.github.io/gsm.core" class="external-link">gsm.core</a> <a href="https://gilead-biostats.github.io/gsm.core/articles/DataAnalysis.html" class="external-link">analysis
+the standard <a href="https://gilead-biostats.github.io/gsm.core" class="external-link">gsm.core</a> <a href="https://gilead-public.github.io/gsm.core/articles/DataAnalysis.html" class="external-link">analysis
 workflow</a>, ensuring consistency with existing metrics.</li>
 </ul>
 </div>
@@ -202,7 +202,7 @@ workflow</a>, ensuring consistency with existing metrics.</li>
 <h4 id="creating-country-level-workflows-if-applicable">Creating Country-Level Workflows (If Applicable)<a class="anchor" aria-label="anchor" href="#creating-country-level-workflows-if-applicable"></a>
 </h4>
 <p>If country-level metrics are needed, parallel workflows must be
-created within the <a href="https://github.com/Gilead-BioStats/gsm.kri" class="external-link">gsm.kri</a> package. These workflows allow
+created within the <a href="https://github.com/Gilead-Public/gsm.kri" class="external-link">gsm.kri</a> package. These workflows allow
 for localized risk assessment and reporting, providing granularity in
 data analysis.</p>
 </div>
@@ -219,7 +219,7 @@ step may not be necessary for every new metric.</p>
 <h4 id="enhancing-visualization-and-reporting-functionality">Enhancing Visualization and Reporting Functionality<a class="anchor" aria-label="anchor" href="#enhancing-visualization-and-reporting-functionality"></a>
 </h4>
 <p>Finally, any necessary updates should be made to the
-<a href="https://github.com/Gilead-BioStats/gsm.kri" class="external-link">gsm.kri</a> and <code>{rbm-viz}</code> packages to support
+<a href="https://github.com/Gilead-Public/gsm.kri" class="external-link">gsm.kri</a> and <code>{rbm-viz}</code> packages to support
 visualization and widget functionality. This ensures that the new KRI is
 correctly represented in dashboards and reports, providing clear and
 actionable insights for stakeholders. This step may not be necessary for
@@ -235,7 +235,7 @@ accuracy, and usability across the system.</p>
 new test or multiple tests must be written and documented in the
 <code>{gsm.qc}</code> package. <code>{gsm.qc}</code> uses the
 <a href="https://gilead-biostats.github.io/qcthat/" class="external-link">qcthat</a> framework, which is detailed in the package
-documentation <a href="https://gilead-biostats.github.io/qcthat/" class="external-link">here</a>.</p>
+documentation <a href="https://gilead-public.github.io/qcthat/" class="external-link">here</a>.</p>
 </div>
 </div>
 <div class="section level3">

@@ -57,6 +57,6 @@ across studies (if dfGroups provided)
 
 ``` r
 if (FALSE) { # \dontrun{
-# See https://gilead-biostats.github.io/gsm.kri/examples/Example_CrossStudySRS.html
+# See https://gilead-public.github.io/gsm.kri/examples/Example_CrossStudySRS.html
 } # }
 ```

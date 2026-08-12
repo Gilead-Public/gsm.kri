@@ -9,19 +9,17 @@ metrics.
 
 Useful links:
 
-- <https://github.com/Gilead-BioStats/gsm.kri>
+- <https://github.com/Gilead-Public/gsm.kri>
 
-- <https://gilead-biostats.github.io/gsm.kri>
+- <https://gilead-public.github.io/gsm.kri>
 
-- Report bugs at <https://github.com/Gilead-BioStats/gsm.kri/issues>
+- Report bugs at <https://github.com/Gilead-Public/gsm.kri/issues>
 
 ## Author
 
 **Maintainer**: Jeremy Wildfire <jwildfire@gmail.com>
 
 Authors:
-
-- Jeremy Wildfire <jwildfire@gmail.com>
 
 - Laura Maxwell <laura.maxwell@atorusresearch.com>
 

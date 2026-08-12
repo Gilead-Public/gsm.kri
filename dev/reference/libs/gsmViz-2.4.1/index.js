@@ -27442,7 +27442,7 @@ var gsmViz = (() => {
     defaults5.groupParticipantCountKey = "ParticipantCount";
     defaults5.groupTooltipKeys = null;
     defaults5.SiteRiskScoreMetricID = "Analysis_srs0001";
-    defaults5.SiteRiskScoreURL = "https://gilead-biostats.github.io/gsm.kri/articles/SiteRiskScore.html";
+    defaults5.SiteRiskScoreURL = "https://gilead-public.github.io/gsm.kri/articles/SiteRiskScore.html";
     defaults5.groupClickCallback = (datum2) => {
       console.log(datum2);
     };
@@ -27591,7 +27591,7 @@ var gsmViz = (() => {
     tooltipLines.push("");
     tooltipLines.push("For more information, see:");
     tooltipLines.push(
-      config.SiteRiskScoreURL || "https://gilead-biostats.github.io/gsm.kri/articles/SiteRiskScore.html"
+      config.SiteRiskScoreURL || "https://gilead-public.github.io/gsm.kri/articles/SiteRiskScore.html"
     );
     return tooltipLines.join("\n");
   }

@@ -38,7 +38,7 @@ as the first step to incorporating the KRI into a final report. The
 first step in this process is to ensure that the data is
 programmatically available to be pulled down from a centralized data
 store. Once this is confirmed, an issue is to be filed in
-[gsm.mapping](https://github.com/Gilead-BioStats/gsm.mapping) repo using
+[gsm.mapping](https://github.com/Gilead-Public/gsm.mapping) repo using
 the `Add New Domain` issue template and filling in the relevant
 information.
 
@@ -47,7 +47,7 @@ mapping file is created that indicates the name of each data source, and
 all required fields from each respective data source along with their
 data types. An example of this specification yaml file is below. More
 details about the construction of these files can be found in
-[gsm.mapping](https://github.com/Gilead-BioStats/gsm.mapping) package
+[gsm.mapping](https://github.com/Gilead-Public/gsm.mapping) package
 documentation.
 
     meta:
@@ -71,12 +71,12 @@ documentation.
 
 It is possible that some of the domains that are needed for a given KRI
 may already be mapped in
-[gsm.mapping](https://github.com/Gilead-BioStats/gsm.mapping). In this
+[gsm.mapping](https://github.com/Gilead-Public/gsm.mapping). In this
 case, check the existing spec for that domain for all relevant fields,
 and if any are missing, create an issue to
 `Request New Domain or Variable`, and fill in all fields. Once the edits
 have been made following the [Contributor
-Guidelines](https://gilead-biostats.github.io/gsm.core/articles/ContributorGuidelines.html),
+Guidelines](https://gilead-public.github.io/gsm.core/articles/ContributorGuidelines.html),
 submit a Pull Request to merge in the edits required for adding this new
 KRI.
 
@@ -91,7 +91,7 @@ align with the new requirements. This process ensures that the new KRI
 is accurately integrated into our analytics framework and reporting
 structure. A more in depth discussion of the Analytics pipeline is
 outlined in this
-[vignette](https://gilead-biostats.github.io/gsm.core/articles/DataAnalysis.html)
+[vignette](https://gilead-public.github.io/gsm.core/articles/DataAnalysis.html)
 
 #### Creating and Customizing YAML Workflow Files
 
@@ -102,23 +102,23 @@ the new KRI. These files include:
   description, numerator, denominator, and other relevant
   specifications. Each KRI must have a unique identifier that follows
   the existing naming convention (e.g., `kri0013` for
-  [gsm.kri](https://github.com/Gilead-BioStats/gsm.kri) or `kri0002ep`
-  for `{gsm.endpoints}`).
+  [gsm.kri](https://github.com/Gilead-Public/gsm.kri) or `kri0002ep` for
+  `{gsm.endpoints}`).
 - **Metric Data Specification:** Ensure the data specifications align
   with updates made to the data model. This step guarantees consistency
   in data interpretation and calculation.
 - **Metric Workflow Definition:** Specify the functions and parameters
   required to calculate the metric. This typically follows the standard
   [gsm.core](https://gilead-biostats.github.io/gsm.core) [analysis
-  workflow](https://gilead-biostats.github.io/gsm.core/articles/DataAnalysis.html),
+  workflow](https://gilead-public.github.io/gsm.core/articles/DataAnalysis.html),
   ensuring consistency with existing metrics.
 
 #### Creating Country-Level Workflows (If Applicable)
 
 If country-level metrics are needed, parallel workflows must be created
-within the [gsm.kri](https://github.com/Gilead-BioStats/gsm.kri)
-package. These workflows allow for localized risk assessment and
-reporting, providing granularity in data analysis.
+within the [gsm.kri](https://github.com/Gilead-Public/gsm.kri) package.
+These workflows allow for localized risk assessment and reporting,
+providing granularity in data analysis.
 
 #### Updating Core Analytical Functions
 
@@ -132,7 +132,7 @@ step may not be necessary for every new metric.
 #### Enhancing Visualization and Reporting Functionality
 
 Finally, any necessary updates should be made to the
-[gsm.kri](https://github.com/Gilead-BioStats/gsm.kri) and `{rbm-viz}`
+[gsm.kri](https://github.com/Gilead-Public/gsm.kri) and `{rbm-viz}`
 packages to support visualization and widget functionality. This ensures
 that the new KRI is correctly represented in dashboards and reports,
 providing clear and actionable insights for stakeholders. This step may
@@ -149,7 +149,7 @@ test or multiple tests must be written and documented in the `{gsm.qc}`
 package. `{gsm.qc}` uses the
 [qcthat](https://gilead-biostats.github.io/qcthat/) framework, which is
 detailed in the package documentation
-[here](https://gilead-biostats.github.io/qcthat/).
+[here](https://gilead-public.github.io/qcthat/).
 
 ### Steps to Incorporate a Metric into Reporting Outputs
 

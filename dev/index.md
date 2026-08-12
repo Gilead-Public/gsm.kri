@@ -6,13 +6,13 @@ data pipeline with robust reports like the one shown below.
 
 ![](reference/figures/gsm_report_screenshot_1.png)
 
-The [gsm.kri](https://github.com/Gilead-BioStats/gsm.kri) package
-provides the necessary functions and workflows to produce the data
+The [gsm.kri](https://github.com/Gilead-Public/gsm.kri) package provides
+the necessary functions and workflows to produce the data
 visualizations, widgets and tables that ultimately go into an html KRI
 report. This package also provides the functions and scripts that
 generate the html KRI reports. This README provides a high-level
 overview of {gsm.kri}; see the [package
-website](https://gilead-biostats.github.io/gsm.kri/) for additional
+website](https://gilead-public.github.io/gsm.kri/) for additional
 details.
 
 ## Installation
@@ -23,7 +23,7 @@ You can install the latest release of gsm.kri from
 ``` r
 
 # install.packages("pak")
-pak::pak("Gilead-BioStats/gsm.kri@*release")
+pak::pak("Gilead-Public/gsm.kri@*release")
 ```
 
 You can install the development version of gsm.kri from
@@ -32,15 +32,14 @@ You can install the development version of gsm.kri from
 ``` r
 
 # install.packages("pak")
-pak::pak("Gilead-BioStats/gsm.kri")
+pak::pak("Gilead-Public/gsm.kri")
 ```
 
 ## Sample Code
 
 This is a basic example showing how to create interactive widget
 visualizations based on reporting outputs from the
-[gsm.reporting](https://gilead-biostats.github.io/gsm.reporting/)
-package:
+[gsm.reporting](https://gilead-public.github.io/gsm.reporting/) package:
 
 ``` r
 
@@ -92,15 +91,15 @@ Full reports for a sample trial run with
 below:
 
 - [Site
-  Report](https://gilead-biostats.github.io/gsm.kri/report_kri_site.html)
+  Report](https://gilead-public.github.io/gsm.kri/report_kri_site.html)
 - [Country
-  Report](https://gilead-biostats.github.io/gsm.kri/report_kri_country.html)
+  Report](https://gilead-public.github.io/gsm.kri/report_kri_country.html)
 
 ## Chart Customization
 
 All widgets can be customized with any configuration setting available
 via the underlying [JavaScript library
-API](https://github.com/Gilead-BioStats/gsm.viz/wiki/API) at the report,
+API](https://github.com/Gilead-Public/gsm.viz/wiki/API) at the report,
 chart, or metric level. Customize a widget by passing any configuration
 setting as an argument to the widget function. Below we can change the
 default x-axis type of `logarithmic` to `linear` for the scatter plot
@@ -130,7 +129,7 @@ Widget_ScatterPlot(
 
 In the context of a workflow, you can also customize the chart
 configuration by passing a list of settings to the
-[`Report_KRI()`](https://gilead-biostats.github.io/gsm.kri/dev/reference/Report_KRI.md)
+[`Report_KRI()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_KRI.md)
 function:
 
 ``` r
