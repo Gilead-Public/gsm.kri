@@ -1,0 +1,95 @@
+meta:
+  Active: true
+  Type: Analysis
+  ID: kri0016
+  GroupLevel: Site
+  Abbreviation: IPNS
+  Metric: IP Non-Starter Rate
+  Numerator: Confirmed IP Non-Starters
+  Denominator: Enrolled Subjects
+  Model: Normal Approximation
+  Score: Adjusted Z-Score
+  AnalysisType: rate
+  # Calibration values are placeholders cloned from the NormalApprox sibling
+  # (kri0001); pending business sign-off (gsm.kri#258).
+  Threshold: -2,-1,2,3
+  Flag: "-2,-1,0,1,2"
+  RiskScoreWeight: "32,16,0,1,2"
+  # Accrual follows kri0015, not kri0001: this denominator counts enrolled
+  # subjects, so a site-level threshold of 30 would leave every site unscored.
+  AccrualThreshold: 1
+  AccrualMetric: Denominator
+  GenerateRiskSignal: true
+spec:
+  Mapped_NonStarter:
+    subjid:
+      type: character
+    confirmed_nonstarter:
+      type: integer
+  Mapped_SUBJ:
+    subjid:
+      type: character
+    invid:
+      type: character
+steps:
+  - output: vThreshold
+    name: gsm.core::ParseThreshold
+    params:
+      strThreshold: Threshold
+  - output: vRiskScoreWeight
+    name: gsm.core::ParseThreshold
+    params:
+      strThreshold: RiskScoreWeight
+      bSort: false
+  - output: vFlag
+    name: gsm.core::ParseThreshold
+    params:
+      strThreshold: Flag
+      bSort: false
+  - output: Temp_ConfirmedNonStarter
+    name: RunQuery
+    params:
+      df: Mapped_NonStarter
+      strQuery: "SELECT * FROM df WHERE confirmed_nonstarter = 1"
+  - output: Analysis_Input
+    name: gsm.core::Input_Rate
+    params:
+      dfSubjects: Mapped_SUBJ
+      dfNumerator: Temp_ConfirmedNonStarter
+      dfDenominator: Mapped_SUBJ
+      strSubjectCol: subjid
+      strGroupCol: invid
+      strGroupLevel: GroupLevel
+      strNumeratorMethod: Count
+      strDenominatorMethod: Count
+  - output: Analysis_Transformed
+    name: gsm.core::Transform_Rate
+    params:
+      dfInput: Analysis_Input
+  - output: Analysis_Analyzed
+    name: Analyze_NormalApprox
+    params:
+      dfTransformed: Analysis_Transformed
+      strType: AnalysisType
+  - output: Analysis_Flagged
+    name: gsm.core::Flag
+    params:
+      dfAnalyzed: Analysis_Analyzed
+      vThreshold: vThreshold
+      vFlag: vFlag
+      vRiskScoreWeight: vRiskScoreWeight
+      nAccrualThreshold: AccrualThreshold
+      strAccrualMetric: AccrualMetric
+  - output: Analysis_Summary
+    name: gsm.core::Summarize
+    params:
+      dfFlagged: Analysis_Flagged
+  - output: lAnalysis
+    name: list
+    params:
+      ID: ID
+      Analysis_Input: Analysis_Input
+      Analysis_Transformed: Analysis_Transformed
+      Analysis_Analyzed: Analysis_Analyzed
+      Analysis_Flagged: Analysis_Flagged
+      Analysis_Summary: Analysis_Summary
