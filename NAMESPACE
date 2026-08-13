@@ -76,35 +76,50 @@ import(gsm.core)
 import(gt)
 import(purrr)
 import(tidyr)
-importFrom(DT,datatable)
-importFrom(DT,formatStyle)
-importFrom(DT,styleInterval)
-importFrom(cli,pluralize)
-importFrom(cli,qty)
+importFrom(DT,
+  datatable,
+  formatStyle,
+  styleInterval
+)
+importFrom(cli,
+  pluralize,
+  qty
+)
 importFrom(glue,glue)
-importFrom(htmltools,HTML)
-importFrom(htmltools,h1)
-importFrom(htmltools,h2)
-importFrom(htmltools,h3)
-importFrom(htmltools,h4)
-importFrom(htmltools,p)
-importFrom(htmltools,strong)
-importFrom(htmltools,tagList)
-importFrom(htmltools,tags)
-importFrom(htmlwidgets,createWidget)
-importFrom(htmlwidgets,prependContent)
-importFrom(htmlwidgets,shinyRenderWidget)
-importFrom(htmlwidgets,shinyWidgetOutput)
-importFrom(jsonlite,fromJSON)
-importFrom(jsonlite,toJSON)
+importFrom(htmltools,
+  HTML,
+  h1,
+  h2,
+  h3,
+  h4,
+  p,
+  strong,
+  tagList,
+  tags
+)
+importFrom(htmlwidgets,
+  createWidget,
+  prependContent,
+  shinyRenderWidget,
+  shinyWidgetOutput
+)
+importFrom(jsonlite,
+  fromJSON,
+  toJSON
+)
 importFrom(lifecycle,deprecated)
-importFrom(log4r,console_appender)
-importFrom(log4r,logger)
 importFrom(magrittr,"%>%")
-importFrom(rlang,"%||%")
-importFrom(rlang,.data)
-importFrom(rlang,check_installed)
-importFrom(stats,reorder)
-importFrom(stats,setNames)
-importFrom(tibble,enframe)
-importFrom(tibble,tibble)
+importFrom(rlang,
+  "%||%",
+  .data,
+  check_installed
+)
+importFrom(stats,
+  reorder,
+  setNames
+)
+importFrom(tibble,
+  enframe,
+  tibble
+)
+importFrom(workr,ListWorkflows)

@@ -1,3 +1,7 @@
+# gsm.kri v1.6.1
+
+This patch release removes the log4r package dependency, because the log4r package was archived on CRAN (#262).
+
 # gsm.kri v1.6.0
 
 This minor release introduces the Premature Deaths reporting module and adds cross-study sorting and filtering capabilities.
@@ -147,24 +151,24 @@ We are happy to announce the first major release of the `gsm.kri` package, which
 ### Key Enhancements:
 - **Updated KRI Descriptions and Templates:**  
   The descriptions of Key Risk Indicators (KRIs) have been updated to improve clarity and understanding based on Risk Advisor feedback.
-  [PR #27](https://github.com/Gilead-BioStats/gsm.kri/pull/27)
+  [PR #27](https://github.com/Gilead-Public/gsm.kri/pull/27)
 
 
 - **Qualification Report GitHub Actions (GHA):**  
   A new GitHub Actions workflow for generating qualification reports has been added, automating the process and ensuring better integration with the overall pipeline.  
-  [PR #33](https://github.com/Gilead-BioStats/gsm.kri/pull/33) 
+  [PR #33](https://github.com/Gilead-Public/gsm.kri/pull/33) 
 
 - **Update to gsm.viz 2.2:**  
   The package has been updated to use `gsm.viz` version 2.2, bringing new visualization capabilities and updates.  
-  [PR #36](https://github.com/Gilead-BioStats/gsm.kri/pull/36)
+  [PR #36](https://github.com/Gilead-Public/gsm.kri/pull/36)
 
 - **Replacement of clindata with gsm.datasim:**  
   In line with updates across other GSM packages, `clindata` has been replaced with the `gsm.datasim` package.  
-  [PR #34](https://github.com/Gilead-BioStats/gsm.kri/pull/34)
+  [PR #34](https://github.com/Gilead-Public/gsm.kri/pull/34)
 
 - **"How to Add a New KRI" Vignette:**  
   A new vignette has been added that provides a step-by-step guide on how to add a new KRI to the package, making it easier for users to extend and customize the package for their needs.  
-  [PR #29](https://github.com/Gilead-BioStats/gsm.kri/pull/29)
+  [PR #29](https://github.com/Gilead-Public/gsm.kri/pull/29)
 
 ### Other Updates:
 - Several bug fixes have been applied to improve stability and functionality.
