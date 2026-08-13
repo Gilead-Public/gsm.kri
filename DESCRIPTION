@@ -1,7 +1,7 @@
 Type: Package
 Package: gsm.kri
 Title: Good Statistical Monitoring KRIs
-Version: 1.6.1
+Version: 1.6.1.9000
 Authors@R: c(
     person("Jeremy", "Wildfire", , "jwildfire@gmail.com", role = c("aut", "cre")),
     person("Laura", "Maxwell", , "laura.maxwell@atorusresearch.com", role = "aut"),
@@ -55,10 +55,10 @@ Suggests:
 VignetteBuilder: 
     knitr
 Remotes:
-    gsm.core=Gilead-Public/gsm.core@main,
-    gsm.mapping=Gilead-Public/gsm.mapping@main,
-    gsm.qtl=Gilead-Public/gsm.qtl@main,
-    gsm.reporting=Gilead-Public/gsm.reporting@main,
+    gsm.core=Gilead-Public/gsm.core@dev,
+    gsm.mapping=Gilead-Public/gsm.mapping@dev,
+    gsm.qtl=Gilead-Public/gsm.qtl@dev,
+    gsm.reporting=Gilead-Public/gsm.reporting@dev,
     qcthat=Gilead-Public/qcthat@main
 Config/roxygen2/version: 8.1.0
 Config/testthat/edition: 3

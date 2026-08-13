@@ -1,3 +1,5 @@
+# gsm.kri (development version)
+
 # gsm.kri v1.6.1
 
 This patch release removes the log4r package dependency, because the log4r package was archived on CRAN (#262).
