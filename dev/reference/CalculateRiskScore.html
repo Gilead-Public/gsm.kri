@@ -11,7 +11,7 @@ creating a composite risk score as a percentage of the total possible risk."><me
 
     <a class="navbar-brand me-2" href="../index.html">gsm.kri</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">1.6.0.9000</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">1.6.1.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -110,12 +110,12 @@ allowing for comparison across groups and identification of high-risk sites or e
 <span class="r-msg co"><span class="r-pr">#&gt;</span>     intersect, setdiff, setequal, union</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Filter to single study/snapshot and remove any existing risk scores</span></span></span>
-<span class="r-in"><span><span class="va">dfResults</span> <span class="op">&lt;-</span> <span class="fu">gsm.core</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/gsm.core/man/reportingResults.html" class="external-link">reportingResults</a></span> <span class="op"><a href="pipe.html">%&gt;%</a></span></span></span>
+<span class="r-in"><span><span class="va">dfResults</span> <span class="op">&lt;-</span> <span class="fu">gsm.core</span><span class="fu">::</span><span class="va"><a href="https://gilead-biostats.github.io/gsm.core/reference/reportingResults.html" class="external-link">reportingResults</a></span> <span class="op"><a href="pipe.html">%&gt;%</a></span></span></span>
 <span class="r-in"><span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">grepl</a></span><span class="op">(</span><span class="st">"srs0001"</span>, <span class="va">MetricID</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="pipe.html">%&gt;%</a></span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="FilterByLatestSnapshotDate.html">FilterByLatestSnapshotDate</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Create weights table</span></span></span>
-<span class="r-in"><span><span class="va">dfWeights</span> <span class="op">&lt;-</span> <span class="fu">gsm.kri</span><span class="fu">::</span><span class="fu"><a href="MakeWeights.html">MakeWeights</a></span><span class="op">(</span><span class="fu">gsm.core</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/gsm.core/man/reportingMetrics.html" class="external-link">reportingMetrics</a></span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">dfWeights</span> <span class="op">&lt;-</span> <span class="fu">gsm.kri</span><span class="fu">::</span><span class="fu"><a href="MakeWeights.html">MakeWeights</a></span><span class="op">(</span><span class="fu">gsm.core</span><span class="fu">::</span><span class="va"><a href="https://gilead-biostats.github.io/gsm.core/reference/reportingMetrics.html" class="external-link">reportingMetrics</a></span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Calculate risk scores</span></span></span>
 <span class="r-in"><span><span class="va">dfRiskScore</span> <span class="op">&lt;-</span> <span class="fu">CalculateRiskScore</span><span class="op">(</span><span class="va">dfResults</span>, <span class="va">dfWeights</span><span class="op">)</span></span></span>

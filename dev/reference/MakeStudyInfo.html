@@ -9,7 +9,7 @@ Generate a study info table summarizing study metadata.'><meta name="robots" con
 
     <a class="navbar-brand me-2" href="../index.html">gsm.kri</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">1.6.0.9000</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">1.6.1.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -86,7 +86,7 @@ passing CTMS site and study data to [MakeLongMeta()]. Expected columns:
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu">MakeStudyInfo</span><span class="op">(</span><span class="fu">gsm.core</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/gsm.core/man/reportingGroups.html" class="external-link">reportingGroups</a></span><span class="op">)</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu">MakeStudyInfo</span><span class="op">(</span><span class="fu">gsm.core</span><span class="fu">::</span><span class="va"><a href="https://gilead-biostats.github.io/gsm.core/reference/reportingGroups.html" class="external-link">reportingGroups</a></span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                          Param              Value                   Description</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1                      studyid     AA-AA-000-0000                       Studyid</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2                     nickname             OAK-38                      Nickname</span>
@@ -111,7 +111,7 @@ passing CTMS site and study data to [MakeLongMeta()]. Expected columns:
 <span class="r-out co"><span class="r-pr">#&gt;</span> 21              SiteActivation  146 / 150 (97.3%)               Site Activation</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 22 PercentParticipantsEnrolled               75.8 Percent Participants Enrolled</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 23       ParticipantEnrollment 758 / 1000 (75.8%)        Participant Enrollment</span>
-<span class="r-in"><span><span class="fu">MakeStudyInfo</span><span class="op">(</span><span class="fu">gsm.core</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/gsm.core/man/reportingGroups.html" class="external-link">reportingGroups</a></span>, <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>SiteCount <span class="op">=</span> <span class="st">"# Sites"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">MakeStudyInfo</span><span class="op">(</span><span class="fu">gsm.core</span><span class="fu">::</span><span class="va"><a href="https://gilead-biostats.github.io/gsm.core/reference/reportingGroups.html" class="external-link">reportingGroups</a></span>, <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>SiteCount <span class="op">=</span> <span class="st">"# Sites"</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                          Param              Value                   Description</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1                      studyid     AA-AA-000-0000                       Studyid</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2                     nickname             OAK-38                      Nickname</span>

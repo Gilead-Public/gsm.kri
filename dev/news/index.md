@@ -2,6 +2,12 @@
 
 ## gsm.kri (development version)
 
+## gsm.kri v1.6.1
+
+This patch release removes the log4r package dependency, because the
+log4r package was archived on CRAN
+([\#262](https://github.com/Gilead-Public/gsm.kri/issues/262)).
+
 ## gsm.kri v1.6.0
 
 This minor release introduces the Premature Deaths reporting module and
@@ -186,7 +192,7 @@ update default accrual thresholds
 ## gsm.kri 1.1.1
 
 This patch release updates the description file to incorporate min
-version for [gsm.core](https://gilead-biostats.github.io/gsm.core).
+version for [gsm.core](https://gilead-public.github.io/gsm.core).
 
 ## gsm.kri v1.1.0
 

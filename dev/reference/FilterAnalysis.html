@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">gsm.kri</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">1.6.0.9000</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">1.6.1.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -77,7 +77,7 @@
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">analysisFlagged</span> <span class="op">&lt;-</span> <span class="fu">gsm.core</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/gsm.core/man/analyticsSummary.html" class="external-link">analyticsSummary</a></span> <span class="op"><a href="pipe.html">%&gt;%</a></span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">analysisFlagged</span> <span class="op">&lt;-</span> <span class="fu">gsm.core</span><span class="fu">::</span><span class="va"><a href="https://gilead-biostats.github.io/gsm.core/reference/analyticsSummary.html" class="external-link">analyticsSummary</a></span> <span class="op"><a href="pipe.html">%&gt;%</a></span></span></span>
 <span class="r-in"><span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>    Weight <span class="op">=</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/case-and-replace-when.html" class="external-link">case_when</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>      <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="va">Flag</span><span class="op">)</span> <span class="op">==</span> <span class="fl">1</span> <span class="op">~</span> <span class="fl">2</span>,</span></span>
