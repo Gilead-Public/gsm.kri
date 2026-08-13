@@ -13,7 +13,7 @@ elevated risk.
 Each KRI (e.g., Adverse Events, Serious Adverse Events, Protocol
 Deviations) in the `gsm` framework is assigned a *flag* as part of the
 [standard analysis
-workflow](https://gilead-biostats.github.io/gsm.core/articles/DataAnalysis.html).
+workflow](https://gilead-public.github.io/gsm.core/articles/DataAnalysis.html).
 Flags can also be associated with a *weight*, which reflects their
 contribution to site risk. For example, a site with a low adverse event
 rate could present more risk than a site with a low query rate. While
@@ -53,22 +53,21 @@ site-risk score process:
   Default: `NULL`.
 
 When `vRiskScoreWeight` is provided, the
-[`Flag()`](https://gilead-biostats.github.io/gsm.core/reference/Flag.html)
-output will include additional columns capturing `Weight` and
-`MaxWeight` with the corresponding weight for each KRI.
+[`Flag()`](https://rdrr.io/pkg/gsm.core/man/Flag.html) output will
+include additional columns capturing `Weight` and `MaxWeight` with the
+corresponding weight for each KRI.
 
 These parameters allow for flexible configuration of the relative risk
 for different metrics in a study. While single metrics can be run via
-direct calls to
-[`Flag()`](https://gilead-biostats.github.io/gsm.core/reference/Flag.html),
+direct calls to [`Flag()`](https://rdrr.io/pkg/gsm.core/man/Flag.html),
 [YAML workflows are recommended for reusable
-implementations](https://gilead-biostats.github.io/gsm.kri/articles/AddingKRIs.html).
+implementations](https://gilead-public.github.io/gsm.kri/articles/AddingKRIs.html).
 As such, all standard KRIs include default thresholds, flags and
 weights. For reference, the relevant sections of the [Adverse Event KRI
-YAML](https://github.com/Gilead-BioStats/gsm.kri/blob/main/inst/workflow/2_metrics/kri0001.yaml),
+YAML](https://github.com/Gilead-Public/gsm.kri/blob/main/inst/workflow/2_metrics/kri0001.yaml),
 including the default flag and weight values and
-[`Flag()`](https://gilead-biostats.github.io/gsm.core/reference/Flag.html)
-function call are shown below for reference:
+[`Flag()`](https://rdrr.io/pkg/gsm.core/man/Flag.html) function call are
+shown below for reference:
 
     meta:
       Type: Analysis
@@ -114,9 +113,9 @@ function call are shown below for reference:
 
 First, `Threshold`, `Flag`, and `RiskScoreWeight` values provided in the
 metadata are parsed from strings to vectors using
-[`gsm.core::ParseThreshold()`](https://gilead-biostats.github.io/gsm.core/reference/ParseThreshold.html).
+[`gsm.core::ParseThreshold()`](https://rdrr.io/pkg/gsm.core/man/ParseThreshold.html).
 These parsed vectors are then passed to the
-[`gsm.core::Flag()`](https://gilead-biostats.github.io/gsm.core/reference/Flag.html)
+[`gsm.core::Flag()`](https://rdrr.io/pkg/gsm.core/man/Flag.html)
 function to compute flags and weights for each site.
 
 ## Site Risk Score Calculation
@@ -158,7 +157,7 @@ normalized_score
 ### Using CalculateRiskScore()
 
 The
-[`gsm.kri::CalculateRiskScore()`](https://gilead-biostats.github.io/gsm.kri/reference/CalculateRiskScore.md)
+[`gsm.kri::CalculateRiskScore()`](https://gilead-public.github.io/gsm.kri/reference/CalculateRiskScore.md)
 function simplifies the risk score calculation process. The function
 takes KRI results with flag information and a weights table to compute
 normalized risk scores automatically.
@@ -188,10 +187,10 @@ dfRiskScore <- CalculateRiskScore(
 ```
 
 The
-[`MakeWeights()`](https://gilead-biostats.github.io/gsm.kri/reference/MakeWeights.md)
+[`MakeWeights()`](https://gilead-public.github.io/gsm.kri/reference/MakeWeights.md)
 function parses the `Flag` and `RiskScoreWeight` columns from the
 metrics metadata (e.g.,
-[`gsm.core::reportingMetrics`](https://gilead-biostats.github.io/gsm.core/reference/reportingMetrics.html))
+[`gsm.core::reportingMetrics`](https://rdrr.io/pkg/gsm.core/man/reportingMetrics.html))
 to create a weight lookup table. This table contains one row per
 MetricID-Flag combination with corresponding weights and maximum
 weights.
@@ -206,20 +205,20 @@ KRI workflow using the `srs0001.yaml` workflow file located in
     “kri” pattern
 2.  Stacks the flagged results from all KRIs into a single data frame
 3.  Calls
-    [`CalculateRiskScore()`](https://gilead-biostats.github.io/gsm.kri/reference/CalculateRiskScore.md)
+    [`CalculateRiskScore()`](https://gilead-public.github.io/gsm.kri/reference/CalculateRiskScore.md)
     to compute site risk scores
 4.  Returns the results as a new metric (`srs0001`) using the
-    [`gsm.kri::CalculateRiskScore()`](https://gilead-biostats.github.io/gsm.kri/reference/CalculateRiskScore.md)
+    [`gsm.kri::CalculateRiskScore()`](https://gilead-public.github.io/gsm.kri/reference/CalculateRiskScore.md)
     function
 5.  The standard KRI report produced by
-    [`Report_KRI()`](https://gilead-biostats.github.io/gsm.kri/reference/Report_KRI.md)
+    [`Report_KRI()`](https://gilead-public.github.io/gsm.kri/reference/Report_KRI.md)
     includes a column showing the normalized site risk score for each
     site for a single study.
 
 ## Cross-Study Site Risk Scores
 
 The
-[`Widget_CrossStudyRiskScore()`](https://gilead-biostats.github.io/gsm.kri/reference/Widget_CrossStudyRiskScore.md)
+[`Widget_CrossStudyRiskScore()`](https://gilead-public.github.io/gsm.kri/reference/Widget_CrossStudyRiskScore.md)
 function enables visualization of site risk scores across multiple
 studies simultaneously. This widget provides an interactive table that
 allows users to:
@@ -237,7 +236,7 @@ workflow typically involves:
 1.  **Data preparation**: Combine results from multiple studies,
     ensuring each has calculated site risk scores
 2.  **Summary generation**: Use
-    [`SummarizeCrossStudy()`](https://gilead-biostats.github.io/gsm.kri/reference/SummarizeCrossStudy.md)
+    [`SummarizeCrossStudy()`](https://gilead-public.github.io/gsm.kri/reference/SummarizeCrossStudy.md)
     to aggregate metrics across studies
 3.  **Widget creation**: Pass results, metrics, and groups metadata to
     create the interactive visualization
@@ -263,7 +262,7 @@ Cross-Study Risk Score Widget showing site risk summaries across
 multiple studies
 
 For a complete working example, see
-<https://github.com/Gilead-BioStats/gsm.kri/blob/main/pkgdown/menus/examples/Example_CrossStudySRS.Rmd>,
+<https://github.com/Gilead-Public/gsm.kri/blob/main/pkgdown/menus/examples/Example_CrossStudySRS.Rmd>,
 which demonstrates:
 
 - Simulating multi-study data with site risk scores

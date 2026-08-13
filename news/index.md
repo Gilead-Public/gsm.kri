@@ -1,5 +1,11 @@
 # Changelog
 
+## gsm.kri v1.6.1
+
+This patch release removes the log4r package dependency, because the
+log4r package was archived on CRAN
+([\#262](https://github.com/Gilead-Public/gsm.kri/issues/262)).
+
 ## gsm.kri v1.6.0
 
 This minor release introduces the Premature Deaths reporting module and
@@ -8,40 +14,37 @@ adds cross-study sorting and filtering capabilities.
 **New Features:**
 
 - Add Premature Deaths report module with interactive charts and patient
-  listing
-  ([\#221](https://github.com/Gilead-BioStats/gsm.kri/issues/221),
-  [\#223](https://github.com/Gilead-BioStats/gsm.kri/issues/223))
+  listing ([\#221](https://github.com/Gilead-Public/gsm.kri/issues/221),
+  [\#223](https://github.com/Gilead-Public/gsm.kri/issues/223))
   - Five-category classification of death timing via
-    [`pd_Classify()`](https://gilead-biostats.github.io/gsm.kri/reference/pd_Classify.md)
-    ([\#246](https://github.com/Gilead-BioStats/gsm.kri/issues/246))
+    [`pd_Classify()`](https://gilead-public.github.io/gsm.kri/reference/pd_Classify.md)
+    ([\#246](https://github.com/Gilead-Public/gsm.kri/issues/246))
   - Bucket bar charts with count/percent toggle, on-bar labels, and
     range slider
-    ([\#223](https://github.com/Gilead-BioStats/gsm.kri/issues/223),
-    [\#246](https://github.com/Gilead-BioStats/gsm.kri/issues/246),
-    [\#253](https://github.com/Gilead-BioStats/gsm.kri/issues/253))
+    ([\#223](https://github.com/Gilead-Public/gsm.kri/issues/223),
+    [\#246](https://github.com/Gilead-Public/gsm.kri/issues/246),
+    [\#253](https://github.com/Gilead-Public/gsm.kri/issues/253))
   - Randomization-to-death scatter plot with fixed shared range across
     study/country/site views
-    ([\#247](https://github.com/Gilead-BioStats/gsm.kri/issues/247))
+    ([\#247](https://github.com/Gilead-Public/gsm.kri/issues/247))
   - Death-reason distribution chart with country-reactive filtering
-    ([\#254](https://github.com/Gilead-BioStats/gsm.kri/issues/254))
+    ([\#254](https://github.com/Gilead-Public/gsm.kri/issues/254))
   - Patient listing with site/country filter, eligibility status, and
     download button
-    ([\#249](https://github.com/Gilead-BioStats/gsm.kri/issues/249))
+    ([\#249](https://github.com/Gilead-Public/gsm.kri/issues/249))
   - Overview preamble with death-breakdown sub-line and ≤30 / 31–90 day
-    split
-    ([\#250](https://github.com/Gilead-BioStats/gsm.kri/issues/250),
-    [\#252](https://github.com/Gilead-BioStats/gsm.kri/issues/252))
+    split ([\#250](https://github.com/Gilead-Public/gsm.kri/issues/250),
+    [\#252](https://github.com/Gilead-Public/gsm.kri/issues/252))
   - Sticky bucket-bar count/percent toggle and chip-strip filter UI
-    ([\#253](https://github.com/Gilead-BioStats/gsm.kri/issues/253))
+    ([\#253](https://github.com/Gilead-Public/gsm.kri/issues/253))
 - Add patient-level premature-death workflow `pat0015` with configurable
-  window
-  ([\#221](https://github.com/Gilead-BioStats/gsm.kri/issues/221))
+  window ([\#221](https://github.com/Gilead-Public/gsm.kri/issues/221))
 - Derive Treatment Related status from `deathcls` + fatal related AE
-  ([\#248](https://github.com/Gilead-BioStats/gsm.kri/issues/248))
+  ([\#248](https://github.com/Gilead-Public/gsm.kri/issues/248))
 - Add eligibility status derivation via
-  [`pd_EligibilityStatus()`](https://gilead-biostats.github.io/gsm.kri/reference/pd_EligibilityStatus.md)
-  ([\#249](https://github.com/Gilead-BioStats/gsm.kri/issues/249),
-  [\#250](https://github.com/Gilead-BioStats/gsm.kri/issues/250))
+  [`pd_EligibilityStatus()`](https://gilead-public.github.io/gsm.kri/reference/pd_EligibilityStatus.md)
+  ([\#249](https://github.com/Gilead-Public/gsm.kri/issues/249),
+  [\#250](https://github.com/Gilead-Public/gsm.kri/issues/250))
 - Add sort-by-enrollment option to Cross-Study Site Risk Score widget
 - Recalculate site metrics from the cross-study study filter selection
 
@@ -49,16 +52,16 @@ adds cross-study sorting and filtering capabilities.
 
 - Fix country cross-filter and absent country key guard in
   premature-death charts
-  ([\#222](https://github.com/Gilead-BioStats/gsm.kri/issues/222))
+  ([\#222](https://github.com/Gilead-Public/gsm.kri/issues/222))
 - Fix `cou0015` to exclude subjects without a randomization date from
   the cohort
-  ([\#247](https://github.com/Gilead-BioStats/gsm.kri/issues/247))
+  ([\#247](https://github.com/Gilead-Public/gsm.kri/issues/247))
 - Fix plotly scalar-text bug by using `customdata` for hover tooltips
 - Remove risk score weight from `cou0015` workflow
 - Fix overlapping sticky bucket toggle placement in report
-  ([\#253](https://github.com/Gilead-BioStats/gsm.kri/issues/253))
+  ([\#253](https://github.com/Gilead-Public/gsm.kri/issues/253))
 - Ignore inactive workflows
-  ([\#237](https://github.com/Gilead-BioStats/gsm.kri/issues/237))
+  ([\#237](https://github.com/Gilead-Public/gsm.kri/issues/237))
 
 ## gsm.kri v1.5.2
 
@@ -67,9 +70,9 @@ renders missing examples.
 
 **Bug Fixes:** - Fix overlapping summary table and text in Site/Country
 Report examples on the pkgdown site
-([\#240](https://github.com/Gilead-BioStats/gsm.kri/issues/240)) -
-Render missing pkgdown examples
-([\#228](https://github.com/Gilead-BioStats/gsm.kri/issues/228))
+([\#240](https://github.com/Gilead-Public/gsm.kri/issues/240)) - Render
+missing pkgdown examples
+([\#228](https://github.com/Gilead-Public/gsm.kri/issues/228))
 
 ## gsm.kri v1.5.1
 
@@ -129,7 +132,7 @@ has the following steps:
 - KRI Flags are given weights using the new `RiskScoreWeight` parameter
   in the `yaml` workflows for each KRI.
 - Site-level risk scores are calculated using the new
-  [`CalculateRiskScore()`](https://gilead-biostats.github.io/gsm.kri/reference/CalculateRiskScore.md)
+  [`CalculateRiskScore()`](https://gilead-public.github.io/gsm.kri/reference/CalculateRiskScore.md)
   function.
 - Site Risk Scores are saved in a new Metric `srs0001` via a new
   standard workflow
@@ -210,34 +213,34 @@ visualization functions and widgets for the GSM pipeline.
 - **Updated KRI Descriptions and Templates:**  
   The descriptions of Key Risk Indicators (KRIs) have been updated to
   improve clarity and understanding based on Risk Advisor feedback.
-  [PR](https://github.com/Gilead-BioStats/gsm.kri/pull/27)
-  [\#27](https://github.com/Gilead-BioStats/gsm.kri/issues/27)
+  [PR](https://github.com/Gilead-Public/gsm.kri/pull/27)
+  [\#27](https://github.com/Gilead-Public/gsm.kri/issues/27)
 
 - **Qualification Report GitHub Actions (GHA):**  
   A new GitHub Actions workflow for generating qualification reports has
   been added, automating the process and ensuring better integration
   with the overall pipeline.  
-  [PR](https://github.com/Gilead-BioStats/gsm.kri/pull/33)
-  [\#33](https://github.com/Gilead-BioStats/gsm.kri/issues/33)
+  [PR](https://github.com/Gilead-Public/gsm.kri/pull/33)
+  [\#33](https://github.com/Gilead-Public/gsm.kri/issues/33)
 
 - **Update to gsm.viz 2.2:**  
   The package has been updated to use `gsm.viz` version 2.2, bringing
   new visualization capabilities and updates.  
-  [PR](https://github.com/Gilead-BioStats/gsm.kri/pull/36)
-  [\#36](https://github.com/Gilead-BioStats/gsm.kri/issues/36)
+  [PR](https://github.com/Gilead-Public/gsm.kri/pull/36)
+  [\#36](https://github.com/Gilead-Public/gsm.kri/issues/36)
 
 - **Replacement of clindata with gsm.datasim:**  
   In line with updates across other GSM packages, `clindata` has been
   replaced with the `gsm.datasim` package.  
-  [PR](https://github.com/Gilead-BioStats/gsm.kri/pull/34)
-  [\#34](https://github.com/Gilead-BioStats/gsm.kri/issues/34)
+  [PR](https://github.com/Gilead-Public/gsm.kri/pull/34)
+  [\#34](https://github.com/Gilead-Public/gsm.kri/issues/34)
 
 - **“How to Add a New KRI” Vignette:**  
   A new vignette has been added that provides a step-by-step guide on
   how to add a new KRI to the package, making it easier for users to
   extend and customize the package for their needs.  
-  [PR](https://github.com/Gilead-BioStats/gsm.kri/pull/29)
-  [\#29](https://github.com/Gilead-BioStats/gsm.kri/issues/29)
+  [PR](https://github.com/Gilead-Public/gsm.kri/pull/29)
+  [\#29](https://github.com/Gilead-Public/gsm.kri/issues/29)
 
 #### Other Updates:
 
@@ -251,4 +254,4 @@ above.
 
 This initial release migrates the KRI-specific functions, workflows,
 widgets and documentation from `{gsm}` to
-[gsm.kri](https://github.com/Gilead-BioStats/gsm.kri).
+[gsm.kri](https://github.com/Gilead-Public/gsm.kri).

@@ -15,7 +15,7 @@ result in a datatable.'><!-- dependencies from examples --></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">gsm.kri</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.6.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.6.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -43,7 +43,7 @@ result in a datatable.'><!-- dependencies from examples --></head><body>
   </ul></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
-<li class="nav-item"><a class="external-link nav-link" href="https://github.com/gilead-biostats/gsm.kri"><span class="fa fab fa-github"></span></a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/gilead-public/gsm.kri"><span class="fa fab fa-github"></span></a></li>
       </ul></div>
 
 
@@ -53,7 +53,7 @@ result in a datatable.'><!-- dependencies from examples --></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Generate a summary table for a report</h1>
-      <small class="dont-index">Source: <a href="https://github.com/Gilead-BioStats/gsm.kri/blob/main/R/Report_MetricTable.R" class="external-link"><code>R/Report_MetricTable.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/Gilead-Public/gsm.kri/blob/main/R/Report_MetricTable.R" class="external-link"><code>R/Report_MetricTable.R</code></a></small>
       <div class="d-none name"><code>Report_MetricTable.Rd</code></div>
     </div>
 
@@ -113,10 +113,10 @@ Default: `c(-2, -1, 1, 2)`.</p></dd>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># site-level report</span></span></span>
 <span class="r-in"><span><span class="fu">Report_MetricTable</span><span class="op">(</span></span></span>
-<span class="r-in"><span>  dfResults <span class="op">=</span> <span class="fu">gsm.core</span><span class="fu">::</span><span class="va"><a href="https://gilead-biostats.github.io/gsm.core/reference/reportingResults.html" class="external-link">reportingResults</a></span> <span class="op"><a href="pipe.html">%&gt;%</a></span></span></span>
+<span class="r-in"><span>  dfResults <span class="op">=</span> <span class="fu">gsm.core</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/gsm.core/man/reportingResults.html" class="external-link">reportingResults</a></span> <span class="op"><a href="pipe.html">%&gt;%</a></span></span></span>
 <span class="r-in"><span>    <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">.data</span><span class="op">$</span><span class="va">MetricID</span> <span class="op">==</span> <span class="st">"Analysis_kri0001"</span><span class="op">)</span> <span class="op"><a href="pipe.html">%&gt;%</a></span></span></span>
 <span class="r-in"><span>    <span class="fu"><a href="FilterByLatestSnapshotDate.html">FilterByLatestSnapshotDate</a></span><span class="op">(</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  dfGroups <span class="op">=</span> <span class="fu">gsm.core</span><span class="fu">::</span><span class="va"><a href="https://gilead-biostats.github.io/gsm.core/reference/reportingGroups.html" class="external-link">reportingGroups</a></span></span></span>
+<span class="r-in"><span>  dfGroups <span class="op">=</span> <span class="fu">gsm.core</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/gsm.core/man/reportingGroups.html" class="external-link">reportingGroups</a></span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <div class="gt-table"><div id="mwlefoodfi" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
 

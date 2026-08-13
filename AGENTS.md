@@ -9,8 +9,8 @@ framework for statistical data monitoring. ‘gsm.kri’ provides workflows
 to generate metrics and functionality to visualize and report on these
 metrics.
 
-<https://github.com/Gilead-BioStats/gsm.kri>,
-<https://gilead-biostats.github.io/gsm.kri>
+<https://github.com/Gilead-Public/gsm.kri>,
+<https://gilead-public.github.io/gsm.kri>
 
 ### Overall structure
 

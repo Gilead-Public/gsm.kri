@@ -26588,7 +26588,7 @@ var gsmViz = (() => {
         defaults3.groupTooltipKeys = null;
         defaults3.SiteRiskScoreMetricID = 'Analysis_srs0001';
         defaults3.SiteRiskScoreURL =
-            'https://gilead-biostats.github.io/gsm.kri/articles/SiteRiskScore.html';
+            'https://gilead-public.github.io/gsm.kri/articles/SiteRiskScore.html';
         defaults3.groupClickCallback = (datum2) => {
             console.log(datum2);
         };
@@ -26772,7 +26772,7 @@ var gsmViz = (() => {
         tooltipLines.push('For more information, see:');
         tooltipLines.push(
             config.SiteRiskScoreURL ||
-                'https://gilead-biostats.github.io/gsm.kri/articles/SiteRiskScore.html'
+                'https://gilead-public.github.io/gsm.kri/articles/SiteRiskScore.html'
         );
         return tooltipLines.join('\n');
     }

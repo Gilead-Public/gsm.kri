@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">gsm.kri</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.6.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.6.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -35,7 +35,7 @@
   </ul></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
-<li class="nav-item"><a class="external-link nav-link" href="https://github.com/gilead-biostats/gsm.kri"><span class="fa fab fa-github"></span></a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/gilead-public/gsm.kri"><span class="fa fab fa-github"></span></a></li>
       </ul></div>
 
 
@@ -45,39 +45,43 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/Gilead-BioStats/gsm.kri/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/Gilead-Public/gsm.kri/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.6.1" id="gsmkri-v161">gsm.kri v1.6.1<a class="anchor" aria-label="anchor" href="#gsmkri-v161"></a></h2>
+<p>This patch release removes the log4r package dependency, because the log4r package was archived on CRAN (<a href="https://github.com/Gilead-Public/gsm.kri/issues/262" class="external-link">#262</a>).</p>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.6.0" id="gsmkri-v160">gsm.kri v1.6.0<a class="anchor" aria-label="anchor" href="#gsmkri-v160"></a></h2>
 <p>This minor release introduces the Premature Deaths reporting module and adds cross-study sorting and filtering capabilities.</p>
 <p><strong>New Features:</strong></p>
-<ul><li>Add Premature Deaths report module with interactive charts and patient listing (<a href="https://github.com/Gilead-BioStats/gsm.kri/issues/221" class="external-link">#221</a>, <a href="https://github.com/Gilead-BioStats/gsm.kri/issues/223" class="external-link">#223</a>)
-<ul><li>Five-category classification of death timing via <code><a href="../reference/pd_Classify.html">pd_Classify()</a></code> (<a href="https://github.com/Gilead-BioStats/gsm.kri/issues/246" class="external-link">#246</a>)</li>
-<li>Bucket bar charts with count/percent toggle, on-bar labels, and range slider (<a href="https://github.com/Gilead-BioStats/gsm.kri/issues/223" class="external-link">#223</a>, <a href="https://github.com/Gilead-BioStats/gsm.kri/issues/246" class="external-link">#246</a>, <a href="https://github.com/Gilead-BioStats/gsm.kri/issues/253" class="external-link">#253</a>)</li>
-<li>Randomization-to-death scatter plot with fixed shared range across study/country/site views (<a href="https://github.com/Gilead-BioStats/gsm.kri/issues/247" class="external-link">#247</a>)</li>
-<li>Death-reason distribution chart with country-reactive filtering (<a href="https://github.com/Gilead-BioStats/gsm.kri/issues/254" class="external-link">#254</a>)</li>
-<li>Patient listing with site/country filter, eligibility status, and download button (<a href="https://github.com/Gilead-BioStats/gsm.kri/issues/249" class="external-link">#249</a>)</li>
-<li>Overview preamble with death-breakdown sub-line and ≤30 / 31–90 day split (<a href="https://github.com/Gilead-BioStats/gsm.kri/issues/250" class="external-link">#250</a>, <a href="https://github.com/Gilead-BioStats/gsm.kri/issues/252" class="external-link">#252</a>)</li>
-<li>Sticky bucket-bar count/percent toggle and chip-strip filter UI (<a href="https://github.com/Gilead-BioStats/gsm.kri/issues/253" class="external-link">#253</a>)</li>
+<ul><li>Add Premature Deaths report module with interactive charts and patient listing (<a href="https://github.com/Gilead-Public/gsm.kri/issues/221" class="external-link">#221</a>, <a href="https://github.com/Gilead-Public/gsm.kri/issues/223" class="external-link">#223</a>)
+<ul><li>Five-category classification of death timing via <code><a href="../reference/pd_Classify.html">pd_Classify()</a></code> (<a href="https://github.com/Gilead-Public/gsm.kri/issues/246" class="external-link">#246</a>)</li>
+<li>Bucket bar charts with count/percent toggle, on-bar labels, and range slider (<a href="https://github.com/Gilead-Public/gsm.kri/issues/223" class="external-link">#223</a>, <a href="https://github.com/Gilead-Public/gsm.kri/issues/246" class="external-link">#246</a>, <a href="https://github.com/Gilead-Public/gsm.kri/issues/253" class="external-link">#253</a>)</li>
+<li>Randomization-to-death scatter plot with fixed shared range across study/country/site views (<a href="https://github.com/Gilead-Public/gsm.kri/issues/247" class="external-link">#247</a>)</li>
+<li>Death-reason distribution chart with country-reactive filtering (<a href="https://github.com/Gilead-Public/gsm.kri/issues/254" class="external-link">#254</a>)</li>
+<li>Patient listing with site/country filter, eligibility status, and download button (<a href="https://github.com/Gilead-Public/gsm.kri/issues/249" class="external-link">#249</a>)</li>
+<li>Overview preamble with death-breakdown sub-line and ≤30 / 31–90 day split (<a href="https://github.com/Gilead-Public/gsm.kri/issues/250" class="external-link">#250</a>, <a href="https://github.com/Gilead-Public/gsm.kri/issues/252" class="external-link">#252</a>)</li>
+<li>Sticky bucket-bar count/percent toggle and chip-strip filter UI (<a href="https://github.com/Gilead-Public/gsm.kri/issues/253" class="external-link">#253</a>)</li>
 </ul></li>
-<li>Add patient-level premature-death workflow <code>pat0015</code> with configurable window (<a href="https://github.com/Gilead-BioStats/gsm.kri/issues/221" class="external-link">#221</a>)</li>
-<li>Derive Treatment Related status from <code>deathcls</code> + fatal related AE (<a href="https://github.com/Gilead-BioStats/gsm.kri/issues/248" class="external-link">#248</a>)</li>
-<li>Add eligibility status derivation via <code><a href="../reference/pd_EligibilityStatus.html">pd_EligibilityStatus()</a></code> (<a href="https://github.com/Gilead-BioStats/gsm.kri/issues/249" class="external-link">#249</a>, <a href="https://github.com/Gilead-BioStats/gsm.kri/issues/250" class="external-link">#250</a>)</li>
+<li>Add patient-level premature-death workflow <code>pat0015</code> with configurable window (<a href="https://github.com/Gilead-Public/gsm.kri/issues/221" class="external-link">#221</a>)</li>
+<li>Derive Treatment Related status from <code>deathcls</code> + fatal related AE (<a href="https://github.com/Gilead-Public/gsm.kri/issues/248" class="external-link">#248</a>)</li>
+<li>Add eligibility status derivation via <code><a href="../reference/pd_EligibilityStatus.html">pd_EligibilityStatus()</a></code> (<a href="https://github.com/Gilead-Public/gsm.kri/issues/249" class="external-link">#249</a>, <a href="https://github.com/Gilead-Public/gsm.kri/issues/250" class="external-link">#250</a>)</li>
 <li>Add sort-by-enrollment option to Cross-Study Site Risk Score widget</li>
 <li>Recalculate site metrics from the cross-study study filter selection</li>
 </ul><p><strong>Bug Fixes:</strong></p>
-<ul><li>Fix country cross-filter and absent country key guard in premature-death charts (<a href="https://github.com/Gilead-BioStats/gsm.kri/issues/222" class="external-link">#222</a>)</li>
-<li>Fix <code>cou0015</code> to exclude subjects without a randomization date from the cohort (<a href="https://github.com/Gilead-BioStats/gsm.kri/issues/247" class="external-link">#247</a>)</li>
+<ul><li>Fix country cross-filter and absent country key guard in premature-death charts (<a href="https://github.com/Gilead-Public/gsm.kri/issues/222" class="external-link">#222</a>)</li>
+<li>Fix <code>cou0015</code> to exclude subjects without a randomization date from the cohort (<a href="https://github.com/Gilead-Public/gsm.kri/issues/247" class="external-link">#247</a>)</li>
 <li>Fix plotly scalar-text bug by using <code>customdata</code> for hover tooltips</li>
 <li>Remove risk score weight from <code>cou0015</code> workflow</li>
-<li>Fix overlapping sticky bucket toggle placement in report (<a href="https://github.com/Gilead-BioStats/gsm.kri/issues/253" class="external-link">#253</a>)</li>
-<li>Ignore inactive workflows (<a href="https://github.com/Gilead-BioStats/gsm.kri/issues/237" class="external-link">#237</a>)</li>
+<li>Fix overlapping sticky bucket toggle placement in report (<a href="https://github.com/Gilead-Public/gsm.kri/issues/253" class="external-link">#253</a>)</li>
+<li>Ignore inactive workflows (<a href="https://github.com/Gilead-Public/gsm.kri/issues/237" class="external-link">#237</a>)</li>
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.5.2" id="gsmkri-v152">gsm.kri v1.5.2<a class="anchor" aria-label="anchor" href="#gsmkri-v152"></a></h2>
 <p>This patch release fixes report display issues on the pkgdown site and renders missing examples.</p>
-<p><strong>Bug Fixes:</strong> - Fix overlapping summary table and text in Site/Country Report examples on the pkgdown site (<a href="https://github.com/Gilead-BioStats/gsm.kri/issues/240" class="external-link">#240</a>) - Render missing pkgdown examples (<a href="https://github.com/Gilead-BioStats/gsm.kri/issues/228" class="external-link">#228</a>)</p>
+<p><strong>Bug Fixes:</strong> - Fix overlapping summary table and text in Site/Country Report examples on the pkgdown site (<a href="https://github.com/Gilead-Public/gsm.kri/issues/240" class="external-link">#240</a>) - Render missing pkgdown examples (<a href="https://github.com/Gilead-Public/gsm.kri/issues/228" class="external-link">#228</a>)</p>
 </div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.5.1" id="gsmkri-v151">gsm.kri v1.5.1<a class="anchor" aria-label="anchor" href="#gsmkri-v151"></a></h2>
@@ -168,15 +172,15 @@
 <div class="section level4">
 <h4 id="key-enhancements-1-0-0">Key Enhancements:<a class="anchor" aria-label="anchor" href="#key-enhancements-1-0-0"></a></h4>
 <ul><li><p><strong>Updated KRI Descriptions and Templates:</strong><br>
-The descriptions of Key Risk Indicators (KRIs) have been updated to improve clarity and understanding based on Risk Advisor feedback. <a href="https://github.com/Gilead-BioStats/gsm.kri/pull/27" class="external-link">PR </a><a href="https://github.com/Gilead-BioStats/gsm.kri/issues/27" class="external-link">#27</a></p></li>
+The descriptions of Key Risk Indicators (KRIs) have been updated to improve clarity and understanding based on Risk Advisor feedback. <a href="https://github.com/Gilead-Public/gsm.kri/pull/27" class="external-link">PR </a><a href="https://github.com/Gilead-Public/gsm.kri/issues/27" class="external-link">#27</a></p></li>
 <li><p><strong>Qualification Report GitHub Actions (GHA):</strong><br>
-A new GitHub Actions workflow for generating qualification reports has been added, automating the process and ensuring better integration with the overall pipeline.<br><a href="https://github.com/Gilead-BioStats/gsm.kri/pull/33" class="external-link">PR </a><a href="https://github.com/Gilead-BioStats/gsm.kri/issues/33" class="external-link">#33</a></p></li>
+A new GitHub Actions workflow for generating qualification reports has been added, automating the process and ensuring better integration with the overall pipeline.<br><a href="https://github.com/Gilead-Public/gsm.kri/pull/33" class="external-link">PR </a><a href="https://github.com/Gilead-Public/gsm.kri/issues/33" class="external-link">#33</a></p></li>
 <li><p><strong>Update to gsm.viz 2.2:</strong><br>
-The package has been updated to use <code>gsm.viz</code> version 2.2, bringing new visualization capabilities and updates.<br><a href="https://github.com/Gilead-BioStats/gsm.kri/pull/36" class="external-link">PR </a><a href="https://github.com/Gilead-BioStats/gsm.kri/issues/36" class="external-link">#36</a></p></li>
+The package has been updated to use <code>gsm.viz</code> version 2.2, bringing new visualization capabilities and updates.<br><a href="https://github.com/Gilead-Public/gsm.kri/pull/36" class="external-link">PR </a><a href="https://github.com/Gilead-Public/gsm.kri/issues/36" class="external-link">#36</a></p></li>
 <li><p><strong>Replacement of clindata with gsm.datasim:</strong><br>
-In line with updates across other GSM packages, <code>clindata</code> has been replaced with the <code>gsm.datasim</code> package.<br><a href="https://github.com/Gilead-BioStats/gsm.kri/pull/34" class="external-link">PR </a><a href="https://github.com/Gilead-BioStats/gsm.kri/issues/34" class="external-link">#34</a></p></li>
+In line with updates across other GSM packages, <code>clindata</code> has been replaced with the <code>gsm.datasim</code> package.<br><a href="https://github.com/Gilead-Public/gsm.kri/pull/34" class="external-link">PR </a><a href="https://github.com/Gilead-Public/gsm.kri/issues/34" class="external-link">#34</a></p></li>
 <li><p><strong>“How to Add a New KRI” Vignette:</strong><br>
-A new vignette has been added that provides a step-by-step guide on how to add a new KRI to the package, making it easier for users to extend and customize the package for their needs.<br><a href="https://github.com/Gilead-BioStats/gsm.kri/pull/29" class="external-link">PR </a><a href="https://github.com/Gilead-BioStats/gsm.kri/issues/29" class="external-link">#29</a></p></li>
+A new vignette has been added that provides a step-by-step guide on how to add a new KRI to the package, making it easier for users to extend and customize the package for their needs.<br><a href="https://github.com/Gilead-Public/gsm.kri/pull/29" class="external-link">PR </a><a href="https://github.com/Gilead-Public/gsm.kri/issues/29" class="external-link">#29</a></p></li>
 </ul></div>
 <div class="section level4">
 <h4 id="other-updates-1-0-0">Other Updates:<a class="anchor" aria-label="anchor" href="#other-updates-1-0-0"></a></h4>
@@ -186,7 +190,7 @@ A new vignette has been added that provides a step-by-step guide on how to add a
 </div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.0.1" id="gsmkri-v001">gsm.kri v0.0.1<a class="anchor" aria-label="anchor" href="#gsmkri-v001"></a></h2>
-<p>This initial release migrates the KRI-specific functions, workflows, widgets and documentation from <code>{gsm}</code> to <a href="https://github.com/Gilead-BioStats/gsm.kri" class="external-link">gsm.kri</a>.</p>
+<p>This initial release migrates the KRI-specific functions, workflows, widgets and documentation from <code>{gsm}</code> to <a href="https://github.com/Gilead-Public/gsm.kri" class="external-link">gsm.kri</a>.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
