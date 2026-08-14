@@ -40,6 +40,9 @@ pd_BarWidget <- function(strName, data, spec, metadata, bDebug) {
     package = "gsm.kri",
     # gsmViz bundle comes from gsm.vizr now - the YAML can only resolve
     # package-relative paths inside gsm.kri, so the handoff is explicit here.
+    # This appends gsmViz *after* the widget binding (the YAML placed it before),
+    # so a binding that reached for window.gsmViz at parse time rather than inside
+    # renderValue would break.
     dependencies = list(gsm.vizr::html_dependency_gsm_viz())
   )
 

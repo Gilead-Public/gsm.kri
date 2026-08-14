@@ -55,7 +55,7 @@ git log --oneline --all -- inst/htmlwidgets/lib 'inst/htmlwidgets/*.yaml'
 ```
 Identify every YAML dependency with `name: gsmViz`, every exact bundle/version pin, provisional note, and bundle safeguard. Inspect at least:
 - gsm.vizr's single-bundle safeguard test (the `vendored-bundle` testthat file) and its bundle-export assertions
-- `R/html_dependency_gsm_viz.R` — the exported dependency other packages consume; its `version` must track the bundle directory
+- `R/dependency.R` — defines `html_dependency_gsm_viz()`, the exported dependency other packages consume; its `version` must track the bundle directory
 - widget dependency assertions found by the search
 
 Downstream consumers do not vendor the bundle and must not be edited to do so. gsm.kri holds a browser regression (`tests/playwright/bundle-regression.spec.js`) that renders reports against whatever bundle gsm.vizr serves; after a bump, re-run it from the gsm.kri repository to confirm the new bundle did not change report structure.
@@ -103,5 +103,7 @@ R CMD INSTALL <path-to-gsm.vizr>
 R --quiet -e 'devtools::load_all("."); source("tests/playwright/render-kri-fixture.R")'
 npm --prefix tests/playwright ci
 npm --prefix tests/playwright test -- bundle-regression.spec.js
-``` Do not refresh structural baselines merely to make failures pass; inspect and explain intentional rendering changes first.
+```
+
+Do not refresh structural baselines merely to make failures pass; inspect and explain intentional rendering changes first.
 Review `git diff --check`, `git status --short`, the complete diff, the single-directory invariant, and all remaining `gsm.viz` references. Stop instead of completing the upgrade if provenance is uncertain, required exports disappear, a widget throws, fingerprints drift without an understood cause, R checks warn/error, or stale provisional references remain. Never approve a development-mode bundle as the final released upgrade; repeat the workflow in release mode from the official tag before merge/release.
