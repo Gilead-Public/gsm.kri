@@ -57,7 +57,10 @@ Widget_CrossStudyRiskScore <- function(
       )
     ),
     width = "100%",
-    package = "gsm.kri"
+    package = "gsm.kri",
+    # gsmViz bundle comes from gsm.vizr now - the YAML can only resolve
+    # package-relative paths inside gsm.kri, so the handoff is explicit here.
+    dependencies = list(gsm.vizr::html_dependency_gsm_viz())
   )
 
   return(lWidget)

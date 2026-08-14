@@ -37,7 +37,10 @@ pd_BarWidget <- function(strName, data, spec, metadata, bDebug) {
       list(data = data, spec = spec, metadata = metadata, bDebug = bDebug),
       ~ jsonlite::toJSON(.x, null = "null", na = "string", auto_unbox = TRUE)
     ),
-    package = "gsm.kri"
+    package = "gsm.kri",
+    # gsmViz bundle comes from gsm.vizr now - the YAML can only resolve
+    # package-relative paths inside gsm.kri, so the handoff is explicit here.
+    dependencies = list(gsm.vizr::html_dependency_gsm_viz())
   )
 
   if (bDebug) {

@@ -29,11 +29,10 @@ test_that("Widget_PrematureDeathReasonBar serializes horizontal spec + rows (#26
   expect_true(all(c("reason", "n", "hover") %in% names(data_back)))
 })
 
-test_that("Widget_PrematureDeathReasonBar wires the pinned gsm.viz dependency (#264)", {
-  y <- yaml::read_yaml(system.file(
-    "htmlwidgets/Widget_PrematureDeathReasonBar.yaml",
-    package = "gsm.kri"
-  ))
-  gv <- Filter(function(d) identical(d$name, "gsmViz"), y$dependencies)[[1]]
+test_that("Widget_PrematureDeathReasonBar wires the pinned gsm.viz dependency (#264) (#291)", {
+  i <- reason_inputs()
+  w <- Widget_PrematureDeathReasonBar(i$data, i$spec, i$metadata)
+  gv <- Filter(function(d) identical(d$name, "gsmViz"), w$dependencies)[[1]]
   expect_equal(as.character(gv$version), "2.4.1")
+  expect_true(startsWith(gv$src$file, system.file(package = "gsm.vizr")))
 })
