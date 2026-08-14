@@ -95,6 +95,21 @@ importFrom(cli,
   qty
 )
 importFrom(glue,glue)
+importFrom(gsm.vizr,
+  MakeChartConfig,
+  Widget_BarChart,
+  Widget_BarChartOutput,
+  Widget_GroupOverview,
+  Widget_GroupOverviewOutput,
+  Widget_ScatterPlot,
+  Widget_ScatterPlotOutput,
+  Widget_TimeSeries,
+  Widget_TimeSeriesOutput,
+  renderWidget_BarChart,
+  renderWidget_GroupOverview,
+  renderWidget_ScatterPlot,
+  renderWidget_TimeSeries
+)
 importFrom(htmltools,
   HTML,
   h1,
