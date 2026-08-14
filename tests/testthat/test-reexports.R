@@ -14,6 +14,14 @@ test_that("relocated widget wrappers are re-exported from gsm.vizr (#291)", {
     "renderWidget_GroupOverview",
     "MakeChartConfig"
   )
+  # Identity alone is not enough: get() also finds imported-but-unexported
+  # objects, so deleting R/reexports.R while the importFrom directives survived
+  # would break every gsm.kri::Widget_* caller with this test still green.
+  expect_identical(
+    setdiff(relocated, getNamespaceExports("gsm.kri")),
+    character(0)
+  )
+
   for (fn in relocated) {
     expect_identical(
       get(fn, envir = asNamespace("gsm.kri")),
