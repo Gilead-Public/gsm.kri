@@ -73,7 +73,11 @@ test_that("Report_Eligibility renders its 8 bar charts through gsm.vizr-backed g
   )
   expect_false(grepl("library(ggplot2)", rmd_source, fixed = TRUE))
   expect_false(grepl("library(plotly)", rmd_source, fixed = TRUE))
-  expect_false(grepl("fig.height=4", rmd_source, fixed = TRUE))
+  # Scoped to the bar-chart section: the untouched Time Series chunk (out of
+  # scope for #286) keeps its own fig.height, which a whole-file grepl would
+  # wrongly catch.
+  bar_charts_source <- sub("^.*## Bar Charts", "", rmd_source)
+  expect_false(grepl("fig.height=4", bar_charts_source, fixed = TRUE))
 
   out <- Report_Eligibility(
     dfResults = dfResults,
