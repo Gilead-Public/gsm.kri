@@ -313,6 +313,7 @@ test('the site bucket tooltip names the parent country; study and country do not
   expect(site.some((l) => /^Country: \S/.test(l))).toBe(true);
   expect(site.join('|')).toContain('Subjects');          // still carries the counts
   expect(site.join('|')).not.toContain('Country: NA');
+  expect(site.join('|')).not.toContain('Country: null');
 
   // The other two tiers have no parent, so they get no country line at all.
   for (const id of ['pd-study-buckets', 'pd-country-buckets']) {
