@@ -37,3 +37,25 @@ test_that("pd_ReasonBarSpec keeps value labels when the order is pinned (#264)",
   spec <- pd_ReasonBarSpec(reason_order = c("Disease progression", "AE"))
   expect_true(spec$annotations$labels$segment$display)
 })
+
+test_that("pd_ReasonBarSpec attaches the tooltip formatter as a js_hook {#288}", {
+  spec <- pd_ReasonBarSpec()
+  expect_s3_class(spec$tooltip$formatter, "JS_EVAL")
+})
+
+test_that("gsm.vizr::bars() accepts pd_ReasonBarSpec() and serializes the tooltip hook {#288}", {
+  spec <- pd_ReasonBarSpec()
+  rows <- pd_ReasonRows(list(
+    reason = c("A", "B"),
+    n = c(3L, 1L),
+    hover = c("hA", "hB")
+  ))
+  widget <- gsm.vizr::bars(
+    rows,
+    spec,
+    metadata = list(chartId = "pd-study-reasons")
+  )
+  expect_s3_class(widget, "htmlwidget")
+  expect_false(is.null(widget$x$spec))
+  expect_true(grepl("tooltip.formatter", widget$x$jsHooks, fixed = TRUE))
+})

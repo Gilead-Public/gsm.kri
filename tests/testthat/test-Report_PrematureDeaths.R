@@ -432,6 +432,64 @@ test_that("Report renders a country-reactive Reasons chart via the gsm.viz widge
   expect_false(grepl("function rebuildReasons", html, fixed = TRUE))
 })
 
+test_that("Report renders the bucket/reason charts via gsm.vizr::bars() and inlines pdSiteRows/pdReasonRowsByCountry {#288}", {
+  testthat::skip_if_not_installed("plotly")
+  testthat::skip_if_not_installed("DT")
+  out <- Report_PrematureDeaths(
+    dfResults = dfResults,
+    dfMetrics = dfMetrics,
+    dfGroups = dfGroups,
+    lListings = lListings,
+    nWindowDays = 90,
+    strOutputDir = tempdir()
+  )
+  html <- paste(readLines(out, warn = FALSE), collapse = "\n")
+
+  # Pair each htmlwidget's container div (its class names the widget, e.g.
+  # "bars" post-migration vs "Widget_PrematureDeathBucketBar" today) with its
+  # adjacent serialized JSON payload (matched on the shared htmlwidget-<hash>
+  # id), then keep only the "bars"-classed payloads. A bare grepl("chartId":
+  # "pd-study-buckets"...) would pass today too -- the OLD widget calls pass
+  # the identical metadata -- so scoping to bars-classed payloads specifically
+  # is what proves the chart lives behind gsm.vizr::bars(), not the old widget.
+  widget_pairs <- stringr::str_match_all(
+    html,
+    '<div class="([a-zA-Z_]+) html-widget[^"]*"[^>]*id="(htmlwidget-[^"]*)"[^>]*></div>\\s*<script[^>]*data-for="\\2">(.*?)</script>'
+  )[[1]]
+  bars_payloads <- widget_pairs[widget_pairs[, 2] == "bars", 4]
+
+  # At least the three bucket charts render through gsm.vizr::bars().
+  expect_gte(length(bars_payloads), 3)
+
+  # Each chart's id is carried in its serialized metadata (el.id is stamped at
+  # runtime from metadata.chartId; there is no static id= to match on) --
+  # inside a bars-classed payload specifically, not merely anywhere in the HTML.
+  expect_true(any(grepl(
+    '"chartId":"pd-study-buckets"',
+    bars_payloads,
+    fixed = TRUE
+  )))
+  expect_true(any(grepl(
+    '"chartId":"pd-country-buckets"',
+    bars_payloads,
+    fixed = TRUE
+  )))
+  expect_true(any(grepl(
+    '"chartId":"pd-site-buckets"',
+    bars_payloads,
+    fixed = TRUE
+  )))
+
+  # The old package-local widgets (P4: removed with no re-export) leave no trace.
+  expect_false(grepl("Widget_PrematureDeath", html, fixed = TRUE))
+
+  # filter-js inlines what the removed el.pdAllData / meta.reactive closures
+  # used to carry (P2): the site chart's rows for the country->site drilldown,
+  # and the per-country reason slices for the country-click swap.
+  expect_true(grepl("pdSiteRows", html, fixed = TRUE))
+  expect_true(grepl("pdReasonRowsByCountry", html, fixed = TRUE))
+})
+
 test_that("Report sources rgmn_dt from Mapped_Randomization when Mapped_SUBJ lacks it {#248}", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
