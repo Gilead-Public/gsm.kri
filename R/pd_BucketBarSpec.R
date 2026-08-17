@@ -129,7 +129,7 @@ pd_BucketBarSpec <- function(
       "
     function (count, context, details) {
       var d = (details && details.datum) || {};
-      var lines = [d.Category + ' — Subjects: ' + d.n + ' (' + Number(d.pct).toFixed(1) + '%)'];
+      var lines = [d.Category + ' \u2014 Subjects: ' + d.n + ' (' + Number(d.pct).toFixed(1) + '%)'];
       // Only the site chart has a parent tier; study/country rows serialize a null OuterGroupID.
       if (d.OuterGroupID) lines.push('Country: ' + d.OuterGroupID);
       return lines;
