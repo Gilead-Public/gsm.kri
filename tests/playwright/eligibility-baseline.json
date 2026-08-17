@@ -38,6 +38,7 @@
       "sectionId": "site",
       "tabLabel": "Site",
       "found": true,
+      "renderer": "plotly",
       "title": "Participant Count by Site",
       "orientation": "horizontal",
       "categories": [
@@ -60,6 +61,7 @@
       "sectionId": "site-by",
       "tabLabel": "Site (by %)",
       "found": true,
+      "renderer": "plotly",
       "title": "Participant Percentage by Site",
       "orientation": "horizontal",
       "categories": [
@@ -82,6 +84,7 @@
       "sectionId": "country",
       "tabLabel": "Country",
       "found": true,
+      "renderer": "plotly",
       "title": "Participant Count by Country",
       "orientation": "horizontal",
       "categories": [
@@ -104,6 +107,7 @@
       "sectionId": "source",
       "tabLabel": "Source",
       "found": true,
+      "renderer": "plotly",
       "title": "Participant Count by Category/Source",
       "orientation": "horizontal",
       "categories": [
@@ -134,6 +138,7 @@
       "sectionId": "criteriasite-edc-ie-data-only",
       "tabLabel": "Criteria/Site (EDC I/E data only)",
       "found": true,
+      "renderer": "plotly",
       "title": "Criteria by Site",
       "orientation": "horizontal",
       "categories": [
@@ -158,6 +163,7 @@
       "sectionId": "criteriacountry-edc-ie-data-only",
       "tabLabel": "Criteria/Country (EDC I/E data only)",
       "found": true,
+      "renderer": "plotly",
       "title": "Criteria by Country",
       "orientation": "horizontal",
       "categories": [
@@ -182,6 +188,7 @@
       "sectionId": "sitecriteria-edc-ie-data-only",
       "tabLabel": "Site/Criteria (EDC I/E data only)",
       "found": true,
+      "renderer": "plotly",
       "title": "Site by Criteria",
       "orientation": "horizontal",
       "categories": [
@@ -212,6 +219,7 @@
       "sectionId": "countrycriteria-edc-ie-data-only",
       "tabLabel": "Country/Criteria (EDC I/E data only)",
       "found": true,
+      "renderer": "plotly",
       "title": "Country by Criteria",
       "orientation": "horizontal",
       "categories": [

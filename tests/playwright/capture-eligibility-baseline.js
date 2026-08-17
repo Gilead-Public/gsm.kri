@@ -6,7 +6,10 @@
 // htmlwidget-<hash> id, which is a rendering-library detail. Per-chart facts
 // (categories, series names/colours, orientation, stacking, tab order) are
 // DOM/data facts a canvas swap must reproduce; no plotly trace internals or
-// pixel data are recorded.
+// pixel data are recorded. Each chart carries a `renderer` field ("plotly" or
+// "bars") identifying which reading branch produced it -- informational only
+// (never asserted on), so a plotly-vs-bars capture pair can still be diffed
+// on every other field.
 //   node tests/playwright/capture-eligibility-baseline.js            # writes eligibility-baseline.json
 //   OUT=after node tests/playwright/capture-eligibility-baseline.js  # prints a fresh capture for diffing
 const { chromium } = require('@playwright/test');
