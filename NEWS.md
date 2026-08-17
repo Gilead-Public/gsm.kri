@@ -15,6 +15,11 @@
   `gsm.vizr::js_hook()`s, and the `na = "string"` serialization workaround for a missing
   `OuterGroupID` is gone — gsm.vizr serializes with `na = "null"`, so client JS now reads
   a real `null` instead of the literal string `"NA"`.
+- The Eligibility report's 8 bar charts (Site, Site by %, Country, Source, and the four
+  Criteria/… tabs) now render through gsm.qtl's `gsm.vizr::bars()`-backed
+  `eligibility_groupBar()` / `eligibility_sourceBar()` / `criteria_groupBar()` instead of
+  plotly (#286). `Report_Eligibility.Rmd` no longer loads `ggplot2`/`plotly`; the
+  `gsm.qtl` `Remotes` pin moves to `feat/134-bars-migration` ahead of that PR's merge.
 
 # gsm.kri v1.6.1
 
