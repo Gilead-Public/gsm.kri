@@ -26,32 +26,59 @@ test('site widget renders a flat canvas, exposes helpers + keeps original rows (
   const ok = await page.evaluate(() => {
     const el = document.querySelector('#pd-site-buckets');
     const c = el.gsmChart;
-    // Flat bars (a single Chart.js instance, not a facet {charts}), plus the
-    // pdAllData rows the report re-slices for the country->site drilldown.
+    // Flat bars (a single Chart.js instance, not a facet {charts}). The
+    // report's country->site drilldown re-slices from its own inlined
+    // pdSiteRows JSON now (#288, el.pdAllData is gone), but the ORIGINAL rows
+    // still live on the rendered chart -- Chart.js keeps the source row on
+    // each point as `_datum` (see pd-buckets.spec.js's readLabel).
+    const rows = c.data.datasets.flatMap((d) => d.data).filter(Boolean).map((p) => p._datum);
     return !!(c && !Array.isArray(c.charts) &&
       typeof c.helpers.selectCategory === 'function' &&
       typeof c.helpers.updateData === 'function' &&
-      Array.isArray(el.pdAllData) && el.pdAllData.length > 0 &&
-      'OuterGroupID' in el.pdAllData[0]);
+      rows.length > 0 &&
+      rows.every((r) => 'OuterGroupID' in r));
   });
   expect(ok).toBe(true);
 });
 
-test('clicking a study bar dispatches pdBucketClick with a datum payload (#264)', async ({ page }) => {
+test('gsmViz loads exactly once, resolved from gsm.vizr, with main.css present (#288)', async ({ page }) => {
+  // Guards against the exact regression a stale/duplicate dependency copy
+  // would cause (two conflicting gsmViz builds, or main.css missing): the
+  // harness fixture is not self-contained, so the widget's htmlDependency
+  // resolves to real, individually-observable network requests -- the
+  // self-contained Report.html fixture inlines everything as base64 and
+  // cannot make this assertion.
+  const requests = [];
+  page.on('request', (req) => requests.push(req.url()));
+  await page.goto(fileUrl);
+  await page.waitForSelector('#pd-study-buckets canvas', { timeout: 20000 });
+
+  const indexJs = requests.filter((u) => /\/gsmViz-[\d.]+\/index\.js$/.test(u));
+  expect(indexJs).toHaveLength(1);
+  const mainCss = requests.filter((u) => /\/gsmViz-[\d.]+\/main\.css$/.test(u));
+  expect(mainCss).toHaveLength(1);
+  // No leftover copy of the deleted package-local widget bindings loads
+  // alongside it (the thing that would make "exactly one" not enough).
+  expect(requests.some((u) => /Widget_PrematureDeath/.test(u))).toBe(false);
+});
+
+test('clicking a study bar dispatches gsm-viz-select with a datum payload (#288)', async ({ page }) => {
   await page.goto(fileUrl);
   await page.waitForSelector('#pd-study-buckets canvas');
   await page.evaluate(() => {
     window.__pd = null;
-    document.addEventListener('pdBucketClick', (e) => { window.__pd = e.detail; });
+    document.addEventListener('gsm-viz-select', (e) => { window.__pd = e.detail; });
   });
   const box = await page.locator('#pd-study-buckets canvas').boundingBox();
   await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
   const detail = await page.evaluate(() => window.__pd);
   expect(detail).not.toBeNull();
-  expect(detail).toHaveProperty('level', 'study');
+  expect(detail).toMatchObject({ type: 'click', chartId: 'pd-study-buckets' });
+  expect(detail.metadata).toMatchObject({ level: 'study' });
+  expect(detail.datum).toBeTruthy();
 });
 
-test('clicking a site bar dispatches pdBucketClick (level=site) with its country (#264)', async ({ page }) => {
+test('clicking a site bar dispatches gsm-viz-select (level=site) with its country in the datum (#288)', async ({ page }) => {
   await page.goto(fileUrl);
   await page.waitForSelector('#pd-site-buckets canvas');
   // The site chart sits below the study chart; scroll it into view so the raw
@@ -62,7 +89,7 @@ test('clicking a site bar dispatches pdBucketClick (level=site) with its country
   await page.waitForTimeout(300);
   await page.evaluate(() => {
     window.__pd = null;
-    document.addEventListener('pdBucketClick', (e) => { window.__pd = e.detail; });
+    document.addEventListener('gsm-viz-select', (e) => { window.__pd = e.detail; });
   });
   // Target the exact center of the first non-empty bar segment (from metadata).
   const pt = await page.evaluate(() => {
@@ -78,7 +105,9 @@ test('clicking a site bar dispatches pdBucketClick (level=site) with its country
   await page.mouse.click(pt.x, pt.y);
   const detail = await page.evaluate(() => window.__pd);
   expect(detail).not.toBeNull();
-  expect(detail).toHaveProperty('level', 'site');
-  // Site clicks carry the site's country (from OuterGroupID) for the drilldown.
-  expect(detail.country).toBeTruthy();
+  expect(detail.metadata).toMatchObject({ level: 'site' });
+  // Raw wrapper contract: the widget forwards the clicked row's OuterGroupID
+  // (the site's country) unchanged -- deriving `country`/`invid` off it is the
+  // REPORT's job (filter-js), not the widget's; see pd-buckets.spec.js.
+  expect(detail.datum.OuterGroupID).toBeTruthy();
 });

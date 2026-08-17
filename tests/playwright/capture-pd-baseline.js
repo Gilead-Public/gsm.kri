@@ -80,13 +80,23 @@ function readDrilldownCategories(page) {
   }));
 }
 
-// The report's current mechanism for a country-bucket selection is the
-// pdBucketClick CustomEvent; only used here to DRIVE the browser into the
-// filtered state, never stored as part of the captured fingerprint below.
+// The report's mechanism for a country-bucket selection is now the bubbling
+// gsm-viz-select CustomEvent that gsm.vizr's bars() binding dispatches on a
+// real bar click (htmlwidgets/bars.js's onClick handler) -- pdBucketClick no
+// longer exists (#288). Only used here to DRIVE the browser into the filtered
+// state, never stored as part of the captured fingerprint below; the report's
+// own listener reads only metadata.level and datum.GroupID for a country row.
 function clickCountryBucket(page, country) {
-  return page.evaluate((country) => document.querySelector('#pd-country-buckets')
-    .dispatchEvent(new CustomEvent('pdBucketClick', { bubbles: true,
-      detail: { level: 'country', groupId: country, country } })), country);
+  return page.evaluate((country) => document.getElementById('pd-country-buckets')
+    .dispatchEvent(new CustomEvent('gsm-viz-select', { bubbles: true,
+      detail: {
+        type: 'click',
+        chartId: 'pd-country-buckets',
+        category: country,
+        fill: null,
+        datum: { GroupID: country, OuterGroupID: null, Category: 'Death within 30 days', n: 1, pct: 100, Level: 'country' },
+        metadata: { chartId: 'pd-country-buckets', level: 'country' },
+      } })), country);
 }
 
 (async () => {

@@ -2,6 +2,28 @@ const { test, expect } = require('@playwright/test');
 const path = require('path');
 const fileUrl = 'file://' + path.resolve(__dirname, 'fixture', 'Report.html');
 
+// Simulates the bubbling `gsm-viz-select` CustomEvent that gsm.vizr's bars()
+// binding dispatches on a real bar click (htmlwidgets/bars.js's onClick
+// handler) -- driving filter state this way is the widget's public contract
+// with the report (#288, replaces pdBucketClick), and avoids depending on bar
+// geometry that zoom/pan can move. The report's own listener (filter-js) only
+// reads metadata.level and datum.{GroupID,OuterGroupID,Level}, so the
+// synthetic datum only needs to carry those.
+function clickBucket(page, chartId, { level, groupId, outerGroupId = null }) {
+  return page.evaluate(({ chartId, level, groupId, outerGroupId }) =>
+    document.getElementById(chartId).dispatchEvent(new CustomEvent('gsm-viz-select', {
+      bubbles: true,
+      detail: {
+        type: 'click',
+        chartId,
+        category: groupId,
+        fill: null,
+        datum: { GroupID: groupId, OuterGroupID: outerGroupId, Category: 'Death within 30 days', n: 1, pct: 100, Level: level },
+        metadata: { chartId, level },
+      },
+    })), { chartId, level, groupId, outerGroupId });
+}
+
 test.beforeEach(async ({ page }) => {
   await page.goto(fileUrl);
   await page.waitForSelector('#pd-site-buckets canvas', { timeout: 20000 });
@@ -16,9 +38,7 @@ test('all three bucket charts render Chart.js canvases, not Plotly (#264)', asyn
 
 test('country→site→listing drilldown filters the DT listing (#264)', async ({ page }) => {
   const rowsBefore = await page.locator('table.dataTable tbody tr').count();
-  await page.evaluate(() => document.querySelector('#pd-country-buckets')
-    .dispatchEvent(new CustomEvent('pdBucketClick', { bubbles: true,
-      detail: { level: 'country', groupId: 'USA', country: 'USA' } })));
+  await clickBucket(page, 'pd-country-buckets', { level: 'country', groupId: 'USA' });
   await page.waitForTimeout(300);
   const rowsAfter = await page.locator('table.dataTable tbody tr').count();
   expect(rowsAfter).toBeLessThanOrEqual(rowsBefore);
@@ -30,9 +50,7 @@ test('country click narrows the country scatter — Plotly stays in step (#264)'
     return (el && el.data && el.data[0] && el.data[0].x) ? el.data[0].x.length : -1;
   });
   const before = await nPoints();
-  await page.evaluate(() => document.querySelector('#pd-country-buckets')
-    .dispatchEvent(new CustomEvent('pdBucketClick', { bubbles: true,
-      detail: { level: 'country', groupId: 'USA', country: 'USA' } })));
+  await clickBucket(page, 'pd-country-buckets', { level: 'country', groupId: 'USA' });
   await page.waitForTimeout(300);
   expect(await nPoints()).toBeLessThanOrEqual(before);   // scatter followed the bucket click
 });
@@ -41,9 +59,7 @@ test('country click narrows the flat site chart to that country only (#264)', as
   const siteLabels = () => page.evaluate(() =>
     document.querySelector('#pd-site-buckets').gsmChart.data.labels.slice());
   const before = await siteLabels();                     // all sites
-  await page.evaluate(() => document.querySelector('#pd-country-buckets')
-    .dispatchEvent(new CustomEvent('pdBucketClick', { bubbles: true,
-      detail: { level: 'country', groupId: 'USA', country: 'USA' } })));
+  await clickBucket(page, 'pd-country-buckets', { level: 'country', groupId: 'USA' });
   await page.waitForTimeout(300);
   const after = await siteLabels();
   expect(after.length).toBeGreaterThan(0);
@@ -72,7 +88,7 @@ test('site and country bucket charts enable x-axis zoom; study chart does not (#
 test('a real site-bar click still drills down with zoom/pan active (#264)', async ({ page }) => {
   await page.evaluate(() => {
     window.__pd = null;
-    document.addEventListener('pdBucketClick', (e) => { window.__pd = e.detail; });
+    document.addEventListener('gsm-viz-select', (e) => { window.__pd = e.detail; });
   });
   await page.locator('#pd-site-buckets').scrollIntoViewIfNeeded();
   // Click the center of a real (non-zero) site bar via its Chart.js element pixel.
@@ -91,7 +107,7 @@ test('a real site-bar click still drills down with zoom/pan active (#264)', asyn
   });
   expect(pt).not.toBeNull();
   await page.mouse.click(pt.x, pt.y);
-  await expect.poll(() => page.evaluate(() => window.__pd && window.__pd.level)).toBe('site');
+  await expect.poll(() => page.evaluate(() => window.__pd && window.__pd.metadata && window.__pd.metadata.level)).toBe('site');
 });
 
 test('native percent (fill) mode survives a country filter (#264)', async ({ page }) => {
@@ -105,9 +121,7 @@ test('native percent (fill) mode survives a country filter (#264)', async ({ pag
     c.helpers.updateSpec(c, { position: 'stack', stat: 'percent' });
   });
   await expect.poll(siteStat).toBe('percent');
-  await page.evaluate(() => document.querySelector('#pd-country-buckets')
-    .dispatchEvent(new CustomEvent('pdBucketClick', { bubbles: true,
-      detail: { level: 'country', groupId: 'USA', country: 'USA' } })));
+  await clickBucket(page, 'pd-country-buckets', { level: 'country', groupId: 'USA' });
   await page.waitForTimeout(300);
   expect(await siteStat()).toBe('percent');   // persisted across the updateData narrow
 });
@@ -173,9 +187,7 @@ test('bucket segments carry counts that become percentages in fill mode (#264)',
 
 test('site labels survive the country to site narrow (#264)', async ({ page }) => {
   expect(await readLabel(page, 'pd-site-buckets')).not.toBeNull();
-  await page.evaluate(() => document.querySelector('#pd-country-buckets')
-    .dispatchEvent(new CustomEvent('pdBucketClick', { bubbles: true,
-      detail: { level: 'country', groupId: 'USA', country: 'USA' } })));
+  await clickBucket(page, 'pd-country-buckets', { level: 'country', groupId: 'USA' });
   await page.waitForTimeout(300);
   // helpers.updateData re-runs getPlugins, so the label config is rebuilt.
   const after = await readLabel(page, 'pd-site-buckets');
@@ -193,13 +205,17 @@ test('a bar too thin to hold its label drops it (#264)', async ({ page }) => {
   // check can drop them. Going through updateData also proves the fit check
   // survives the config rebuild, since a lost check would redraw the labels.
   await page.evaluate(() => {
-    const el = document.querySelector('#pd-site-buckets');
+    const c = document.querySelector('#pd-site-buckets').gsmChart;
+    // el.pdAllData is gone (#288); the rendered chart's own points carry the
+    // same rows as `_datum` (Chart.js pads unmatched (GroupID, Category)
+    // cells with null to keep the stack aligned, hence the Boolean filter).
+    const proto = c.data.datasets.flatMap((d) => d.data).filter(Boolean)
+      .map((p) => p._datum).find((r) => r.n > 0);
     // A non-zero row, so the bar runs the full height of the plot and clears
     // the value-axis floor; a two-digit count is wider than the ~7px bar.
-    const proto = el.pdAllData.find((r) => r.n > 0);
     const rows = Array.from({ length: 80 }, (_, i) =>
       Object.assign({}, proto, { GroupID: 'SITE-' + i, n: 10 }));
-    el.gsmChart.helpers.updateData(el.gsmChart, rows, el.gsmChart.data._spec_);
+    c.helpers.updateData(c, rows, c.data._spec_);
   });
   await page.waitForTimeout(400);
 
@@ -241,15 +257,6 @@ test('the zoomable bucket charts caption scroll-to-zoom (#264)', async ({ page }
   expect((await subtitle('pd-study-buckets')).display).toBe(false);
 });
 
-// Helpers shared by the two toggle tests below. Filter state is driven through
-// the pdBucketClick CustomEvent rather than a canvas click: the event is the
-// widget's public contract with the report, and a synthetic click would depend
-// on bar geometry that zoom/pan can move.
-const clickBucket = (page, chartId, detail) => page.evaluate(([chartId, detail]) =>
-  document.querySelector('#' + chartId)
-    .dispatchEvent(new CustomEvent('pdBucketClick', { bubbles: true, detail })),
-  [chartId, detail]);
-
 // Named siteChartLabels, not siteLabels: an existing test in this file already
 // declares a no-arg siteLabels inside its own scope.
 const siteChartLabels = (page) => page.evaluate(() =>
@@ -261,7 +268,7 @@ const shown = (page, id) => page.evaluate((id) =>
   document.getElementById(id).style.display !== 'none', id);
 
 test('re-clicking the active country bar clears the whole drilldown (#264)', async ({ page }) => {
-  const usa = { level: 'country', groupId: 'USA', country: 'USA' };
+  const usa = { level: 'country', groupId: 'USA' };
   const allSites = await siteChartLabels(page);
 
   await clickBucket(page, 'pd-country-buckets', usa);
@@ -277,7 +284,7 @@ test('re-clicking the active country bar clears the whole drilldown (#264)', asy
 });
 
 test('re-clicking the active site bar clears the site but keeps its country (#264)', async ({ page }) => {
-  const inv1 = { level: 'site', groupId: 'INV-1', invid: 'INV-1', country: 'USA' };
+  const inv1 = { level: 'site', groupId: 'INV-1', outerGroupId: 'USA' };
   const allSites = await siteChartLabels(page);
 
   // A site click adopts the site's country, so both chips light up.
@@ -315,8 +322,8 @@ test('the site bucket tooltip names the parent country; study and country do not
 });
 
 test('re-clicking the active country bar drops an active site with it (#264)', async ({ page }) => {
-  const usa = { level: 'country', groupId: 'USA', country: 'USA' };
-  const inv1 = { level: 'site', groupId: 'INV-1', invid: 'INV-1', country: 'USA' };
+  const usa = { level: 'country', groupId: 'USA' };
+  const inv1 = { level: 'site', groupId: 'INV-1', outerGroupId: 'USA' };
 
   // A site click adopts its parent country, so this reaches the one state the
   // other toggle tests never build: both filters active at once.
@@ -349,10 +356,11 @@ test('disabling a legend category drops the sites it emptied off the axis (#264)
   // victim -- the whole point being that a chart built from real data reaches
   // this state. Feeding hand-built rows here would pass even if it never could.
   const out = await page.evaluate(() => {
-    const el = document.querySelector('#pd-site-buckets');
-    const c = el.gsmChart;
+    const c = document.querySelector('#pd-site-buckets').gsmChart;
     const bySite = {};
-    el.pdAllData.forEach((r) => {
+    // el.pdAllData is gone (#288); the rendered points' `_datum` are the same
+    // rows (one per non-empty (GroupID, Category) cell).
+    c.data.datasets.flatMap((d) => d.data).filter(Boolean).map((p) => p._datum).forEach((r) => {
       (bySite[r.GroupID] = bySite[r.GroupID] || new Set()).add(r.Category);
     });
     const victim = Object.keys(bySite).find((s) => bySite[s].size === 1);
@@ -377,7 +385,10 @@ test('bucket payloads carry no empty category cells (#264)', async ({ page }) =>
   // payload would silently make the test above unreachable on real data.
   const zeros = await page.evaluate(() =>
     ['pd-study-buckets', 'pd-country-buckets', 'pd-site-buckets'].map((id) => {
-      const rows = document.querySelector('#' + id).pdAllData;
+      // el.pdAllData is gone (#288); the rendered points' `_datum` are the
+      // same server-emitted rows (only non-empty cells become points at all).
+      const c = document.querySelector('#' + id).gsmChart;
+      const rows = c.data.datasets.flatMap((d) => d.data).filter(Boolean).map((p) => p._datum);
       return { id, rows: rows.length, empty: rows.filter((r) => r.n === 0).length };
     })
   );
