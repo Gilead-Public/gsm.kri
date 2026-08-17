@@ -193,9 +193,9 @@ test_that("Report_PrematureDeaths wires the site-barchart listing filter {#221}"
   )
   html <- paste(readLines(out, warn = FALSE), collapse = "\n")
 
-  # Site click is wired as a second, independent filter source via the gsm.viz
-  # pdBucketClick event and its handler (which branches on detail.level "site").
-  expect_match(html, "pdBucketClick", fixed = TRUE)
+  # Site click is wired as a second, independent filter source via gsm.vizr's
+  # gsm-viz-select event and its handler (which branches on detail.level "site").
+  expect_match(html, "gsm-viz-select", fixed = TRUE)
   expect_match(html, "function pdApplyBucketFilter", fixed = TRUE)
   expect_match(html, "pdHighlightBuckets", fixed = TRUE)
   # Both filters route through one listing owner.
@@ -409,7 +409,7 @@ test_that("Report listing shows Treatment Related Yes for a fatal related AE dea
   expect_true(grepl('"Yes"', html, fixed = TRUE)) # S1: deathcls AE + grade-5 RELATED AE
 })
 
-test_that("Report renders a country-reactive Reasons chart via the gsm.viz widget {#254} {#264}", {
+test_that("Report renders a country-reactive Reasons chart via gsm.vizr::bars() {#254} {#264}", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
   out <- Report_PrematureDeaths(
@@ -422,9 +422,8 @@ test_that("Report renders a country-reactive Reasons chart via the gsm.viz widge
   )
   html <- paste(readLines(out, warn = FALSE), collapse = "\n")
   # chartId is stamped on the element at runtime; statically it lives in the
-  # reason widget's serialized metadata.
+  # reasons chart's serialized metadata.
   expect_match(html, "pd-country-reasons", fixed = TRUE)
-  expect_match(html, "Widget_PrematureDeathReasonBar", fixed = TRUE)
   # The reason bar swaps to the clicked country's slice via updateData on the
   # bucket filter event, replacing the old Plotly rebuildReasons bridge.
   expect_match(html, "pdBucketFilterChanged", fixed = TRUE)

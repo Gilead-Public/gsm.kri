@@ -16,7 +16,7 @@ reason_widget_data <- function(w) jsonlite::fromJSON(w$x$data)
 
 test_that("pd_ReasonDist returns a reason-bar htmlwidget {#264}", {
   w <- pd_ReasonDist(dfDeath_full, nWindowDays = 90)
-  expect_s3_class(w, c("Widget_PrematureDeathReasonBar", "htmlwidget"))
+  expect_s3_class(w, c("bars", "htmlwidget"))
 })
 
 test_that("pd_ReasonDist counts only premature deaths {#223}", {
@@ -203,7 +203,7 @@ test_that("pd_ReasonBar returns a reason-bar htmlwidget carrying the slice rows 
     "__ALL__"
   ]]
   w <- pd_ReasonBar(slice)
-  expect_s3_class(w, c("Widget_PrematureDeathReasonBar", "htmlwidget"))
+  expect_s3_class(w, c("bars", "htmlwidget"))
   data_back <- reason_widget_data(w)
   expect_setequal(data_back$n, slice$n)
   expect_setequal(data_back$hover, slice$hover)

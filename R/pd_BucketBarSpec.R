@@ -59,9 +59,10 @@ pd_BucketRows <- function(
 #' Serializable gsm.viz `bars` spec for the premature-death bucket chart
 #'
 #' @description
-#' The data-driven half of the spec (mapping, orientation, position, stat,
-#' scales, legend, value labels). Non-serializable pieces (tooltip formatter,
-#' click/hover callbacks) are attached in `Widget_PrematureDeathBucketBar.js`.
+#' Mapping, orientation, position, stat, scales, legend, value labels, and the
+#' tooltip formatter -- ready to hand to [gsm.vizr::bars()]. Click/hover
+#' selection is left to the widget's own `gsm-viz-select` event, not a spec
+#' callback.
 #'
 #' Each segment carries its value on the bar: counts in the stack and dodge
 #' views, percentages in the native fill (100%) view.
@@ -120,5 +121,20 @@ pd_BucketBarSpec <- function(
       spec$labels <- list(captions = "Scroll to zoom in; drag to pan.")
     }
   }
+  # gsm.vizr serializes with na = "null", so a missing OuterGroupID (study/
+  # country rows) arrives as JS null -- the `if (d.OuterGroupID)` falsy check
+  # covers it without a "NA" string-compare.
+  spec$tooltip <- list(
+    formatter = gsm.vizr::js_hook(
+      "
+    function (count, context, details) {
+      var d = (details && details.datum) || {};
+      var lines = [d.Category + ' — Subjects: ' + d.n + ' (' + Number(d.pct).toFixed(1) + '%)'];
+      // Only the site chart has a parent tier; study/country rows serialize a null OuterGroupID.
+      if (d.OuterGroupID) lines.push('Country: ' + d.OuterGroupID);
+      return lines;
+    }"
+    )
+  )
   spec
 }

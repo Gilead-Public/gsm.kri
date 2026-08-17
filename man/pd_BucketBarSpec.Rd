@@ -32,9 +32,10 @@ chart opts in so hiding a death window thins its many bars). Omitted when
 A named `list` — a `gsm.viz` `bars` spec without callbacks.
 }
 \description{
-The data-driven half of the spec (mapping, orientation, position, stat,
-scales, legend, value labels). Non-serializable pieces (tooltip formatter,
-click/hover callbacks) are attached in `Widget_PrematureDeathBucketBar.js`.
+Mapping, orientation, position, stat, scales, legend, value labels, and the
+tooltip formatter -- ready to hand to [gsm.vizr::bars()]. Click/hover
+selection is left to the widget's own `gsm-viz-select` event, not a spec
+callback.
 
 Each segment carries its value on the bar: counts in the stack and dodge
 views, percentages in the native fill (100%) view.
