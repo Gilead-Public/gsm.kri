@@ -37,7 +37,11 @@ pd_BarWidget <- function(strName, data, spec, metadata, bDebug) {
       list(data = data, spec = spec, metadata = metadata, bDebug = bDebug),
       ~ jsonlite::toJSON(.x, null = "null", na = "string", auto_unbox = TRUE)
     ),
-    package = "gsm.kri"
+    package = "gsm.kri",
+    # gsmViz lives in gsm.vizr; a YAML dependency can only resolve paths inside
+    # gsm.kri, so it is handed over here. createWidget() appends it after the
+    # widget binding, so bindings must not touch window.gsmViz until renderValue.
+    dependencies = list(gsm.vizr::html_dependency_gsm_viz())
   )
 
   if (bDebug) {
