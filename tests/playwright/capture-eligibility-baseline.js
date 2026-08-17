@@ -1,12 +1,12 @@
 // Captures a renderer-agnostic structural fingerprint of the Eligibility
-// report's 8 plotly bar-chart tabs (+ the already-canvas time series widget),
-// ahead of their migration onto gsm.qtl's gsm.vizr::bars()-backed helpers
-// (#286). Charts are keyed by their Rmd section id / tab label -- stable
-// anchors independent of the plotly-vs-canvas rendering mechanism -- not by
-// the auto-generated htmlwidget-<hash> id, which is a rendering-library detail.
-// Per-chart facts (categories, series names/colours, orientation, stacking,
-// tab order) are DOM/data facts a canvas swap must reproduce; no plotly trace
-// internals or pixel data are recorded.
+// report's 8 bar-chart tabs (+ the already-canvas time series widget), across
+// the plotly -> gsm.qtl's gsm.vizr::bars() migration (#286). Charts are keyed
+// by their Rmd section id / tab label -- stable anchors independent of the
+// plotly-vs-canvas rendering mechanism -- not by the auto-generated
+// htmlwidget-<hash> id, which is a rendering-library detail. Per-chart facts
+// (categories, series names/colours, orientation, stacking, tab order) are
+// DOM/data facts a canvas swap must reproduce; no plotly trace internals or
+// pixel data are recorded.
 //   node tests/playwright/capture-eligibility-baseline.js            # writes eligibility-baseline.json
 //   OUT=after node tests/playwright/capture-eligibility-baseline.js  # prints a fresh capture for diffing
 const { chromium } = require('@playwright/test');
@@ -29,37 +29,67 @@ const BAR_TABS = [
   ['countrycriteria-edc-ie-data-only', 'Country/Criteria (EDC I/E data only)'],
 ];
 
+// Reads each tab's widget in-browser. gsm.vizr::bars() canvas widgets expose
+// their Chart.js instance at el.gsmChart (same technique as
+// capture-pd-baseline.js's readBucketChart/readReasonChart); the plotly
+// branch is kept only so this same script still reads a pre-#286 capture.
+// None of the eligibility bars() calls pass a metadata$chartId, so el.id
+// stays the auto-generated htmlwidget-<hash> id -- select the widget by its
+// position inside the Rmd's own section pane instead.
 function readBarTabs(page) {
   return page.evaluate((tabs) => {
     return tabs.map(([id, label]) => {
       const pane = document.getElementById(id);
-      const el = pane ? pane.querySelector('.plotly') : null;
-      if (!el) return { sectionId: id, tabLabel: label, found: false };
-      const layout = el.layout || {};
-      const xa = layout.xaxis || {};
-      const ya = layout.yaxis || {};
-      // The categorical axis is whichever carries a non-numeric categoryarray;
-      // orientation is derived from WHICH axis that is, not plotly's own
-      // "orientation" trace field (its 'v'/'h' vocabulary is a plotly-ism that
-      // does not describe the visual bar direction consistently across libs).
-      const isCategorical = (ax) => Array.isArray(ax.categoryarray) &&
-        ax.categoryarray.some((v) => Number.isNaN(Number(v)));
-      const yCat = isCategorical(ya);
-      const xCat = isCategorical(xa);
-      const categories = yCat ? ya.categoryarray.slice() : (xCat ? xa.categoryarray.slice() : []);
-      const series = (el.data || [])
-        .filter((t) => t.name)
-        .map((t) => ({ name: t.name, color: (t.marker && t.marker.color) || null }));
-      return {
-        sectionId: id,
-        tabLabel: label,
-        found: true,
-        title: (layout.title && layout.title.text) || null,
-        orientation: yCat ? 'horizontal' : (xCat ? 'vertical' : null),
-        categories,
-        series,
-        stacked: layout.barmode === 'relative' || layout.barmode === 'stack',
-      };
+      const barsEl = pane ? pane.querySelector('.bars.html-widget') : null;
+      const plotlyEl = pane ? pane.querySelector('.plotly') : null;
+
+      if (barsEl && barsEl.gsmChart) {
+        const c = barsEl.gsmChart;
+        const opts = c.config.options;
+        return {
+          sectionId: id,
+          tabLabel: label,
+          found: true,
+          renderer: 'bars',
+          title: (opts.plugins && opts.plugins.title && opts.plugins.title.text) || null,
+          orientation: opts.indexAxis === 'y' ? 'horizontal' : 'vertical',
+          categories: c.data.labels.slice(),
+          series: c.data.datasets.map((d) => ({ name: d.label, color: d.backgroundColor || null })),
+          stacked: !!((opts.scales.x && opts.scales.x.stacked) || (opts.scales.y && opts.scales.y.stacked)),
+        };
+      }
+
+      if (plotlyEl) {
+        const layout = plotlyEl.layout || {};
+        const xa = layout.xaxis || {};
+        const ya = layout.yaxis || {};
+        // The categorical axis is whichever carries a non-numeric
+        // categoryarray; orientation is derived from WHICH axis that is, not
+        // plotly's own "orientation" trace field (its 'v'/'h' vocabulary is a
+        // plotly-ism that does not describe the visual bar direction
+        // consistently across libs).
+        const isCategorical = (ax) => Array.isArray(ax.categoryarray) &&
+          ax.categoryarray.some((v) => Number.isNaN(Number(v)));
+        const yCat = isCategorical(ya);
+        const xCat = isCategorical(xa);
+        const categories = yCat ? ya.categoryarray.slice() : (xCat ? xa.categoryarray.slice() : []);
+        const series = (plotlyEl.data || [])
+          .filter((t) => t.name)
+          .map((t) => ({ name: t.name, color: (t.marker && t.marker.color) || null }));
+        return {
+          sectionId: id,
+          tabLabel: label,
+          found: true,
+          renderer: 'plotly',
+          title: (layout.title && layout.title.text) || null,
+          orientation: yCat ? 'horizontal' : (xCat ? 'vertical' : null),
+          categories,
+          series,
+          stacked: layout.barmode === 'relative' || layout.barmode === 'stack',
+        };
+      }
+
+      return { sectionId: id, tabLabel: label, found: false };
     });
   }, BAR_TABS);
 }
@@ -110,16 +140,28 @@ function readFootnotes(page) {
   const timeSeriesChart = await readTimeSeriesWidget(page);
   const footnotes = await readFootnotes(page);
 
-  // Screenshot evidence for hover + legend only (plotly = SVG today, gsm.viz =
-  // canvas after #286; no pixel diffing, just reviewer-facing artifacts). The
-  // default "Site" tab is active on load, so no tab click is needed first.
-  // Plotly's hover layer only fires on the bar's own SVG path, not the
-  // container div -- hovering the container leaves the tooltip unrendered.
-  const chart = page.locator('#site .js-plotly-plot');
-  await page.locator('#site .bars .point path').first().hover({ force: true });
-  await page.waitForTimeout(300);
-  await chart.screenshot({ path: path.join(artifacts, `eligibility-hover.${label}.png`) }).catch(() => {});
-  await page.locator('#site .legend').first().screenshot({ path: path.join(artifacts, `eligibility-legend.${label}.png`) }).catch(() => {});
+  // Screenshot evidence for hover + legend only (no pixel diffing, just
+  // reviewer-facing artifacts). The default "Site" tab is active on load, so
+  // no tab click is needed first. Chart.js draws its legend on the same
+  // <canvas> as the bars, so one hover screenshot of the widget covers both;
+  // plotly's SVG legend is a separate element, hence the two-shot branch.
+  const barsCanvas = page.locator('#site .bars.html-widget canvas');
+  if (await barsCanvas.count() > 0) {
+    await barsCanvas.first().hover();
+    await page.waitForTimeout(300);
+    await page.locator('#site .bars.html-widget').first()
+      .screenshot({ path: path.join(artifacts, `eligibility-hover.${label}.png`) }).catch(() => {});
+    await page.locator('#site .bars.html-widget').first()
+      .screenshot({ path: path.join(artifacts, `eligibility-legend.${label}.png`) }).catch(() => {});
+  } else {
+    // Plotly's hover layer only fires on the bar's own SVG path, not the
+    // container div -- hovering the container leaves the tooltip unrendered.
+    const chart = page.locator('#site .js-plotly-plot');
+    await page.locator('#site .bars .point path').first().hover({ force: true });
+    await page.waitForTimeout(300);
+    await chart.screenshot({ path: path.join(artifacts, `eligibility-hover.${label}.png`) }).catch(() => {});
+    await page.locator('#site .legend').first().screenshot({ path: path.join(artifacts, `eligibility-legend.${label}.png`) }).catch(() => {});
+  }
 
   const out = {
     tabOrder,

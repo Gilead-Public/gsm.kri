@@ -58,7 +58,7 @@ VignetteBuilder:
 Remotes:
     gsm.core=Gilead-Public/gsm.core@dev,
     gsm.mapping=Gilead-Public/gsm.mapping@dev,
-    gsm.qtl=Gilead-Public/gsm.qtl@dev,
+    gsm.qtl=Gilead-Public/gsm.qtl@feat/134-bars-migration,
     gsm.reporting=Gilead-Public/gsm.reporting@dev,
     gsm.vizr=Gilead-Public/gsm.vizr@feat/4-widget-relocation,
     qcthat=Gilead-Public/qcthat@main
