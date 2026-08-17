@@ -56,3 +56,46 @@ test_that("Ensure report renders normally {#157}", {
     fixed = TRUE
   )
 })
+
+test_that("Report_Eligibility renders its 8 bar charts through gsm.vizr-backed gsm.qtl, with the plotly/ggplot2 setup dropped {#286}", {
+  testthat::skip_if_not_installed("gsm.qtl")
+
+  # gsm.qtl's eligibility/criteria bar helpers are gsm.vizr::bars()-backed as
+  # of #286; the Rmd's plotly/ggplot2 chunk (loaded only for the old widgets)
+  # and the fig.height option (only meaningful to knitr's own graphics
+  # device -- bars() sizes itself via a minHeight CSS floor) are dead weight.
+  rmd_source <- paste(
+    readLines(
+      system.file("report", "Report_Eligibility.Rmd", package = "gsm.kri"),
+      warn = FALSE
+    ),
+    collapse = "\n"
+  )
+  expect_false(grepl("library(ggplot2)", rmd_source, fixed = TRUE))
+  expect_false(grepl("library(plotly)", rmd_source, fixed = TRUE))
+  expect_false(grepl("fig.height=4", rmd_source, fixed = TRUE))
+
+  out <- Report_Eligibility(
+    dfResults = dfResults,
+    dfMetrics = dfMetrics,
+    dfGroups = dfGroups,
+    lListings = lListings,
+    strOutputDir = tempdir()
+  )
+  html <- paste(readLines(out, warn = FALSE), collapse = "\n")
+
+  # Pair each htmlwidget's container div (its class names the widget, e.g.
+  # "plotly" pre-migration vs "bars" post-migration) with its adjacent
+  # serialized JSON payload, matched on the shared htmlwidget-<hash> id (same
+  # technique as test-Report_PrematureDeaths.R's bars-payload assertion).
+  widget_pairs <- stringr::str_match_all(
+    html,
+    '<div class="([a-zA-Z_]+) html-widget[^"]*"[^>]*id="(htmlwidget-[^"]*)"[^>]*></div>\\s*<script[^>]*data-for="\\2">(.*?)</script>'
+  )[[1]]
+  bars_payloads <- widget_pairs[widget_pairs[, 2] == "bars", 4]
+
+  # Site, Site (by %), Country, Source, and the 4 Criteria/... tabs.
+  expect_equal(length(bars_payloads), 8)
+  expect_false(any(widget_pairs[, 2] == "plotly"))
+  expect_false(grepl("js-plotly-plot", html, fixed = TRUE))
+})
