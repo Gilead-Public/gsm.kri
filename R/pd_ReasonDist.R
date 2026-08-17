@@ -83,17 +83,17 @@ pd_ReasonSlice <- function(dfReason, nEnrolled = NULL) {
 #' `r lifecycle::badge("experimental")`
 #'
 #' Renders the horizontal reason distribution from a reason slice produced by
-#' [pd_ReasonByCountry()] or derived inside [pd_ReasonDist()], via the `gsm.viz`
-#' reason widget.
+#' [pd_ReasonByCountry()] or derived inside [pd_ReasonDist()], via
+#' [gsm.vizr::bars()].
 #'
 #' @param slice A named `list` with `reason`, `n`, and `hover` vectors, as
 #'   returned by the internal kernel `pd_ReasonSlice` or elements of the list
 #'   returned by [pd_ReasonByCountry()].
 #'
-#' @return A `Widget_PrematureDeathReasonBar` htmlwidget.
+#' @return A `bars` htmlwidget (see [gsm.vizr::bars()]).
 #' @export
 pd_ReasonBar <- function(slice) {
-  Widget_PrematureDeathReasonBar(
+  gsm.vizr::bars(
     data = pd_ReasonRows(slice),
     # slice is arranged desc(n), so its reason vector pins the count sort the
     # former Plotly chart got from stats::reorder(reason, n).
@@ -107,14 +107,14 @@ pd_ReasonBar <- function(slice) {
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' Horizontal bar of `deathcls` counts among premature deaths, rendered via the
-#' `gsm.viz` reason widget.
+#' Horizontal bar of `deathcls` counts among premature deaths, rendered via
+#' [gsm.vizr::bars()].
 #'
 #' @inheritParams pd_ReasonCounts
 #' @param nEnrolled `numeric` Total enrolled subjects, used for the "% of enrolled"
 #'   tooltip line. When `NULL` (default) that line is omitted. Default: `NULL`.
 #'
-#' @return A `Widget_PrematureDeathReasonBar` htmlwidget.
+#' @return A `bars` htmlwidget (see [gsm.vizr::bars()]).
 #' @export
 pd_ReasonDist <- function(dfDeath, nWindowDays = 90, nEnrolled = NULL) {
   coh <- pd_PrematureReasonCohort(dfDeath, nWindowDays)
