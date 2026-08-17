@@ -409,7 +409,7 @@ test_that("Report listing shows Treatment Related Yes for a fatal related AE dea
   expect_true(grepl('"Yes"', html, fixed = TRUE)) # S1: deathcls AE + grade-5 RELATED AE
 })
 
-test_that("Report renders a country-reactive Reasons chart via gsm.vizr::bars() {#254} {#264}", {
+test_that("Report renders a country-reactive Reasons chart via gsm.vizr::bars() {#254} {#264} {#288}", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
   out <- Report_PrematureDeaths(
@@ -429,6 +429,15 @@ test_that("Report renders a country-reactive Reasons chart via gsm.vizr::bars() 
   expect_match(html, "pdBucketFilterChanged", fixed = TRUE)
   expect_match(html, "helpers.updateData", fixed = TRUE)
   expect_false(grepl("function rebuildReasons", html, fixed = TRUE))
+  # Two-stage fallback: pdReasonRowsByCountry only has keys for countries with
+  # >=1 premature death, but the country bucket chart renders every enrolled
+  # country, so a zero-premature-death country click must fall back to
+  # __ALL__ instead of silently leaving the previous country's slice on screen.
+  expect_match(
+    html,
+    'pdReasonRowsByCountry[country || "__ALL__"] || pdReasonRowsByCountry["__ALL__"]',
+    fixed = TRUE
+  )
 })
 
 test_that("Report renders the bucket/reason charts via gsm.vizr::bars() and inlines pdSiteRows/pdReasonRowsByCountry {#288}", {
