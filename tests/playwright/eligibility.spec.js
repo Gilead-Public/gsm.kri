@@ -111,3 +111,36 @@ test('bSwapAxes swaps the category axis, not the orientation, across Criteria/Si
   expect(criteriaBySite.categories.sort()).toEqual(['E010', 'E020', 'I001', 'I002']);
   expect(siteByCriteria.categories.sort()).toEqual(['Site01', 'Site02']);
 });
+
+// Pins the dataset/series ORDER (unsorted -- this is exactly what the
+// category-sorted assertions above deliberately throw away). The equivalence
+// diff against the pre-migration baseline (#286 equivalence gate) found this
+// array order UNCHANGED end to end -- both renders emit
+// ["No Eligibility Risk", "Ineligible"] / ["Site01", "Site02"] in the same
+// positions. What differs, and is NOT asserted here because it is a rendering
+// -library convention rather than a data fact, is which end of the stack each
+// array position draws at: Chart.js stacks datasets[0] closest to the axis
+// origin, plotly stacked its first trace farthest from it -- so the same
+// array order produces visually swapped stacking on the Site chart (see the
+// fix report for the before/after screenshot comparison). A future change
+// that reorders these arrays would be a real regression; this test exists to
+// catch that, not to assert anything about on-screen stacking direction.
+test('dataset order is preserved end to end on the Site chart (#286)', async ({ page }) => {
+  await page.goto(fileUrl);
+  await page.waitForSelector('#site canvas', { timeout: 20000 });
+  const order = await page.evaluate(() =>
+    document.querySelector('#site .bars.html-widget').gsmChart.data.datasets.map((d) => d.label)
+  );
+  expect(order).toEqual(['No Eligibility Risk', 'Ineligible']);
+});
+
+test('dataset order is preserved end to end on the Criteria/Site chart (#286)', async ({ page }) => {
+  await page.goto(fileUrl);
+  await page.waitForSelector('#site canvas', { timeout: 20000 });
+  await page.click('a[href="#criteriasite-edc-ie-data-only"]');
+  await page.waitForTimeout(300);
+  const order = await page.evaluate(() =>
+    document.querySelector('#criteriasite-edc-ie-data-only .bars.html-widget').gsmChart.data.datasets.map((d) => d.label)
+  );
+  expect(order).toEqual(['Site01', 'Site02']);
+});
