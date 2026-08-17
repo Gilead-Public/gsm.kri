@@ -63,17 +63,24 @@ pd_ReasonSlice <- function(dfReason, nEnrolled = NULL) {
     dplyr::arrange(dplyr::desc(.data$n))
   total <- sum(g$n)
   # No "Reason: <x>" line — the reason is the tooltip title (the bar's category).
-  hover <- paste0(
-    "Subjects: ",
-    g$n,
-    if (!is.null(nEnrolled)) {
-      paste0("<br>% of enrolled: ", pd_PctLabel(g$n, nEnrolled))
-    } else {
-      ""
-    },
-    "<br>% of premature deaths: ",
-    pd_PctLabel(g$n, total)
-  )
+  # Zero-row guard: paste0() recycles its scalar literals up to length 1 even
+  # when g$n is length-0, which would desync hover from reason/n and blow up
+  # pd_ReasonRows's data.frame() downstream.
+  hover <- if (nrow(g) == 0) {
+    character(0)
+  } else {
+    paste0(
+      "Subjects: ",
+      g$n,
+      if (!is.null(nEnrolled)) {
+        paste0("<br>% of enrolled: ", pd_PctLabel(g$n, nEnrolled))
+      } else {
+        ""
+      },
+      "<br>% of premature deaths: ",
+      pd_PctLabel(g$n, total)
+    )
+  }
   list(reason = g$death_reason, n = g$n, hover = hover)
 }
 

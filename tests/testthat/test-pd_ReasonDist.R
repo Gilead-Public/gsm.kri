@@ -242,6 +242,19 @@ test_that("pd_ReasonByCountry __ALL__ hover equals study chart hover (dedup lock
   expect_equal(sort(study_cd), sort(all_cd))
 })
 
+test_that("pd_ReasonSlice/pd_ReasonRows stay 0-row on an empty cohort instead of erroring {#288}", {
+  # Regression: an empty group used to leave hover at length 1 (paste0()
+  # recycles its scalar literals) while reason/n stayed length 0, so
+  # pd_ReasonRows's data.frame() raised "differing number of rows".
+  empty_cohort <- dfDeath_full[0, ]
+  empty_cohort$death_reason <- character(0)
+  slice <- pd_ReasonSlice(empty_cohort)
+  expect_length(slice$hover, 0)
+  rows <- pd_ReasonRows(slice)
+  expect_equal(nrow(rows), 0)
+  expect_named(rows, c("reason", "n", "hover"))
+})
+
 test_that("pd_ReasonByCountry skips the enrolled line for a country absent from the lookup {#254}", {
   # S2 is absent from dfSubjects -> country NA -> coalesced "Unknown", a key the
   # named-vector lookup does not contain. `[[` would error here before the guard.

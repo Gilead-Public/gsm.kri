@@ -121,13 +121,13 @@ reason_data <- pd_ReasonByCountry(Mapped_Death, Mapped_SUBJ, nWindowDays,
                                   nEnrolledByCountry = enrolled_by_country,
                                   nEnrolled = nEnrolled)
 reason_rows_by_country <- lapply(reason_data, pd_ReasonRows)
-reason_rows_by_country_json <- jsonlite::toJSON(reason_rows_by_country, dataframe = "rows")
+reason_rows_by_country_json <- jsonlite::toJSON(reason_rows_by_country, dataframe = "rows", na = "null")
 
 # Site rows computed ONCE: the site-buckets chunk renders them and filter-js
 # inlines the same frame (as JSON) for the country->site drilldown -- one
 # source of truth instead of a client-side el.pdAllData copy.
 pd_site_rows <- pd_BucketRows(dfClassified, nWindowDays, "invid", strOuterCol = "country")
-pd_site_rows_json <- jsonlite::toJSON(pd_site_rows, dataframe = "rows")
+pd_site_rows_json <- jsonlite::toJSON(pd_site_rows, dataframe = "rows", na = "null")
 
 # Study-discontinuation caveat, shared verbatim by the Study Buckets and the
 # Study Rand -> Death tabs (single source of truth so the embedded nWindowDays
