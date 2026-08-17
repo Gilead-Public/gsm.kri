@@ -41,9 +41,14 @@
       "title": "Participant Count by Site",
       "orientation": "horizontal",
       "categories": [
+        "Site02",
         "Site01"
       ],
       "series": [
+        {
+          "name": "No Eligibility Risk",
+          "color": "rgba(0,191,196,1)"
+        },
         {
           "name": "Ineligible",
           "color": "rgba(255,88,89,1)"
@@ -58,9 +63,14 @@
       "title": "Participant Percentage by Site",
       "orientation": "horizontal",
       "categories": [
+        "Site02",
         "Site01"
       ],
       "series": [
+        {
+          "name": "No Eligibility Risk",
+          "color": "rgba(0,191,196,1)"
+        },
         {
           "name": "Ineligible",
           "color": "rgba(255,88,89,1)"
@@ -75,9 +85,14 @@
       "title": "Participant Count by Country",
       "orientation": "horizontal",
       "categories": [
-        "US"
+        "US",
+        "CA"
       ],
       "series": [
+        {
+          "name": "No Eligibility Risk",
+          "color": "rgba(0,191,196,1)"
+        },
         {
           "name": "Ineligible",
           "color": "rgba(255,88,89,1)"
@@ -92,12 +107,21 @@
       "title": "Participant Count by Category/Source",
       "orientation": "horizontal",
       "categories": [
+        "EDC",
         "Eligibility IPD"
       ],
       "series": [
         {
-          "name": "Eligibility IPD",
+          "name": "EDC",
           "color": "rgba(248,118,109,1)"
+        },
+        {
+          "name": "Eligibility IPD",
+          "color": "rgba(0,191,196,1)"
+        },
+        {
+          "name": "EDC",
+          "color": null
         },
         {
           "name": "Eligibility IPD",
@@ -111,9 +135,23 @@
       "tabLabel": "Criteria/Site (EDC I/E data only)",
       "found": true,
       "title": "Criteria by Site",
-      "orientation": null,
-      "categories": [],
-      "series": [],
+      "orientation": "horizontal",
+      "categories": [
+        "E010",
+        "E020",
+        "I001",
+        "I002"
+      ],
+      "series": [
+        {
+          "name": "Site01",
+          "color": "rgba(248,118,109,1)"
+        },
+        {
+          "name": "Site02",
+          "color": "rgba(0,191,196,1)"
+        }
+      ],
       "stacked": true
     },
     {
@@ -121,9 +159,23 @@
       "tabLabel": "Criteria/Country (EDC I/E data only)",
       "found": true,
       "title": "Criteria by Country",
-      "orientation": null,
-      "categories": [],
-      "series": [],
+      "orientation": "horizontal",
+      "categories": [
+        "E010",
+        "E020",
+        "I001",
+        "I002"
+      ],
+      "series": [
+        {
+          "name": "CA",
+          "color": "rgba(248,118,109,1)"
+        },
+        {
+          "name": "US",
+          "color": "rgba(0,191,196,1)"
+        }
+      ],
       "stacked": true
     },
     {
@@ -131,9 +183,29 @@
       "tabLabel": "Site/Criteria (EDC I/E data only)",
       "found": true,
       "title": "Site by Criteria",
-      "orientation": null,
-      "categories": [],
-      "series": [],
+      "orientation": "horizontal",
+      "categories": [
+        "Site01",
+        "Site02"
+      ],
+      "series": [
+        {
+          "name": "E010",
+          "color": "rgba(248,118,109,1)"
+        },
+        {
+          "name": "E020",
+          "color": "rgba(124,174,0,1)"
+        },
+        {
+          "name": "I001",
+          "color": "rgba(0,191,196,1)"
+        },
+        {
+          "name": "I002",
+          "color": "rgba(199,124,255,1)"
+        }
+      ],
       "stacked": true
     },
     {
@@ -141,9 +213,29 @@
       "tabLabel": "Country/Criteria (EDC I/E data only)",
       "found": true,
       "title": "Country by Criteria",
-      "orientation": null,
-      "categories": [],
-      "series": [],
+      "orientation": "horizontal",
+      "categories": [
+        "CA",
+        "US"
+      ],
+      "series": [
+        {
+          "name": "E010",
+          "color": "rgba(248,118,109,1)"
+        },
+        {
+          "name": "E020",
+          "color": "rgba(124,174,0,1)"
+        },
+        {
+          "name": "I001",
+          "color": "rgba(0,191,196,1)"
+        },
+        {
+          "name": "I002",
+          "color": "rgba(199,124,255,1)"
+        }
+      ],
       "stacked": true
     }
   ],
