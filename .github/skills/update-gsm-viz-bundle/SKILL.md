@@ -1,19 +1,14 @@
 ---
 name: update-gsm-viz-bundle
-description: Replace the gsm.viz bundle vendored by gsm.vizr from an official release tag or an explicit development commit, and update every package reference and regression pin. Run from the gsm.vizr repository, never from gsm.kri.
+description: Replace the gsm.viz bundle vendored by gsm.vizr from an official release tag or an explicit development commit, and update every package reference and regression pin. Run from the gsm.vizr repository only.
 ---
 # Update the gsm.viz bundle
 
-> **The bundle no longer lives in gsm.kri.** It was relocated to `gsm.vizr` (#291),
-> which is now its single source. gsm.kri consumes it at runtime through
-> `gsm.vizr::html_dependency_gsm_viz()` and vendors no copy of its own.
->
-> **Never re-vendor a bundle into `gsm.kri/inst/htmlwidgets/lib/`.** A second copy would
-> let gsm.kri's widgets silently load a different build than the one gsm.vizr serves —
-> the exact failure the relocation removed. If `gsm.kri` is the current repository, stop:
-> switch to the `gsm.vizr` repository and run this skill there.
+The bundle is consumed by downstream applications at runtime through
+`gsm.vizr::html_dependency_gsm_viz()` and vendors no copy of its own.
 
 Use this skill when upgrading the gsm.viz assets vendored by `gsm.vizr`, including temporary development bundles from an immutable upstream commit. All repository-relative paths below refer to the **gsm.vizr** working tree.
+
 ## Inputs
 - Required: target version as `X.Y.Z` (without `v`).
 - Optional: upstream repository; default to `Gilead-Public/gsm.viz`.
@@ -46,6 +41,7 @@ Set `VERSION` and `UPSTREAM`. In release mode, set `TAG="v${VERSION}"`. In devel
      ```
      Stop if GitHub cannot resolve the abbreviation uniquely or the resolved SHA does not have the requested prefix. A branch name, PR number/head, non-hex reference, or workflow artifact is not an acceptable substitute. Development mode is provisional and must not be presented as a released upgrade.
 4. Record the source mode, `VERSION`, `SOURCE_SHA`, upstream repository, and asset checksums in the change description. In release mode also record `TAG` and release URL. Stop if the selected source cannot be resolved exactly; in release mode also stop for an absent, draft, or prerelease release.
+
 ## Inspect before editing
 Discover the current state; do not assume a fixed widget list:
 ```sh
