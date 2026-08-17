@@ -23,7 +23,7 @@ for (const [name, file] of Object.entries(FIXTURES)) {
       expect(errors, `bundle threw while initialising a widget:\n${errors.join('\n')}`).toEqual([]);
     });
 
-    test('structural fingerprint matches the committed 2.3.0 baseline', async ({ page }) => {
+    test('structural fingerprint matches the committed baseline', async ({ page }) => {
       const live = await readFingerprint(page);
       expect(live).toEqual(structural(baseline[name]));
     });

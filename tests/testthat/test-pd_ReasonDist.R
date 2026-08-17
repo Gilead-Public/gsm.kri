@@ -10,7 +10,7 @@ dfDeath_full <- tibble::tibble(
 )
 dfDeath_degraded <- dplyr::select(dfDeath_full, subjid, death_dy)
 
-# The reason chart is now a gsm.viz widget (#264); its reason/n/hover content is
+# The reason chart is a gsm.vizr::bars() widget; its reason/n/hover content is
 # read back off the serialized widget data instead of a plotly build.
 reason_widget_data <- function(w) jsonlite::fromJSON(w$x$data)
 
