@@ -528,3 +528,30 @@ test_that("Report sources rgmn_dt from Mapped_Randomization when Mapped_SUBJ lac
     perl = TRUE
   )
 })
+
+test_that("Report_PrematureDeaths renders the empty-state cleanly with zero premature deaths {#288}", {
+  testthat::skip_if_not_installed("plotly")
+  testthat::skip_if_not_installed("DT")
+  # Regression: the setup chunk built reason_rows_by_country / pd_site_rows
+  # unconditionally (not gated on has_premature), and pd_ReasonSlice crashed on
+  # an empty cohort -- so a zero-premature-death snapshot aborted the render.
+  lL <- lListings
+  lL$Mapped_Death <- dplyr::filter(lListings$Mapped_Death, FALSE)
+  lL$Mapped_STUDCOMP <- dplyr::filter(lListings$Mapped_STUDCOMP, FALSE)
+  dfResults0 <- dfResults
+  dfResults0$Numerator <- 0
+  dfResults0$Metric <- 0
+  dfResults0$Score <- 0
+  dfResults0$Flag <- 0
+  out <- Report_PrematureDeaths(
+    dfResults = dfResults0,
+    dfMetrics = dfMetrics,
+    dfGroups = dfGroups,
+    lListings = lL,
+    nWindowDays = 90,
+    strOutputDir = tempdir()
+  )
+  expect_true(file.exists(out))
+  html <- paste(readLines(out, warn = FALSE), collapse = "\n")
+  expect_match(html, "No premature deaths in window", fixed = TRUE)
+})
