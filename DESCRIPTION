@@ -1,7 +1,7 @@
 Type: Package
 Package: gsm.kri
 Title: Good Statistical Monitoring KRIs
-Version: 1.6.1.9000
+Version: 2.0.0
 Authors@R: c(
     person("Jeremy", "Wildfire", , "jwildfire@gmail.com", role = c("aut", "cre")),
     person("Laura", "Maxwell", , "laura.maxwell@atorusresearch.com", role = "aut"),
@@ -58,7 +58,7 @@ VignetteBuilder:
 Remotes:
     gsm.core=Gilead-Public/gsm.core@dev,
     gsm.mapping=Gilead-Public/gsm.mapping@dev,
-    gsm.qtl=Gilead-Public/gsm.qtl@dev,
+    gsm.qtl=Gilead-Public/gsm.qtl@for-gsm.kri-293,
     gsm.reporting=Gilead-Public/gsm.reporting@dev,
     gsm.vizr=Gilead-Public/gsm.vizr@feat/4-widget-relocation,
     qcthat=Gilead-Public/qcthat@main

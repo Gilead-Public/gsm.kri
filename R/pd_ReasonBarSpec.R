@@ -26,9 +26,8 @@ pd_ReasonRows <- function(slice) {
 #' `r lifecycle::badge("experimental")`
 #'
 #' Horizontal single-series bars, each carrying its count on the bar when the
-#' bar is long enough to hold the label. The tooltip formatter and callbacks are
-#' attached in `Widget_PrematureDeathReasonBar.js`; this returns only the
-#' serializable spec.
+#' bar is long enough to hold the label. Ready to hand to [gsm.vizr::bars()];
+#' the tooltip formatter is attached here as a `js_hook`.
 #'
 #' @param reason_order `character` or `NULL`. Explicit category order for the
 #'   reasons. gsm.viz orders categories alphanumerically unless `scales$x$order`
@@ -59,6 +58,17 @@ pd_ReasonBarSpec <- function(reason_order = NULL) {
     # whose bar is under 16px long instead of nudging it outside.
     annotations = list(
       labels = list(segment = list(display = TRUE))
+    ),
+    # hover carries the pre-built "Subjects: N<br>% of premature deaths: X%"
+    # lines (pd_HoverText); split on <br> into the tooltip's per-line array.
+    tooltip = list(
+      formatter = gsm.vizr::js_hook(
+        "
+      function (count, context, details) {
+        var d = (details && details.datum) || {};
+        return d.hover ? String(d.hover).split('<br>') : '';
+      }"
+      )
     )
   )
 }

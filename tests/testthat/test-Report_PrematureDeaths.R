@@ -193,9 +193,9 @@ test_that("Report_PrematureDeaths wires the site-barchart listing filter {#221}"
   )
   html <- paste(readLines(out, warn = FALSE), collapse = "\n")
 
-  # Site click is wired as a second, independent filter source via the gsm.viz
-  # pdBucketClick event and its handler (which branches on detail.level "site").
-  expect_match(html, "pdBucketClick", fixed = TRUE)
+  # Site click is wired as a second, independent filter source via gsm.vizr's
+  # gsm-viz-select event and its handler (which branches on detail.level "site").
+  expect_match(html, "gsm-viz-select", fixed = TRUE)
   expect_match(html, "function pdApplyBucketFilter", fixed = TRUE)
   expect_match(html, "pdHighlightBuckets", fixed = TRUE)
   # Both filters route through one listing owner.
@@ -409,7 +409,7 @@ test_that("Report listing shows Treatment Related Yes for a fatal related AE dea
   expect_true(grepl('"Yes"', html, fixed = TRUE)) # S1: deathcls AE + grade-5 RELATED AE
 })
 
-test_that("Report renders a country-reactive Reasons chart via the gsm.viz widget {#254} {#264}", {
+test_that("Report renders a country-reactive Reasons chart via gsm.vizr::bars() {#254} {#264} {#288}", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
   out <- Report_PrematureDeaths(
@@ -422,14 +422,80 @@ test_that("Report renders a country-reactive Reasons chart via the gsm.viz widge
   )
   html <- paste(readLines(out, warn = FALSE), collapse = "\n")
   # chartId is stamped on the element at runtime; statically it lives in the
-  # reason widget's serialized metadata.
+  # reasons chart's serialized metadata.
   expect_match(html, "pd-country-reasons", fixed = TRUE)
-  expect_match(html, "Widget_PrematureDeathReasonBar", fixed = TRUE)
   # The reason bar swaps to the clicked country's slice via updateData on the
   # bucket filter event, replacing the old Plotly rebuildReasons bridge.
   expect_match(html, "pdBucketFilterChanged", fixed = TRUE)
   expect_match(html, "helpers.updateData", fixed = TRUE)
   expect_false(grepl("function rebuildReasons", html, fixed = TRUE))
+  # Two-stage fallback: pdReasonRowsByCountry only has keys for countries with
+  # >=1 premature death, but the country bucket chart renders every enrolled
+  # country, so a zero-premature-death country click must fall back to
+  # __ALL__ instead of silently leaving the previous country's slice on screen.
+  expect_match(
+    html,
+    'pdReasonRowsByCountry[country || "__ALL__"] || pdReasonRowsByCountry["__ALL__"]',
+    fixed = TRUE
+  )
+})
+
+test_that("Report renders the bucket/reason charts via gsm.vizr::bars() and inlines pdSiteRows/pdReasonRowsByCountry {#288}", {
+  testthat::skip_if_not_installed("plotly")
+  testthat::skip_if_not_installed("DT")
+  out <- Report_PrematureDeaths(
+    dfResults = dfResults,
+    dfMetrics = dfMetrics,
+    dfGroups = dfGroups,
+    lListings = lListings,
+    nWindowDays = 90,
+    strOutputDir = tempdir()
+  )
+  html <- paste(readLines(out, warn = FALSE), collapse = "\n")
+
+  # Pair each htmlwidget's container div (its class names the widget, e.g.
+  # "bars" post-migration vs "Widget_PrematureDeathBucketBar" today) with its
+  # adjacent serialized JSON payload (matched on the shared htmlwidget-<hash>
+  # id), then keep only the "bars"-classed payloads. A bare grepl("chartId":
+  # "pd-study-buckets"...) would pass today too -- the OLD widget calls pass
+  # the identical metadata -- so scoping to bars-classed payloads specifically
+  # is what proves the chart lives behind gsm.vizr::bars(), not the old widget.
+  widget_pairs <- stringr::str_match_all(
+    html,
+    '<div class="([a-zA-Z_]+) html-widget[^"]*"[^>]*id="(htmlwidget-[^"]*)"[^>]*></div>\\s*<script[^>]*data-for="\\2">(.*?)</script>'
+  )[[1]]
+  bars_payloads <- widget_pairs[widget_pairs[, 2] == "bars", 4]
+
+  # At least the three bucket charts render through gsm.vizr::bars().
+  expect_gte(length(bars_payloads), 3)
+
+  # Each chart's id is carried in its serialized metadata (el.id is stamped at
+  # runtime from metadata.chartId; there is no static id= to match on) --
+  # inside a bars-classed payload specifically, not merely anywhere in the HTML.
+  expect_true(any(grepl(
+    '"chartId":"pd-study-buckets"',
+    bars_payloads,
+    fixed = TRUE
+  )))
+  expect_true(any(grepl(
+    '"chartId":"pd-country-buckets"',
+    bars_payloads,
+    fixed = TRUE
+  )))
+  expect_true(any(grepl(
+    '"chartId":"pd-site-buckets"',
+    bars_payloads,
+    fixed = TRUE
+  )))
+
+  # The old package-local widgets (P4: removed with no re-export) leave no trace.
+  expect_false(grepl("Widget_PrematureDeath", html, fixed = TRUE))
+
+  # filter-js inlines what the removed el.pdAllData / meta.reactive closures
+  # used to carry (P2): the site chart's rows for the country->site drilldown,
+  # and the per-country reason slices for the country-click swap.
+  expect_true(grepl("pdSiteRows", html, fixed = TRUE))
+  expect_true(grepl("pdReasonRowsByCountry", html, fixed = TRUE))
 })
 
 test_that("Report sources rgmn_dt from Mapped_Randomization when Mapped_SUBJ lacks it {#248}", {
@@ -461,4 +527,31 @@ test_that("Report sources rgmn_dt from Mapped_Randomization when Mapped_SUBJ lac
     "(?s)<tbody>\\s*<tr>\\s*<td[^>]*>\\s*2\\s*</td>",
     perl = TRUE
   )
+})
+
+test_that("Report_PrematureDeaths renders the empty-state cleanly with zero premature deaths {#288}", {
+  testthat::skip_if_not_installed("plotly")
+  testthat::skip_if_not_installed("DT")
+  # Regression: the setup chunk built reason_rows_by_country / pd_site_rows
+  # unconditionally (not gated on has_premature), and pd_ReasonSlice crashed on
+  # an empty cohort -- so a zero-premature-death snapshot aborted the render.
+  lL <- lListings
+  lL$Mapped_Death <- dplyr::filter(lListings$Mapped_Death, FALSE)
+  lL$Mapped_STUDCOMP <- dplyr::filter(lListings$Mapped_STUDCOMP, FALSE)
+  dfResults0 <- dfResults
+  dfResults0$Numerator <- 0
+  dfResults0$Metric <- 0
+  dfResults0$Score <- 0
+  dfResults0$Flag <- 0
+  out <- Report_PrematureDeaths(
+    dfResults = dfResults0,
+    dfMetrics = dfMetrics,
+    dfGroups = dfGroups,
+    lListings = lL,
+    nWindowDays = 90,
+    strOutputDir = tempdir()
+  )
+  expect_true(file.exists(out))
+  html <- paste(readLines(out, warn = FALSE), collapse = "\n")
+  expect_match(html, "No premature deaths in window", fixed = TRUE)
 })

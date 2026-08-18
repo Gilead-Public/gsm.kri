@@ -115,11 +115,19 @@ enrolled_by_country <- dfClassified %>%
   tibble::deframe()
 
 # Reason aggregate computed ONCE: per-country slices + "__ALL__", each with prebuilt
-# hover (incl. % of enrolled). The country-reasons widget receives these rows as
-# its reactive map and swaps slices client-side on a country click.
+# hover (incl. % of enrolled). filter-js inlines the per-country rows as JSON
+# and swaps the reasons chart's data client-side on a country click.
 reason_data <- pd_ReasonByCountry(Mapped_Death, Mapped_SUBJ, nWindowDays,
                                   nEnrolledByCountry = enrolled_by_country,
                                   nEnrolled = nEnrolled)
+reason_rows_by_country <- lapply(reason_data, pd_ReasonRows)
+reason_rows_by_country_json <- jsonlite::toJSON(reason_rows_by_country, dataframe = "rows", na = "null")
+
+# Site rows computed ONCE: the site-buckets chunk renders them and filter-js
+# inlines the same frame (as JSON) for the country->site drilldown -- one
+# source of truth instead of a client-side el.pdAllData copy.
+pd_site_rows <- pd_BucketRows(dfClassified, nWindowDays, "invid", strOuterCol = "country")
+pd_site_rows_json <- jsonlite::toJSON(pd_site_rows, dataframe = "rows", na = "null")
 
 # Study-discontinuation caveat, shared verbatim by the Study Buckets and the
 # Study Rand -> Death tabs (single source of truth so the embedded nWindowDays
@@ -271,7 +279,7 @@ cat("\n> **No premature deaths in window.** All charts and the patient listing a
 
 ### Buckets
 ```{r study-buckets, echo=FALSE, eval=has_premature}
-Widget_PrematureDeathBucketBar(
+gsm.vizr::bars(
   data = pd_BucketRows(dfClassified, nWindowDays, strGroupCol = "studyid"),
   spec = pd_BucketBarSpec(nWindowDays, "Study"),
   metadata = list(chartId = "pd-study-buckets", level = "study")
@@ -296,7 +304,7 @@ cat(study_discont_note)
 
 ### Reasons
 ```{r study-reasons, echo=FALSE, eval=has_premature}
-Widget_PrematureDeathReasonBar(
+gsm.vizr::bars(
   data = pd_ReasonRows(reason_data[["__ALL__"]]),
   # reason_order pins the study-wide count sort as a stable axis; the country
   # tab reuses the same order so its bar keeps position when a country is picked.
@@ -309,7 +317,7 @@ Widget_PrematureDeathReasonBar(
 
 ### Buckets
 ```{r country-buckets, echo=FALSE, eval=has_premature}
-Widget_PrematureDeathBucketBar(
+gsm.vizr::bars(
   data = pd_BucketRows(dfClassified, nWindowDays, strGroupCol = "country"),
   # Country and site charts opt into zoom/pan (x-axis) — a multinational study
   # can carry many country bars; the single-bar study chart stays zoom-free.
@@ -328,17 +336,13 @@ htmltools::div(
 
 ### Reasons
 ```{r country-reasons, echo=FALSE, eval=has_premature}
-# reactive: one row frame per country (+ __ALL__). A country bucket click
-# broadcasts pdBucketFilterChanged, and the widget swaps to that slice via
-# helpers.updateData — no per-country spec, no rebuildReasons.
-reason_rows_by_country <- lapply(reason_data, pd_ReasonRows)
-Widget_PrematureDeathReasonBar(
+# reason_rows_by_country (setup chunk): a country bucket click broadcasts
+# pdBucketFilterChanged, and filter-js swaps this chart to that country's
+# slice via helpers.updateData — no per-country spec, no rebuildReasons.
+gsm.vizr::bars(
   data = reason_rows_by_country[["__ALL__"]],
   spec = pd_ReasonBarSpec(reason_order = reason_data[["__ALL__"]]$reason),
-  metadata = list(
-    chartId = "pd-country-reasons", level = "country",
-    reactive = reason_rows_by_country
-  )
+  metadata = list(chartId = "pd-country-reasons", level = "country")
 )
 ```
 
@@ -346,10 +350,10 @@ Widget_PrematureDeathReasonBar(
 
 ### Buckets
 ```{r site-buckets, echo=FALSE, eval=has_premature}
-Widget_PrematureDeathBucketBar(
-  # strOuterCol = "country" keeps each row's OuterGroupID so the country->site
-  # drilldown can re-slice this chart to one country's sites (see filter-js).
-  data = pd_BucketRows(dfClassified, nWindowDays, strGroupCol = "invid", strOuterCol = "country"),
+gsm.vizr::bars(
+  # pd_site_rows (setup chunk): its OuterGroupID lets the country->site
+  # drilldown re-slice this chart to one country's sites (see filter-js).
+  data = pd_site_rows,
   # Zoom/pan (x-axis): the site chart always renders every enrolled site (see
   # the country chart chunk for the shared rationale). dynamicCategoryAxis drops
   # a site off the axis once a disabled legend entry leaves it with nothing to
@@ -398,6 +402,11 @@ cat(paste0('
 <script>
 (function() {
   var countrySiteMap = ', country_site_map, ';
+  // input.metadata is closure-bound per gsm.vizr chart instance, so cross-chart
+  // data (country->site drilldown rows, per-country reason slices) is inlined
+  // here instead -- the same pattern countrySiteMap already uses.
+  var pdSiteRows = ', pd_site_rows_json, ';
+  var pdReasonRowsByCountry = ', reason_rows_by_country_json, ';
   // activeCountry / activeSite are retained ONLY as mirrors of pdBucketState so
   // the kept scatter helpers (applySiteScatterFilter) keep working unchanged.
   var activeCountry = null;
@@ -512,16 +521,17 @@ cat(paste0('
   }
 
   // Country->site drilldown: re-slice the site chart to the sites in the active
-  // country (all sites when no country is active), reusing the rows the widget
-  // kept on el.pdAllData. Runs before pdHighlightBuckets so a site highlight
-  // lands on the freshly-swapped data.
+  // country (all sites when no country is active), reading the inlined
+  // pdSiteRows (metadata is closure-bound per chart, so it cannot carry these
+  // cross-chart). Runs before pdHighlightBuckets so a site highlight lands on
+  // the freshly-swapped data.
   function pdNarrowSiteChart() {
     var el = document.getElementById("pd-site-buckets");
-    if (!el || !el.gsmChart || !el.pdAllData) return;
+    if (!el || !el.gsmChart) return;
     var country = pdBucketState.activeCountry;
     var rows = country
-      ? el.pdAllData.filter(function(r) { return r.OuterGroupID === country; })
-      : el.pdAllData;
+      ? pdSiteRows.filter(function(r) { return r.OuterGroupID === country; })
+      : pdSiteRows;
     el.gsmChart.helpers.updateData(el.gsmChart, rows, el.gsmChart.data._spec_);
   }
 
@@ -611,7 +621,36 @@ cat(paste0('
     pdSyncBucketFilters();
   };
 
-  document.addEventListener("pdBucketClick", function(e) { pdApplyBucketFilter(e.detail); });
+  // Bucket click: the gsm.vizr bars() binding always dispatches gsm-viz-select
+  // (bubbling) on click; branch on chartId and ignore events from other charts.
+  // stat = "identity" on every bucket chart, so datum is the single clicked row.
+  document.addEventListener("gsm-viz-select", function(e) {
+    var d = e.detail;
+    if (d.type !== "click" || PD_BUCKET_IDS.indexOf(d.chartId) < 0) return;
+    var row = d.datum || {};
+    pdApplyBucketFilter({
+      level: d.metadata.level,
+      groupId: row.GroupID,
+      country: row.Level === "country" ? row.GroupID : row.OuterGroupID,
+      invid: row.Level === "site" ? row.GroupID : undefined
+    });
+  });
+
+  // Country-reactive reason swap (relocated from the deleted reason widget
+  // JS): a country bucket click broadcasts pdBucketFilterChanged; swap the
+  // reasons chart to that country slice via updateData -- no per-country
+  // spec, no rebuild. Two-stage fallback: pdReasonRowsByCountry only has keys
+  // for countries with >=1 premature death, but the country bucket chart
+  // renders every enrolled country, so a zero-premature-death country click
+  // falls back to __ALL__ instead of leaving the previous slice on screen.
+  document.addEventListener("pdBucketFilterChanged", function(e) {
+    var country = e.detail && e.detail.country;
+    var rows = pdReasonRowsByCountry[country || "__ALL__"] || pdReasonRowsByCountry["__ALL__"];
+    var el = document.getElementById("pd-country-reasons");
+    if (rows && el && el.gsmChart) {
+      el.gsmChart.helpers.updateData(el.gsmChart, rows, el.gsmChart.data._spec_);
+    }
+  });
 })();
 </script>
 '))
