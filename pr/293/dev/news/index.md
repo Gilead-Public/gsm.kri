@@ -36,9 +36,7 @@
   `eligibility_groupBar()` / `eligibility_sourceBar()` /
   `criteria_groupBar()` instead of plotly
   ([\#286](https://github.com/Gilead-Public/gsm.kri/issues/286)).
-  `Report_Eligibility.Rmd` no longer loads `ggplot2`/`plotly`; the
-  `gsm.qtl` `Remotes` pin moves to `feat/134-bars-migration` ahead of
-  that PR’s merge.
+  `Report_Eligibility.Rmd` no longer loads `ggplot2`/`plotly`.
 
 ## gsm.kri v1.6.1
 
