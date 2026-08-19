@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Time to First AE — Proposed KRI</title>
+<style>
+  :root{
+    --bg:#fbfaf8; --surface:#fff; --ink:#1f1d1a; --muted:#6b6560;
+    --line:#e3ded7; --accent:#8a5a2b; --accent-soft:#f3ece3;
+    --low:#2f6f8f; --high:#a4472c; --ok:#3f7d4e;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#171614; --surface:#211f1c; --ink:#f0ece6; --muted:#a49d95;
+      --line:#35322d; --accent:#d3a26a; --accent-soft:#2b2620;
+      --low:#7fb6d1; --high:#e08e6f; --ok:#87c096; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:2.5rem 1.25rem 4rem;background:var(--bg);color:var(--ink);
+    font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+  .wrap{max-width:920px;margin:0 auto}
+  header{border-bottom:2px solid var(--accent);padding-bottom:1.25rem;margin-bottom:2rem}
+  .tag{display:inline-block;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--accent);background:var(--accent-soft);padding:.3rem .6rem;border-radius:3px;
+    font-weight:600;margin-bottom:.75rem}
+  h1{margin:0 0 .35rem;font-size:1.9rem;letter-spacing:-.01em}
+  .sub{color:var(--muted);font-size:.95rem;margin:0}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.86em;
+    background:var(--accent-soft);padding:.12em .35em;border-radius:3px}
+  h2{font-size:1.15rem;margin:2.5rem 0 .9rem;padding-left:.7rem;
+    border-left:3px solid var(--accent)}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:8px;
+    padding:1.1rem 1.25rem;margin:1rem 0}
+  .lede{font-size:1.05rem}
+  table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:.92rem}
+  th,td{text-align:left;padding:.6rem .7rem;border-bottom:1px solid var(--line);
+    vertical-align:top}
+  th{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+    font-weight:600}
+  tr:last-child td{border-bottom:none}
+  .grid2{display:grid;gap:1rem;grid-template-columns:1fr 1fr}
+  @media (max-width:680px){.grid2{grid-template-columns:1fr}}
+  .pill{display:inline-block;font-size:.72rem;font-weight:600;padding:.2rem .5rem;
+    border-radius:20px;border:1px solid currentColor}
+  .pill.low{color:var(--low)} .pill.high{color:var(--high)} .pill.ok{color:var(--ok)}
+  ol,ul{padding-left:1.3rem} li{margin:.4rem 0}
+  .flow{display:flex;flex-wrap:wrap;align-items:center;gap:.45rem;margin:1rem 0}
+  .step{background:var(--surface);border:1px solid var(--line);border-radius:6px;
+    padding:.5rem .7rem;font-family:ui-monospace,Menlo,monospace;font-size:.78rem}
+  .step.new{border-color:var(--accent);border-width:2px;background:var(--accent-soft);
+    font-weight:600}
+  .arrow{color:var(--muted);font-size:.9rem}
+  .note{border-left:3px solid var(--accent);background:var(--accent-soft);
+    padding:.85rem 1rem;border-radius:0 6px 6px 0;margin:1rem 0;font-size:.94rem}
+  .note strong{color:var(--accent)}
+  footer{margin-top:3rem;padding-top:1.25rem;border-top:1px solid var(--line);
+    color:var(--muted);font-size:.85rem}
+  .legend{display:flex;gap:1.25rem;flex-wrap:wrap;margin-top:.6rem;font-size:.82rem;
+    color:var(--muted)}
+  .sw{display:inline-block;width:.85rem;height:.85rem;border-radius:2px;
+    vertical-align:-1px;margin-right:.35rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <span class="tag">Draft requirement &middot; demo</span>
+  <h1>Time to First Adverse Event</h1>
+  <p class="sub">Proposed <code>kri0019</code> / <code>cou0019</code> &nbsp;·&nbsp; site- and country-level &nbsp;·&nbsp; two-sided flagging</p>
+</header>
+
+<p class="lede">Flag sites whose subjects go unexpectedly <em>long</em> — or unexpectedly
+<em>short</em> — before their first adverse event is recorded, relative to the rest of the
+study.</p>
+
+<h2>Why this isn't <code>kri0001</code></h2>
+<div class="card">
+<p style="margin-top:0"><code>kri0001</code> measures AE <strong>volume</strong> per day on study. It is blind to
+<strong>onset timing</strong>. A site can post a study-average AE rate across the full window
+while recording nothing for its first three months.</p>
+<table>
+<thead><tr><th>Signal</th><th>Direction</th><th>Plausible cause</th></tr></thead>
+<tbody>
+<tr><td><span class="pill low">Long time to AE</span></td><td>low hazard</td>
+    <td>Delayed AE identification or data entry; under-reporting at early visits; staff untrained at activation</td></tr>
+<tr><td><span class="pill high">Short time to AE</span></td><td>high hazard</td>
+    <td>Over-reporting / miscoded non-AEs; sicker baseline population; medical history logged as AE</td></tr>
+</tbody></table>
+<p style="margin-bottom:0">Both tails are actionable, so this flags two-sided — the same
+<code>Threshold: -2,-1,2,3</code> pattern <code>kri0001</code> already uses.</p>
+</div>
+
+<h2>Definition</h2>
+<div class="grid2">
+  <div class="card">
+    <strong>Subject level</strong>
+    <ul style="margin-bottom:0">
+      <li><code>t_ref</code> = <code>firstparticipantdate</code></li>
+      <li>Has an AE → <code>days_at_risk = min(aest_dt) − t_ref</code>, <code>event = 1</code></li>
+      <li>No AE → <code>days_at_risk = timeonstudy</code>, <code>event = 0</code> <em>(censored)</em></li>
+    </ul>
+  </div>
+  <div class="card">
+    <strong>Site level</strong>
+    <ul style="margin-bottom:0">
+      <li>Numerator = subjects with a first AE</li>
+      <li>Denominator = &sum; days at risk</li>
+      <li>Model = <code>Analyze_Poisson</code></li>
+      <li>Score = adjusted z-score</li>
+    </ul>
+  </div>
+</div>
+
+<div class="note">
+<strong>Censoring is the crux.</strong> Averaging "days to first AE" over only the subjects
+who <em>had</em> an AE is badly biased — a site with short follow-up would look like it has a
+long time to AE. Every enrolled subject must contribute time at risk, censored or not.
+</div>
+
+<div class="note">
+<strong>Why Poisson, not survival code.</strong> Poisson regression on person-time is the
+standard equivalent of an exponential time-to-event model. That means this metric drops
+straight into the existing gsm pipeline with <strong>zero new statistics code</strong> — and the
+double-programming QC test can verify it against a real <code>survival</code> fit.
+</div>
+
+<h2>Pipeline</h2>
+<div class="flow">
+  <span class="step">Mapped_AE + Mapped_SUBJ</span><span class="arrow">&rarr;</span>
+  <span class="step new">Input_TimeToEvent&nbsp;⬥&nbsp;NEW</span><span class="arrow">&rarr;</span>
+  <span class="step">Transform_Rate</span><span class="arrow">&rarr;</span>
+  <span class="step">Analyze_Poisson</span><span class="arrow">&rarr;</span>
+  <span class="step">Flag</span><span class="arrow">&rarr;</span>
+  <span class="step">Summarize</span>
+</div>
+<div class="legend">
+  <span><span class="sw" style="background:var(--accent)"></span>new function — one, and it's metric-agnostic</span>
+  <span><span class="sw" style="background:var(--line)"></span>existing <code>gsm.core</code>, unchanged</span>
+</div>
+<p><strong>No <code>gsm.mapping</code> changes needed.</strong> <code>AE.yaml</code> already maps
+<code>aest_dt</code>; <code>SUBJ.yaml</code> already maps <code>firstparticipantdate</code> and
+<code>timeonstudy</code>.</p>
+<p><code>gsm.core::Input_TimeToEvent()</code> returns the standard <code>Analysis_Input</code>
+shape and is reusable for any future time-to-event KRI — time to first query, first lab,
+discontinuation.</p>
+
+<h2>Open decision: which way does the score point?</h2>
+<div class="card">
+<p style="margin-top:0">The Poisson score sits on the <strong>hazard</strong> scale, so its sign is
+inverted relative to the metric's name:</p>
+<ul>
+<li>Unexpectedly <strong>long</strong> time to AE &rarr; low hazard &rarr; <strong>negative</strong> z</li>
+<li>Unexpectedly <strong>short</strong> time to AE &rarr; high hazard &rarr; <strong>positive</strong> z</li>
+</ul>
+<p>That is consistent with the rest of gsm, where negative means under-reporting and carries
+the heaviest risk weight. <span class="pill ok">Recommendation</span> keep the hazard scale and
+document it in a report footnote, rather than negating the score and reversing
+<code>RiskScoreWeight</code>. But reviewers will read "Time to&hellip;" and expect the other
+direction, so this needs an explicit call.</p>
+</div>
+
+<h2>Open questions</h2>
+<ol>
+<li><strong>Metric ID.</strong> <code>kri0016</code> is claimed by two open issues (#231 Duplicate
+Weight and #258 IP Non-Starters), and <code>kri0017</code>/<code>kri0018</code> by #232.
+<code>kri0019</code> is proposed here, but ID assignment needs an owner.</li>
+<li><strong>Reference date.</strong> <code>firstparticipantdate</code> (captures pre-dose AEs) or
+<code>firstdosedate</code> (the more meaningful zero for treatment-emergent AEs)? Enrollment for
+Phase 1, configurable in the workflow.</li>
+<li><strong>AE scope.</strong> All AEs, or serious (<code>aeser</code>) / grade &ge;3
+(<code>aetoxgr</code>) only? All for Phase 1; a serious-only variant is a cheap follow-on reusing
+the same helper.</li>
+<li><strong>Accrual gate.</strong> Person-days alone could pass a site with one long-follow-up
+subject. Consider a secondary minimum subject count. All thresholds are placeholders pending
+calibration on pilot studies.</li>
+</ol>
+
+<h2>Edge cases the unit tests must cover</h2>
+<ul>
+<li>AE start date <em>before</em> the reference date &rarr; clamp to zero or drop; decide and test</li>
+<li>Missing <code>aest_dt</code> &rarr; subject stays at risk (censored); document the bias</li>
+<li><code>timeonstudy = 0</code> &rarr; excluded from the denominator</li>
+<li>A site where <em>no</em> subject has an AE &rarr; must yield a valid negative score, not <code>NA</code></li>
+<li>Multiple AEs on the same day &rarr; a single first event</li>
+</ul>
+
+<h2>Reporting</h2>
+<p><strong>Phase 1</strong> reuses <code>Visualize_Scatter</code> with
+<code>Analyze_Poisson_PredictBounds</code> — x = person-days at risk, y = observed first-AE
+count. No new widget.</p>
+<p><strong>Phase 2 (optional)</strong> a Kaplan&ndash;Meier overlay, site vs study, would
+communicate this metric far better than a scatter. Any new widget must be built on
+<strong>gsm.vizr</strong> — the vendored <code>gsm.viz</code> bundle is being retired (#288, #291).</p>
+
+<h2>Sizing</h2>
+<table>
+<thead><tr><th>Task</th><th>Repo</th><th>Size</th></tr></thead>
+<tbody>
+<tr><td><code>Input_TimeToEvent</code> + unit tests</td><td>gsm.core</td><td>M</td></tr>
+<tr><td><code>kri0019.yaml</code> / <code>cou0019.yaml</code> + workflow tests</td><td>gsm.kri</td><td>S</td></tr>
+<tr><td>Report and example-data integration</td><td>gsm.kri</td><td>S</td></tr>
+<tr><td>Qualification test via double programming</td><td>gsm.kri</td><td>M</td></tr>
+<tr><td>Kaplan&ndash;Meier widget (Phase 2)</td><td>gsm.vizr</td><td>L</td></tr>
+</tbody></table>
+
+<footer>
+Draft for discussion, 2026-08-19 &middot; drafted with Claude Code against the
+<code>gsm.kri</code> and <code>gsm.mapping</code> workflow conventions.
+All thresholds and weights are placeholders. No issues were filed.
+</footer>
+
+</div>
+</body>
+</html>

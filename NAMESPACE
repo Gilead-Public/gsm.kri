@@ -8,6 +8,7 @@ export(CalculateRiskScore)
 export(FilterAnalysis)
 export(FilterByFlags)
 export(FilterByLatestSnapshotDate)
+export(Input_TimeToEvent)
 export(MakeChartConfig)
 export(MakeCharts)
 export(MakeMetricTable)
@@ -27,6 +28,7 @@ export(Report_OverviewText)
 export(Report_PrematureDeaths)
 export(Report_Setup)
 export(Report_StudyInfo)
+export(Report_TimeToAE)
 export(StackAnalysis)
 export(SummarizeCrossStudy)
 export(Visualize_Metric)
@@ -79,56 +81,42 @@ export(renderWidget_PrematureDeathBucketBar)
 export(renderWidget_PrematureDeathReasonBar)
 export(renderWidget_ScatterPlot)
 export(renderWidget_TimeSeries)
+export(ttae_KaplanMeier)
+export(ttae_MedianTime)
 import(dplyr)
 import(ggplot2)
 import(gsm.core)
 import(gt)
 import(purrr)
 import(tidyr)
-importFrom(DT,
-  datatable,
-  formatStyle,
-  styleInterval
-)
-importFrom(cli,
-  pluralize,
-  qty
-)
+importFrom(DT,datatable)
+importFrom(DT,formatStyle)
+importFrom(DT,styleInterval)
+importFrom(cli,pluralize)
+importFrom(cli,qty)
 importFrom(glue,glue)
-importFrom(htmltools,
-  HTML,
-  h1,
-  h2,
-  h3,
-  h4,
-  p,
-  strong,
-  tagList,
-  tags
-)
-importFrom(htmlwidgets,
-  createWidget,
-  prependContent,
-  shinyRenderWidget,
-  shinyWidgetOutput
-)
-importFrom(jsonlite,
-  fromJSON,
-  toJSON
-)
+importFrom(htmltools,HTML)
+importFrom(htmltools,h1)
+importFrom(htmltools,h2)
+importFrom(htmltools,h3)
+importFrom(htmltools,h4)
+importFrom(htmltools,p)
+importFrom(htmltools,strong)
+importFrom(htmltools,tagList)
+importFrom(htmltools,tags)
+importFrom(htmlwidgets,createWidget)
+importFrom(htmlwidgets,prependContent)
+importFrom(htmlwidgets,shinyRenderWidget)
+importFrom(htmlwidgets,shinyWidgetOutput)
+importFrom(jsonlite,fromJSON)
+importFrom(jsonlite,toJSON)
 importFrom(lifecycle,deprecated)
 importFrom(magrittr,"%>%")
-importFrom(rlang,
-  "%||%",
-  .data,
-  check_installed
-)
-importFrom(stats,
-  reorder,
-  setNames
-)
-importFrom(tibble,
-  enframe,
-  tibble
-)
+importFrom(rlang,"%||%")
+importFrom(rlang,.data)
+importFrom(rlang,check_installed)
+importFrom(stats,reorder)
+importFrom(stats,setNames)
+importFrom(tibble,enframe)
+importFrom(tibble,tibble)
 importFrom(workr,ListWorkflows)

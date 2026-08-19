@@ -40,15 +40,18 @@ Imports:
     tidyr,
     workr
 Suggests: 
+    broom,
     fontawesome,
     gsm.mapping (>= 1.1.3),
     gsm.reporting (>= 1.1.4),
     gsm.qtl (>= 1.1.0),
     here,
     knitr,
+    lamW,
     lubridate,
     plotly,
     qcthat,
+    survival,
     testthat (>= 3.0.0),
     withr,
     yaml

@@ -1,0 +1,82 @@
+meta:
+  Active: true
+  Type: Analysis
+  ID: cou0019
+  GroupLevel: Country
+  Abbreviation: TTAE
+  Metric: Time to First Adverse Event
+  Numerator: Participants with an Adverse Event
+  Denominator: Days at Risk to First Adverse Event
+  Model: Poisson
+  Score: Adjusted Z-Score
+  AnalysisType: poisson
+  Threshold: -2,-1,2,3
+  Flag: "-2,-1,0,1,2"
+  AccrualThreshold: 10
+  AccrualMetric: Denominator
+  GenerateRiskSignal: true
+spec:
+  Mapped_AE:
+    subjid:
+      type: character
+    aest_dt:
+      type: Date
+  Mapped_SUBJ:
+    subjid:
+      type: character
+    country:
+      type: character
+    firstparticipantdate:
+      type: Date
+    timeonstudy:
+      type: integer
+steps:
+  - output: vThreshold
+    name: gsm.core::ParseThreshold
+    params:
+      strThreshold: Threshold
+  - output: vFlag
+    name: gsm.core::ParseThreshold
+    params:
+      strThreshold: Flag
+      bSort: false
+  - output: Analysis_Input
+    name: gsm.kri::Input_TimeToEvent
+    params:
+      dfSubjects: Mapped_SUBJ
+      dfEvents: Mapped_AE
+      strSubjectCol: subjid
+      strGroupCol: country
+      strGroupLevel: GroupLevel
+      strEventDateCol: aest_dt
+      strReferenceDateCol: firstparticipantdate
+      strCensorCol: timeonstudy
+  - output: Analysis_Transformed
+    name: gsm.core::Transform_Rate
+    params:
+      dfInput: Analysis_Input
+  - output: Analysis_Analyzed
+    name: gsm.core::Analyze_Poisson
+    params:
+      dfTransformed: Analysis_Transformed
+  - output: Analysis_Flagged
+    name: gsm.core::Flag
+    params:
+      dfAnalyzed: Analysis_Analyzed
+      vThreshold: vThreshold
+      vFlag: vFlag
+      nAccrualThreshold: AccrualThreshold
+      strAccrualMetric: AccrualMetric
+  - output: Analysis_Summary
+    name: gsm.core::Summarize
+    params:
+      dfFlagged: Analysis_Flagged
+  - output: lAnalysis
+    name: list
+    params:
+      ID: ID
+      Analysis_Input: Analysis_Input
+      Analysis_Transformed: Analysis_Transformed
+      Analysis_Analyzed: Analysis_Analyzed
+      Analysis_Flagged: Analysis_Flagged
+      Analysis_Summary: Analysis_Summary
