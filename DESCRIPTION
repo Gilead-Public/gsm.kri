@@ -49,6 +49,7 @@ Suggests:
     lubridate,
     plotly,
     qcthat,
+    survival,
     testthat (>= 3.0.0),
     withr,
     yaml

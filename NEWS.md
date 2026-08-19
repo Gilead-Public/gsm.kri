@@ -1,5 +1,16 @@
 # gsm.kri (development version)
 
+**New Features:**
+
+- Add `kri0019` / `cou0019`: Time to First Adverse Event, the first `gsm.kri` metric
+  to use `AnalysisType: poisson`
+- Add `Input_TimeToEvent()`, a metric-agnostic helper that derives a subject-level
+  time-to-first-event `Analysis_Input`, right-censoring subjects with no event
+- Add `Report_TimeToAE()` and the `report_timetoae` module workflow, with a
+  Kaplan-Meier event-free curve alongside the standard metric charts
+- Add `ttae_KaplanMeier()` and `ttae_MedianTime()` product-limit helpers
+- Add the "Time to First AE Report" pkgdown example
+
 # gsm.kri v1.6.1
 
 This patch release removes the log4r package dependency, because the log4r package was archived on CRAN (#262).

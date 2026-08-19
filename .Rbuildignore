@@ -11,3 +11,4 @@
 ^\.claude$
 ^AGENTS\.md$
 ^tests/playwright$
+^specs$
