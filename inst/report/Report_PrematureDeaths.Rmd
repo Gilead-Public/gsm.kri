@@ -81,6 +81,12 @@ y_max <- max(c(dfClassified$follow_up, nWindowDays), na.rm = TRUE)
 vXRange <- c(0, x_max * 1.05)
 vYRange <- c(0, y_max * 1.05)
 
+# The JSON built here is pasted verbatim into the inline <script> block of
+# filter-js. jsonlite already renders "</" as "<\/" so data cannot terminate
+# the block, but escape every "<" as \u003c anyway: it also closes the
+# "<!--<script>" escaped-state edge and stops relying on a serializer default.
+script_safe_json <- function(json) gsub("<", "\\\\u003c", json)
+
 # Country → site lookup for JS filtering (all enrolled sites in the country).
 # Built from dfClassified -- the same cohort the bucket bars use -- so its keys
 # are exactly the bars' country labels (incl. "Unknown"); clicking any bar always
@@ -90,7 +96,8 @@ country_site_map <- dfClassified %>%
   dplyr::group_by(country) %>%
   dplyr::summarise(sites = list(invid), .groups = "drop") %>%
   tibble::deframe() %>%
-  jsonlite::toJSON(auto_unbox = FALSE)
+  jsonlite::toJSON(auto_unbox = FALSE) %>%
+  script_safe_json()
 
 has_eligibility <- !is.null(Mapped_EXCLUSION) && "Source" %in% names(Mapped_EXCLUSION)
 
@@ -121,13 +128,17 @@ reason_data <- pd_ReasonByCountry(Mapped_Death, Mapped_SUBJ, nWindowDays,
                                   nEnrolledByCountry = enrolled_by_country,
                                   nEnrolled = nEnrolled)
 reason_rows_by_country <- lapply(reason_data, pd_ReasonRows)
-reason_rows_by_country_json <- jsonlite::toJSON(reason_rows_by_country, dataframe = "rows", na = "null")
+reason_rows_by_country_json <- script_safe_json(
+  jsonlite::toJSON(reason_rows_by_country, dataframe = "rows", na = "null")
+)
 
 # Site rows computed ONCE: the site-buckets chunk renders them and filter-js
 # inlines the same frame (as JSON) for the country->site drilldown -- one
 # source of truth instead of a client-side el.pdAllData copy.
 pd_site_rows <- pd_BucketRows(dfClassified, nWindowDays, "invid", strOuterCol = "country")
-pd_site_rows_json <- jsonlite::toJSON(pd_site_rows, dataframe = "rows", na = "null")
+pd_site_rows_json <- script_safe_json(
+  jsonlite::toJSON(pd_site_rows, dataframe = "rows", na = "null")
+)
 
 # Study-discontinuation caveat, shared verbatim by the Study Buckets and the
 # Study Rand -> Death tabs (single source of truth so the embedded nWindowDays

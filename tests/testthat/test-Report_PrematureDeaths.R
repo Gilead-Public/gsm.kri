@@ -555,3 +555,28 @@ test_that("Report_PrematureDeaths renders the empty-state cleanly with zero prem
   html <- paste(readLines(out, warn = FALSE), collapse = "\n")
   expect_match(html, "No premature deaths in window", fixed = TRUE)
 })
+
+test_that("inlined JSON data cannot terminate the report's script block {#288}", {
+  testthat::skip_if_not_installed("plotly")
+  testthat::skip_if_not_installed("DT")
+  # HTML ends a <script> element at the first "</script" regardless of JS
+  # string context, so a data value carrying that sequence would cut the
+  # filter-js block short and let the remainder parse as markup.
+  payload <- "</script><script>alert(1)"
+  lL <- lListings
+  lL$Mapped_SUBJ$invid[1] <- paste0("INV", payload)
+  lL$Mapped_Death$deathcls[1] <- paste0("Reason", payload)
+  out <- Report_PrematureDeaths(
+    dfResults = dfResults,
+    dfMetrics = dfMetrics,
+    dfGroups = dfGroups,
+    lListings = lL,
+    nWindowDays = 90,
+    strOutputDir = tempdir()
+  )
+  html <- paste(readLines(out, warn = FALSE), collapse = "\n")
+  expect_false(grepl(payload, html, fixed = TRUE))
+  # jsonlite renders "</" as "<\/" and script_safe_json escapes the "<", so the
+  # payload survives only as \u003c\/script -- inert to the HTML parser.
+  expect_true(grepl("\\u003c\\/script", html, fixed = TRUE))
+})
