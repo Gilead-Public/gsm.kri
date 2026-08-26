@@ -77,7 +77,9 @@ function readBarTabs(page) {
         const xCat = isCategorical(xa);
         const categories = yCat ? ya.categoryarray.slice() : (xCat ? xa.categoryarray.slice() : []);
         const series = (plotlyEl.data || [])
-          .filter((t) => t.name)
+          // Named non-bar traces exist too (the count-label text traces carry
+          // the series name); only bar traces are series in the bars() sense.
+          .filter((t) => t.name && t.type === 'bar')
           .map((t) => ({ name: t.name, color: (t.marker && t.marker.color) || null }));
         return {
           sectionId: id,

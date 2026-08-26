@@ -122,14 +122,6 @@
         {
           "name": "Eligibility IPD",
           "color": "rgba(0,191,196,1)"
-        },
-        {
-          "name": "EDC",
-          "color": null
-        },
-        {
-          "name": "Eligibility IPD",
-          "color": null
         }
       ],
       "stacked": true
