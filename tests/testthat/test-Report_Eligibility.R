@@ -57,7 +57,7 @@ test_that("Ensure report renders normally {#157}", {
   )
 })
 
-test_that("Report_Eligibility renders its 8 bar charts through gsm.vizr-backed gsm.qtl, with the plotly/ggplot2 setup dropped {#286}", {
+test_that("Report_Eligibility renders its 7 bar charts through gsm.vizr-backed gsm.qtl, with the plotly/ggplot2 setup dropped {#286}", {
   testthat::skip_if_not_installed("gsm.qtl")
 
   # gsm.qtl's eligibility/criteria bar helpers are gsm.vizr::bars()-backed as
@@ -98,8 +98,11 @@ test_that("Report_Eligibility renders its 8 bar charts through gsm.vizr-backed g
   )[[1]]
   bars_payloads <- widget_pairs[widget_pairs[, 2] == "bars", 4]
 
-  # Site, Site (by %), Country, Source, and the 4 Criteria/... tabs.
-  expect_equal(length(bars_payloads), 8)
+  # Site, Country, Source, and the 4 Criteria/... tabs. The former
+  # "Site (by %)" tab is folded into the Site chart's position toggle,
+  # mirroring gsm.qtl's QTL0001 report.
+  expect_equal(length(bars_payloads), 7)
+  expect_false(grepl("Site (by %)", html, fixed = TRUE))
   expect_false(any(widget_pairs[, 2] == "plotly"))
   expect_false(grepl("js-plotly-plot", html, fixed = TRUE))
 })

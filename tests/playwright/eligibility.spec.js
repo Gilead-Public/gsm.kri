@@ -1,4 +1,4 @@
-// Verifies the 7 initially-hidden "Bar Charts" tabs draw real content once
+// Verifies the 6 initially-hidden "Bar Charts" tabs draw real content once
 // revealed (#286). gsm.vizr's bars.js binding renders every widget at page
 // load regardless of its tab-pane's display state -- htmlwidgets resolves
 // the widget's width from CSS (width:100%) rather than by live-measuring a
@@ -17,7 +17,6 @@ const fileUrl = 'file://' + path.resolve(__dirname, 'fixture', 'Report_Eligibili
 // [sectionId, tabLabel]; "site" is the tabset's default-active tab (visible
 // on load, no click needed) and is asserted separately below.
 const HIDDEN_TABS = [
-  ['site-by', 'Site (by %)'],
   ['country', 'Country'],
   ['source', 'Source'],
   ['criteriasite-edc-ie-data-only', 'Criteria/Site (EDC I/E data only)'],

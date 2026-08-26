@@ -74,11 +74,6 @@ gsm.kri::Widget_TimeSeries(
 gsm.qtl::eligibility_groupBar(dfNum = IE_num, dfDenom = IE_denom, varGroupID = invid, strGroupLabel = "Site")
 ```
 
-### Site (by %)
-```{r, echo = FALSE}
-gsm.qtl::eligibility_groupBar(dfNum = IE_num, dfDenom = IE_denom, varGroupID = invid, strGroupLabel = "Site", bPercentage = TRUE)
-```
-
 ### Country
 ```{r, echo = FALSE}
 gsm.qtl::eligibility_groupBar(dfNum = IE_num, dfDenom = IE_denom, varGroupID = country, strGroupLabel = "Country")
