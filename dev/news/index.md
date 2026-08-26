@@ -2,6 +2,20 @@
 
 ## gsm.kri (development version)
 
+- The legacy widget wrappers (`Widget_BarChart`, `Widget_ScatterPlot`,
+  `Widget_TimeSeries`, `Widget_GroupOverview`), their Shiny bindings,
+  [`MakeChartConfig()`](https://gilead-public.github.io/gsm.vizr/reference/MakeChartConfig.html),
+  and the shared widget-control JS/CSS moved to gsm.vizr
+  ([\#291](https://github.com/Gilead-Public/gsm.kri/issues/291)).
+  gsm.kri re-exports every name, so existing callers are unaffected. The
+  vendored `gsm.viz-2.4.1` bundle is retired;
+  `Widget_CrossStudyRiskScore`, `Widget_PrematureDeathBucketBar`, and
+  `Widget_PrematureDeathReasonBar` now take the bundle from
+  [`gsm.vizr::html_dependency_gsm_viz()`](https://gilead-public.github.io/gsm.vizr/reference/html_dependency_gsm_viz.html).
+  Because these are re-exports, the relocated functions no longer have
+  their own reference pages in the gsm.kri documentation site — see the
+  gsm.vizr documentation for them.
+
 ## gsm.kri v1.6.1
 
 This patch release removes the log4r package dependency, because the

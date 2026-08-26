@@ -20,7 +20,6 @@
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/FilterAnalysis.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/FilterByFlags.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/FilterByLatestSnapshotDate.html</loc></url>
-<url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/MakeChartConfig.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/MakeCharts.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/MakeMetricTable.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/MakeParamLabels.html</loc></url>
@@ -44,22 +43,14 @@
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/Visualize_RiskScore.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/Visualize_Scatter.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/Visualize_Score.html</loc></url>
-<url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/Widget_BarChart-shiny.html</loc></url>
-<url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/Widget_BarChart.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/Widget_CrossStudyRiskScore-shiny.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/Widget_CrossStudyRiskScore.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/Widget_FlagOverTime-shiny.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/Widget_FlagOverTime.html</loc></url>
-<url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/Widget_GroupOverview-shiny.html</loc></url>
-<url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/Widget_GroupOverview.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/Widget_PrematureDeathBucketBar-shiny.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/Widget_PrematureDeathBucketBar.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/Widget_PrematureDeathReasonBar-shiny.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/Widget_PrematureDeathReasonBar.html</loc></url>
-<url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/Widget_ScatterPlot-shiny.html</loc></url>
-<url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/Widget_ScatterPlot.html</loc></url>
-<url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/Widget_TimeSeries-shiny.html</loc></url>
-<url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/Widget_TimeSeries.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/add_Groups_metadata.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/cols_label_month.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/gsm.kri-package.html</loc></url>
@@ -89,6 +80,7 @@
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/pd_ReasonRows.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/pd_SubjectFatalRelatedAE.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/pipe.html</loc></url>
+<url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/reexports.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/shared-params.html</loc></url>
 </urlset>
 
