@@ -30,13 +30,15 @@
   `OuterGroupID` is gone — gsm.vizr serializes with `na = "null"`, so
   client JS now reads a real `null` instead of the literal string
   `"NA"`.
-- The Eligibility report’s 8 bar charts (Site, Site by %, Country,
-  Source, and the four Criteria/… tabs) now render through gsm.qtl’s
+- The Eligibility report’s 7 bar charts (Site, Country, Source, and the
+  four Criteria/… tabs) now render through gsm.qtl’s
   [`gsm.vizr::bars()`](https://gilead-public.github.io/gsm.vizr/reference/bars.html)-backed
   `eligibility_groupBar()` / `eligibility_sourceBar()` /
   `criteria_groupBar()` instead of plotly
-  ([\#286](https://github.com/Gilead-Public/gsm.kri/issues/286)).
-  `Report_Eligibility.Rmd` no longer loads `ggplot2`/`plotly`.
+  ([\#286](https://github.com/Gilead-Public/gsm.kri/issues/286)). The
+  separate “Site (by %)” tab is folded into the Site chart’s position
+  toggle, matching the QTL report. `Report_Eligibility.Rmd` no longer
+  loads `ggplot2`/`plotly`.
 
 ## gsm.kri v1.6.1
 
