@@ -6,7 +6,7 @@ const { FIXTURES, fixtureUrl, readFingerprint, structural } = require('./fingerp
 const baseline = JSON.parse(fs.readFileSync(path.resolve(__dirname, 'baseline.json'), 'utf8'));
 
 for (const [name, file] of Object.entries(FIXTURES)) {
-  test.describe(`${name} report on the vendored gsm.viz bundle`, () => {
+  test.describe(`${name} report on the gsm.vizr-served gsm.viz bundle`, () => {
     let errors;
     test.beforeEach(async ({ page }) => {
       errors = [];

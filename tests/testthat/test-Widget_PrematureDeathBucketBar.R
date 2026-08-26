@@ -55,13 +55,14 @@ test_that("Widget_PrematureDeathBucketBar validates inputs (#264)", {
   )
 })
 
-test_that("Widget_PrematureDeathBucketBar wires the pinned gsm.viz dependency (#264)", {
-  y <- yaml::read_yaml(system.file(
-    "htmlwidgets/Widget_PrematureDeathBucketBar.yaml",
-    package = "gsm.kri"
-  ))
-  gv <- Filter(function(d) identical(d$name, "gsmViz"), y$dependencies)[[1]]
-    # Release-mode pin: yaml version and directory both track gsm.viz 2.4.1.
+test_that("Widget_PrematureDeathBucketBar wires the pinned gsm.viz dependency (#264) (#291)", {
+  i <- make_bucket_inputs()
+  w <- Widget_PrematureDeathBucketBar(i$data, i$spec, i$metadata)
+  gv <- Filter(function(d) identical(d$name, "gsmViz"), w$dependencies)[[1]]
+  # Release-mode pin: the dependency version and directory both track gsm.viz
+  # 2.4.1. The bundle is served from gsm.vizr, so assert it resolves there -
+  # a path back inside gsm.kri would mean the vendored copy had returned.
   expect_equal(as.character(gv$version), "2.4.1")
-  expect_equal(gv$src, "htmlwidgets/lib/gsm.viz-2.4.1")
+  expect_match(gv$src$file, "gsm\\.viz-2\\.4\\.1$")
+  expect_true(startsWith(gv$src$file, system.file(package = "gsm.vizr")))
 })

@@ -1,9 +1,14 @@
 ---
 name: update-gsm-viz-bundle
-description: Replace the vendored gsm.viz bundle from an official release tag or an explicit development commit and update every package reference and regression pin.
+description: Replace the gsm.viz bundle vendored by gsm.vizr from an official release tag or an explicit development commit, and update every package reference and regression pin. Run from the gsm.vizr repository only.
 ---
 # Update the gsm.viz bundle
-Use this skill when upgrading the gsm.viz assets vendored by `gsm.kri`, including temporary development bundles from an immutable upstream commit.
+
+The bundle is consumed by downstream applications at runtime through
+`gsm.vizr::html_dependency_gsm_viz()` and vendors no copy of its own.
+
+Use this skill when upgrading the gsm.viz assets vendored by `gsm.vizr`, including temporary development bundles from an immutable upstream commit. All repository-relative paths below refer to the **gsm.vizr** working tree.
+
 ## Inputs
 - Required: target version as `X.Y.Z` (without `v`).
 - Optional: upstream repository; default to `Gilead-Public/gsm.viz`.
@@ -36,6 +41,7 @@ Set `VERSION` and `UPSTREAM`. In release mode, set `TAG="v${VERSION}"`. In devel
      ```
      Stop if GitHub cannot resolve the abbreviation uniquely or the resolved SHA does not have the requested prefix. A branch name, PR number/head, non-hex reference, or workflow artifact is not an acceptable substitute. Development mode is provisional and must not be presented as a released upgrade.
 4. Record the source mode, `VERSION`, `SOURCE_SHA`, upstream repository, and asset checksums in the change description. In release mode also record `TAG` and release URL. Stop if the selected source cannot be resolved exactly; in release mode also stop for an absent, draft, or prerelease release.
+
 ## Inspect before editing
 Discover the current state; do not assume a fixed widget list:
 ```sh
@@ -44,10 +50,11 @@ rg -n 'name:\s*gsmViz|gsm\.viz-|gsmViz' inst tests .github
 git log --oneline --all -- inst/htmlwidgets/lib 'inst/htmlwidgets/*.yaml'
 ```
 Identify every YAML dependency with `name: gsmViz`, every exact bundle/version pin, provisional note, and bundle safeguard. Inspect at least:
-- `tests/testthat/test-vendored-bundle.R`
-- `tests/playwright/bundle-exports.spec.js`
-- `tests/playwright/bundle-regression.spec.js`
+- gsm.vizr's single-bundle safeguard test (the `vendored-bundle` testthat file) and its bundle-export assertions
+- `R/dependency.R` — defines `html_dependency_gsm_viz()`, the exported dependency other packages consume; its `version` must track the bundle directory
 - widget dependency assertions found by the search
+
+Downstream consumers do not vendor the bundle and must not be edited to do so. gsm.kri holds a browser regression (`tests/playwright/bundle-regression.spec.js`) that renders reports against whatever bundle gsm.vizr serves; after a bump, re-run it from the gsm.kri repository to confirm the new bundle did not change report structure.
 ## Source the assets
 Work in a temporary checkout of the verified immutable source. Resolve its `HEAD` and require it to equal `SOURCE_SHA`.
 ```sh
@@ -78,14 +85,21 @@ Verify all three staged files are non-empty, `index.js.map` parses as JSON, and 
    ```
 Exactly one `gsm.viz-*` directory must remain, and every manifest and exact pin must reference it. A development directory must contain its verified short SHA and must never be renamed into a release directory.
 ## Validate
-Run the focused safeguards, then package and browser regressions:
+In the **gsm.vizr** repository, run the focused safeguards and the package gate:
 ```sh
 R --quiet --vanilla -e 'devtools::test(filter = "vendored-bundle", reporter = "check")'
 R --quiet --vanilla -e 'devtools::test(reporter = "check")'
 R --quiet --vanilla -e 'devtools::check(error_on = "warning")'
-R --quiet --vanilla -e 'devtools::load_all("."); source("tests/playwright/render-fixture.R")'
-npm --prefix tests/playwright ci
-npm --prefix tests/playwright test -- bundle-exports.spec.js bundle-regression.spec.js
 ```
-Also run any widget-specific Playwright specs and fixture generators affected by upstream API or rendering changes. Do not refresh structural baselines merely to make failures pass; inspect and explain intentional rendering changes first.
+Then run gsm.vizr's own browser specs and any fixture generators affected by upstream API or rendering changes.
+
+Because gsm.kri renders production reports against this bundle, install the updated gsm.vizr and re-run the downstream browser regression **from the gsm.kri repository**:
+```sh
+R CMD INSTALL <path-to-gsm.vizr>
+R --quiet -e 'devtools::load_all("."); source("tests/playwright/render-kri-fixture.R")'
+npm --prefix tests/playwright ci
+npm --prefix tests/playwright test -- bundle-regression.spec.js
+```
+
+Do not refresh structural baselines merely to make failures pass; inspect and explain intentional rendering changes first.
 Review `git diff --check`, `git status --short`, the complete diff, the single-directory invariant, and all remaining `gsm.viz` references. Stop instead of completing the upgrade if provenance is uncertain, required exports disappear, a widget throws, fingerprints drift without an understood cause, R checks warn/error, or stale provisional references remain. Never approve a development-mode bundle as the final released upgrade; repeat the workflow in release mode from the official tag before merge/release.

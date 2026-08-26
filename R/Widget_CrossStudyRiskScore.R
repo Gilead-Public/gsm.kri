@@ -57,7 +57,11 @@ Widget_CrossStudyRiskScore <- function(
       )
     ),
     width = "100%",
-    package = "gsm.kri"
+    package = "gsm.kri",
+    # gsmViz lives in gsm.vizr; a YAML dependency can only resolve paths inside
+    # gsm.kri, so it is handed over here. createWidget() appends it after the
+    # widget binding, so bindings must not touch window.gsmViz until renderValue.
+    dependencies = list(gsm.vizr::html_dependency_gsm_viz())
   )
 
   return(lWidget)

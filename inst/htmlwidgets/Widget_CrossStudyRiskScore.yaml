@@ -3,8 +3,3 @@ dependencies:
     version: 1.0.0
     src: htmlwidgets/lib
     script: renderCrossStudyRiskScoreTable.js
-  - name: gsmViz
-    version: 2.4.1
-    src: 'htmlwidgets/lib/gsm.viz-2.4.1'
-    script: 'index.js'
-    stylesheet: 'main.css'
