@@ -19,6 +19,20 @@ test.beforeEach(async ({ page }) => {
   await page.waitForSelector('.site-summary', { timeout: 20000 });
 });
 
+test('Weighting tab explains metric contributions to SRS', async ({ page }) => {
+  const weightingTab = page.getByRole('tab', { name: 'How SRS Weighting Works' });
+  const weightingPanel = page.getByRole('tabpanel', { name: 'How SRS Weighting Works' });
+
+  await expect(weightingPanel).toBeHidden();
+  await weightingTab.click();
+
+  await expect(weightingTab).toHaveAttribute('aria-selected', 'true');
+  await expect(weightingPanel).toBeVisible();
+  await expect(weightingPanel).toContainText('Adverse Event Rate');
+  await expect(weightingPanel).toContainText('Maximum contribution');
+  await expect(weightingPanel).toContainText('Share of total possible SRS');
+});
+
 test('Sort by dropdown includes Enrollment Count options and reorders sites', async ({ page }) => {
   await page.selectOption('#sort-by', 'enrollment-desc');
   const order = await page.evaluate(() => {

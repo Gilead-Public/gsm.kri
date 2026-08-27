@@ -6,7 +6,9 @@ testthat::test_that("Widget_CrossStudyRiskScore creates an htmlwidget (#71)", {
 
   dfMetrics <- data.frame(
     MetricID = "Analysis_srs0001",
-    MetricName = "Risk Score"
+    Metric = "Risk Score",
+    Flag = "0,1,2",
+    RiskScoreWeight = "0,1,2"
   )
 
   dfGroups <- data.frame(
@@ -33,6 +35,7 @@ testthat::test_that("Widget_CrossStudyRiskScore creates an htmlwidget (#71)", {
   )
 
   expect_s3_class(widget, "htmlwidget")
+  expect_match(widget$x$strWeightingSummary, "How metric weighting contributes")
 })
 
 testthat::test_that("Widget_CrossStudyRiskScore errors if Analysis_srs0001 is missing (#71)", {
@@ -43,7 +46,9 @@ testthat::test_that("Widget_CrossStudyRiskScore errors if Analysis_srs0001 is mi
 
   dfMetrics <- data.frame(
     MetricID = "OtherMetric",
-    MetricName = "Other"
+    Metric = "Other",
+    Flag = "0,1,2",
+    RiskScoreWeight = "0,1,2"
   )
 
   dfGroups <- data.frame(
@@ -61,6 +66,32 @@ testthat::test_that("Widget_CrossStudyRiskScore errors if Analysis_srs0001 is mi
   )
 })
 
+testthat::test_that("Widget_CrossStudyRiskScore accepts metadata without weights", {
+  dfResults <- data.frame(
+    MetricID = "Analysis_srs0001",
+    Value = 0.75
+  )
+  dfMetrics <- data.frame(
+    MetricID = "Analysis_srs0001",
+    MetricName = "Risk Score"
+  )
+  dfGroups <- data.frame(
+    GroupID = "SiteA",
+    Site = "SiteA"
+  )
+
+  testthat::local_mocked_bindings(
+    SummarizeCrossStudy = function(dfResults, strGroupLevel, dfGroups) {
+      data.frame(GroupID = "SiteA", RiskScore = 0.75)
+    }
+  )
+
+  widget <- Widget_CrossStudyRiskScore(dfResults, dfMetrics, dfGroups)
+
+  expect_s3_class(widget, "htmlwidget")
+  expect_identical(as.character(widget$x$strWeightingSummary), "null")
+})
+
 testthat::test_that("Widget_CrossStudyRiskScore validates inputs (#71)", {
   dfResults <- data.frame(
     MetricID = "Analysis_srs0001",
@@ -69,7 +100,9 @@ testthat::test_that("Widget_CrossStudyRiskScore validates inputs (#71)", {
 
   dfMetrics <- data.frame(
     MetricID = "Analysis_srs0001",
-    MetricName = "Risk Score"
+    Metric = "Risk Score",
+    Flag = "0,1,2",
+    RiskScoreWeight = "0,1,2"
   )
 
   dfGroups <- data.frame(
