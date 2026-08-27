@@ -36,6 +36,8 @@ come from that metric.
 Choose a flag for each metric to see its point contribution and
 calculate an example SRS.
 
+Show example SRS calculator
+
 [TABLE]
 
 Metric weights used in the Site Risk Score {.table .srs-weighting-table}

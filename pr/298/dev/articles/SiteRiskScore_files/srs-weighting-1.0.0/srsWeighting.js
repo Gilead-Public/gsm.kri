@@ -1,3 +1,5 @@
+let srsWeightingExampleIndex = 0;
+
 function setupSRSWeightingExamples(root) {
   const summaries = root.querySelectorAll(
     '.srs-weighting-summary:not([data-srs-weighting-initialized])'
@@ -8,6 +10,14 @@ function setupSRSWeightingExamples(root) {
     const selects = summary.querySelectorAll('.srs-weighting-flag-select');
     const totalScore = summary.querySelector('.srs-weighting-total-score');
     const selectedPoints = summary.querySelector('.srs-weighting-selected-points');
+    const toggle = summary.querySelector('.srs-weighting-calculator-toggle');
+    const calculatorContent = summary.querySelectorAll(
+      '.srs-weighting-calculator-content'
+    );
+    const calculatorTable = summary.querySelector('.srs-weighting-table');
+    calculatorTable.id = calculatorTable.id ||
+      `srs-weighting-calculator-${srsWeightingExampleIndex++}`;
+    toggle.setAttribute('aria-controls', calculatorTable.id);
 
     function formatPoints(points) {
       return Number.isInteger(points) ? String(points) : String(Number(points.toFixed(4)));
@@ -31,7 +41,19 @@ function setupSRSWeightingExamples(root) {
         : 'Not available';
     }
 
+    function toggleCalculator() {
+      const expanded = toggle.getAttribute('aria-expanded') === 'true';
+      calculatorContent.forEach(element => {
+        element.hidden = expanded;
+      });
+      toggle.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+      toggle.textContent = expanded
+        ? 'Show example SRS calculator'
+        : 'Hide example SRS calculator';
+    }
+
     selects.forEach(select => select.addEventListener('change', updateScores));
+    toggle.addEventListener('click', toggleCalculator);
     summary.dataset.srsWeightingInitialized = 'true';
     updateScores();
   });

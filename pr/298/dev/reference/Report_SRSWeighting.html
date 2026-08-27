@@ -88,17 +88,18 @@ When supplied, the summary includes only metrics present in these results.</p></
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu">Report_SRSWeighting</span><span class="op">(</span><span class="fu">gsm.core</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/gsm.core/man/reportingMetrics.html" class="external-link">reportingMetrics</a></span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;style&gt;.srs-weighting-summary{color:#333}.srs-weighting-summary p{max-width:80rem} .srs-weighting-table-wrap{overflow-x:auto;margin:1rem 0} .srs-weighting-table{border-collapse:collapse;width:100%;font-size:0.95em} .srs-weighting-table caption{text-align:left;font-weight:bold;margin-bottom:.5rem} .srs-weighting-table th,.srs-weighting-table td{border:1px solid #d8d8d8;padding:.55rem .7rem;text-align:center} .srs-weighting-table thead th{background:#3c587f;color:white;vertical-align:bottom} .srs-weighting-table tbody th{text-align:left;background:#f5f5f5} .srs-weighting-table tbody tr:nth-child(even) td{background:#fafafa} .srs-weighting-maximum,.srs-weighting-share{font-weight:bold} .srs-weighting-not-configured{color:#666;font-style:italic} .srs-weighting-total-row th{background:#e8eef5!important;color:#243b5a!important;font-size:1.1em;text-align:left!important} .srs-weighting-total-score{font-size:1.25em} .srs-weighting-flag-select{min-width:10rem;padding:.35rem} .srs-weighting-metric-score{font-weight:bold;white-space:nowrap}&lt;/style&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;style&gt;.srs-weighting-summary{--srs-example-bg:#e8eef5;color:#333}.srs-weighting-summary p{max-width:80rem} .srs-weighting-table-wrap{overflow-x:auto;margin:1rem 0} .srs-weighting-table{border-collapse:collapse;width:100%;font-size:0.95em} .srs-weighting-table caption{text-align:left;font-weight:bold;margin-bottom:.5rem} .srs-weighting-table th,.srs-weighting-table td{border:1px solid #d8d8d8;padding:.55rem .7rem;text-align:center} .srs-weighting-table thead th{background:#3c587f;color:white;vertical-align:bottom} .srs-weighting-table tbody th{text-align:left;background:#f5f5f5} .srs-weighting-table tbody tr:nth-child(even) td{background:#fafafa} .srs-weighting-maximum,.srs-weighting-share{font-weight:bold} .srs-weighting-not-configured{color:#666;font-style:italic} .srs-weighting-total-row th{background:var(--srs-example-bg)!important;color:#243b5a!important;font-size:1.1em;text-align:left!important} .srs-weighting-example-subhead,.srs-weighting-table thead th.srs-weighting-example-cell{background:var(--srs-example-bg)!important;color:#243b5a!important} .srs-weighting-table tbody tr td.srs-weighting-example-cell{background:var(--srs-example-bg)} .srs-weighting-total-score{font-size:1.25em} .srs-weighting-calculator-toggle{background:#3c587f;border:0;border-radius:3px;color:white;cursor:pointer;font-weight:bold;margin:.25rem 0 1rem;padding:.55rem .9rem} .srs-weighting-calculator-toggle:focus-visible{outline:3px solid #fff;outline-offset:1px;box-shadow:0 0 0 4px #005fcc} .srs-weighting-flag-select{min-width:10rem;padding:.35rem} .srs-weighting-metric-score{font-weight:bold;white-space:nowrap}&lt;/style&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;section class="srs-weighting-summary" data-total-possible="202"&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;h3&gt;Site Risk Score Overview&lt;/h3&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;p&gt;Each metric assigns points according to the site's flag. The points for all metrics are added together, then divided by the total possible points and multiplied by 100 to produce the normalized SRS.&lt;/p&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;p&gt;Each metric's maximum contribution is the highest number of points that the metric can add to the SRS, based on its largest configured weight. The contribution percentage shows how much of the total possible SRS can come from that metric.&lt;/p&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;p&gt;Choose a flag for each metric to see its point contribution and calculate an example SRS.&lt;/p&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;button class="srs-weighting-calculator-toggle" type="button" aria-expanded="false"&gt;Show example SRS calculator&lt;/button&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;div class="srs-weighting-table-wrap"&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;table class="srs-weighting-table"&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>       &lt;caption&gt;Metric weights used in the Site Risk Score&lt;/caption&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>       &lt;thead&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         &lt;tr class="srs-weighting-total-row"&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         &lt;tr class="srs-weighting-total-row srs-weighting-calculator-content" hidden=""&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;th colspan="10"&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             Example SRS: </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;output class="srs-weighting-total-score" aria-live="polite"&gt;0.0&lt;/output&gt;</span>
@@ -109,6 +110,10 @@ When supplied, the summary includes only metrics present in these results.</p></
 <span class="r-out co"><span class="r-pr">#&gt;</span>              total possible points x 100</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;/th&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>         &lt;/tr&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         &lt;tr class="srs-weighting-calculator-content" hidden=""&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;th class="srs-weighting-reference-subhead" colspan="8" aria-hidden="true"&gt;&lt;/th&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;th class="srs-weighting-example-subhead srs-weighting-calculator-content" colspan="2" hidden="" scope="colgroup"&gt;Example SRS&lt;/th&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         &lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>         &lt;tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;th scope="col"&gt;Metric&lt;/th&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;th scope="col"&gt;Low red (-2)&lt;/th&gt;</span>
@@ -118,8 +123,8 @@ When supplied, the summary includes only metrics present in these results.</p></
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;th scope="col"&gt;High red (+2)&lt;/th&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;th scope="col"&gt;Maximum contribution&lt;/th&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;th scope="col"&gt;Share of total possible SRS&lt;/th&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;th scope="col"&gt;Selected flag&lt;/th&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;th scope="col"&gt;Metric score&lt;/th&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;th class="srs-weighting-example-cell srs-weighting-calculator-content" hidden="" scope="col"&gt;Selected flag&lt;/th&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;th class="srs-weighting-example-cell srs-weighting-calculator-content" hidden="" scope="col"&gt;Metric score&lt;/th&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>         &lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>       &lt;/thead&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>       &lt;tbody&gt;</span>
@@ -132,7 +137,7 @@ When supplied, the summary includes only metrics present in these results.</p></
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;2&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-maximum"&gt;32 points&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-share"&gt;15.8%&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-example-cell srs-weighting-calculator-content" hidden=""&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;select class="srs-weighting-flag-select" aria-label="Select flag for Adverse Event Rate"&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="-2" data-weight="32"&gt;Low red (-2)&lt;/option&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="-1" data-weight="16"&gt;Low amber (-1)&lt;/option&gt;</span>
@@ -141,7 +146,7 @@ When supplied, the summary includes only metrics present in these results.</p></
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="2" data-weight="2"&gt;High red (+2)&lt;/option&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;/select&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-example-cell srs-weighting-calculator-content" hidden=""&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;output class="srs-weighting-metric-score" aria-live="polite"&gt;0 points&lt;/output&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>         &lt;/tr&gt;</span>
@@ -154,7 +159,7 @@ When supplied, the summary includes only metrics present in these results.</p></
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;8&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-maximum"&gt;8 points&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-share"&gt;4.0%&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-example-cell srs-weighting-calculator-content" hidden=""&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;select class="srs-weighting-flag-select" aria-label="Select flag for Serious Adverse Event Rate"&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="-2" data-weight="8"&gt;Low red (-2)&lt;/option&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="-1" data-weight="0"&gt;Low amber (-1)&lt;/option&gt;</span>
@@ -163,7 +168,7 @@ When supplied, the summary includes only metrics present in these results.</p></
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="2" data-weight="8"&gt;High red (+2)&lt;/option&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;/select&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-example-cell srs-weighting-calculator-content" hidden=""&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;output class="srs-weighting-metric-score" aria-live="polite"&gt;0 points&lt;/output&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>         &lt;/tr&gt;</span>
@@ -176,7 +181,7 @@ When supplied, the summary includes only metrics present in these results.</p></
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;16&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-maximum"&gt;16 points&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-share"&gt;7.9%&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-example-cell srs-weighting-calculator-content" hidden=""&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;select class="srs-weighting-flag-select" aria-label="Select flag for Non-Important Protocol Deviation Rate"&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="-2" data-weight="8"&gt;Low red (-2)&lt;/option&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="-1" data-weight="4"&gt;Low amber (-1)&lt;/option&gt;</span>
@@ -185,7 +190,7 @@ When supplied, the summary includes only metrics present in these results.</p></
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="2" data-weight="16"&gt;High red (+2)&lt;/option&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;/select&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-example-cell srs-weighting-calculator-content" hidden=""&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;output class="srs-weighting-metric-score" aria-live="polite"&gt;0 points&lt;/output&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>         &lt;/tr&gt;</span>
@@ -198,7 +203,7 @@ When supplied, the summary includes only metrics present in these results.</p></
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;32&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-maximum"&gt;32 points&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-share"&gt;15.8%&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-example-cell srs-weighting-calculator-content" hidden=""&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;select class="srs-weighting-flag-select" aria-label="Select flag for Important Protocol Deviation Rate"&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="-2" data-weight="0"&gt;Low red (-2)&lt;/option&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="-1" data-weight="0"&gt;Low amber (-1)&lt;/option&gt;</span>
@@ -207,7 +212,7 @@ When supplied, the summary includes only metrics present in these results.</p></
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="2" data-weight="32"&gt;High red (+2)&lt;/option&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;/select&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-example-cell srs-weighting-calculator-content" hidden=""&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;output class="srs-weighting-metric-score" aria-live="polite"&gt;0 points&lt;/output&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>         &lt;/tr&gt;</span>
@@ -220,14 +225,14 @@ When supplied, the summary includes only metrics present in these results.</p></
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;2&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-maximum"&gt;2 points&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-share"&gt;1.0%&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-example-cell srs-weighting-calculator-content" hidden=""&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;select class="srs-weighting-flag-select" aria-label="Select flag for Grade 3+ Lab Abnormality Rate"&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="0" data-weight="0" selected=""&gt;Not flagged (0)&lt;/option&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="1" data-weight="1"&gt;High amber (+1)&lt;/option&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="2" data-weight="2"&gt;High red (+2)&lt;/option&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;/select&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-example-cell srs-weighting-calculator-content" hidden=""&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;output class="srs-weighting-metric-score" aria-live="polite"&gt;0 points&lt;/output&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>         &lt;/tr&gt;</span>
@@ -240,14 +245,14 @@ When supplied, the summary includes only metrics present in these results.</p></
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;32&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-maximum"&gt;32 points&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-share"&gt;15.8%&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-example-cell srs-weighting-calculator-content" hidden=""&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;select class="srs-weighting-flag-select" aria-label="Select flag for Study Discontinuation Rate"&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="0" data-weight="0" selected=""&gt;Not flagged (0)&lt;/option&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="1" data-weight="16"&gt;High amber (+1)&lt;/option&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="2" data-weight="32"&gt;High red (+2)&lt;/option&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;/select&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-example-cell srs-weighting-calculator-content" hidden=""&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;output class="srs-weighting-metric-score" aria-live="polite"&gt;0 points&lt;/output&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>         &lt;/tr&gt;</span>
@@ -260,14 +265,14 @@ When supplied, the summary includes only metrics present in these results.</p></
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;32&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-maximum"&gt;32 points&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-share"&gt;15.8%&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-example-cell srs-weighting-calculator-content" hidden=""&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;select class="srs-weighting-flag-select" aria-label="Select flag for Treatment Discontinuation Rate"&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="0" data-weight="0" selected=""&gt;Not flagged (0)&lt;/option&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="1" data-weight="16"&gt;High amber (+1)&lt;/option&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="2" data-weight="32"&gt;High red (+2)&lt;/option&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;/select&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-example-cell srs-weighting-calculator-content" hidden=""&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;output class="srs-weighting-metric-score" aria-live="polite"&gt;0 points&lt;/output&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>         &lt;/tr&gt;</span>
@@ -280,14 +285,14 @@ When supplied, the summary includes only metrics present in these results.</p></
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;2&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-maximum"&gt;2 points&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-share"&gt;1.0%&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-example-cell srs-weighting-calculator-content" hidden=""&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;select class="srs-weighting-flag-select" aria-label="Select flag for Query Rate"&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="0" data-weight="0" selected=""&gt;Not flagged (0)&lt;/option&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="1" data-weight="1"&gt;High amber (+1)&lt;/option&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="2" data-weight="2"&gt;High red (+2)&lt;/option&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;/select&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-example-cell srs-weighting-calculator-content" hidden=""&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;output class="srs-weighting-metric-score" aria-live="polite"&gt;0 points&lt;/output&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>         &lt;/tr&gt;</span>
@@ -300,14 +305,14 @@ When supplied, the summary includes only metrics present in these results.</p></
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;2&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-maximum"&gt;2 points&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-share"&gt;1.0%&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-example-cell srs-weighting-calculator-content" hidden=""&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;select class="srs-weighting-flag-select" aria-label="Select flag for Delayed Query Resolution Rate"&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="0" data-weight="0" selected=""&gt;Not flagged (0)&lt;/option&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="1" data-weight="1"&gt;High amber (+1)&lt;/option&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="2" data-weight="2"&gt;High red (+2)&lt;/option&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;/select&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-example-cell srs-weighting-calculator-content" hidden=""&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;output class="srs-weighting-metric-score" aria-live="polite"&gt;0 points&lt;/output&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>         &lt;/tr&gt;</span>
@@ -320,14 +325,14 @@ When supplied, the summary includes only metrics present in these results.</p></
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;2&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-maximum"&gt;2 points&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-share"&gt;1.0%&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-example-cell srs-weighting-calculator-content" hidden=""&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;select class="srs-weighting-flag-select" aria-label="Select flag for Delayed Data Entry Rate"&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="0" data-weight="0" selected=""&gt;Not flagged (0)&lt;/option&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="1" data-weight="1"&gt;High amber (+1)&lt;/option&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="2" data-weight="2"&gt;High red (+2)&lt;/option&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;/select&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-example-cell srs-weighting-calculator-content" hidden=""&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;output class="srs-weighting-metric-score" aria-live="polite"&gt;0 points&lt;/output&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>         &lt;/tr&gt;</span>
@@ -340,14 +345,14 @@ When supplied, the summary includes only metrics present in these results.</p></
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;2&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-maximum"&gt;2 points&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-share"&gt;1.0%&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-example-cell srs-weighting-calculator-content" hidden=""&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;select class="srs-weighting-flag-select" aria-label="Select flag for Data Change Rate"&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="0" data-weight="0" selected=""&gt;Not flagged (0)&lt;/option&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="1" data-weight="1"&gt;High amber (+1)&lt;/option&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="2" data-weight="2"&gt;High red (+2)&lt;/option&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;/select&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-example-cell srs-weighting-calculator-content" hidden=""&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;output class="srs-weighting-metric-score" aria-live="polite"&gt;0 points&lt;/output&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>         &lt;/tr&gt;</span>
@@ -360,7 +365,7 @@ When supplied, the summary includes only metrics present in these results.</p></
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;16&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-maximum"&gt;16 points&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-share"&gt;7.9%&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-example-cell srs-weighting-calculator-content" hidden=""&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;select class="srs-weighting-flag-select" aria-label="Select flag for Screen Failure Rate"&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="-2" data-weight="0"&gt;Low red (-2)&lt;/option&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="-1" data-weight="0"&gt;Low amber (-1)&lt;/option&gt;</span>
@@ -369,7 +374,7 @@ When supplied, the summary includes only metrics present in these results.</p></
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="2" data-weight="16"&gt;High red (+2)&lt;/option&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;/select&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-example-cell srs-weighting-calculator-content" hidden=""&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;output class="srs-weighting-metric-score" aria-live="polite"&gt;0 points&lt;/output&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>         &lt;/tr&gt;</span>
@@ -382,14 +387,14 @@ When supplied, the summary includes only metrics present in these results.</p></
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;16&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-maximum"&gt;16 points&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-share"&gt;7.9%&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-example-cell srs-weighting-calculator-content" hidden=""&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;select class="srs-weighting-flag-select" aria-label="Select flag for Ineligibility"&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="0" data-weight="0" selected=""&gt;Not flagged (0)&lt;/option&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="1" data-weight="8"&gt;High amber (+1)&lt;/option&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="2" data-weight="16"&gt;High red (+2)&lt;/option&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;/select&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-example-cell srs-weighting-calculator-content" hidden=""&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;output class="srs-weighting-metric-score" aria-live="polite"&gt;0 points&lt;/output&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>         &lt;/tr&gt;</span>
@@ -402,14 +407,14 @@ When supplied, the summary includes only metrics present in these results.</p></
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;8&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-maximum"&gt;8 points&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-share"&gt;4.0%&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-example-cell srs-weighting-calculator-content" hidden=""&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;select class="srs-weighting-flag-select" aria-label="Select flag for Premature Death Rate"&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="0" data-weight="0" selected=""&gt;Not flagged (0)&lt;/option&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="1" data-weight="4"&gt;High amber (+1)&lt;/option&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               &lt;option value="2" data-weight="8"&gt;High red (+2)&lt;/option&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;/select&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;td class="srs-weighting-example-cell srs-weighting-calculator-content" hidden=""&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             &lt;output class="srs-weighting-metric-score" aria-live="polite"&gt;0 points&lt;/output&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>         &lt;/tr&gt;</span>
