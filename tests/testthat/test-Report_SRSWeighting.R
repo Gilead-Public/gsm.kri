@@ -20,6 +20,18 @@ test_that("Report_SRSWeighting explains and displays metric contributions", {
   expect_match(html, "Low red \\(-2\\)")
   expect_match(html, "Not configured")
   expect_match(html, "Example SRS")
+  expect_match(html, "Show example SRS calculator")
+  expect_match(html, 'aria-expanded="false"')
+  expect_match(
+    html,
+    'class="srs-weighting-total-row srs-weighting-calculator-content" hidden=""'
+  )
+  expect_match(
+    html,
+    'class="srs-weighting-example-subhead srs-weighting-calculator-content"'
+  )
+  expect_match(html, "srs-weighting-example-cell")
+  expect_match(html, "--srs-example-bg:#e8eef5")
   expect_match(html, "Selected flag")
   expect_match(html, "Metric score")
   expect_match(html, "srs-weighting-flag-select")

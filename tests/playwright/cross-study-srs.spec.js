@@ -31,11 +31,43 @@ test('Weighting tab calculates metric contributions and total SRS', async ({ pag
   await expect(weightingPanel.getByRole('heading', { level: 3 })).toHaveText(
     'Site Risk Score Overview'
   );
+  const calculatorToggle = weightingPanel.locator(
+    '.srs-weighting-calculator-toggle'
+  );
+  await expect(calculatorToggle).toHaveText('Show example SRS calculator');
+  const totalSRS = weightingPanel.locator('.srs-weighting-total-score');
+  const exampleSubhead = weightingPanel.locator(
+    '.srs-weighting-example-subhead'
+  );
+
+  await expect(calculatorToggle).toHaveAttribute('aria-expanded', 'false');
+  await expect(totalSRS).toBeHidden();
+  await expect(exampleSubhead).toBeHidden();
+  await calculatorToggle.click();
+  await expect(calculatorToggle).toHaveText('Hide example SRS calculator');
+  await expect(calculatorToggle).toHaveAttribute('aria-expanded', 'true');
+  await expect(totalSRS).toBeVisible();
+  await expect(
+    exampleSubhead
+  ).toHaveText('Example SRS');
   await expect(weightingPanel).toContainText('Adverse Event Rate');
   await expect(weightingPanel).toContainText('Maximum contribution');
   await expect(weightingPanel).toContainText('Share of total possible SRS');
 
-  const totalSRS = weightingPanel.locator('.srs-weighting-total-score');
+  const exampleBackgrounds = await weightingPanel.evaluate((panel) => {
+    const total = panel.querySelector('.srs-weighting-total-row th');
+    const exampleCells = panel.querySelectorAll(
+      'tbody .srs-weighting-example-cell'
+    );
+    return {
+      total: getComputedStyle(total).backgroundColor,
+      cells: Array.from(exampleCells, cell => getComputedStyle(cell).backgroundColor),
+    };
+  });
+  expect(exampleBackgrounds.cells.length).toBeGreaterThan(2);
+  expect(
+    exampleBackgrounds.cells.every(color => color === exampleBackgrounds.total)
+  ).toBe(true);
   const adverseEventSelect = weightingPanel.getByLabel(
     'Select flag for Adverse Event Rate'
   );

@@ -109,10 +109,27 @@ Report_SRSWeighting <- function(dfMetrics, dfResults = NULL) {
     list(
       htmltools::tags$th(scope = "col", "Maximum contribution"),
       htmltools::tags$th(scope = "col", "Share of total possible SRS"),
-      htmltools::tags$th(scope = "col", "Selected flag"),
-      htmltools::tags$th(scope = "col", "Metric score")
+      htmltools::tags$th(
+        class = paste(
+          "srs-weighting-example-cell",
+          "srs-weighting-calculator-content"
+        ),
+        hidden = "",
+        scope = "col",
+        "Selected flag"
+      ),
+      htmltools::tags$th(
+        class = paste(
+          "srs-weighting-example-cell",
+          "srs-weighting-calculator-content"
+        ),
+        hidden = "",
+        scope = "col",
+        "Metric score"
+      )
     )
   )
+  nReferenceColumns <- length(lHeader) - 2
 
   lRows <- lapply(seq_along(vMetricIDs), function(i) {
     strMetricID <- vMetricIDs[[i]]
@@ -156,6 +173,11 @@ Report_SRSWeighting <- function(dfMetrics, dfResults = NULL) {
       ),
       htmltools::tags$td(class = "srs-weighting-share", strShare),
       htmltools::tags$td(
+        class = paste(
+          "srs-weighting-example-cell",
+          "srs-weighting-calculator-content"
+        ),
+        hidden = "",
         htmltools::tags$select(
           class = "srs-weighting-flag-select",
           `aria-label` = paste("Select flag for", metric_label(strMetricID)),
@@ -163,6 +185,11 @@ Report_SRSWeighting <- function(dfMetrics, dfResults = NULL) {
         )
       ),
       htmltools::tags$td(
+        class = paste(
+          "srs-weighting-example-cell",
+          "srs-weighting-calculator-content"
+        ),
+        hidden = "",
         htmltools::tags$output(
           class = "srs-weighting-metric-score",
           `aria-live` = "polite",
@@ -174,7 +201,7 @@ Report_SRSWeighting <- function(dfMetrics, dfResults = NULL) {
 
   lSummary <- htmltools::tagList(
     htmltools::tags$style(htmltools::HTML(
-      ".srs-weighting-summary{color:#333}.srs-weighting-summary p{max-width:80rem}",
+      ".srs-weighting-summary{--srs-example-bg:#e8eef5;color:#333}.srs-weighting-summary p{max-width:80rem}",
       ".srs-weighting-table-wrap{overflow-x:auto;margin:1rem 0}",
       ".srs-weighting-table{border-collapse:collapse;width:100%;font-size:0.95em}",
       ".srs-weighting-table caption{text-align:left;font-weight:bold;margin-bottom:.5rem}",
@@ -184,8 +211,12 @@ Report_SRSWeighting <- function(dfMetrics, dfResults = NULL) {
       ".srs-weighting-table tbody tr:nth-child(even) td{background:#fafafa}",
       ".srs-weighting-maximum,.srs-weighting-share{font-weight:bold}",
       ".srs-weighting-not-configured{color:#666;font-style:italic}",
-      ".srs-weighting-total-row th{background:#e8eef5!important;color:#243b5a!important;font-size:1.1em;text-align:left!important}",
+      ".srs-weighting-total-row th{background:var(--srs-example-bg)!important;color:#243b5a!important;font-size:1.1em;text-align:left!important}",
+      ".srs-weighting-example-subhead,.srs-weighting-table thead th.srs-weighting-example-cell{background:var(--srs-example-bg)!important;color:#243b5a!important}",
+      ".srs-weighting-table tbody tr td.srs-weighting-example-cell{background:var(--srs-example-bg)}",
       ".srs-weighting-total-score{font-size:1.25em}",
+      ".srs-weighting-calculator-toggle{background:#3c587f;border:0;border-radius:3px;color:white;cursor:pointer;font-weight:bold;margin:.25rem 0 1rem;padding:.55rem .9rem}",
+      ".srs-weighting-calculator-toggle:focus-visible{outline:3px solid #fff;outline-offset:1px;box-shadow:0 0 0 4px #005fcc}",
       ".srs-weighting-flag-select{min-width:10rem;padding:.35rem}",
       ".srs-weighting-metric-score{font-weight:bold;white-space:nowrap}"
     )),
@@ -207,6 +238,12 @@ Report_SRSWeighting <- function(dfMetrics, dfResults = NULL) {
       htmltools::tags$p(
         "Choose a flag for each metric to see its point contribution and calculate an example SRS."
       ),
+      htmltools::tags$button(
+        class = "srs-weighting-calculator-toggle",
+        type = "button",
+        `aria-expanded` = "false",
+        "Show example SRS calculator"
+      ),
       htmltools::tags$div(
         class = "srs-weighting-table-wrap",
         htmltools::tags$table(
@@ -214,7 +251,11 @@ Report_SRSWeighting <- function(dfMetrics, dfResults = NULL) {
           htmltools::tags$caption("Metric weights used in the Site Risk Score"),
           htmltools::tags$thead(
             htmltools::tags$tr(
-              class = "srs-weighting-total-row",
+              class = paste(
+                "srs-weighting-total-row",
+                "srs-weighting-calculator-content"
+              ),
+              hidden = "",
               htmltools::tags$th(
                 colspan = length(lHeader),
                 "Example SRS: ",
@@ -231,6 +272,25 @@ Report_SRSWeighting <- function(dfMetrics, dfResults = NULL) {
                 " selected points / ",
                 format_number(nTotalPossible),
                 " total possible points x 100"
+              )
+            ),
+            htmltools::tags$tr(
+              class = "srs-weighting-calculator-content",
+              hidden = "",
+              htmltools::tags$th(
+                class = "srs-weighting-reference-subhead",
+                colspan = nReferenceColumns,
+                `aria-hidden` = "true"
+              ),
+              htmltools::tags$th(
+                class = paste(
+                  "srs-weighting-example-subhead",
+                  "srs-weighting-calculator-content"
+                ),
+                colspan = 2,
+                hidden = "",
+                scope = "colgroup",
+                "Example SRS"
               )
             ),
             htmltools::tags$tr(lHeader)
