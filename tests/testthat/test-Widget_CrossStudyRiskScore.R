@@ -35,7 +35,7 @@ testthat::test_that("Widget_CrossStudyRiskScore creates an htmlwidget (#71)", {
   )
 
   expect_s3_class(widget, "htmlwidget")
-  expect_match(widget$x$strWeightingSummary, "How metric weighting contributes")
+  expect_match(widget$x$strWeightingSummary, "Site Risk Score Overview")
 })
 
 testthat::test_that("Widget_CrossStudyRiskScore errors if Analysis_srs0001 is missing (#71)", {

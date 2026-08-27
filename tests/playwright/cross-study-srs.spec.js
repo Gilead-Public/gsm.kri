@@ -19,7 +19,7 @@ test.beforeEach(async ({ page }) => {
   await page.waitForSelector('.site-summary', { timeout: 20000 });
 });
 
-test('Weighting tab explains metric contributions to SRS', async ({ page }) => {
+test('Weighting tab calculates metric contributions and total SRS', async ({ page }) => {
   const weightingTab = page.getByRole('tab', { name: 'How SRS Weighting Works' });
   const weightingPanel = page.getByRole('tabpanel', { name: 'How SRS Weighting Works' });
 
@@ -28,9 +28,35 @@ test('Weighting tab explains metric contributions to SRS', async ({ page }) => {
 
   await expect(weightingTab).toHaveAttribute('aria-selected', 'true');
   await expect(weightingPanel).toBeVisible();
+  await expect(weightingPanel.getByRole('heading', { level: 3 })).toHaveText(
+    'Site Risk Score Overview'
+  );
   await expect(weightingPanel).toContainText('Adverse Event Rate');
   await expect(weightingPanel).toContainText('Maximum contribution');
   await expect(weightingPanel).toContainText('Share of total possible SRS');
+
+  const totalSRS = weightingPanel.locator('.srs-weighting-total-score');
+  const adverseEventSelect = weightingPanel.getByLabel(
+    'Select flag for Adverse Event Rate'
+  );
+  const seriousAdverseEventSelect = weightingPanel.getByLabel(
+    'Select flag for Serious Adverse Event Rate'
+  );
+  const adverseEventScore = adverseEventSelect
+    .locator('xpath=ancestor::tr')
+    .locator('.srs-weighting-metric-score');
+  const seriousAdverseEventScore = seriousAdverseEventSelect
+    .locator('xpath=ancestor::tr')
+    .locator('.srs-weighting-metric-score');
+
+  await expect(totalSRS).toHaveText('0.0');
+  await adverseEventSelect.selectOption('-2');
+  await expect(adverseEventScore).toHaveText('32 points');
+  await expect(totalSRS).toHaveText('15.8');
+
+  await seriousAdverseEventSelect.selectOption('-2');
+  await expect(seriousAdverseEventScore).toHaveText('8 points');
+  await expect(totalSRS).toHaveText('19.8');
 });
 
 test('Sort by dropdown includes Enrollment Count options and reorders sites', async ({ page }) => {

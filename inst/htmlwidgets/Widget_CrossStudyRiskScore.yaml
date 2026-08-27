@@ -8,3 +8,7 @@ dependencies:
     src: 'htmlwidgets/lib/gsm.viz-2.3.0'
     script: 'index.js'
     stylesheet: 'main.css'
+  - name: srsWeighting
+    version: 1.0.0
+    src: 'report/lib'
+    script: 'srsWeighting.js'

@@ -2,7 +2,7 @@
 
 This patch release removes the log4r package dependency, because the log4r package was archived on CRAN (#262).
 
-- Add a reusable Site Risk Score weighting summary to KRI reports and the cross-study SRS widget.
+- Add a reusable, interactive Site Risk Score overview to KRI reports and the cross-study SRS widget.
 
 # gsm.kri v1.6.0
 

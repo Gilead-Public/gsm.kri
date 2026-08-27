@@ -52,6 +52,16 @@ Report_SRSWeighting <- function(dfMetrics, dfResults = NULL) {
     format(x, trim = TRUE, scientific = FALSE)
   }
 
+  serialize_number <- function(x) {
+    format(
+      x,
+      digits = 17,
+      trim = TRUE,
+      scientific = FALSE,
+      decimal.mark = "."
+    )
+  }
+
   flag_label <- function(x) {
     labels <- c(
       `-2` = "Low red (-2)",
@@ -71,6 +81,25 @@ Report_SRSWeighting <- function(dfMetrics, dfResults = NULL) {
     unique(dfWeights$WeightMax[dfWeights$MetricID == strMetricID])
   }, numeric(1))
   nTotalPossible <- sum(vMaxWeights)
+  lMetricWeights <- lapply(vMetricIDs, function(strMetricID) {
+    dfWeights[dfWeights$MetricID == strMetricID, ]
+  })
+  vDefaultFlags <- vapply(lMetricWeights, function(dfMetricWeights) {
+    if (0 %in% dfMetricWeights$Flag) {
+      return(0)
+    }
+    dfMetricWeights$Flag[which.min(dfMetricWeights$Weight)]
+  }, numeric(1))
+  vDefaultWeights <- vapply(seq_along(lMetricWeights), function(i) {
+    dfMetricWeights <- lMetricWeights[[i]]
+    dfMetricWeights$Weight[match(vDefaultFlags[[i]], dfMetricWeights$Flag)]
+  }, numeric(1))
+  nInitialPoints <- sum(vDefaultWeights)
+  strInitialSRS <- if (nTotalPossible > 0) {
+    sprintf("%.1f", nInitialPoints / nTotalPossible * 100)
+  } else {
+    "Not available"
+  }
 
   lHeader <- c(
     list(htmltools::tags$th(scope = "col", "Metric")),
@@ -79,7 +108,9 @@ Report_SRSWeighting <- function(dfMetrics, dfResults = NULL) {
     }),
     list(
       htmltools::tags$th(scope = "col", "Maximum contribution"),
-      htmltools::tags$th(scope = "col", "Share of total possible SRS")
+      htmltools::tags$th(scope = "col", "Share of total possible SRS"),
+      htmltools::tags$th(scope = "col", "Selected flag"),
+      htmltools::tags$th(scope = "col", "Metric score")
     )
   )
 
@@ -103,6 +134,18 @@ Report_SRSWeighting <- function(dfMetrics, dfResults = NULL) {
     } else {
       "Not available"
     }
+    dfMetricWeights <- lMetricWeights[[i]]
+    nDefaultFlag <- vDefaultFlags[[i]]
+    nDefaultWeight <- vDefaultWeights[[i]]
+    lFlagOptions <- lapply(seq_len(nrow(dfMetricWeights)), function(j) {
+      nFlag <- dfMetricWeights$Flag[[j]]
+      htmltools::tags$option(
+        value = serialize_number(nFlag),
+        `data-weight` = serialize_number(dfMetricWeights$Weight[[j]]),
+        selected = if (nFlag == nDefaultFlag) "" else NULL,
+        flag_label(nFlag)
+      )
+    })
 
     htmltools::tags$tr(
       htmltools::tags$th(scope = "row", metric_label(strMetricID)),
@@ -111,11 +154,25 @@ Report_SRSWeighting <- function(dfMetrics, dfResults = NULL) {
         class = "srs-weighting-maximum",
         paste(format_number(vMaxWeights[[i]]), "points")
       ),
-      htmltools::tags$td(class = "srs-weighting-share", strShare)
+      htmltools::tags$td(class = "srs-weighting-share", strShare),
+      htmltools::tags$td(
+        htmltools::tags$select(
+          class = "srs-weighting-flag-select",
+          `aria-label` = paste("Select flag for", metric_label(strMetricID)),
+          lFlagOptions
+        )
+      ),
+      htmltools::tags$td(
+        htmltools::tags$output(
+          class = "srs-weighting-metric-score",
+          `aria-live` = "polite",
+          paste(format_number(nDefaultWeight), "points")
+        )
+      )
     )
   })
 
-  htmltools::tagList(
+  lSummary <- htmltools::tagList(
     htmltools::tags$style(htmltools::HTML(
       ".srs-weighting-summary{color:#333}.srs-weighting-summary p{max-width:80rem}",
       ".srs-weighting-table-wrap{overflow-x:auto;margin:1rem 0}",
@@ -126,32 +183,73 @@ Report_SRSWeighting <- function(dfMetrics, dfResults = NULL) {
       ".srs-weighting-table tbody th{text-align:left;background:#f5f5f5}",
       ".srs-weighting-table tbody tr:nth-child(even) td{background:#fafafa}",
       ".srs-weighting-maximum,.srs-weighting-share{font-weight:bold}",
-      ".srs-weighting-not-configured{color:#666;font-style:italic}"
+      ".srs-weighting-not-configured{color:#666;font-style:italic}",
+      ".srs-weighting-total-row th{background:#e8eef5!important;color:#243b5a!important;font-size:1.1em;text-align:left!important}",
+      ".srs-weighting-total-score{font-size:1.25em}",
+      ".srs-weighting-flag-select{min-width:10rem;padding:.35rem}",
+      ".srs-weighting-metric-score{font-weight:bold;white-space:nowrap}"
     )),
     htmltools::tags$section(
       class = "srs-weighting-summary",
-      htmltools::tags$h3("How metric weighting contributes to the Site Risk Score"),
+      `data-total-possible` = serialize_number(nTotalPossible),
+      htmltools::tags$h3("Site Risk Score Overview"),
       htmltools::tags$p(paste0(
         "Each metric assigns points according to the site's flag. ",
         "The points for all metrics are added together, then divided by the ",
         "total possible points and multiplied by 100 to produce the normalized SRS."
       )),
+      htmltools::tags$p(paste0(
+        "Each metric's maximum contribution is the highest number of points that ",
+        "the metric can add to the SRS, based on its largest configured weight. ",
+        "The contribution percentage shows how much of the total possible SRS can ",
+        "come from that metric."
+      )),
       htmltools::tags$p(
-        "The maximum contribution is the largest configured weight for a metric. ",
-        "Its share shows how much that metric can contribute to the total possible SRS. ",
-        htmltools::tags$strong(
-          paste("Total possible points:", format_number(nTotalPossible))
-        )
+        "Choose a flag for each metric to see its point contribution and calculate an example SRS."
       ),
       htmltools::tags$div(
         class = "srs-weighting-table-wrap",
         htmltools::tags$table(
           class = "srs-weighting-table",
           htmltools::tags$caption("Metric weights used in the Site Risk Score"),
-          htmltools::tags$thead(htmltools::tags$tr(lHeader)),
+          htmltools::tags$thead(
+            htmltools::tags$tr(
+              class = "srs-weighting-total-row",
+              htmltools::tags$th(
+                colspan = length(lHeader),
+                "Example SRS: ",
+                htmltools::tags$output(
+                  class = "srs-weighting-total-score",
+                  `aria-live` = "polite",
+                  strInitialSRS
+                ),
+                " = ",
+                htmltools::tags$span(
+                  class = "srs-weighting-selected-points",
+                  format_number(nInitialPoints)
+                ),
+                " selected points / ",
+                format_number(nTotalPossible),
+                " total possible points x 100"
+              )
+            ),
+            htmltools::tags$tr(lHeader)
+          ),
           htmltools::tags$tbody(lRows)
         )
       )
+    )
+  )
+
+  htmltools::attachDependencies(
+    lSummary,
+    htmltools::htmlDependency(
+      name = "srs-weighting",
+      version = "1.0.0",
+      src = c(
+        file = system.file("report", "lib", package = "gsm.kri")
+      ),
+      script = "srsWeighting.js"
     )
   )
 }
