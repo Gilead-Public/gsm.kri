@@ -166,6 +166,7 @@ function renderCrossStudyRiskScoreTable(el, input) {
     // Set initial HTML
     el.innerHTML = html;
     setupTabs(el);
+    setupSRSWeightingExamples(el);
     
     // Flag to track if we've set the unified header
     let headerSet = false;

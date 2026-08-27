@@ -22,32 +22,21 @@ rates compared to other sites), a higher *weight* could be assigned to
 the AE KRI flag than the query rate KRI flag. The current default
 weights are generated from metric metadata below.
 
-#### How metric weighting contributes to the Site Risk Score
+#### Site Risk Score Overview
 
 Each metric assigns points according to the site's flag. The points for
 all metrics are added together, then divided by the total possible
 points and multiplied by 100 to produce the normalized SRS.
 
-The maximum contribution is the largest configured weight for a metric.
-Its share shows how much that metric can contribute to the total
-possible SRS. **Total possible points: 202**
+Each metric's maximum contribution is the highest number of points that
+the metric can add to the SRS, based on its largest configured weight.
+The contribution percentage shows how much of the total possible SRS can
+come from that metric.
 
-| Metric | Low red (-2) | Low amber (-1) | Not flagged (0) | High amber (+1) | High red (+2) | Maximum contribution | Share of total possible SRS |
-|----|----|----|----|----|----|----|----|
-| Adverse Event Rate | 32 | 16 | 0 | 1 | 2 | 32 points | 15.8% |
-| Serious Adverse Event Rate | 8 | 0 | 0 | 4 | 8 | 8 points | 4.0% |
-| Non-Important Protocol Deviation Rate | 8 | 4 | 0 | 8 | 16 | 16 points | 7.9% |
-| Important Protocol Deviation Rate | 0 | 0 | 0 | 16 | 32 | 32 points | 15.8% |
-| Grade 3+ Lab Abnormality Rate | Not configured | Not configured | 0 | 1 | 2 | 2 points | 1.0% |
-| Study Discontinuation Rate | Not configured | Not configured | 0 | 16 | 32 | 32 points | 15.8% |
-| Treatment Discontinuation Rate | Not configured | Not configured | 0 | 16 | 32 | 32 points | 15.8% |
-| Query Rate | Not configured | Not configured | 0 | 1 | 2 | 2 points | 1.0% |
-| Delayed Query Resolution Rate | Not configured | Not configured | 0 | 1 | 2 | 2 points | 1.0% |
-| Delayed Data Entry Rate | Not configured | Not configured | 0 | 1 | 2 | 2 points | 1.0% |
-| Data Change Rate | Not configured | Not configured | 0 | 1 | 2 | 2 points | 1.0% |
-| Screen Failure Rate | 0 | 0 | 0 | 8 | 16 | 16 points | 7.9% |
-| Ineligibility | Not configured | Not configured | 0 | 8 | 16 | 16 points | 7.9% |
-| Premature Death Rate | Not configured | Not configured | 0 | 4 | 8 | 8 points | 4.0% |
+Choose a flag for each metric to see its point contribution and
+calculate an example SRS.
+
+[TABLE]
 
 Metric weights used in the Site Risk Score {.table .srs-weighting-table}
 
