@@ -32,13 +32,13 @@ dfGroups <- tibble::tibble(
 # expects) so the four "Criteria/..." tabs carry real categories/series
 # instead of rendering empty (#286).
 dfEXCLUSION <- tibble::tribble(
-  ~studyid  , ~invid   , ~country , ~subjid         , ~Source           , ~ietestcd_concat , ~dvdtm                , ~eligibility_criteria             ,
-  "Study01" , "Site01" , "US"     , "Participant01" , "Eligibility IPD" , "I001,E010"      , "2025-01-01 00:00:00" , "Inclusion/Exclusion description" ,
-  "Study01" , "Site01" , "US"     , "Participant02" , "EDC"             , "I002"           , "2025-01-02 00:00:00" , "Inclusion/Exclusion description" ,
-  "Study01" , "Site01" , "US"     , "Participant03" , "Neither"         , NA_character_    , "2025-01-03 00:00:00" , NA_character_                     ,
-  "Study01" , "Site02" , "CA"     , "Participant04" , "EDC"             , "E010,E020"      , "2025-01-04 00:00:00" , "Inclusion/Exclusion description" ,
-  "Study01" , "Site02" , "CA"     , "Participant05" , "Eligibility IPD" , "I001"           , "2025-01-05 00:00:00" , "Inclusion/Exclusion description" ,
-  "Study01" , "Site02" , "CA"     , "Participant06" , "Neither"         , NA_character_    , "2025-01-06 00:00:00" , NA_character_
+  ~studyid, ~invid, ~country, ~subjid, ~Source, ~ietestcd_concat, ~dvdtm, ~eligibility_criteria,
+  "Study01", "Site01", "US", "Participant01", "Eligibility IPD", "I001,E010", "2025-01-01 00:00:00", "Inclusion/Exclusion description",
+  "Study01", "Site01", "US", "Participant02", "EDC", "I002", "2025-01-02 00:00:00", "Inclusion/Exclusion description",
+  "Study01", "Site01", "US", "Participant03", "Neither", NA_character_, "2025-01-03 00:00:00", NA_character_,
+  "Study01", "Site02", "CA", "Participant04", "EDC", "E010,E020", "2025-01-04 00:00:00", "Inclusion/Exclusion description",
+  "Study01", "Site02", "CA", "Participant05", "Eligibility IPD", "I001", "2025-01-05 00:00:00", "Inclusion/Exclusion description",
+  "Study01", "Site02", "CA", "Participant06", "Neither", NA_character_, "2025-01-06 00:00:00", NA_character_
 )
 lListings <- list(
   IE_num = dfEXCLUSION %>% dplyr::filter(Source != "Neither"),
