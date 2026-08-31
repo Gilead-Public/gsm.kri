@@ -1,6 +1,6 @@
 # Changelog
 
-## gsm.kri 2.0.0
+## gsm.kri (development version)
 
 - The legacy widget wrappers (`Widget_BarChart`, `Widget_ScatterPlot`,
   `Widget_TimeSeries`, `Widget_GroupOverview`), their Shiny bindings,
@@ -16,15 +16,17 @@
   instead of the package-local `Widget_PrematureDeathBucketBar()` /
   `Widget_PrematureDeathReasonBar()`
   ([\#288](https://github.com/Gilead-Public/gsm.kri/issues/288)).
-  **Breaking:** those two widgets and their four Shiny bindings
-  (`*Output()` / `render*()`) are removed with no replacement in
-  gsm.kri; call
+  **Breaking (development only):** those two widgets and their four
+  Shiny bindings (`*Output()` / `render*()`) are removed with no
+  replacement in gsm.kri; call
   [`gsm.vizr::bars()`](https://gilead-public.github.io/gsm.vizr/reference/bars.html)
   directly with
   [`pd_BucketBarSpec()`](https://gilead-public.github.io/gsm.kri/dev/reference/pd_BucketBarSpec.md)
   /
   [`pd_ReasonBarSpec()`](https://gilead-public.github.io/gsm.kri/dev/reference/pd_ReasonBarSpec.md).
-  The tooltip formatters move onto the spec builders as
+  They were added after v1.6.1 and never shipped in a release, so no
+  released API is affected. The tooltip formatters move onto the spec
+  builders as
   [`gsm.vizr::js_hook()`](https://gilead-public.github.io/gsm.vizr/reference/js_hook.html)s,
   and the `na = "string"` serialization workaround for a missing
   `OuterGroupID` is gone — gsm.vizr serializes with `na = "null"`, so
