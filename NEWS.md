@@ -1,4 +1,4 @@
-# gsm.kri 2.0.0
+# gsm.kri (development version)
 
 - The legacy widget wrappers (`Widget_BarChart`, `Widget_ScatterPlot`, `Widget_TimeSeries`,
   `Widget_GroupOverview`), their Shiny bindings, `MakeChartConfig()`, and the shared
@@ -8,10 +8,11 @@
   `gsm.vizr::html_dependency_gsm_viz()`.
 - The Premature Deaths bucket and reason barcharts now render through
   `gsm.vizr::bars()` instead of the package-local `Widget_PrematureDeathBucketBar()` /
-  `Widget_PrematureDeathReasonBar()` (#288). **Breaking:** those two widgets and their
-  four Shiny bindings (`*Output()` / `render*()`) are removed with no replacement in
-  gsm.kri; call `gsm.vizr::bars()` directly with `pd_BucketBarSpec()` /
-  `pd_ReasonBarSpec()`. The tooltip formatters move onto the spec builders as
+  `Widget_PrematureDeathReasonBar()` (#288). **Breaking (development only):** those two
+  widgets and their four Shiny bindings (`*Output()` / `render*()`) are removed with no
+  replacement in gsm.kri; call `gsm.vizr::bars()` directly with `pd_BucketBarSpec()` /
+  `pd_ReasonBarSpec()`. They were added after v1.6.1 and never shipped in a release, so
+  no released API is affected. The tooltip formatters move onto the spec builders as
   `gsm.vizr::js_hook()`s, and the `na = "string"` serialization workaround for a missing
   `OuterGroupID` is gone — gsm.vizr serializes with `na = "null"`, so client JS now reads
   a real `null` instead of the literal string `"NA"`.
