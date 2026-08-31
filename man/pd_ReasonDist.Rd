@@ -16,11 +16,11 @@ optionally `deathcls`.}
 tooltip line. When `NULL` (default) that line is omitted. Default: `NULL`.}
 }
 \value{
-A `Widget_PrematureDeathReasonBar` htmlwidget.
+A `bars` htmlwidget (see [gsm.vizr::bars()]).
 }
 \description{
 `r lifecycle::badge("experimental")`
 
-Horizontal bar of `deathcls` counts among premature deaths, rendered via the
-`gsm.viz` reason widget.
+Horizontal bar of `deathcls` counts among premature deaths, rendered via
+[gsm.vizr::bars()].
 }

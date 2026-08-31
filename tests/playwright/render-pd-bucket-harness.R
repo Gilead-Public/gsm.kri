@@ -12,15 +12,18 @@ dfC <- tibble::tibble(
   ),
   death_dy = c(10, 40, NA, NA, 20, NA, NA, NA)
 )
-study <- Widget_PrematureDeathBucketBar(
-  pd_BucketRows(dfC, 90, "studyid"),
-  pd_BucketBarSpec(90, "Study"),
-  list(chartId = "pd-study-buckets", level = "study")
+# Widget_PrematureDeathBucketBar() is gone (#288); pd_BucketBarSpec()/
+# pd_BucketRows() are unchanged, so the same rows/spec now go straight to
+# gsm.vizr::bars(), mirroring the report chunks in Report_PrematureDeaths.Rmd.
+study <- gsm.vizr::bars(
+  data = pd_BucketRows(dfC, 90, "studyid"),
+  spec = pd_BucketBarSpec(90, "Study"),
+  metadata = list(chartId = "pd-study-buckets", level = "study")
 )
-site <- Widget_PrematureDeathBucketBar(
-  pd_BucketRows(dfC, 90, "invid", "country"),
-  pd_BucketBarSpec(90, "Site"),
-  list(chartId = "pd-site-buckets", level = "site")
+site <- gsm.vizr::bars(
+  data = pd_BucketRows(dfC, 90, "invid", "country"),
+  spec = pd_BucketBarSpec(90, "Site"),
+  metadata = list(chartId = "pd-site-buckets", level = "site")
 )
 htmltools::save_html(
   htmltools::tagList(

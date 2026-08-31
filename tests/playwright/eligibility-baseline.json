@@ -1,0 +1,248 @@
+{
+  "tabOrder": [
+    {
+      "label": "Site",
+      "default": true
+    },
+    {
+      "label": "Site (by %)",
+      "default": false
+    },
+    {
+      "label": "Country",
+      "default": false
+    },
+    {
+      "label": "Source",
+      "default": false
+    },
+    {
+      "label": "Criteria/Site (EDC I/E data only)",
+      "default": false
+    },
+    {
+      "label": "Criteria/Country (EDC I/E data only)",
+      "default": false
+    },
+    {
+      "label": "Site/Criteria (EDC I/E data only)",
+      "default": false
+    },
+    {
+      "label": "Country/Criteria (EDC I/E data only)",
+      "default": false
+    }
+  ],
+  "charts": [
+    {
+      "sectionId": "site",
+      "tabLabel": "Site",
+      "found": true,
+      "renderer": "plotly",
+      "title": "Participant Count by Site",
+      "orientation": "horizontal",
+      "categories": [
+        "Site02",
+        "Site01"
+      ],
+      "series": [
+        {
+          "name": "No Eligibility Risk",
+          "color": "rgba(0,191,196,1)"
+        },
+        {
+          "name": "Ineligible",
+          "color": "rgba(255,88,89,1)"
+        }
+      ],
+      "stacked": true
+    },
+    {
+      "sectionId": "site-by",
+      "tabLabel": "Site (by %)",
+      "found": true,
+      "renderer": "plotly",
+      "title": "Participant Percentage by Site",
+      "orientation": "horizontal",
+      "categories": [
+        "Site02",
+        "Site01"
+      ],
+      "series": [
+        {
+          "name": "No Eligibility Risk",
+          "color": "rgba(0,191,196,1)"
+        },
+        {
+          "name": "Ineligible",
+          "color": "rgba(255,88,89,1)"
+        }
+      ],
+      "stacked": true
+    },
+    {
+      "sectionId": "country",
+      "tabLabel": "Country",
+      "found": true,
+      "renderer": "plotly",
+      "title": "Participant Count by Country",
+      "orientation": "horizontal",
+      "categories": [
+        "US",
+        "CA"
+      ],
+      "series": [
+        {
+          "name": "No Eligibility Risk",
+          "color": "rgba(0,191,196,1)"
+        },
+        {
+          "name": "Ineligible",
+          "color": "rgba(255,88,89,1)"
+        }
+      ],
+      "stacked": true
+    },
+    {
+      "sectionId": "source",
+      "tabLabel": "Source",
+      "found": true,
+      "renderer": "plotly",
+      "title": "Participant Count by Category/Source",
+      "orientation": "horizontal",
+      "categories": [
+        "EDC",
+        "Eligibility IPD"
+      ],
+      "series": [
+        {
+          "name": "EDC",
+          "color": "rgba(248,118,109,1)"
+        },
+        {
+          "name": "Eligibility IPD",
+          "color": "rgba(0,191,196,1)"
+        }
+      ],
+      "stacked": true
+    },
+    {
+      "sectionId": "criteriasite-edc-ie-data-only",
+      "tabLabel": "Criteria/Site (EDC I/E data only)",
+      "found": true,
+      "renderer": "plotly",
+      "title": "Criteria by Site",
+      "orientation": "horizontal",
+      "categories": [
+        "E010",
+        "E020",
+        "I001",
+        "I002"
+      ],
+      "series": [
+        {
+          "name": "Site01",
+          "color": "rgba(248,118,109,1)"
+        },
+        {
+          "name": "Site02",
+          "color": "rgba(0,191,196,1)"
+        }
+      ],
+      "stacked": true
+    },
+    {
+      "sectionId": "criteriacountry-edc-ie-data-only",
+      "tabLabel": "Criteria/Country (EDC I/E data only)",
+      "found": true,
+      "renderer": "plotly",
+      "title": "Criteria by Country",
+      "orientation": "horizontal",
+      "categories": [
+        "E010",
+        "E020",
+        "I001",
+        "I002"
+      ],
+      "series": [
+        {
+          "name": "CA",
+          "color": "rgba(248,118,109,1)"
+        },
+        {
+          "name": "US",
+          "color": "rgba(0,191,196,1)"
+        }
+      ],
+      "stacked": true
+    },
+    {
+      "sectionId": "sitecriteria-edc-ie-data-only",
+      "tabLabel": "Site/Criteria (EDC I/E data only)",
+      "found": true,
+      "renderer": "plotly",
+      "title": "Site by Criteria",
+      "orientation": "horizontal",
+      "categories": [
+        "Site01",
+        "Site02"
+      ],
+      "series": [
+        {
+          "name": "E010",
+          "color": "rgba(248,118,109,1)"
+        },
+        {
+          "name": "E020",
+          "color": "rgba(124,174,0,1)"
+        },
+        {
+          "name": "I001",
+          "color": "rgba(0,191,196,1)"
+        },
+        {
+          "name": "I002",
+          "color": "rgba(199,124,255,1)"
+        }
+      ],
+      "stacked": true
+    },
+    {
+      "sectionId": "countrycriteria-edc-ie-data-only",
+      "tabLabel": "Country/Criteria (EDC I/E data only)",
+      "found": true,
+      "renderer": "plotly",
+      "title": "Country by Criteria",
+      "orientation": "horizontal",
+      "categories": [
+        "CA",
+        "US"
+      ],
+      "series": [
+        {
+          "name": "E010",
+          "color": "rgba(248,118,109,1)"
+        },
+        {
+          "name": "E020",
+          "color": "rgba(124,174,0,1)"
+        },
+        {
+          "name": "I001",
+          "color": "rgba(0,191,196,1)"
+        },
+        {
+          "name": "I002",
+          "color": "rgba(199,124,255,1)"
+        }
+      ],
+      "stacked": true
+    }
+  ],
+  "timeSeriesChart": {
+    "present": true,
+    "isCanvas": true
+  },
+  "footnotes": [],
+  "consoleErrors": 0
+}

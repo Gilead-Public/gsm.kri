@@ -96,3 +96,28 @@ test_that("pd_BucketBarSpec drops the zoom caption when zoom is off (#264)", {
   spec <- pd_BucketBarSpec(90, "Site", zoom = list(enabled = FALSE, mode = "x"))
   expect_null(spec$labels)
 })
+
+test_that("pd_BucketBarSpec attaches the tooltip formatter as a js_hook with no 'NA' string-compare {#288}", {
+  spec <- pd_BucketBarSpec(90, strGroupLabel = "Site")
+  expect_s3_class(spec$tooltip$formatter, "JS_EVAL")
+  # gsm.vizr serializes with na = "null" (utils-serialize.R), so a missing
+  # OuterGroupID (the study/country charts) arrives client-side as JS null, not
+  # the literal "NA" string the old widget JS guarded against (na = "string").
+  # paste()'d to a single string so a still-missing formatter (character(0))
+  # fails the s3_class check above instead of a length-0 comparison here.
+  formatter_code <- paste(as.character(spec$tooltip$formatter), collapse = "\n")
+  expect_false(grepl("'NA'", formatter_code, fixed = TRUE))
+})
+
+test_that("gsm.vizr::bars() accepts pd_BucketBarSpec() and serializes the tooltip hook {#288}", {
+  spec <- pd_BucketBarSpec(90, strGroupLabel = "Site")
+  rows <- pd_BucketRows(make_classified(), 90, strGroupCol = "invid")
+  widget <- gsm.vizr::bars(
+    rows,
+    spec,
+    metadata = list(chartId = "pd-site-buckets")
+  )
+  expect_s3_class(widget, "htmlwidget")
+  expect_false(is.null(widget$x$spec))
+  expect_true(grepl("tooltip.formatter", widget$x$jsHooks, fixed = TRUE))
+})

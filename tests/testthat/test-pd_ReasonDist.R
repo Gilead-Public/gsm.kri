@@ -10,13 +10,13 @@ dfDeath_full <- tibble::tibble(
 )
 dfDeath_degraded <- dplyr::select(dfDeath_full, subjid, death_dy)
 
-# The reason chart is now a gsm.viz widget (#264); its reason/n/hover content is
+# The reason chart is a gsm.vizr::bars() widget; its reason/n/hover content is
 # read back off the serialized widget data instead of a plotly build.
 reason_widget_data <- function(w) jsonlite::fromJSON(w$x$data)
 
 test_that("pd_ReasonDist returns a reason-bar htmlwidget {#264}", {
   w <- pd_ReasonDist(dfDeath_full, nWindowDays = 90)
-  expect_s3_class(w, c("Widget_PrematureDeathReasonBar", "htmlwidget"))
+  expect_s3_class(w, c("bars", "htmlwidget"))
 })
 
 test_that("pd_ReasonDist counts only premature deaths {#223}", {
@@ -203,7 +203,7 @@ test_that("pd_ReasonBar returns a reason-bar htmlwidget carrying the slice rows 
     "__ALL__"
   ]]
   w <- pd_ReasonBar(slice)
-  expect_s3_class(w, c("Widget_PrematureDeathReasonBar", "htmlwidget"))
+  expect_s3_class(w, c("bars", "htmlwidget"))
   data_back <- reason_widget_data(w)
   expect_setequal(data_back$n, slice$n)
   expect_setequal(data_back$hover, slice$hover)
@@ -240,6 +240,19 @@ test_that("pd_ReasonByCountry __ALL__ hover equals study chart hover (dedup lock
   all_cd <- reason_widget_data(pd_ReasonBar(res[["__ALL__"]]))$hover
 
   expect_equal(sort(study_cd), sort(all_cd))
+})
+
+test_that("pd_ReasonSlice/pd_ReasonRows stay 0-row on an empty cohort instead of erroring {#288}", {
+  # Regression: an empty group used to leave hover at length 1 (paste0()
+  # recycles its scalar literals) while reason/n stayed length 0, so
+  # pd_ReasonRows's data.frame() raised "differing number of rows".
+  empty_cohort <- dfDeath_full[0, ]
+  empty_cohort$death_reason <- character(0)
+  slice <- pd_ReasonSlice(empty_cohort)
+  expect_length(slice$hover, 0)
+  rows <- pd_ReasonRows(slice)
+  expect_equal(nrow(rows), 0)
+  expect_named(rows, c("reason", "n", "hover"))
 })
 
 test_that("pd_ReasonByCountry skips the enrolled line for a country absent from the lookup {#254}", {
