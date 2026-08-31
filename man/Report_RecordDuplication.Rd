@@ -11,6 +11,7 @@ Report_RecordDuplication(
   vMeasuresVS = NULL,
   vMeasuresLB = NULL,
   vPrioritizedMeasures = NULL,
+  nWindowLength = 3,
   strGroupCol = "invid",
   strGroupLevel = "Site",
   dfReportingResults = NULL,
@@ -35,6 +36,9 @@ in `lbtstnam` column.}
 \item{vPrioritizedMeasures}{`character` Measures with KRI metrics configured (shown first).
 If NULL and `dfMeasureMetrics` is derived from installed YAMLs, defaults to those measures.}
 
+\item{nWindowLength}{`numeric` Rolling window length *W* used to detect consecutive
+repeats. Should match the `WindowLength` configured on the metric YAMLs. Default: `3`.}
+
 \item{strGroupCol}{`character` Column in `dfMappedSUBJ` for grouping. Default: `"invid"`.}
 
 \item{strGroupLevel}{`character` Group level label. Default: `"Site"`.}
@@ -51,9 +55,13 @@ A [Widget_RecordDuplication()] htmlwidget.
 \description{
 `r lifecycle::badge("experimental")`
 
-Convenience function that runs [Flag_Duplicates()] across multiple measures and
-produces a [Widget_RecordDuplication()] htmlwidget. Supports both wide-format
+Convenience function that runs [Detect_ConsecutiveRepeats()] across multiple measures
+and produces a [Widget_RecordDuplication()] htmlwidget. Supports both wide-format
 vitals data and long-format lab data.
+
+The report uses the same rolling-window detection as the [Count_Duplicates()] metric
+workflow, so a run highlighted here is exactly a run that contributes repeat windows to
+the metric.
 }
 \examples{
 \dontrun{

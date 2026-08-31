@@ -2,10 +2,10 @@ meta:
   Type: Analysis
   ID: kri0017
   GroupLevel: Site
-  Abbreviation: VS
-  Metric: Duplicate Systolic BP Record Rate
-  Numerator: Duplicate Systolic BP Records
-  Denominator: Total Systolic BP Records
+  Abbreviation: RptSBP
+  Metric: Repeat Measurement Rate - Systolic Blood Pressure
+  Numerator: Rolling Windows with Identical Systolic Blood Pressure Values
+  Denominator: Total Evaluable Systolic Blood Pressure Windows
   Model: Normal Approximation
   Score: Adjusted Z-Score
   AnalysisType: binary
@@ -16,6 +16,7 @@ meta:
   AccrualMetric: Numerator
   ValueCol: sysbp
   DateCol: vs_dt
+  WindowLength: 3
 spec:
   Mapped_SUBJ:
     subjid:
@@ -44,25 +45,27 @@ steps:
     params:
       strThreshold: Flag
       bSort: false
-  - output: Temp_Measure_Flagged
-    name: gsm.kri::Flag_Duplicates
+  - output: Temp_Measure_Windows
+    name: gsm.kri::Count_Duplicates
     params:
       df: Mapped_VS
       strSubjectCol: subjid
       strDateCol: DateCol
       strValueCol: ValueCol
+      nWindowLength: WindowLength
   - output: Analysis_Input
     name: gsm.core::Input_Rate
     params:
       dfSubjects: Mapped_SUBJ
-      dfNumerator: Temp_Measure_Flagged
-      dfDenominator: Temp_Measure_Flagged
+      dfNumerator: Temp_Measure_Windows
+      dfDenominator: Temp_Measure_Windows
       strSubjectCol: subjid
       strGroupCol: invid
       strGroupLevel: GroupLevel
       strNumeratorMethod: Sum
-      strNumeratorCol: is_duplicate
-      strDenominatorMethod: Count
+      strNumeratorCol: IsRepeatWindow
+      strDenominatorMethod: Sum
+      strDenominatorCol: IsEvaluableWindow
   - output: Analysis_Transformed
     name: gsm.core::Transform_Rate
     params:

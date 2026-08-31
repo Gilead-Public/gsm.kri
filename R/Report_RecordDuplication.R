@@ -3,9 +3,13 @@
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' Convenience function that runs [Flag_Duplicates()] across multiple measures and
-#' produces a [Widget_RecordDuplication()] htmlwidget. Supports both wide-format
+#' Convenience function that runs [Detect_ConsecutiveRepeats()] across multiple measures
+#' and produces a [Widget_RecordDuplication()] htmlwidget. Supports both wide-format
 #' vitals data and long-format lab data.
+#'
+#' The report uses the same rolling-window detection as the [Count_Duplicates()] metric
+#' workflow, so a run highlighted here is exactly a run that contributes repeat windows to
+#' the metric.
 #'
 #' @param dfMappedVS `data.frame` Optional. Wide-format vitals data with measurement
 #'   columns (e.g., weight, sysbp, diabp).
@@ -18,6 +22,8 @@
 #'   in `lbtstnam` column.
 #' @param vPrioritizedMeasures `character` Measures with KRI metrics configured (shown first).
 #'   If NULL and `dfMeasureMetrics` is derived from installed YAMLs, defaults to those measures.
+#' @param nWindowLength `numeric` Rolling window length *W* used to detect consecutive
+#'   repeats. Should match the `WindowLength` configured on the metric YAMLs. Default: `3`.
 #' @param strGroupCol `character` Column in `dfMappedSUBJ` for grouping. Default: `"invid"`.
 #' @param strGroupLevel `character` Group level label. Default: `"Site"`.
 #' @param dfReportingResults `data.frame` Optional. Standard reportingResults data with columns:
@@ -44,6 +50,7 @@ Report_RecordDuplication <- function(
   vMeasuresVS = NULL,
   vMeasuresLB = NULL,
   vPrioritizedMeasures = NULL,
+  nWindowLength = 3,
   strGroupCol = "invid",
   strGroupLevel = "Site",
   dfReportingResults = NULL,
@@ -63,8 +70,11 @@ Report_RecordDuplication <- function(
     date = as.Date(character(0)),
     measure = character(0),
     value = numeric(0),
-    is_duplicate = integer(0),
-    is_source = integer(0),
+    RunID = integer(0),
+    RunLength = integer(0),
+    IsRepeatRun = integer(0),
+    IsEvaluableWindow = integer(0),
+    IsRepeatWindow = integer(0),
     stringsAsFactors = FALSE
   )
 
@@ -79,11 +89,12 @@ Report_RecordDuplication <- function(
 
     for (measure in vMeasuresVS) {
       if (!(measure %in% names(dfMappedVS))) next
-      flagged <- Flag_Duplicates(
+      flagged <- Detect_ConsecutiveRepeats(
         df = dfMappedVS,
         strSubjectCol = "subjid",
         strDateCol = "vs_dt",
-        strValueCol = measure
+        strValueCol = measure,
+        nWindowLength = nWindowLength
       )
       if (nrow(flagged) > 0) {
         flagged_out <- data.frame(
@@ -91,8 +102,11 @@ Report_RecordDuplication <- function(
           date = flagged$vs_dt,
           measure = measure,
           value = flagged[[measure]],
-          is_duplicate = flagged$is_duplicate,
-          is_source = flagged$is_source,
+          RunID = flagged$RunID,
+          RunLength = flagged$RunLength,
+          IsRepeatRun = flagged$IsRepeatRun,
+          IsEvaluableWindow = flagged$IsEvaluableWindow,
+          IsRepeatWindow = flagged$IsRepeatWindow,
           stringsAsFactors = FALSE
         )
         flagged_out <- merge(flagged_out, dfSubjGroup, by = "subjid", all.x = TRUE)
@@ -111,13 +125,14 @@ Report_RecordDuplication <- function(
 
     if (!is.null(vMeasuresLB)) {
       for (measure in vMeasuresLB) {
-        flagged <- Flag_Duplicates(
+        flagged <- Detect_ConsecutiveRepeats(
           df = dfMappedLB,
           strSubjectCol = "subjid",
           strDateCol = "lb_dt",
           strValueCol = "rptresn",
           strMeasureCol = "lbtstnam",
-          strMeasureVal = measure
+          strMeasureVal = measure,
+          nWindowLength = nWindowLength
         )
         if (nrow(flagged) > 0) {
           flagged_out <- data.frame(
@@ -125,8 +140,11 @@ Report_RecordDuplication <- function(
             date = flagged$lb_dt,
             measure = measure,
             value = flagged$rptresn,
-            is_duplicate = flagged$is_duplicate,
-            is_source = flagged$is_source,
+            RunID = flagged$RunID,
+            RunLength = flagged$RunLength,
+            IsRepeatRun = flagged$IsRepeatRun,
+            IsEvaluableWindow = flagged$IsEvaluableWindow,
+            IsRepeatWindow = flagged$IsRepeatWindow,
             stringsAsFactors = FALSE
           )
           flagged_out <- merge(flagged_out, dfSubjGroup, by = "subjid", all.x = TRUE)
@@ -162,6 +180,7 @@ Report_RecordDuplication <- function(
     dfReportingMetrics = dfReportingMetrics,
     dfMeasureMetrics = dfMeasureMetrics,
     strGroupLevel = strGroupLevel,
-    vPrioritizedMeasures = vPrioritizedMeasures
+    vPrioritizedMeasures = vPrioritizedMeasures,
+    nWindowLength = nWindowLength
   )
 }

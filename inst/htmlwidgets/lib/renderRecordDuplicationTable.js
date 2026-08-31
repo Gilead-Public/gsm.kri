@@ -13,6 +13,15 @@ function renderRecordDuplicationTable(el, input) {
 
     const groupLevel = input.strGroupLevel || 'Site';
     const prioritized = Array.isArray(input.vPrioritizedMeasures) ? input.vPrioritizedMeasures : [];
+    const windowLength = Number(input.nWindowLength) || 3;
+
+    // Repeat window rate = repeat windows / evaluable windows, matching Count_Duplicates().
+    // Rows outside an evaluable window (the first W-1 per subject) contribute to neither.
+    function windowRate(rows) {
+        const den = rows.reduce((acc, d) => acc + (Number(d.IsEvaluableWindow) || 0), 0);
+        const num = rows.reduce((acc, d) => acc + (Number(d.IsRepeatWindow) || 0), 0);
+        return { num: num, den: den, pct: den > 0 ? (num / den * 100).toFixed(1) : '0.0' };
+    }
 
     // Parse metric inputs
     const reportingResults = Array.isArray(input.dfReportingResults) ? input.dfReportingResults : [];
@@ -128,9 +137,7 @@ function renderRecordDuplicationTable(el, input) {
         const measureData = data.filter(d => d.measure === measure);
         const isPrioritized = prioritized.includes(measure);
         const hasMetric = !!measureToMetricID[measure];
-        const totalRecords = measureData.length;
-        const dupRecords = measureData.filter(d => d.is_duplicate === 1).length;
-        const dupPct = totalRecords > 0 ? (dupRecords / totalRecords * 100).toFixed(1) : '0.0';
+        const measureRate = windowRate(measureData);
 
         const priLabel = isPrioritized ? ' <span style="background:#ffc107; color:#000; padding:1px 5px; border-radius:3px; font-size:11px; font-weight:600;">KRI</span>' : '';
 
@@ -158,7 +165,7 @@ function renderRecordDuplicationTable(el, input) {
         html += '<div class="rd-measure-section" data-measure="' + measure + '" data-has-metric="' + hasMetric + '">';
         html += '<div class="rd-measure-header" data-idx="m' + mIdx + '" style="background:#343a40; color:#fff; padding:10px 12px; cursor:pointer; border-radius:4px 4px 0 0; margin-top:10px; display:flex; justify-content:space-between; align-items:center;">';
         html += '<span style="font-weight:600;display:flex;align-items:center;gap:4px;">▼ ' + measure + priLabel + measureFlagSummary + '</span>';
-        html += '<span style="font-size:12px;">' + dupPct + '% duplicate (' + dupRecords + '/' + totalRecords + ' records)</span>';
+        html += '<span style="font-size:12px;">' + measureRate.pct + '% repeat (' + measureRate.num + '/' + measureRate.den + ' windows, W=' + windowLength + ')</span>';
         html += '</div>';
         html += '<div class="rd-measure-body" id="rd-body-m' + mIdx + '" style="display:block; border:1px solid #dee2e6; border-top:none; border-radius:0 0 4px 4px;">';
 
@@ -167,8 +174,7 @@ function renderRecordDuplicationTable(el, input) {
 
         groups.forEach((group, gIdx) => {
             const groupData = measureData.filter(d => d.GroupID === group);
-            const groupDups = groupData.filter(d => d.is_duplicate === 1).length;
-            const groupPct = groupData.length > 0 ? (groupDups / groupData.length * 100).toFixed(1) : '0.0';
+            const groupRate = windowRate(groupData);
 
             const metricID = measureToMetricID[measure];
             const metricResult = metricID ? metricResultLookup[metricID + '|' + group] : null;
@@ -177,7 +183,7 @@ function renderRecordDuplicationTable(el, input) {
             html += '<div class="rd-group-section" data-group="' + group + '">';
             html += '<div class="rd-group-header" data-idx="g' + mIdx + '-' + gIdx + '" style="background:#e9ecef; padding:8px 12px 8px 24px; cursor:pointer; border-bottom:1px solid #dee2e6; display:flex; justify-content:space-between; align-items:center;">';
             html += '<span style="font-weight:500;">▼ ' + groupLevel + ': ' + group + '</span>';
-            html += '<span style="display:flex;align-items:center;font-size:12px;color:#6c757d;">' + groupPct + '% dup (' + groupDups + '/' + groupData.length + ')' + metricBadge + '</span>';
+            html += '<span style="display:flex;align-items:center;font-size:12px;color:#6c757d;">' + groupRate.pct + '% repeat (' + groupRate.num + '/' + groupRate.den + ')' + metricBadge + '</span>';
             html += '</div>';
             html += '<div class="rd-group-body" id="rd-body-g' + mIdx + '-' + gIdx + '" style="display:block;">';
 
@@ -189,9 +195,8 @@ function renderRecordDuplicationTable(el, input) {
                     .filter(d => d.subjid === subj)
                     .sort((a, b) => (a.date || '').localeCompare(b.date || ''));
 
-                const subjDups = subjData.filter(d => d.is_duplicate === 1).length;
-                const subjPct = subjData.length > 0 ? (subjDups / subjData.length * 100).toFixed(1) : '0.0';
-                const dupColor = subjDups > 0 ? '#dc3545' : '#6c757d';
+                const subjRate = windowRate(subjData);
+                const dupColor = subjRate.num > 0 ? '#dc3545' : '#6c757d';
 
                 // Pre-compute baseline and previous-visit deltas
                 const baseVal = subjData.length > 0 ? subjData[0].value : null;
@@ -202,12 +207,11 @@ function renderRecordDuplicationTable(el, input) {
                 html += '<div style="display:flex; gap:3px; flex-wrap:wrap; flex:1;">';
 
                 subjData.forEach((row, rIdx) => {
-                    const isDup = row.is_duplicate === 1;
-                    const isSrc = !isDup && row.is_source === 1;
-                    const cellBg     = isDup ? '#f8d7da' : '#e8f5e9';
-                    const cellBorder = isDup ? '#f5c6cb' : '#c3e6cb';
-                    const cellColor  = isDup ? '#721c24' : (isSrc ? '#c0392b' : '#155724');
-                    const fontWeight = isDup ? '600' : '400';
+                    const inRun = Number(row.IsRepeatRun) === 1;
+                    const cellBg     = inRun ? '#f8d7da' : '#e8f5e9';
+                    const cellBorder = inRun ? '#f5c6cb' : '#c3e6cb';
+                    const cellColor  = inRun ? '#721c24' : '#155724';
+                    const fontWeight = inRun ? '600' : '400';
 
                     const rawVal  = row.value;
                     const prevVal = rIdx > 0 ? subjData[rIdx - 1].value : null;
@@ -218,7 +222,8 @@ function renderRecordDuplicationTable(el, input) {
                     const baseStr = rIdx === 0 ? '—' : fmtDelta(dBase);
                     const prevStr = rIdx === 0 ? '—' : fmtDelta(dPrev);
 
-                    const titleStr = (row.date || '') + ' | ' + rawStr;
+                    const runNote = inRun ? ' | run of ' + row.RunLength + ' identical values' : '';
+                    const titleStr = (row.date || '') + ' | ' + rawStr + runNote;
 
                     html += '<div class="rd-pill"'
                         + ' data-raw="' + rawStr + '"'
@@ -239,7 +244,7 @@ function renderRecordDuplicationTable(el, input) {
 
                 html += '</div>';
                 html += '<span style="font-size:11px; color:' + dupColor + '; white-space:nowrap; min-width:90px; text-align:right;">'
-                    + subjPct + '% dup (' + subjDups + '/' + subjData.length + ')</span>';
+                    + subjRate.pct + '% repeat (' + subjRate.num + '/' + subjRate.den + ')</span>';
                 html += '</div></div>';
             });
 

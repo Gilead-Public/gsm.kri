@@ -34,5 +34,5 @@ navbar:
         href: examples/report_kri_country.html
       - text: Report Kri Site
         href: examples/report_kri_site.html
-      - text: Record Duplication Report
+      - text: Repeat Measurements Report
         href: examples/Example_RecordDuplication.html

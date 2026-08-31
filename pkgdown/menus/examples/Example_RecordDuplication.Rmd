@@ -1,5 +1,5 @@
 ---
-title: "Record Duplication Report"
+title: "Repeat Measurements Report"
 date: "`r format(Sys.time(), '%Y-%m-%d %H:%M:%S %Z')`"
 index: 5
 output:
@@ -26,8 +26,8 @@ library(htmlwidgets)
 ```
 
 ```{r simulate-data}
-#### Simulate Vitals Data with Duplicates ####
-# Site-level duplicate rates are intentionally extreme to produce realistic flag patterns.
+#### Simulate Vitals Data with Consecutive Repeats ####
+# Site-level injection rates are intentionally extreme to produce realistic flag patterns.
 # Flags require Z > 2 (flag=1) or Z > 3 (flag=2) via normal approximation vs. overall mean.
 # Key insight: having many high-rate sites inflates the overall mean and suppresses Z-scores,
 # so we use 1-2 extreme sites and keep most sites very clean.
@@ -52,27 +52,28 @@ vs_rows$resp   <- round(rnorm(nrow(vs_rows), 16,    3),  0)
 
 site_map <- setNames(Mapped_SUBJ$invid, Mapped_SUBJ$subjid)
 
-# Inject duplicates for each subject at a per-site rate.
-# Copies a prior-visit value into a later visit (exact match = duplicate).
-inject_dups <- function(values, subjects, site_rates, site_map) {
+# Inject *consecutive* runs of identical values for each subject at a per-site rate.
+# The metric only counts rolling windows in which all W values are identical, so scattered
+# copies of a prior value do not score -- the run has to be at least W long.
+inject_runs <- function(values, subjects, site_rates, site_map, window_length = 3) {
   for (subj in unique(subjects)) {
     idx <- which(subjects == subj)
-    if (length(idx) <= 1) next
-    r <- site_rates[[site_map[subj]]]
-    n_dup <- round(length(idx[-1]) * r)
-    if (n_dup <= 0) next
-    dup_pos <- sample(idx[-1], min(n_dup, length(idx[-1])))
-    for (p in dup_pos) {
-      prior <- idx[idx < p]
-      values[p] <- values[sample(prior, 1)]
-    }
+    if (length(idx) < window_length) next
+    if (stats::runif(1) > site_rates[[site_map[subj]]]) next
+
+    # Run long enough to close at least one window, short enough to fit the visit schedule.
+    run_len <- sample(window_length:min(window_length + 2, length(idx)), 1)
+    start <- sample(seq_len(length(idx) - run_len + 1), 1)
+    run_idx <- idx[start:(start + run_len - 1)]
+    values[run_idx] <- values[run_idx[1]]
   }
   values
 }
 
-# Site duplicate rates — one extreme site per KRI measure (different site each time)
-# to get Flag=2 (red). The overdispersion correction in Analyze_NormalApprox requires
-# a SINGLE extreme site (all others low) to produce Z > 3.
+# Site run-injection rates — the share of subjects at each site that receive a repeat run.
+# One extreme site per KRI measure (a different site each time) to get Flag=2 (red). The
+# overdispersion correction in Analyze_NormalApprox requires a SINGLE extreme site (all
+# others low) to produce Z > 3.
 #
 # weight — SITE01 is the problem site
 weight_rates <- as.list(setNames(
@@ -92,29 +93,34 @@ diabp_rates <- as.list(setNames(
 # Other measures — mild background noise only
 mild_rates <- as.list(setNames(rep(0.04, 12), paste0("SITE", sprintf("%02d", 1:12))))
 
-vs_rows$weight <- inject_dups(vs_rows$weight, vs_rows$subjid, weight_rates, site_map)
-vs_rows$height <- inject_dups(vs_rows$height, vs_rows$subjid, mild_rates,   site_map)
-vs_rows$bmi    <- inject_dups(vs_rows$bmi,    vs_rows$subjid, mild_rates,   site_map)
-vs_rows$sysbp  <- inject_dups(vs_rows$sysbp,  vs_rows$subjid, sysbp_rates,  site_map)
-vs_rows$diabp  <- inject_dups(vs_rows$diabp,  vs_rows$subjid, diabp_rates,  site_map)
-vs_rows$pulse  <- inject_dups(vs_rows$pulse,  vs_rows$subjid, mild_rates,   site_map)
-vs_rows$temp   <- inject_dups(vs_rows$temp,   vs_rows$subjid, mild_rates,   site_map)
-vs_rows$resp   <- inject_dups(vs_rows$resp,   vs_rows$subjid, mild_rates,   site_map)
+vs_rows$weight <- inject_runs(vs_rows$weight, vs_rows$subjid, weight_rates, site_map)
+vs_rows$height <- inject_runs(vs_rows$height, vs_rows$subjid, mild_rates,   site_map)
+vs_rows$bmi    <- inject_runs(vs_rows$bmi,    vs_rows$subjid, mild_rates,   site_map)
+vs_rows$sysbp  <- inject_runs(vs_rows$sysbp,  vs_rows$subjid, sysbp_rates,  site_map)
+vs_rows$diabp  <- inject_runs(vs_rows$diabp,  vs_rows$subjid, diabp_rates,  site_map)
+vs_rows$pulse  <- inject_runs(vs_rows$pulse,  vs_rows$subjid, mild_rates,   site_map)
+vs_rows$temp   <- inject_runs(vs_rows$temp,   vs_rows$subjid, mild_rates,   site_map)
+vs_rows$resp   <- inject_runs(vs_rows$resp,   vs_rows$subjid, mild_rates,   site_map)
 
 Mapped_VS <- vs_rows[, c("subjid", "vs_dt", "weight", "height", "bmi",
                           "sysbp", "diabp", "pulse", "temp", "resp")]
 ```
 
 ```{r compute-metrics}
-#### Helper to run a duplicate-rate pipeline ####
-run_duplicate_pipeline <- function(df, dfSubjects, strValueCol, strMetricID, strMetricLabel) {
-  flagged <- Flag_Duplicates(
-    df = df, strSubjectCol = "subjid", strDateCol = "vs_dt", strValueCol = strValueCol
+#### Helper to run a repeat-measurement-rate pipeline ####
+# Mirrors the kri0016-kri0018 workflow YAMLs: Count_Duplicates sums repeat windows over
+# evaluable windows, then the standard rate pipeline scores and flags each site.
+run_repeat_pipeline <- function(df, dfSubjects, strValueCol, strMetricID, strMetricLabel,
+                                nWindowLength = 3) {
+  windows <- Count_Duplicates(
+    df = df, strSubjectCol = "subjid", strDateCol = "vs_dt", strValueCol = strValueCol,
+    nWindowLength = nWindowLength
   )
   input <- gsm.core::Input_Rate(
-    dfSubjects = dfSubjects, dfNumerator = flagged, dfDenominator = flagged,
+    dfSubjects = dfSubjects, dfNumerator = windows, dfDenominator = windows,
     strSubjectCol = "subjid", strGroupCol = "invid", strGroupLevel = "Site",
-    strNumeratorMethod = "Sum", strNumeratorCol = "is_duplicate", strDenominatorMethod = "Count"
+    strNumeratorMethod = "Sum", strNumeratorCol = "IsRepeatWindow",
+    strDenominatorMethod = "Sum", strDenominatorCol = "IsEvaluableWindow"
   )
   transformed <- gsm.core::Transform_Rate(input)
   analyzed    <- gsm.core::Analyze_NormalApprox(transformed, strType = "binary")
@@ -134,9 +140,9 @@ run_duplicate_pipeline <- function(df, dfSubjects, strValueCol, strMetricID, str
   )
 }
 
-kri0016_results <- run_duplicate_pipeline(Mapped_VS, Mapped_SUBJ, "weight", "Analysis_kri0016", "Duplicate Weight Record Rate")
-kri0017_results <- run_duplicate_pipeline(Mapped_VS, Mapped_SUBJ, "sysbp",  "Analysis_kri0017", "Duplicate Systolic BP Record Rate")
-kri0018_results <- run_duplicate_pipeline(Mapped_VS, Mapped_SUBJ, "diabp",  "Analysis_kri0018", "Duplicate Diastolic BP Record Rate")
+kri0016_results <- run_repeat_pipeline(Mapped_VS, Mapped_SUBJ, "weight", "Analysis_kri0016", "Repeat Measurement Rate - Weight")
+kri0017_results <- run_repeat_pipeline(Mapped_VS, Mapped_SUBJ, "sysbp",  "Analysis_kri0017", "Repeat Measurement Rate - Systolic Blood Pressure")
+kri0018_results <- run_repeat_pipeline(Mapped_VS, Mapped_SUBJ, "diabp",  "Analysis_kri0018", "Repeat Measurement Rate - Diastolic Blood Pressure")
 
 dfReportingResults <- rbind(
   gsm.core::reportingResults[, names(kri0016_results)],
@@ -147,8 +153,9 @@ dfReportingResults <- rbind(
 
 new_metrics <- data.frame(
   MetricID = c("Analysis_kri0016", "Analysis_kri0017", "Analysis_kri0018"),
-  Metric   = c("Duplicate Weight Record Rate", "Duplicate Systolic BP Record Rate",
-               "Duplicate Diastolic BP Record Rate"),
+  Metric   = c("Repeat Measurement Rate - Weight",
+               "Repeat Measurement Rate - Systolic Blood Pressure",
+               "Repeat Measurement Rate - Diastolic Blood Pressure"),
   stringsAsFactors = FALSE
 )
 dfReportingMetrics <- rbind(
@@ -158,13 +165,14 @@ dfReportingMetrics <- rbind(
 ```
 
 ```{r report, results='asis'}
-#### Generate Record Duplication Report ####
+#### Generate Repeat Measurements Report ####
 w <- Report_RecordDuplication(
   dfMappedVS = Mapped_VS,
   dfMappedSUBJ = Mapped_SUBJ,
   vMeasuresVS = c("weight", "height", "bmi", "sysbp", "diabp", "pulse", "temp", "resp"),
   dfReportingResults = dfReportingResults,
   dfReportingMetrics = dfReportingMetrics,
+  nWindowLength = 3,
   strGroupLevel = "Site"
 )
 w
