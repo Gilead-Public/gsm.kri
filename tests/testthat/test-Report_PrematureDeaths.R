@@ -429,13 +429,14 @@ test_that("Report renders a country-reactive Reasons chart via gsm.vizr::bars() 
   expect_match(html, "pdBucketFilterChanged", fixed = TRUE)
   expect_match(html, "helpers.updateData", fixed = TRUE)
   expect_false(grepl("function rebuildReasons", html, fixed = TRUE))
-  # Two-stage fallback: pdReasonRowsByCountry only has keys for countries with
-  # >=1 premature death, but the country bucket chart renders every enrolled
-  # country, so a zero-premature-death country click must fall back to
-  # __ALL__ instead of silently leaving the previous country's slice on screen.
+  # pdReasonRowsByCountry only has keys for countries with >=1 premature death,
+  # but the country bucket chart renders every enrolled country, so a
+  # zero-premature-death country is clickable and misses. That miss must empty
+  # the chart: __ALL__ describes the cleared state only, and serving it under a
+  # country filter would read as deaths in that country.
   expect_match(
     html,
-    'pdReasonRowsByCountry[country || "__ALL__"] || pdReasonRowsByCountry["__ALL__"]',
+    'country ? (pdReasonRowsByCountry[country] || []) : pdReasonRowsByCountry["__ALL__"]',
     fixed = TRUE
   )
 })

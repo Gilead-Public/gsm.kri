@@ -650,13 +650,14 @@ cat(paste0('
   // Country-reactive reason swap (relocated from the deleted reason widget
   // JS): a country bucket click broadcasts pdBucketFilterChanged; swap the
   // reasons chart to that country slice via updateData -- no per-country
-  // spec, no rebuild. Two-stage fallback: pdReasonRowsByCountry only has keys
-  // for countries with >=1 premature death, but the country bucket chart
-  // renders every enrolled country, so a zero-premature-death country click
-  // falls back to __ALL__ instead of leaving the previous slice on screen.
+  // spec, no rebuild. pdReasonRowsByCountry only has keys for countries with
+  // >=1 premature death, but the country bucket chart renders every enrolled
+  // country, so a zero-premature-death country is clickable and misses. That
+  // miss empties the chart: __ALL__ describes the cleared state only, and
+  // serving it under a country filter would read as deaths in that country.
   document.addEventListener("pdBucketFilterChanged", function(e) {
     var country = e.detail && e.detail.country;
-    var rows = pdReasonRowsByCountry[country || "__ALL__"] || pdReasonRowsByCountry["__ALL__"];
+    var rows = country ? (pdReasonRowsByCountry[country] || []) : pdReasonRowsByCountry["__ALL__"];
     var el = document.getElementById("pd-country-reasons");
     if (rows && el && el.gsmChart) {
       el.gsmChart.helpers.updateData(el.gsmChart, rows, el.gsmChart.data._spec_);
