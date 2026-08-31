@@ -34,6 +34,10 @@ through gsm.vizr, and the vendored gsm.viz bundle and legacy widget sources are 
 
 **Other:**
 
+- New `update-gsm-viz-bundle` skill under `.github/skills/`, referenced from `AGENTS.md`
+  (#282). It documents how to re-vendor the gsm.viz assets in gsm.vizr from a release tag
+  or a pinned upstream commit, and how to re-run gsm.kri's `bundle-regression` browser
+  spec afterwards. Repository tooling; not part of the installed package.
 - Repository links updated from Gilead-BioStats to Gilead-Public (#284).
 
 # gsm.kri v1.6.1
