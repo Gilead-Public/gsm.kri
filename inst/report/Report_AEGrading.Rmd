@@ -1,0 +1,246 @@
+---
+output:
+  html_document:
+    mathjax: null
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    css: styles.css
+params:
+  dfAE: NA
+  dfSubj: NA
+  strStudyID: "Study"
+  dfFlagged: NA
+  nMinAE: 20
+  nTopTerms: 10
+  nMinTermStudy: 50
+  nMinTermSite: 10
+  nDiffThreshold: 0.20
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  warning = FALSE,
+  message = FALSE,
+  fig.retina = 2
+)
+library(dplyr)
+library(ggplot2)
+library(gt)
+```
+
+```{r compute}
+dfDist <- AEGrading_SiteDistribution(
+  params$dfAE,
+  params$dfSubj,
+  nMinAE = params$nMinAE
+)
+
+dfTerm <- AEGrading_TermConsistency(
+  params$dfAE,
+  params$dfSubj,
+  nTopTerms = params$nTopTerms,
+  nMinTermStudy = params$nMinTermStudy,
+  nMinTermSite = params$nMinTermSite,
+  nDiffThreshold = params$nDiffThreshold
+)
+
+dfSiteTerm <- AEGrading_SiteTermSummary(dfTerm)
+
+nSites <- dplyr::n_distinct(dfDist$GroupID)
+nAE <- sum(dfDist$Count)
+dfStudyGrade <- dfDist %>%
+  dplyr::distinct(Grade, StudyProportion) %>%
+  dplyr::arrange(Grade)
+nStudyHigh <- sum(dfStudyGrade$StudyProportion[dfStudyGrade$Grade >= 3])
+```
+
+# AE Grading Overview {.tabset}
+
+**Study:** `r params$strStudyID`
+**Report generated:** `r format(Sys.Date(), "%d %B %Y")`
+
+This report examines how consistently investigator sites apply CTCAE severity
+grading to adverse events. It is a companion to the two site-level grading KRIs
+(`kri0016` High-Grade AE Proportion and `kri0017` Low-Grade AE Proportion) and adds
+the term-level detail those aggregate metrics cannot show.
+
+It looks at grading from two angles:
+
+1. **Overall severity mix** — does a site's distribution of Grade 1–5 events look
+   like the rest of the study? This catches sites that grade nearly everything as
+   Grade 1, or nearly everything as Grade 3/4.
+2. **Term-level consistency** — for the most commonly reported preferred terms,
+   does the site grade *the same event* the way the rest of the study does? This
+   catches sites whose overall mix looks unremarkable but who apply the criteria
+   inconsistently from one term to the next.
+
+`r nAE` graded adverse events across `r nSites` sites met the minimum volume
+threshold of `r params$nMinAE` graded AEs per site. Study-wide,
+**`r sprintf("%.1f%%", nStudyHigh * 100)`** of adverse events are Grade 3 or higher.
+
+## Study-wide grade distribution
+
+```{r study-dist}
+dfStudyGrade %>%
+  dplyr::mutate(
+    Grade = paste("Grade", Grade),
+    Events = round(StudyProportion * nAE),
+    StudyProportion = scales::percent(StudyProportion, accuracy = 0.1)
+  ) %>%
+  dplyr::select(Grade, Events, `% of all AEs` = StudyProportion) %>%
+  gt::gt() %>%
+  gt::tab_options(table.width = gt::pct(60))
+```
+
+# Grade distribution by site
+
+Each bar is one site's severity mix, sorted by the proportion of Grade 3+ events.
+Sites at the top report the highest share of severe events; sites at the bottom
+report the lowest. The dashed line marks the study-wide Grade 3+ proportion —
+bars that break well away from it in either direction are the sites whose grading
+behaviour differs from their peers.
+
+```{r grade-by-site, fig.width = 10, fig.height = 12}
+Visualize_GradeBySite(
+  dfDist,
+  dfFlagged = if (is.data.frame(params$dfFlagged)) params$dfFlagged else NULL
+)
+```
+
+```{r flagged-sites, results = "asis"}
+if (is.data.frame(params$dfFlagged) && nrow(params$dfFlagged) > 0) {
+  dfF <- params$dfFlagged %>%
+    dplyr::filter(!is.na(Flag), Flag != 0) %>%
+    dplyr::arrange(desc(abs(Score)))
+
+  cat("\n## Sites flagged by the grading KRI\n\n")
+
+  if (nrow(dfF) == 0) {
+    cat("No sites were flagged.\n")
+  } else {
+    dfF %>%
+      dplyr::transmute(
+        Site = GroupID,
+        `Grade 3+ events` = Numerator,
+        `Total AEs` = Denominator,
+        `Site %` = scales::percent(Metric, accuracy = 0.1),
+        `Study %` = scales::percent(OverallMetric, accuracy = 0.1),
+        `Z-score` = round(Score, 2),
+        Flag = ifelse(Flag > 0, "Over-grading", "Under-grading")
+      ) %>%
+      gt::gt() %>%
+      gt::tab_options(table.width = gt::pct(100)) %>%
+      print()
+  }
+}
+```
+
+# Term-level grading consistency
+
+The overall severity mix is a blunt instrument: a site can report a perfectly
+average proportion of severe events while still grading individual event types
+inconsistently. This section compares each site against the study for the
+`r params$nTopTerms` most frequently reported preferred terms, so a site's case
+mix cannot be mistaken for a grading difference.
+
+**Evaluation rules**
+
+- A preferred term is evaluated if it has at least `r params$nMinTermStudy` events study-wide.
+- A site is evaluated on that term if it reported at least `r params$nMinTermSite` events of it.
+- A site/term pair is flagged when its Grade 3+ proportion differs from the
+  study-wide proportion for that term by at least
+  `r scales::percent(params$nDiffThreshold)` (in either direction).
+- A site is raised for investigation when it is flagged on **two or more** terms.
+
+```{r term-counts}
+dfTerm %>%
+  dplyr::distinct(Term, StudyN, StudyHighGrade) %>%
+  dplyr::arrange(desc(StudyN)) %>%
+  dplyr::transmute(
+    `Preferred term` = Term,
+    `Events (study)` = StudyN,
+    `Grade 3+ (study)` = scales::percent(StudyHighGrade, accuracy = 0.1)
+  ) %>%
+  gt::gt() %>%
+  gt::tab_header(title = "Preferred terms evaluated") %>%
+  gt::tab_options(table.width = gt::pct(70))
+```
+
+## Site-by-term deviation
+
+```{r heatmap, fig.width = 10, fig.height = 8}
+Visualize_TermGradingHeatmap(dfTerm)
+```
+
+## Sites to investigate
+
+```{r investigate}
+dfInv <- dfSiteTerm %>% dplyr::filter(Investigate)
+
+if (nrow(dfInv) == 0) {
+  cat("No sites were flagged on two or more preferred terms.")
+} else {
+  dfInv %>%
+    dplyr::transmute(
+      Site = GroupID,
+      `Terms evaluated` = TermsEvaluated,
+      `Terms flagged` = TermsFlagged,
+      `Over-graded` = TermsOverGraded,
+      `Under-graded` = TermsUnderGraded,
+      `Largest gap` = scales::percent(MaxAbsDifference, accuracy = 0.1),
+      `Max |z|` = round(MaxAbsZScore, 1),
+      Pattern = Pattern
+    ) %>%
+    gt::gt() %>%
+    gt::tab_options(table.width = gt::pct(100)) %>%
+    gt::tab_source_note(
+      "Sites flagged on two or more independent preferred terms. A single discrepant term is readily explained by case mix or chance; a pattern across several terms suggests the site applies the severity grading criteria differently from the rest of the study."
+    )
+}
+```
+
+## Flagged site/term detail
+
+```{r detail}
+dfTerm %>%
+  dplyr::filter(Flagged) %>%
+  dplyr::transmute(
+    Site = GroupID,
+    `Preferred term` = Term,
+    `Site events` = SiteN,
+    `Site Grade 3+` = scales::percent(SiteHighGrade, accuracy = 0.1),
+    `Study Grade 3+` = scales::percent(StudyHighGrade, accuracy = 0.1),
+    Gap = sprintf("%+.1f pp", Difference * 100),
+    `z` = round(ZScore, 1),
+    Direction = Direction
+  ) %>%
+  gt::gt() %>%
+  gt::tab_options(table.width = gt::pct(100))
+```
+
+# Method notes and limitations
+
+- **Grades are treated as reported.** No re-derivation from lab values or
+  outcome data is attempted; the report measures internal consistency across
+  sites, not clinical correctness.
+- **The study is its own comparator.** If grading drifts study-wide, this report
+  will not detect it — every site is compared to the study average.
+- **The absolute-difference rule is asymmetric in practice.** Because the
+  study-wide Grade 3+ proportion is only
+  `r sprintf("%.1f%%", nStudyHigh * 100)`, a site cannot fall
+  `r scales::percent(params$nDiffThreshold)` *below* the study average on a term
+  whose study-wide Grade 3+ proportion is itself under
+  `r scales::percent(params$nDiffThreshold)`. Under-grading on low-severity terms
+  is therefore structurally hard to flag with a fixed percentage-point rule. The
+  `z` column applies a volume-scaled binomial z-score instead, which stays
+  symmetric across both tails; it is reported alongside the absolute rule so the
+  two can be compared before a production threshold is chosen.
+- **Volume thresholds bind hard at small sites.** Sites below
+  `r params$nMinTermSite` events for a term are not evaluated on it, so a small
+  site with a genuine grading problem may show no flags at all.
+- **Multiplicity is not controlled.** With `r params$nTopTerms` terms and
+  `r nSites` sites, some flagged pairs are expected by chance alone. Requiring
+  two or more flagged terms per site is a deliberately crude guard against this.
