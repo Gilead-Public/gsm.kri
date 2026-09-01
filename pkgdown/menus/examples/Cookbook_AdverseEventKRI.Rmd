@@ -1,7 +1,7 @@
 ---
 title: "Cookbook - Adverse Event KRI Report"
 type: "Cookbook"
-index: 5
+index: 6
 date: "`r format(Sys.time(), '%Y-%m-%d %H:%M:%S %Z')`"
 output: 
   html_document:
