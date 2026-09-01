@@ -8,7 +8,8 @@ SummarizeCrossStudy(
   dfResults,
   strGroupLevel = "Site",
   dfGroups = NULL,
-  strNameCol = "InvestigatorLastName"
+  strNameCol = "InvestigatorLastName",
+  strEnrollmentCol = "ParticipantCount"
 )
 }
 \arguments{
@@ -16,9 +17,11 @@ SummarizeCrossStudy(
 
 \item{strGroupLevel}{`character` The group level to summarize. Default is 'Site'.}
 
-\item{dfGroups}{`data.frame` Optional. A data frame containing group metadata (for InvestigatorName lookup). Must include StudyID, GroupID, Param, and Value columns.}
+\item{dfGroups}{`data.frame` Optional. A data frame containing group metadata (for InvestigatorName and enrollment lookup). Must include StudyID, GroupID, Param, and Value columns.}
 
 \item{strNameCol}{`character` The column name in dfGroups to use for investigator names. Default is 'InvestigatorLastName'.}
+
+\item{strEnrollmentCol}{`character` The Param value in dfGroups to use for site enrollment counts. Default is 'ParticipantCount'.}
 }
 \value{
 `data.frame` Summary table with the following columns:
@@ -27,6 +30,7 @@ SummarizeCrossStudy(
 - AvgRiskScore: Average site risk score across studies
 - MaxRiskScore: Maximum site risk score across studies
 - InvestigatorName: Investigator name (if dfGroups provided)
+- TotalEnrollment: Total enrollment count across studies (if dfGroups provided)
 }
 \description{
 `r lifecycle::badge("experimental")`
@@ -36,6 +40,6 @@ number of studies, average and maximum risk scores, and investigator names.
 }
 \examples{
 \dontrun{
-# See https://gilead-biostats.github.io/gsm.kri/examples/Example_CrossStudySRS.html
+# See https://gilead-public.github.io/gsm.kri/examples/Example_CrossStudySRS.html
 }
 }

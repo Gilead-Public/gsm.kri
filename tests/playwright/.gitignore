@@ -1,0 +1,6 @@
+# Generated / installed artifacts -- regenerate with render-fixture.R + npm install.
+node_modules/
+fixture/
+test-results/
+playwright-report/
+artifacts/

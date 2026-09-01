@@ -1,0 +1,137 @@
+---
+title: "Premature Deaths Report"
+author: "[gsm.kri](https://gilead-public.github.io/gsm.kri) Example"
+description: "Example Premature Deaths report generated with gsm.kri"
+index: 4
+date: "`r format(Sys.time(), '%B %d, %Y %H:%M:%S %Z')`"
+output:
+  html_document:
+    mathjax: null
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    css: ../report/styles.css
+---
+# Set Up
+This page provides a sample Premature Deaths Report generated using the `gsm.kri` package. Expand the "Setup" section below to see the code used to generate the report. Or scroll down for the standard report output.
+
+<details>
+<summary>Setup</summary>
+
+```{r}
+# Load libraries
+library(gsm.core)
+library(gsm.mapping)
+library(gsm.kri)
+library(gsm.reporting)
+library(dplyr)
+
+window_days <- 90 # must match meta.WindowDays on kri0015 / cou0015 / pat0015
+
+# --- Step 1: Map raw data (real gsm.mapping pipeline, per run_kri_report.R) ---
+core_mappings <- c(
+  "AE",
+  "COUNTRY",
+  "DATACHG",
+  "DATAENT",
+  "ENROLL",
+  "IE",
+  "EXCLUSION",
+  "LB",
+  "PD",
+  "QUERY",
+  "STUDY",
+  "STUDCOMP",
+  "SDRGCOMP",
+  "SITE",
+  "SUBJ",
+  # Death + its mapping dependencies (needed to derive death_dy)
+  "Death",
+  "OverallResponse",
+  "Randomization"
+)
+
+mappings_wf <- MakeWorkflowList(
+  strNames = core_mappings,
+  strPath = "workflow/1_mappings",
+  strPackage = "gsm.mapping"
+)
+lRaw <- Ingest(gsm.core::lSource, CombineSpecs(mappings_wf))
+lMapped <- RunWorkflows(mappings_wf, lRaw)
+
+# --- Step 2b: Simulate a realistic premature-death cohort (example only) ------
+# clindata's real randomization dates sit ~a decade pre-snapshot, so real
+# premature deaths land off-scale on the study scatter. Manufacture an
+# accrual / Weibull-mortality / censoring cohort instead -- see R/pd_ExampleData.R
+# for the full trial-dynamics rationale.
+# The simulation returns the mapped frames pd_Classify() needs: Mapped_SUBJ
+# (+ rgmn_dt for follow-up), Mapped_Death (+ deathcls), Mapped_AE
+# (+ aetoxgr / aerel for Treatment Related), and Mapped_STUDCOMP (non-death
+# discontinuations dated inside the window).
+sim <- gsm.kri:::pd_SimulatePrematureDeathCohort(
+  dfSubj = lMapped$Mapped_SUBJ,
+  nWindowDays = window_days
+)
+lMapped$Mapped_SUBJ <- sim$Mapped_SUBJ
+lMapped$Mapped_Death <- sim$Mapped_Death
+lMapped$Mapped_STUDCOMP <- sim$Mapped_STUDCOMP
+lMapped$Mapped_AE <- sim$Mapped_AE
+
+# --- Step 3: Run the site / country / patient premature-death metrics --------
+metric_names <- c("kri0015", "cou0015", "pat0015")
+metrics_wf <- MakeWorkflowList(
+  strNames = metric_names,
+  strPath = "workflow/2_metrics",
+  strPackage = "gsm.kri"
+)
+lAnalyzed <- RunWorkflows(metrics_wf, c(lMapped, list(lWorkflows = metrics_wf)))
+
+# --- Step 4: Build reporting frames (real gsm.reporting pipeline) ------------
+reporting_wf <- MakeWorkflowList(
+  strNames = c("Results", "Metrics", "Bounds", "Groups"),
+  strPath = "workflow/3_reporting",
+  strPackage = "gsm.reporting"
+)
+lReporting <- RunWorkflows(
+  reporting_wf,
+  c(lMapped, list(lAnalyzed = lAnalyzed, lWorkflows = metrics_wf))
+)
+
+dfResults <- lReporting$Reporting_Results |>
+  FilterByLatestSnapshotDate()
+
+# --- Step 5: Assemble the listings consumed by the report --------------------
+lListings <- list(
+  Mapped_SUBJ = lMapped$Mapped_SUBJ,
+  Mapped_Death = lMapped$Mapped_Death,
+  Mapped_AE = lMapped$Mapped_AE,
+  Mapped_Randomization = lMapped$Mapped_Randomization,
+  Mapped_STUDCOMP = lMapped$Mapped_STUDCOMP,
+  Mapped_EXCLUSION = lMapped$Mapped_EXCLUSION
+)
+```
+
+</details>
+
+```{r, echo=FALSE, results='asis'}
+## Render example report inline using knit_child
+child_env <- list2env(
+  list(
+    params = list(
+      dfResults = dfResults,
+      dfMetrics = lReporting$Reporting_Metrics,
+      dfGroups = lReporting$Reporting_Groups,
+      lListings = lListings,
+      nWindowDays = window_days
+    )
+  ),
+  parent = environment()
+)
+report_premature_deaths <- knitr::knit_child(
+  system.file("report", "Report_PrematureDeaths.Rmd", package = "gsm.kri"),
+  envir = child_env,
+  quiet = TRUE
+)
+cat(report_premature_deaths, sep = "\n")
+```

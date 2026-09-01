@@ -1,0 +1,668 @@
+---
+# pagetitle sets only the HTML <head><title> (browser tab); it does NOT render a
+# visible heading, so it neither duplicates the body H1 nor affects the
+# knit_child pkgdown embed (which ignores this front matter). The visible title +
+# dynamic subtitle are emitted in the body.
+pagetitle: "Premature Deaths Overview"
+output:
+  html_document:
+    mathjax: null
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    css: styles.css
+params:
+  dfResults: NA
+  dfMetrics: NA
+  dfGroups: NA
+  lListings: NA
+  nWindowDays: 90
+---
+
+```{r setup, include=FALSE}
+library(dplyr)
+library(gsm.kri)
+library(plotly)
+library(DT)
+library(htmltools)
+library(knitr)
+library(jsonlite)
+
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+
+dfResults <- params$dfResults
+lListings <- params$lListings
+nWindowDays <- params$nWindowDays
+
+Mapped_Death <- lListings$Mapped_Death
+Mapped_SUBJ <- lListings$Mapped_SUBJ
+Mapped_STUDCOMP <- lListings$Mapped_STUDCOMP
+Mapped_EXCLUSION <- lListings$Mapped_EXCLUSION
+Mapped_AE <- lListings$Mapped_AE
+Mapped_Randomization <- lListings$Mapped_Randomization
+
+# In production Mapped_SUBJ has no randomization date; source it from
+# Mapped_Randomization (passed in lListings). Then drop subjects with no
+# randomization date -- they have no position on the randomization-anchored
+# timeline, so they must not be counted in the bars yet dropped from the scatter.
+if (!"rgmn_dt" %in% names(Mapped_SUBJ) && !is.null(Mapped_Randomization)) {
+  Mapped_SUBJ <- dplyr::left_join(
+    Mapped_SUBJ,
+    dplyr::distinct(dplyr::select(Mapped_Randomization, "subjid", "rgmn_dt")),
+    by = "subjid"
+  )
+}
+if ("rgmn_dt" %in% names(Mapped_SUBJ)) {
+  Mapped_SUBJ <- dplyr::filter(Mapped_SUBJ, !is.na(.data$rgmn_dt))
+}
+
+# Reporting snapshot drives follow-up (the two "alive" categories), so it is
+# defined here, ahead of the single classification of every enrolled subject.
+latest_snapshot <- max(dfResults$SnapshotDate)
+
+# Single classification of every enrolled subject (the SOT for all charts).
+dfClassified <- pd_Classify(
+  dfSubjects = Mapped_SUBJ,
+  dfDeath = Mapped_Death,
+  dfStudComp = Mapped_STUDCOMP,
+  nWindowDays = nWindowDays,
+  dSnapshotDate = latest_snapshot
+)
+
+# Build the scatter's per-point hover + customdata once; the study/country/site
+# views reuse it (pd_ScatterData is idempotent, so each scatter call skips the rebuild).
+dfScatter <- gsm.kri:::pd_ScatterData(dfClassified)
+
+# Study-wide fixed scatter range, shared by the study/country/site views (AXIS-1).
+# Derived from the data (not hardcoded); a 5% pad keeps boundary points off the edge.
+x_max <- max(c(dfClassified$x_anchor, nWindowDays), na.rm = TRUE)
+y_max <- max(c(dfClassified$follow_up, nWindowDays), na.rm = TRUE)
+vXRange <- c(0, x_max * 1.05)
+vYRange <- c(0, y_max * 1.05)
+
+# The JSON built here is pasted verbatim into the inline <script> block of
+# filter-js. jsonlite already renders "</" as "<\/" so data cannot terminate
+# the block, but escape every "<" as \u003c anyway: it also closes the
+# "<!--<script>" escaped-state edge and stops relying on a serializer default.
+script_safe_json <- function(json) gsub("<", "\\\\u003c", json)
+
+# Country → site lookup for JS filtering (all enrolled sites in the country).
+# Built from dfClassified -- the same cohort the bucket bars use -- so its keys
+# are exactly the bars' country labels (incl. "Unknown"); clicking any bar always
+# resolves to that country's sites instead of an empty filter.
+country_site_map <- dfClassified %>%
+  dplyr::distinct(country, invid) %>%
+  dplyr::group_by(country) %>%
+  dplyr::summarise(sites = list(invid), .groups = "drop") %>%
+  tibble::deframe() %>%
+  jsonlite::toJSON(auto_unbox = FALSE) %>%
+  script_safe_json()
+
+has_eligibility <- !is.null(Mapped_EXCLUSION) && "Source" %in% names(Mapped_EXCLUSION)
+
+# Overview summary numbers, computed once from the classified cohort (the single
+# source of truth). Driving nEnrolled / nPremature from here -- not a separate
+# pd_PrematureCohort count -- means the Overview table, the empty-state, every
+# chart's eval=has_premature gate, and the window-consistency guard below all
+# describe the one cohort the bucket bars and scatter render, so they can never
+# drift apart (a duplicate death row or a death for an unmapped subject no longer
+# makes the guard and the table disagree).
+stats <- pd_OverviewStats(dfClassified, Mapped_EXCLUSION, nWindowDays)
+nEnrolled <- stats$nEnrolled
+nPremature <- stats$nPremature
+nPrematureRate <- stats$nPrematureRate
+has_premature <- nPremature > 0
+
+# Per-country enrolled counts off the classified cohort (same basis as nEnrolled).
+# dfClassified$country is already "Unknown"-labelled (pd_Classify), so these keys
+# match pd_ReasonByCountry's split and the country->site map by construction.
+enrolled_by_country <- dfClassified %>%
+  dplyr::count(country, name = "n") %>%
+  tibble::deframe()
+
+# Reason aggregate computed ONCE: per-country slices + "__ALL__", each with prebuilt
+# hover (incl. % of enrolled). filter-js inlines the per-country rows as JSON
+# and swaps the reasons chart's data client-side on a country click.
+reason_data <- pd_ReasonByCountry(Mapped_Death, Mapped_SUBJ, nWindowDays,
+                                  nEnrolledByCountry = enrolled_by_country,
+                                  nEnrolled = nEnrolled)
+reason_rows_by_country <- lapply(reason_data, pd_ReasonRows)
+reason_rows_by_country_json <- script_safe_json(
+  jsonlite::toJSON(reason_rows_by_country, dataframe = "rows", na = "null")
+)
+
+# Site rows computed ONCE: the site-buckets chunk renders them and filter-js
+# inlines the same frame (as JSON) for the country->site drilldown -- one
+# source of truth instead of a client-side el.pdAllData copy.
+pd_site_rows <- pd_BucketRows(dfClassified, nWindowDays, "invid", strOuterCol = "country")
+pd_site_rows_json <- script_safe_json(
+  jsonlite::toJSON(pd_site_rows, dataframe = "rows", na = "null")
+)
+
+# Study-discontinuation caveat, shared verbatim by the Study Buckets and the
+# Study Rand -> Death tabs (single source of truth so the embedded nWindowDays
+# can't drift between the two placements).
+study_discont_note <- paste0(
+  "\n> **Study discontinuation** is taken from study-completion records (`studcomp`): a subject is counted here when their record indicates discontinuation within ",
+  nWindowDays,
+  " days of randomization for a reason other than death. Deaths within ",
+  nWindowDays,
+  " days appear under *Death within ",
+  nWindowDays,
+  " days*; subjects still on study appear under the *Alive* categories. Discontinuation timing is approximated from the study-completion record date.\n"
+)
+
+# Consistency guard: the charts recompute premature status from Mapped_Death at
+# nWindowDays; the patient listing trusts pat0015 Flag==2 rows (flagged at
+# analysis-time meta.WindowDays). A divergence means nWindowDays != the window
+# that produced dfResults -> charts and listing describe different windows.
+nFlagged <- sum(
+  dfResults$MetricID == "Analysis_pat0015" & dfResults$Flag == 2,
+  na.rm = TRUE
+)
+# Warns only on a mismatch; the comparison lives inside the helper now.
+pd_CheckWindowConsistency(nWindowDays, nPremature, nFlagged)
+```
+
+# Premature Deaths Overview
+
+```{r overview-subtitle, echo=FALSE, results='asis'}
+# Dynamic subtitle emitted as real markdown. A second "--- title/subtitle/date ---"
+# block here is NOT front matter -- pandoc only honours the top header, so it would
+# render as a literal "title:" line + rule. The H1 above is the title; this chunk
+# renders in both the standalone report and the knit_child pkgdown embed.
+cat(sprintf(
+  "**Study:** %s  \n*Snapshot Date: %s*\n\n",
+  paste(unique(Mapped_SUBJ$studyid), collapse = ", "),
+  latest_snapshot
+))
+```
+
+```{r filter-strip-css, echo=FALSE, results='asis'}
+# The chip strip's styling ships as an inline <style> block HERE, not via
+# styles.css, so it survives every host context. The standalone report links
+# styles.css, but the pkgdown example embeds this report through knit_child and
+# does NOT load styles.css -- there the chips would render unstyled and
+# non-sticky. Literal hex (no var(--...) tokens) for the same reason: the :root
+# tokens defined in styles.css aren't present in the embedded context.
+cat('
+<style>
+.pd-filter-strip { position: sticky; top: 48px; z-index: 1029; display: none; align-items: center; flex-wrap: wrap; gap: 10px; background-color: #f1f7fe; border-bottom: 1px solid #cfe3fb; padding: 8px 14px; margin: 0 0 16px; }
+.pd-filter-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #5b7193; }
+.pd-filter-chip { display: inline-flex; align-items: center; gap: 6px; background-color: #ffffff; border: 1px solid #3C587F; border-radius: 16px; padding: 3px 6px 3px 12px; font-size: 13px; color: #3C587F; }
+.pd-chip-value { font-weight: 600; }
+.pd-filter-chip button { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; padding: 0; border: none; border-radius: 50%; background-color: transparent; color: #3C587F; font-size: 13px; line-height: 1; cursor: pointer; }
+.pd-filter-chip button:hover { background-color: #3C587F; color: #ffffff; }
+.pd-filter-chip button:focus-visible { outline: 2px solid #3C587F; outline-offset: 2px; }
+</style>
+')
+```
+
+```{r filter-strip, echo=FALSE}
+# Sticky cross-filter strip: one chip per active country/site filter, shown by
+# the filter-js chunk as selections change. Built with htmltools (not raw HTML)
+# so pandoc doesn't wrap the inline chips in a <p>, which would break the flex
+# row and add stray paragraph margins. Hidden (CSS display:none) until a filter
+# is active.
+htmltools::tags$div(
+  id = "pd-filter-banner", class = "pd-filter-strip",
+  htmltools::tags$span(class = "pd-filter-eyebrow", "Filtering"),
+  htmltools::tags$span(
+    id = "pd-filter-country-chip", class = "pd-filter-chip", style = "display:none;",
+    htmltools::tags$span(
+      class = "pd-chip-label", "Country: ",
+      htmltools::tags$span(id = "pd-filter-country-value", class = "pd-chip-value")
+    ),
+    htmltools::tags$button(
+      id = "pd-filter-reset", onclick = "pdResetFilter()",
+      `aria-label` = "Clear country filter", htmltools::HTML("&times;")
+    )
+  ),
+  htmltools::tags$span(
+    id = "pd-filter-site-chip", class = "pd-filter-chip", style = "display:none;",
+    htmltools::tags$span(
+      class = "pd-chip-label", "Site: ",
+      htmltools::tags$span(id = "pd-filter-site-value", class = "pd-chip-value")
+    ),
+    htmltools::tags$button(
+      id = "pd-site-filter-reset", onclick = "pdResetSiteFilter()",
+      `aria-label` = "Clear site filter", htmltools::HTML("&times;")
+    )
+  )
+)
+```
+
+## Overview
+
+Premature death analysis supports early identification of deaths occurring within ≤`r nWindowDays` days of randomization, enabling timely detection of potential eligibility concerns and emerging safety risks.
+
+```{r overview-table, echo=FALSE}
+# Ineligible needs eligibility data (Mapped_EXCLUSION); when it is absent we show
+# a dash rather than 0, which would falsely assert zero ineligible deaths.
+ineligible_cell <- if (stats$has_eligibility) {
+  sprintf("%d (%.1f%%)", stats$nIneligible, stats$nIneligibleRate)
+} else {
+  "—"
+}
+# Headline total over a severity-keyed ledger: the two windows stack as child
+# rows under the total, each led by its bucket colour (death30 =
+# colorScheme("red","dark") #FF5859, death3190 = colorScheme("amber","dark")
+# #FEAA02 -- the exact hues the bucket bars and scatter use), so the cell doubles
+# as their legend. The table's full-grid borders fence the cell and right-
+# aligned counts make 22 + 24 = 46 read as additive. Literal ≤/– glyphs (not
+# &le;/&ndash;) because pandoc's html4 output preserves entities verbatim;
+# swatches are styled <div>s, so no entities and no unimported font weights are
+# relied on. Counts come from the one classified cohort, so the split cannot
+# drift from the total.
+premature_cell <- sprintf(
+  paste0(
+    "<div style='font-size:1.1em'>%d <span style='color:#666;font-size:smaller'>(%.1f%%)</span></div>",
+    "<div style='display:inline-block;text-align:left;margin-top:3px;font-size:smaller'>",
+    "<div><span style='display:inline-block;width:9px;height:9px;background:#FF5859;margin-right:6px'></span>",
+    "<b style='display:inline-block;min-width:1.4em;text-align:right'>%d</b> ≤30 days</div>",
+    "<div><span style='display:inline-block;width:9px;height:9px;background:#FEAA02;margin-right:6px'></span>",
+    "<b style='display:inline-block;min-width:1.4em;text-align:right'>%d</b> 31–90 days</div>",
+    "</div>"
+  ),
+  stats$nPremature, stats$nPrematureRate, stats$nDeath30, stats$nDeath3190
+)
+knitr::kable(
+  data.frame(
+    "Total enrolled" = stats$nEnrolled,
+    "Total sites with enrolled participants" = stats$nSites,
+    "Premature Death(s)" = premature_cell,
+    "Participants Ineligible + Premature Death" = ineligible_cell,
+    check.names = FALSE
+  ),
+  format = "html",
+  escape = FALSE,
+  align = "r",
+  table.attr = "class=\"table table-bordered\""
+)
+```
+
+```{r empty-state, echo=FALSE, results='asis', eval=!has_premature}
+cat("\n> **No premature deaths in window.** All charts and the patient listing are empty for this snapshot.\n")
+```
+
+## Study {.tabset .tabset-pills}
+
+### Buckets
+```{r study-buckets, echo=FALSE, eval=has_premature}
+gsm.vizr::bars(
+  data = pd_BucketRows(dfClassified, nWindowDays, strGroupCol = "studyid"),
+  spec = pd_BucketBarSpec(nWindowDays, "Study"),
+  metadata = list(chartId = "pd-study-buckets", level = "study")
+)
+```
+
+```{r study-buckets-note, echo=FALSE, results='asis', eval=has_premature}
+cat(study_discont_note)
+```
+
+### Rand -> Death
+```{r study-scatter, echo=FALSE, eval=has_premature}
+htmltools::div(
+  id = "pd-study-scatter",
+  pd_RandToDeathScatter(dfScatter, nWindowDays, vXRange = vXRange, vYRange = vYRange)
+)
+```
+
+```{r study-scatter-note, echo=FALSE, results='asis', eval=has_premature}
+cat(study_discont_note)
+```
+
+### Reasons
+```{r study-reasons, echo=FALSE, eval=has_premature}
+gsm.vizr::bars(
+  data = pd_ReasonRows(reason_data[["__ALL__"]]),
+  # reason_order pins the study-wide count sort as a stable axis; the country
+  # tab reuses the same order so its bar keeps position when a country is picked.
+  spec = pd_ReasonBarSpec(reason_order = reason_data[["__ALL__"]]$reason),
+  metadata = list(chartId = "pd-study-reasons", level = "study")
+)
+```
+
+## Country {.tabset .tabset-pills}
+
+### Buckets
+```{r country-buckets, echo=FALSE, eval=has_premature}
+gsm.vizr::bars(
+  data = pd_BucketRows(dfClassified, nWindowDays, strGroupCol = "country"),
+  # Country and site charts opt into zoom/pan (x-axis) — a multinational study
+  # can carry many country bars; the single-bar study chart stays zoom-free.
+  spec = pd_BucketBarSpec(nWindowDays, "Country", zoom = list(enabled = TRUE, mode = "x")),
+  metadata = list(chartId = "pd-country-buckets", level = "country")
+)
+```
+
+### Rand -> Death
+```{r country-scatter, echo=FALSE, eval=has_premature}
+htmltools::div(
+  id = "pd-country-scatter",
+  pd_RandToDeathScatter(dfScatter, nWindowDays, vXRange = vXRange, vYRange = vYRange)
+)
+```
+
+### Reasons
+```{r country-reasons, echo=FALSE, eval=has_premature}
+# reason_rows_by_country (setup chunk): a country bucket click broadcasts
+# pdBucketFilterChanged, and filter-js swaps this chart to that country's
+# slice via helpers.updateData — no per-country spec, no rebuildReasons.
+gsm.vizr::bars(
+  data = reason_rows_by_country[["__ALL__"]],
+  spec = pd_ReasonBarSpec(reason_order = reason_data[["__ALL__"]]$reason),
+  metadata = list(chartId = "pd-country-reasons", level = "country")
+)
+```
+
+## Site {.tabset .tabset-pills}
+
+### Buckets
+```{r site-buckets, echo=FALSE, eval=has_premature}
+gsm.vizr::bars(
+  # pd_site_rows (setup chunk): its OuterGroupID lets the country->site
+  # drilldown re-slice this chart to one country's sites (see filter-js).
+  data = pd_site_rows,
+  # Zoom/pan (x-axis): the site chart always renders every enrolled site (see
+  # the country chart chunk for the shared rationale). dynamicCategoryAxis drops
+  # a site off the axis once a disabled legend entry leaves it with nothing to
+  # show, so hiding a death window thins the axis instead of leaving blank slots.
+  spec = pd_BucketBarSpec(
+    nWindowDays,
+    "Site",
+    zoom = list(enabled = TRUE, mode = "x"),
+    theme = list(dynamicCategoryAxis = TRUE)
+  ),
+  metadata = list(chartId = "pd-site-buckets", level = "site")
+)
+```
+
+### Rand -> Death
+```{r site-scatter, echo=FALSE, eval=has_premature}
+htmltools::div(
+  id = "pd-site-scatter",
+  pd_RandToDeathScatter(dfScatter, nWindowDays, vXRange = vXRange, vYRange = vYRange)
+)
+```
+
+## Patient Listing
+```{r patient-listing, echo=FALSE}
+pd_PatientListing(dfResults, Mapped_Death, Mapped_SUBJ, Mapped_EXCLUSION, Mapped_AE)
+```
+
+```{r patient-listing-note, echo=FALSE, results='asis', eval=has_premature}
+cat("\n> **Treatment Related** combines the death classification (`deathcls`) with adverse-event data: **Yes** when the death is classified as an adverse event *and* the subject has a fatal (CTCAE grade 5) treatment-related (`aerel` = `RELATED`) adverse event; **No** when either the death is classified as an adverse event *and* the subject has a fatal (grade 5) *not* treatment-related (`aerel` = `NOT RELATED`) adverse event, or the death is not classified as an adverse event *and* there is no fatal treatment-related adverse event; **Unknown** otherwise (e.g. an adverse-event death with no fatal adverse-event evidence, contradictory signals, or a missing death classification / adverse-event grade or relatedness). Note: the adverse event is matched by subject, not to the specific event that caused death.\n")
+```
+
+```{r eligibility-note, echo=FALSE, results='asis', eval=has_premature && has_eligibility}
+cat(
+  "\n",
+  "> The Eligibility Status summarizes whether an enrolled participant met the study eligibility criteria, derived by combining data from the **IE** CRF  and **Protocol Deviations** reported in CTMS. It is determined as follows:\n",
+  ">\n",
+  "> - **Ineligible:** The participant triggered **at least one** of the eligibility signals. This applies whether they had an EDC I/E violation only, an eligibility protocol deviation only, or met both criteria.\n",
+  "> - **Eligible:** The participant triggered **neither** of the eligibility signals (they have no EDC I/E violations and no eligibility-related protocol deviations).\n",
+  "> - **Unknown:** The participant has no exclusion record available to evaluate.\n",
+  sep = ""
+)
+```
+
+```{r filter-js, echo=FALSE, results='asis', eval=has_premature}
+cat(paste0('
+<script>
+(function() {
+  var countrySiteMap = ', country_site_map, ';
+  // input.metadata is closure-bound per gsm.vizr chart instance, so cross-chart
+  // data (country->site drilldown rows, per-country reason slices) is inlined
+  // here instead -- the same pattern countrySiteMap already uses.
+  var pdSiteRows = ', pd_site_rows_json, ';
+  var pdReasonRowsByCountry = ', reason_rows_by_country_json, ';
+  // activeCountry / activeSite are retained ONLY as mirrors of pdBucketState so
+  // the kept scatter helpers (applySiteScatterFilter) keep working unchanged.
+  var activeCountry = null;
+  var activeSite = null;
+
+  // ---- Retained Plotly scatter + listing helpers --------------------------
+  // The scatter charts stay on Plotly (migration deferred with #120); these
+  // helpers drive them and the DataTable off pdBucketState.
+
+  // Find the plotly div inside a container (returns null until Plotly has
+  // initialized the widget and attached its event system).
+  function getPlotlyDiv(containerId) {
+    var container = document.getElementById(containerId);
+    if (!container) return null;
+    var el = container.querySelector(".plotly");
+    if (!el || !el.on) return null;
+    return el;
+  }
+
+  // Show/hide the banner container based on whether either filter is active.
+  function updateBannerVisibility() {
+    var banner = document.getElementById("pd-filter-banner");
+    banner.style.display = (pdBucketState.activeCountry || pdBucketState.activeSite) ? "flex" : "none";
+  }
+
+  // Single owner of the patient-listing column search. Only one search can be
+  // held on the invid column, so both filters route through here. Precedence:
+  // an active site wins over an active country (site is more specific).
+  function applyListingFilter() {
+    var tables = document.querySelectorAll(".dataTable");
+    if (tables.length === 0) return;
+    var dtApi = $(tables[tables.length - 1]).DataTable();
+    var sites = null;
+    if (pdBucketState.activeSite) {
+      sites = [pdBucketState.activeSite];
+    } else if (pdBucketState.activeCountry) {
+      sites = countrySiteMap[pdBucketState.activeCountry] || [];
+    }
+    if (sites) {
+      var regex = "^(" + sites.join("|") + ")$";
+      dtApi.column("invid:name").search(regex, true, false).draw();
+    } else {
+      dtApi.column("invid:name").search("").draw();
+    }
+  }
+
+  // Single owner of the site-scatter point filter. Same site > country > none
+  // precedence as the listing: an active site shows just that site, else an
+  // active country shows its sites, else all points return at the shared range.
+  function applySiteScatterFilter() {
+    if (activeSite) {
+      filterScatterChart("pd-site-scatter", [activeSite], 2);
+    } else if (activeCountry) {
+      filterScatterChart("pd-site-scatter", countrySiteMap[activeCountry] || [], 2);
+    } else {
+      resetPlotlyChart("pd-site-scatter");
+    }
+  }
+
+  // Cache each scatter clean trace data + layout the first time we touch it, so
+  // a later reset can restore the un-filtered version. Idempotent.
+  var originalData = {};
+  var originalLayout = {};
+  function cacheOriginal(el, containerId) {
+    if (!originalData[containerId]) {
+      originalData[containerId] = JSON.parse(JSON.stringify(el.data));
+    }
+    if (!originalLayout[containerId]) {
+      originalLayout[containerId] = JSON.parse(JSON.stringify(el.layout));
+    }
+  }
+
+  // Numeric-y scatters filter by per-point customdata: index 1 = country,
+  // index 2 = invid. Reindex each trace x/y/customdata in lockstep, then react
+  // with the CACHED layout so the fixed range is preserved (AXIS-1).
+  function filterScatterChart(containerId, allowedValues, cdIndex) {
+    var el = getPlotlyDiv(containerId);
+    if (!el) return;
+    cacheOriginal(el, containerId);
+    var orig = originalData[containerId];
+    var filtered = orig.map(function(trace) {
+      if (!Array.isArray(trace.customdata)) return trace;
+      var keep = [];
+      trace.customdata.forEach(function(cd, idx) {
+        if (cd && allowedValues.indexOf(cd[cdIndex]) >= 0) keep.push(idx);
+      });
+      var nt = Object.assign({}, trace);
+      nt.x = keep.map(function(i) { return trace.x[i]; });
+      nt.y = keep.map(function(i) { return trace.y[i]; });
+      nt.customdata = keep.map(function(i) { return trace.customdata[i]; });
+      return nt;
+    });
+    Plotly.react(el, filtered, JSON.parse(JSON.stringify(originalLayout[containerId])));
+  }
+
+  // Restore a scatter to its cached original (full point set, fixed range).
+  // Scatter-only now: the bucket bars are gsm.viz canvases, not Plotly.
+  function resetPlotlyChart(containerId) {
+    var el = getPlotlyDiv(containerId);
+    if (!el || !originalData[containerId]) return;
+    Plotly.react(el, originalData[containerId], originalLayout[containerId] || el.layout);
+  }
+
+  // ---- gsm.viz bucket charts (#264) ---------------------------------------
+  var PD_BUCKET_IDS = ["pd-study-buckets", "pd-country-buckets", "pd-site-buckets"];
+  var pdBucketState = { activeCountry: null, activeSite: null };
+
+  // Every bucket chart is a flat gsm.viz `bars` (a single Chart.js instance).
+  function pdChartsFor(id) {
+    var el = document.getElementById(id);
+    return el && el.gsmChart ? [el.gsmChart] : [];
+  }
+
+  // Country->site drilldown: re-slice the site chart to the sites in the active
+  // country (all sites when no country is active), reading the inlined
+  // pdSiteRows (metadata is closure-bound per chart, so it cannot carry these
+  // cross-chart). Runs before pdHighlightBuckets so a site highlight lands on
+  // the freshly-swapped data.
+  function pdNarrowSiteChart() {
+    var el = document.getElementById("pd-site-buckets");
+    if (!el || !el.gsmChart) return;
+    var country = pdBucketState.activeCountry;
+    var rows = country
+      ? pdSiteRows.filter(function(r) { return r.OuterGroupID === country; })
+      : pdSiteRows;
+    el.gsmChart.helpers.updateData(el.gsmChart, rows, el.gsmChart.data._spec_);
+  }
+
+  // Highlight the active group across the bucket charts. Single-owner
+  // precedence: site > country > none. Only charts whose category axis actually
+  // contains the selection are highlighted -- selectCategory with an absent
+  // value dims every bar, which would grey out the study chart (categories are
+  // studies, not countries/sites) or the country chart on a site selection.
+  // Charts without a match clear instead, staying fully visible.
+  function pdHighlightBuckets() {
+    var sel = pdBucketState.activeSite || pdBucketState.activeCountry || null;
+    PD_BUCKET_IDS.forEach(function(id) {
+      pdChartsFor(id).forEach(function(c) {
+        var labels = (c.data && c.data.labels) || [];
+        if (sel && labels.indexOf(sel) >= 0) c.helpers.selectCategory(c, sel);
+        else c.helpers.clearSelection(c);
+      });
+    });
+  }
+
+  // Reflect pdBucketState everywhere: mirror the scatter globals, update the
+  // filter chips + banner, highlight the buckets, refilter the listing and the
+  // two scatters (single-owner precedence), and broadcast pdBucketFilterChanged.
+  function pdSyncBucketFilters() {
+    activeCountry = pdBucketState.activeCountry;
+    activeSite = pdBucketState.activeSite;
+
+    // Show a chip and set its label when its filter value is active; hide otherwise.
+    function setChip(chipId, valueId, value) {
+      var chip = document.getElementById(chipId);
+      if (value) {
+        chip.style.display = "inline-flex";
+        document.getElementById(valueId).textContent = value;
+      } else {
+        chip.style.display = "none";
+      }
+    }
+    setChip("pd-filter-country-chip", "pd-filter-country-value", pdBucketState.activeCountry);
+    setChip("pd-filter-site-chip", "pd-filter-site-value", pdBucketState.activeSite);
+    updateBannerVisibility();
+    pdNarrowSiteChart();
+    pdHighlightBuckets();
+    applyListingFilter();
+    if (pdBucketState.activeCountry) {
+      filterScatterChart("pd-country-scatter", [pdBucketState.activeCountry], 1);
+    } else {
+      resetPlotlyChart("pd-country-scatter");
+    }
+    applySiteScatterFilter();
+    document.dispatchEvent(new CustomEvent("pdBucketFilterChanged", { bubbles: true,
+      detail: { country: pdBucketState.activeCountry, invid: pdBucketState.activeSite } }));
+  }
+
+  // Bucket click handler: derive the new state from the clicked datum, then sync.
+  // Clicking the bar that is already active toggles it off -- gsm.viz has a
+  // deselect path of its own, but it is gated on spec.selection, which these
+  // charts do not enable. Unlike a chip\'s reset button (which owns exactly one
+  // filter), the country bar owns the drilldown, so toggling it off drops the
+  // site with it.
+  function pdApplyBucketFilter(detail) {
+    if (detail.level === "country") {
+      var country = detail.country || detail.groupId;
+      pdBucketState.activeCountry = country === pdBucketState.activeCountry ? null : country;
+      pdBucketState.activeSite = null;
+    } else if (detail.level === "site") {
+      var invid = detail.invid || detail.groupId;
+      // The site is the leaf: toggling it off steps back to its country.
+      if (invid === pdBucketState.activeSite) {
+        pdBucketState.activeSite = null;
+      } else {
+        pdBucketState.activeSite = invid;
+        pdBucketState.activeCountry = detail.country || pdBucketState.activeCountry;
+      }
+    }
+    pdSyncBucketFilters();
+  }
+
+  // Chip reset buttons keep their inline onclick handlers (pdResetFilter /
+  // pdResetSiteFilter). Clearing a country leaves any active site untouched and
+  // vice-versa, matching the pre-migration single-owner behavior.
+  window.pdResetFilter = function() {
+    pdBucketState.activeCountry = null;
+    pdSyncBucketFilters();
+  };
+  window.pdResetSiteFilter = function() {
+    pdBucketState.activeSite = null;
+    pdSyncBucketFilters();
+  };
+
+  // Bucket click: the gsm.vizr bars() binding always dispatches gsm-viz-select
+  // (bubbling) on click; branch on chartId and ignore events from other charts.
+  // stat = "identity" on every bucket chart, so datum is the single clicked row.
+  document.addEventListener("gsm-viz-select", function(e) {
+    var d = e.detail;
+    if (d.type !== "click" || PD_BUCKET_IDS.indexOf(d.chartId) < 0) return;
+    var row = d.datum || {};
+    pdApplyBucketFilter({
+      level: d.metadata.level,
+      groupId: row.GroupID,
+      country: row.Level === "country" ? row.GroupID : row.OuterGroupID,
+      invid: row.Level === "site" ? row.GroupID : undefined
+    });
+  });
+
+  // Country-reactive reason swap (relocated from the deleted reason widget
+  // JS): a country bucket click broadcasts pdBucketFilterChanged; swap the
+  // reasons chart to that country slice via updateData -- no per-country
+  // spec, no rebuild. Two-stage fallback: pdReasonRowsByCountry only has keys
+  // for countries with >=1 premature death, but the country bucket chart
+  // renders every enrolled country, so a zero-premature-death country click
+  // falls back to __ALL__ instead of leaving the previous slice on screen.
+  document.addEventListener("pdBucketFilterChanged", function(e) {
+    var country = e.detail && e.detail.country;
+    var rows = pdReasonRowsByCountry[country || "__ALL__"] || pdReasonRowsByCountry["__ALL__"];
+    var el = document.getElementById("pd-country-reasons");
+    if (rows && el && el.gsmChart) {
+      el.gsmChart.helpers.updateData(el.gsmChart, rows, el.gsmChart.data._spec_);
+    }
+  });
+})();
+</script>
+'))
+```

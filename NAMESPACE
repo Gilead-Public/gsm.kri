@@ -26,6 +26,7 @@ export(Report_KRI)
 export(Report_MetricCharts)
 export(Report_MetricTable)
 export(Report_OverviewText)
+export(Report_PrematureDeaths)
 export(Report_RecordDuplication)
 export(Report_Setup)
 export(Report_StudyInfo)
@@ -50,6 +51,27 @@ export(Widget_ScatterPlotOutput)
 export(Widget_TimeSeries)
 export(Widget_TimeSeriesOutput)
 export(add_Groups_metadata)
+export(pd_BucketBarSpec)
+export(pd_BucketCounts)
+export(pd_BucketRows)
+export(pd_CategoryColors)
+export(pd_CategoryLevels)
+export(pd_CheckWindowConsistency)
+export(pd_Classify)
+export(pd_DisplayOrder)
+export(pd_EligibilityStatus)
+export(pd_OverviewStats)
+export(pd_PatientListing)
+export(pd_PatientListingData)
+export(pd_PrematureCohort)
+export(pd_RandToDeathScatter)
+export(pd_ReasonBar)
+export(pd_ReasonBarSpec)
+export(pd_ReasonByCountry)
+export(pd_ReasonCounts)
+export(pd_ReasonDist)
+export(pd_ReasonRows)
+export(pd_SubjectFatalRelatedAE)
 export(renderWidget_BarChart)
 export(renderWidget_CrossStudyRiskScore)
 export(renderWidget_FlagOverTime)
@@ -63,33 +85,65 @@ import(gsm.core)
 import(gt)
 import(purrr)
 import(tidyr)
-importFrom(DT,datatable)
-importFrom(DT,formatStyle)
-importFrom(DT,styleInterval)
-importFrom(cli,pluralize)
-importFrom(cli,qty)
+importFrom(DT,
+  datatable,
+  formatStyle,
+  styleInterval
+)
+importFrom(cli,
+  pluralize,
+  qty
+)
 importFrom(glue,glue)
-importFrom(htmltools,HTML)
-importFrom(htmltools,h1)
-importFrom(htmltools,h2)
-importFrom(htmltools,h3)
-importFrom(htmltools,h4)
-importFrom(htmltools,p)
-importFrom(htmltools,strong)
-importFrom(htmltools,tagList)
-importFrom(htmltools,tags)
-importFrom(htmlwidgets,createWidget)
-importFrom(htmlwidgets,prependContent)
-importFrom(htmlwidgets,shinyRenderWidget)
-importFrom(htmlwidgets,shinyWidgetOutput)
-importFrom(jsonlite,fromJSON)
-importFrom(jsonlite,toJSON)
+importFrom(gsm.vizr,
+  MakeChartConfig,
+  Widget_BarChart,
+  Widget_BarChartOutput,
+  Widget_GroupOverview,
+  Widget_GroupOverviewOutput,
+  Widget_ScatterPlot,
+  Widget_ScatterPlotOutput,
+  Widget_TimeSeries,
+  Widget_TimeSeriesOutput,
+  renderWidget_BarChart,
+  renderWidget_GroupOverview,
+  renderWidget_ScatterPlot,
+  renderWidget_TimeSeries
+)
+importFrom(htmltools,
+  HTML,
+  h1,
+  h2,
+  h3,
+  h4,
+  p,
+  strong,
+  tagList,
+  tags
+)
+importFrom(htmlwidgets,
+  createWidget,
+  prependContent,
+  shinyRenderWidget,
+  shinyWidgetOutput
+)
+importFrom(jsonlite,
+  fromJSON,
+  toJSON
+)
 importFrom(lifecycle,deprecated)
 importFrom(magrittr,"%>%")
-importFrom(rlang,"%||%")
-importFrom(rlang,.data)
-importFrom(rlang,check_installed)
-importFrom(stats,reorder)
-importFrom(stats,setNames)
-importFrom(tibble,enframe)
-importFrom(tibble,tibble)
+importFrom(rlang,
+  "%||%",
+  .data,
+  check_installed
+)
+importFrom(stats,
+  reorder,
+  setNames
+)
+importFrom(tibble,
+  enframe,
+  tibble
+)
+importFrom(workr,ListWorkflows)

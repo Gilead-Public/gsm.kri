@@ -1,9 +1,9 @@
 ## Test Setup
-kri_workflows <- MakeWorkflowList(
+kri_workflows <- workr::MakeWorkflowList(
   c(sprintf("kri%04d", 6:7), sprintf("cou%04d", 6:7)),
   GetDefaultKRIPath()
 )
-kri_custom <- MakeWorkflowList(
+kri_custom <- workr::MakeWorkflowList(
   c(sprintf("kri%04d_custom", 6:7), sprintf("cou%04d_custom", 6:7)),
   GetYamlPathCustomMetrics()
 )

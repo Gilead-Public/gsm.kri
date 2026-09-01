@@ -52,7 +52,7 @@ dfMetrics <- gsm.core::reportingMetrics_study \%>\%
 
 dfGroups <- gsm.core::reportingGroups_study
 
-mappings_wf <- gsm.core::MakeWorkflowList(
+mappings_wf <- workr::MakeWorkflowList(
   strNames = c("IE", "EXCLUSION", "ENROLL", "PD"),
   strPath = "workflow/1_mappings",
   strPackage = "gsm.mapping"
@@ -64,7 +64,7 @@ lRaw <- map_depth(
   gsm.mapping::Ingest,
   mappings_spec
 )
-mapped <- map_depth(lRaw, 1, ~ gsm.core::RunWorkflows(mappings_wf, .x))
+mapped <- map_depth(lRaw, 1, ~ workr::RunWorkflows(mappings_wf, .x))
 
 # test rendering of report
 lListings <- list(

@@ -11,7 +11,7 @@
 # - Reduces test load times significantly (especially on slower systems)
 #
 # Cache files created:
-# - mapped_data.rds: Cached result of RunWorkflows(mappings_wf, lData)
+# - mapped_data.rds: Cached result of workr::RunWorkflows(mappings_wf, lData)
 # - mappings_wf.rds: Cached mappings_wf object
 # - mapping_output.rds: Cached mapping output names
 #
@@ -81,7 +81,7 @@ get_cached_mapped_data <- function(lData, mappings_wf, force_refresh = FALSE, ca
       is_cache_outdated(mappings_wf_cache, source_mtime)) {
     
     # Generate fresh mapped data
-    mapped_data <- gsm.core::RunWorkflows(mappings_wf, lData)
+    mapped_data <- workr::RunWorkflows(mappings_wf, lData)
     
     # Save to cache
     saveRDS(mapped_data, mapped_data_cache)

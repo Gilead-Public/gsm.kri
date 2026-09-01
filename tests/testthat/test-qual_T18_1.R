@@ -1,6 +1,6 @@
 # TestAtLogLevel("WARN")
 ## Test Setup
-kri_workflows <- MakeWorkflowList(
+kri_workflows <- workr::MakeWorkflowList(
   sprintf("kri%04d", 15),
   GetDefaultKRIPath()
 )

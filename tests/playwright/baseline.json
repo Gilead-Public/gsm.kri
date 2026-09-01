@@ -1,0 +1,18 @@
+{
+  "kri": {
+    "htmlWidgetCount": 50,
+    "canvasCount": 48,
+    "groupOverviewRowCounts": [
+      49
+    ],
+    "selectCount": 130,
+    "consoleErrors": 0
+  },
+  "eligibility": {
+    "htmlWidgetCount": 8,
+    "canvasCount": 8,
+    "groupOverviewRowCounts": [],
+    "selectCount": 0,
+    "consoleErrors": 0
+  }
+}

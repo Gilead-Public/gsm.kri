@@ -1,0 +1,94 @@
+meta:
+  Type: Analysis
+  ID: pat0015
+  GroupLevel: Subject
+  Abbreviation: DTH90
+  Metric: Premature Death (Subject)
+  Numerator: Premature Death in Window
+  Denominator: Enrolled Subject
+  Model: Identity
+  Score: Numerator
+  AnalysisType: identity
+  Threshold: "1"
+  Flag: "0,2"
+  RiskScoreWeight: "0,16"
+  AccrualThreshold: 1
+  AccrualMetric: Denominator
+  WindowDays: 90
+  GenerateRiskSignal: true
+spec:
+  Mapped_Death:
+    subjid:
+      type: character
+    death_dy:
+      type: numeric
+  Mapped_SUBJ:
+    subjid:
+      type: character
+steps:
+  - output: vThreshold
+    name: gsm.core::ParseThreshold
+    params:
+      strThreshold: Threshold
+  - output: vRiskScoreWeight
+    name: gsm.core::ParseThreshold
+    params:
+      strThreshold: RiskScoreWeight
+      bSort: false
+  - output: vFlag
+    name: gsm.core::ParseThreshold
+    params:
+      strThreshold: Flag
+      bSort: false
+  - output: strDeathQuery
+    name: paste0
+    params:
+      strPrefix: "SELECT * FROM df WHERE death_dy <= "
+      nWindow: WindowDays
+  - output: Temp_DeathWindow
+    name: RunQuery
+    params:
+      df: Mapped_Death
+      strQuery: strDeathQuery
+  - output: Analysis_Input
+    name: gsm.core::Input_Rate
+    params:
+      dfSubjects: Mapped_SUBJ
+      dfNumerator: Temp_DeathWindow
+      dfDenominator: Mapped_SUBJ
+      strSubjectCol: subjid
+      strGroupCol: subjid
+      strGroupLevel: GroupLevel
+      strNumeratorMethod: Count
+      strDenominatorMethod: Count
+  - output: Analysis_Transformed
+    name: gsm.core::Transform_Rate
+    params:
+      dfInput: Analysis_Input
+  - output: Analysis_Analyzed
+    name: Analyze_Identity
+    params:
+      dfTransformed: Analysis_Transformed
+      strValueCol: Score
+  - output: Analysis_Flagged
+    name: gsm.core::Flag
+    params:
+      dfAnalyzed: Analysis_Analyzed
+      vThreshold: vThreshold
+      vFlag: vFlag
+      vRiskScoreWeight: vRiskScoreWeight
+      nAccrualThreshold: AccrualThreshold
+      strAccrualMetric: AccrualMetric
+  - output: Analysis_Summary
+    name: gsm.core::Summarize
+    params:
+      dfFlagged: Analysis_Flagged
+  - output: lAnalysis
+    name: list
+    params:
+      ID: ID
+      Analysis_Input: Analysis_Input
+      Analysis_Transformed: Analysis_Transformed
+      Analysis_Analyzed: Analysis_Analyzed
+      Analysis_Flagged: Analysis_Flagged
+      Analysis_Summary: Analysis_Summary

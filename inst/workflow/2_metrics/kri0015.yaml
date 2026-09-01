@@ -1,4 +1,5 @@
 meta:
+  Active: true
   Type: Analysis
   ID: kri0015
   GroupLevel: Site
@@ -14,6 +15,8 @@ meta:
   RiskScoreWeight: "0,8,16"
   AccrualThreshold: 1
   AccrualMetric: Denominator
+  WindowDays: 90
+  GenerateRiskSignal: true
 spec:
   Mapped_Death:
     subjid:
@@ -40,16 +43,21 @@ steps:
     params:
       strThreshold: Flag
       bSort: false
-  - output: Temp_Death90
+  - output: strDeathQuery
+    name: paste0
+    params:
+      strPrefix: "SELECT * FROM df WHERE death_dy <= "
+      nWindow: WindowDays
+  - output: Temp_DeathWindow
     name: RunQuery
     params:
       df: Mapped_Death
-      strQuery: "SELECT * FROM df WHERE death_dy <= 90"
+      strQuery: strDeathQuery
   - output: Analysis_Input
     name: gsm.core::Input_Rate
     params:
       dfSubjects: Mapped_SUBJ
-      dfNumerator: Temp_Death90
+      dfNumerator: Temp_DeathWindow
       dfDenominator: Mapped_SUBJ
       strSubjectCol: subjid
       strGroupCol: invid

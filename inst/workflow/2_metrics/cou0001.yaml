@@ -1,4 +1,5 @@
 meta:
+  Active: true
   Type: Analysis
   ID: cou0001
   GroupLevel: Country
@@ -12,6 +13,7 @@ meta:
   Threshold: -2,-1,2,3
   AccrualThreshold: 30
   AccrualMetric: Denominator
+  GenerateRiskSignal: true
 spec:
   Mapped_AE:
     subjid:

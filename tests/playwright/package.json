@@ -1,0 +1,6 @@
+{
+  "name": "gsm-kri-pd-visual-tests",
+  "private": true,
+  "scripts": { "test": "playwright test" },
+  "devDependencies": { "@playwright/test": "^1.48.0" }
+}

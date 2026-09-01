@@ -1,4 +1,5 @@
 meta:
+  Active: true
   Type: Analysis
   ID: cou0006
   GroupLevel: Country
@@ -13,6 +14,7 @@ meta:
   Flag: "0,1,2"
   AccrualThreshold: 3
   AccrualMetric: Numerator
+  GenerateRiskSignal: true
 spec:
   Mapped_SUBJ:
     subjid:
@@ -34,7 +36,7 @@ steps:
     params:
       strThreshold: Flag
   - output: Temp_DROPOUT
-    name: RunQuery
+    name: workr::RunQuery
     params:
       df: Mapped_STUDCOMP
       strQuery: "SELECT * FROM df WHERE compyn = 'N'"

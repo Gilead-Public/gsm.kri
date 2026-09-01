@@ -419,3 +419,42 @@ test_that("CalculateRiskScore handles multiple group levels (#127)", {
   expect_true("Site002" %in% dfRiskScore$GroupID)
   expect_true("Canada" %in% dfRiskScore$GroupID)
 })
+
+# Active metric filtering tests ----
+
+test_that("CalculateRiskScore excludes inactive metrics from denominator (#226)", {
+  # Only active metrics appear in dfResults (inactive ones are never run)
+  dfResults <- data.frame(
+    GroupLevel = rep("Site", 4),
+    GroupID = rep(c("Site001", "Site002"), each = 2),
+    MetricID = rep(c("Analysis_kri0001", "Analysis_kri0002"), 2),
+    Flag = c(1, 2, 0, -1),
+    stringsAsFactors = FALSE
+  )
+  # kri0003 is inactive; its WeightMax (16) should NOT inflate the denominator
+  dfMetrics_with_inactive <- data.frame(
+    MetricID = c("Analysis_kri0001", "Analysis_kri0002", "Analysis_kri0003"),
+    Flag = rep("-2,-1,0,1,2", 3),
+    RiskScoreWeight = c("4,2,0,2,4", "8,4,0,4,8", "16,8,0,8,16"),
+    Active = c(TRUE, TRUE, FALSE),
+    stringsAsFactors = FALSE
+  )
+  dfMetrics_active_only <- data.frame(
+    MetricID = c("Analysis_kri0001", "Analysis_kri0002"),
+    Flag = rep("-2,-1,0,1,2", 2),
+    RiskScoreWeight = c("4,2,0,2,4", "8,4,0,4,8"),
+    stringsAsFactors = FALSE
+  )
+
+  dfWeights_with_inactive <- MakeWeights(dfMetrics_with_inactive)
+  dfWeights_active_only <- MakeWeights(dfMetrics_active_only)
+
+  # Both should produce the same results because kri0003 is filtered out
+  dfRiskScore_inactive <- CalculateRiskScore(dfResults, dfWeights_with_inactive)
+  dfRiskScore_active <- CalculateRiskScore(dfResults, dfWeights_active_only)
+
+  # Denominator = 4 + 8 = 12 (active metrics only)
+  expect_equal(unique(dfRiskScore_inactive$Denominator), 12)
+  expect_equal(dfRiskScore_inactive$Denominator, dfRiskScore_active$Denominator)
+  expect_equal(dfRiskScore_inactive$Numerator, dfRiskScore_active$Numerator)
+})

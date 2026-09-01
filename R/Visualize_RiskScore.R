@@ -3,7 +3,7 @@
 #' Creates an interactive risk score widget for cross-study visualization.
 #'
 #' For a working example see
-#' [Cross-Study KRI Report](https://gilead-biostats.github.io/gsm.kri/examples/Example_CrossStudySRS.html).
+#' [Cross-Study KRI Report](https://gilead-public.github.io/gsm.kri/examples/Example_CrossStudySRS.html).
 #'
 #' @param dfResults `data.frame` Analysis results from CalculateRiskScore
 #' @param dfMetrics `data.frame` Metric metadata from gsm.core::reportingMetrics

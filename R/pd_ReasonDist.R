@@ -1,0 +1,197 @@
+#' Premature-death reason counts
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#'
+#' Counts `deathcls` among premature deaths (`death_dy <= window`). Falls back
+#' to `"Unknown"` for missing reasons or when the `deathcls` column is absent.
+#'
+#' @param dfDeath `data.frame` Mapped death data with `subjid`, `death_dy`, and
+#'   optionally `deathcls`.
+#' @param nWindowDays `numeric` Premature-death window in days. Default: 90.
+#'
+#' @return A `data.frame` with `death_reason` and `n` columns, sorted by `n` descending.
+#' @export
+pd_ReasonCounts <- function(dfDeath, nWindowDays = 90) {
+  coh <- pd_PrematureReasonCohort(dfDeath, nWindowDays)
+  s <- pd_ReasonSlice(coh)
+  tibble::tibble(death_reason = s$reason, n = s$n)
+}
+
+#' Premature-death reason cohort (internal)
+#'
+#' @description
+#' Validate `dfDeath`/`nWindowDays`, build the premature-death cohort, and label
+#' each death's reason. Shared preamble for [pd_ReasonCounts()] and
+#' [pd_ReasonDist()] so the input contract lives in one place.
+#'
+#' @return The premature cohort `data.frame` with a `death_reason` column.
+#' @noRd
+pd_PrematureReasonCohort <- function(dfDeath, nWindowDays) {
+  gsm.core::stop_if(
+    cnd = !is.data.frame(dfDeath),
+    message = "dfDeath is not a data.frame"
+  )
+  gsm.core::stop_if(
+    cnd = !(is.numeric(nWindowDays) &&
+      length(nWindowDays) == 1 &&
+      nWindowDays > 0),
+    message = "nWindowDays must be a positive number"
+  )
+
+  coh <- pd_PrematureCohort(dfDeath, nWindowDays = nWindowDays)
+  coh$death_reason <- pd_DeathReason(coh)
+  coh
+}
+
+#' Premature-death reason slice (internal kernel)
+#'
+#' @description
+#' Shared kernel: count -> arrange -> build hover. Returns the slice contract
+#' `list(reason, n, hover)`. The premature-death percentage is over the slice
+#' total. The enrolled-percentage line is conditional on `nEnrolled`.
+#'
+#' @param dfReason `data.frame` with a `death_reason` column.
+#' @param nEnrolled `numeric` or `NULL`. When non-NULL, adds a "% of enrolled"
+#'   hover line using this as the denominator.
+#'
+#' @return A named `list` with `reason`, `n`, and `hover` character/integer vectors.
+#' @noRd
+pd_ReasonSlice <- function(dfReason, nEnrolled = NULL) {
+  g <- dfReason %>%
+    dplyr::count(.data$death_reason, name = "n") %>%
+    dplyr::arrange(dplyr::desc(.data$n))
+  total <- sum(g$n)
+  # No "Reason: <x>" line — the reason is the tooltip title (the bar's category).
+  # Zero-row guard: paste0() recycles its scalar literals up to length 1 even
+  # when g$n is length-0, which would desync hover from reason/n and blow up
+  # pd_ReasonRows's data.frame() downstream.
+  hover <- if (nrow(g) == 0) {
+    character(0)
+  } else {
+    paste0(
+      "Subjects: ",
+      g$n,
+      if (!is.null(nEnrolled)) {
+        paste0("<br>% of enrolled: ", pd_PctLabel(g$n, nEnrolled))
+      } else {
+        ""
+      },
+      "<br>% of premature deaths: ",
+      pd_PctLabel(g$n, total)
+    )
+  }
+  list(reason = g$death_reason, n = g$n, hover = hover)
+}
+
+#' Premature-death reason bar chart
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#'
+#' Renders the horizontal reason distribution from a reason slice produced by
+#' [pd_ReasonByCountry()] or derived inside [pd_ReasonDist()], via
+#' [gsm.vizr::bars()].
+#'
+#' @param slice A named `list` with `reason`, `n`, and `hover` vectors, as
+#'   returned by the internal kernel `pd_ReasonSlice` or elements of the list
+#'   returned by [pd_ReasonByCountry()].
+#'
+#' @return A `bars` htmlwidget (see [gsm.vizr::bars()]).
+#' @export
+pd_ReasonBar <- function(slice) {
+  gsm.vizr::bars(
+    data = pd_ReasonRows(slice),
+    # slice is arranged desc(n), so its reason vector pins the count sort the
+    # former Plotly chart got from stats::reorder(reason, n).
+    spec = pd_ReasonBarSpec(reason_order = slice$reason),
+    metadata = list(level = "study")
+  )
+}
+
+#' Premature-death reason distribution chart
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#'
+#' Horizontal bar of `deathcls` counts among premature deaths, rendered via
+#' [gsm.vizr::bars()].
+#'
+#' @inheritParams pd_ReasonCounts
+#' @param nEnrolled `numeric` Total enrolled subjects, used for the "% of enrolled"
+#'   tooltip line. When `NULL` (default) that line is omitted. Default: `NULL`.
+#'
+#' @return A `bars` htmlwidget (see [gsm.vizr::bars()]).
+#' @export
+pd_ReasonDist <- function(dfDeath, nWindowDays = 90, nEnrolled = NULL) {
+  coh <- pd_PrematureReasonCohort(dfDeath, nWindowDays)
+  pd_ReasonBar(pd_ReasonSlice(coh, nEnrolled = nEnrolled))
+}
+
+#' Premature-death reason counts by country
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#'
+#' Reason (`deathcls`) counts among premature deaths, split per country, plus an
+#' `"__ALL__"` aggregate over every premature death. Powers the country-reactive
+#' Reasons chart: the report serializes this to JSON and a client handler swaps
+#' the bar to the clicked country's slice. Each slice is sorted by descending
+#' count and carries a prebuilt hover string, so the client needs no arithmetic.
+#'
+#' @inheritParams pd_ReasonCounts
+#' @param dfSubjects `data.frame` Mapped subject data with `subjid` and `country`,
+#'   joined onto each death to attribute it to a country.
+#' @param nEnrolledByCountry `named numeric` or `NULL`. When provided, each
+#'   per-country slice gains a "% of enrolled" hover line using the element
+#'   named by the country as its denominator. Countries absent from the lookup
+#'   receive no enrolled line. Default: `NULL` (no enrolled line; backward-
+#'   compatible with existing callers).
+#' @param nEnrolled `numeric` or `NULL`. When provided, the `"__ALL__"` slice
+#'   gains a "% of enrolled" hover line using this as the denominator.
+#'   Default: `NULL`.
+#'
+#' @return A named `list`: one element per country (and `"__ALL__"`), each a
+#'   `list` with `reason`, `n`, and `hover` vectors sorted by descending `n`.
+#' @export
+pd_ReasonByCountry <- function(
+  dfDeath,
+  dfSubjects,
+  nWindowDays = 90,
+  nEnrolledByCountry = NULL,
+  nEnrolled = NULL
+) {
+  gsm.core::stop_if(
+    cnd = !is.data.frame(dfDeath),
+    message = "dfDeath is not a data.frame"
+  )
+  coh <- pd_PrematureCohort(dfDeath, dfSubjects, nWindowDays = nWindowDays)
+  if (!"country" %in% names(coh)) {
+    coh$country <- NA_character_
+  }
+  coh$death_reason <- pd_DeathReason(coh)
+  # Same "Unknown" label as dfClassified (pd_CountryLabel) so this per-country
+  # split keys identically to enrolled_by_country and the JS country->site map.
+  coh$country <- pd_CountryLabel(coh$country)
+
+  groups <- split(coh, coh$country)
+  out <- Map(
+    function(df, ctry) {
+      # `[[` on a named atomic vector (e.g. tibble::deframe() output) errors on a
+      # missing key, so guard presence: a country absent from the lookup gets no
+      # enrolled line (e.g. an unmapped-subject death coalesced to "Unknown").
+      nEnr <- if (
+        !is.null(nEnrolledByCountry) && ctry %in% names(nEnrolledByCountry)
+      ) {
+        nEnrolledByCountry[[ctry]]
+      } else {
+        NULL
+      }
+      pd_ReasonSlice(df, nEnrolled = nEnr)
+    },
+    groups,
+    names(groups)
+  )
+  out[["__ALL__"]] <- pd_ReasonSlice(coh, nEnrolled = nEnrolled)
+  out
+}

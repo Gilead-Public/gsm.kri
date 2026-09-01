@@ -1,4 +1,5 @@
 meta:
+  Active: true
   Type: Analysis
   ID: cou0009
   GroupLevel: Country
@@ -13,6 +14,7 @@ meta:
   Flag: "0,1,2"
   AccrualThreshold: 30
   AccrualMetric: Numerator
+  GenerateRiskSignal: true
 spec:
   Mapped_SUBJ:
     subjid:
@@ -36,12 +38,12 @@ steps:
     params:
       strThreshold: Flag
   - output: Temp_OLDQUERY
-    name: RunQuery
+    name: workr::RunQuery
     params:
       df: Mapped_QUERY
       strQuery: "SELECT * FROM df WHERE querystatus IN ('Open','Answered','Closed') AND queryage > 30"
   - output: Temp_QUERY
-    name: RunQuery
+    name: workr::RunQuery
     params:
       df: Mapped_QUERY
       strQuery: "SELECT * FROM df WHERE querystatus IN ('Open','Answered','Closed')"

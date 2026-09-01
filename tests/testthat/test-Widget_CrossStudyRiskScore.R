@@ -111,7 +111,7 @@ test_that("Cross-study SRS report widget allows filtering on multiple studies (#
     "Can filter cross-study SRS report on multiple studies.",
     intIssue = 171,
     chrInstructions = paste(
-      "1. Navigate to the [Cross-Study SRS Report example](https://gilead-biostats.github.io/gsm.kri/dev/examples/Example_CrossStudySRS.html).",
+      "1. Navigate to the [Cross-Study SRS Report example](https://gilead-public.github.io/gsm.kri/dev/examples/Example_CrossStudySRS.html).",
       "2. Use the 'Filter by Study' option, following the instructions on the page.",
       sep = "\n"
     ),
