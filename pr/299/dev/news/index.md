@@ -2,9 +2,11 @@
 
 ## gsm.kri v1.7.0
 
-This minor release completes the gsm.viz adoption: every chart gsm.kri
-renders now goes through gsm.vizr, and the vendored gsm.viz bundle and
-legacy widget sources are gone.
+This minor release moves every gsm.viz-backed chart onto gsm.vizr: the
+vendored gsm.viz bundle and the legacy widget sources are gone, and the
+Premature Deaths and Eligibility bar charts render through gsm.vizr. The
+Premature Deaths randomization-to-death scatters stay on Plotly
+([\#120](https://github.com/Gilead-Public/gsm.kri/issues/120)).
 
 **Breaking Changes:**
 
@@ -15,8 +17,12 @@ legacy widget sources are gone.
   [`pd_BucketBarSpec()`](https://gilead-public.github.io/gsm.kri/dev/reference/pd_BucketBarSpec.md)
   with
   [`gsm.vizr::bars()`](https://gilead-public.github.io/gsm.vizr/reference/bars.html).
-  [`pd_BucketCounts()`](https://gilead-public.github.io/gsm.kri/dev/reference/pd_BucketCounts.md)
-  is unchanged.
+  Its aggregation is now the new exported
+  [`pd_BucketCounts()`](https://gilead-public.github.io/gsm.kri/dev/reference/pd_BucketCounts.md),
+  which emits only the (group, category) pairs that occur
+  (`.drop = TRUE`) rather than `pd_BucketBar()`’s complete grid, so an
+  empty category carries no zero-count row and the dynamic category axis
+  can thin.
 - gsm.kri now requires `gsm.qtl (>= 1.4.0)` for the gsm.vizr-backed
   eligibility charts, and takes a new dependency on
   `gsm.vizr (>= 0.1.0)`.
@@ -69,7 +75,12 @@ legacy widget sources are gone.
   `bundle-regression` browser spec afterwards. Repository tooling; not
   part of the installed package.
 - Repository links updated from Gilead-BioStats to Gilead-Public
-  ([\#284](https://github.com/Gilead-Public/gsm.kri/issues/284)).
+  ([\#284](https://github.com/Gilead-Public/gsm.kri/issues/284)). Two
+  sets of `Gilead-BioStats` references are intentionally kept: the
+  `clindata` link in `README.md`, because that repository has not moved,
+  and the `Gilead-BioStats/41` project board named by
+  `.github/CONTRIBUTING.md` and the issue templates, which is org-level
+  and shared with the other gsm packages.
 
 ## gsm.kri v1.6.1
 
