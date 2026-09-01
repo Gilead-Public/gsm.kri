@@ -20,8 +20,6 @@ library(stringr)
 library(tidyr)
 library(gsm.kri)
 library(gsm.qtl)
-library(ggplot2)
-library(plotly)
 library(gt)
 library(htmltools)
 library(knitr)
@@ -72,42 +70,37 @@ gsm.kri::Widget_TimeSeries(
 ## Bar Charts {.tabset .tabset-pills}
 
 ### Site
-```{r, echo = FALSE, results = 'asis', fig.height=4}
+```{r, echo = FALSE}
 gsm.qtl::eligibility_groupBar(dfNum = IE_num, dfDenom = IE_denom, varGroupID = invid, strGroupLabel = "Site")
 ```
 
-### Site (by %)
-```{r, echo = FALSE, results = 'asis', fig.height=4}
-gsm.qtl::eligibility_groupBar(dfNum = IE_num, dfDenom = IE_denom, varGroupID = invid, strGroupLabel = "Site", bPercentage = TRUE)
-```
-
 ### Country
-```{r, echo = FALSE, results = 'asis', fig.height=4}
+```{r, echo = FALSE}
 gsm.qtl::eligibility_groupBar(dfNum = IE_num, dfDenom = IE_denom, varGroupID = country, strGroupLabel = "Country")
 ```
 
 ### Source
-```{r, echo = FALSE, results = 'asis', fig.height=4}
+```{r, echo = FALSE}
 gsm.qtl::eligibility_sourceBar(df = IE_num)
 ```
 
 ### Criteria/Site (EDC I/E data only)
-```{r, echo = FALSE, results = 'asis', fig.height=4}
+```{r, echo = FALSE}
 gsm.qtl::criteria_groupBar(df =  IE_num, varGroupID = invid, strGroupLabel = "Site")
 ```
 
 ### Criteria/Country (EDC I/E data only)
-```{r, echo = FALSE, results = 'asis', fig.height=4}
+```{r, echo = FALSE}
 gsm.qtl::criteria_groupBar(df =  IE_num, varGroupID = country, strGroupLabel = "Country")
 ```
 
 ### Site/Criteria (EDC I/E data only)
-```{r, echo = FALSE, results = 'asis', fig.height=4}
+```{r, echo = FALSE}
 gsm.qtl::criteria_groupBar(df =  IE_num, varGroupID = invid, strGroupLabel = "Site", bSwapAxes = TRUE)
 ```
 
 ### Country/Criteria (EDC I/E data only)
-```{r, echo = FALSE, results = 'asis', fig.height=4}
+```{r, echo = FALSE}
 gsm.qtl::criteria_groupBar(df =  IE_num, varGroupID = country, strGroupLabel = "Country", bSwapAxes = TRUE)
 ```
 

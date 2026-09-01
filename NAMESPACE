@@ -46,8 +46,9 @@ export(Widget_ScatterPlotOutput)
 export(Widget_TimeSeries)
 export(Widget_TimeSeriesOutput)
 export(add_Groups_metadata)
-export(pd_BucketBar)
+export(pd_BucketBarSpec)
 export(pd_BucketCounts)
+export(pd_BucketRows)
 export(pd_CategoryColors)
 export(pd_CategoryLevels)
 export(pd_CheckWindowConsistency)
@@ -60,9 +61,11 @@ export(pd_PatientListingData)
 export(pd_PrematureCohort)
 export(pd_RandToDeathScatter)
 export(pd_ReasonBar)
+export(pd_ReasonBarSpec)
 export(pd_ReasonByCountry)
 export(pd_ReasonCounts)
 export(pd_ReasonDist)
+export(pd_ReasonRows)
 export(pd_SubjectFatalRelatedAE)
 export(renderWidget_BarChart)
 export(renderWidget_CrossStudyRiskScore)
@@ -86,6 +89,21 @@ importFrom(cli,
   qty
 )
 importFrom(glue,glue)
+importFrom(gsm.vizr,
+  MakeChartConfig,
+  Widget_BarChart,
+  Widget_BarChartOutput,
+  Widget_GroupOverview,
+  Widget_GroupOverviewOutput,
+  Widget_ScatterPlot,
+  Widget_ScatterPlotOutput,
+  Widget_TimeSeries,
+  Widget_TimeSeriesOutput,
+  renderWidget_BarChart,
+  renderWidget_GroupOverview,
+  renderWidget_ScatterPlot,
+  renderWidget_TimeSeries
+)
 importFrom(htmltools,
   HTML,
   h1,

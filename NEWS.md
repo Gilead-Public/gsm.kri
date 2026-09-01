@@ -1,3 +1,54 @@
+# gsm.kri v1.7.0
+
+This minor release moves every gsm.viz-backed chart onto gsm.vizr: the vendored gsm.viz
+bundle and the legacy widget sources are gone, and the Premature Deaths and Eligibility
+bar charts render through gsm.vizr. The Premature Deaths randomization-to-death scatters
+stay on Plotly (#120).
+
+**Breaking Changes:**
+
+- `pd_BucketBar()` is removed (#264) — the Plotly bucket bar, left without a caller once
+  the Premature Deaths report moved to gsm.viz. Use `pd_BucketBarSpec()` with
+  `gsm.vizr::bars()`. Its aggregation is now the new exported `pd_BucketCounts()`, which
+  emits only the (group, category) pairs that occur (`.drop = TRUE`) rather than
+  `pd_BucketBar()`'s complete grid, so an empty category carries no zero-count row and
+  the dynamic category axis can thin.
+- gsm.kri now requires `gsm.qtl (>= 1.4.0)` for the gsm.vizr-backed eligibility charts,
+  and takes a new dependency on `gsm.vizr (>= 0.1.0)`.
+
+**Relocations to gsm.vizr:**
+
+- The legacy widget wrappers (`Widget_BarChart`, `Widget_ScatterPlot`, `Widget_TimeSeries`,
+  `Widget_GroupOverview`), their Shiny bindings, `MakeChartConfig()`, and the shared
+  widget-control JS/CSS moved to gsm.vizr (#291). gsm.kri re-exports every name, so
+  existing callers are unaffected. The vendored `gsm.viz-2.4.1` bundle is retired;
+  `Widget_CrossStudyRiskScore` now takes the bundle from
+  `gsm.vizr::html_dependency_gsm_viz()`.
+- The Premature Deaths bucket and reason barcharts render through `gsm.vizr::bars()` via
+  the new `pd_BucketBarSpec()` / `pd_BucketRows()` / `pd_ReasonBarSpec()` /
+  `pd_ReasonRows()` (#264, #288). The pilot wrappers `Widget_PrematureDeathBucketBar()` /
+  `Widget_PrematureDeathReasonBar()` and their four Shiny bindings are removed; they were
+  added after v1.6.1 and never shipped in a release. The hand-rolled count/percent toggle
+  is replaced by gsm.viz's native position toggle, and a missing `OuterGroupID` now
+  serializes to a real `null` instead of the literal string `"NA"`.
+- The Eligibility report's 7 bar charts (Site, Country, Source, and the four Criteria/…
+  tabs) render through gsm.qtl's `eligibility_groupBar()` / `eligibility_sourceBar()` /
+  `criteria_groupBar()` instead of plotly (#286). The separate "Site (by %)" tab is folded
+  into the Site chart's position toggle, matching the QTL report. `Report_Eligibility.Rmd`
+  no longer loads `ggplot2`/`plotly`.
+
+**Other:**
+
+- New `update-gsm-viz-bundle` skill under `.github/skills/`, referenced from `AGENTS.md`
+  (#282). It documents how to re-vendor the gsm.viz assets in gsm.vizr from a release tag
+  or a pinned upstream commit, and how to re-run gsm.kri's `bundle-regression` browser
+  spec afterwards. Repository tooling; not part of the installed package.
+- Repository links updated from Gilead-BioStats to Gilead-Public (#284). Two sets of
+  `Gilead-BioStats` references are intentionally kept: the `clindata` link in `README.md`,
+  because that repository has not moved, and the `Gilead-BioStats/41` project board named
+  by `.github/CONTRIBUTING.md` and the issue templates, which is org-level and shared with
+  the other gsm packages.
+
 # gsm.kri v1.6.1
 
 This patch release removes the log4r package dependency, because the log4r package was archived on CRAN (#262).

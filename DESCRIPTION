@@ -1,7 +1,7 @@
 Type: Package
 Package: gsm.kri
 Title: Good Statistical Monitoring KRIs
-Version: 1.6.1
+Version: 1.7.0
 Authors@R: c(
     person("Jeremy", "Wildfire", , "jwildfire@gmail.com", role = c("aut", "cre")),
     person("Laura", "Maxwell", , "laura.maxwell@atorusresearch.com", role = "aut"),
@@ -26,6 +26,7 @@ Imports:
     ggplot2,
     glue,
     gsm.core (>= 1.3.1),
+    gsm.vizr (>= 0.1.0),
     gt,
     htmltools,
     htmlwidgets,
@@ -43,7 +44,7 @@ Suggests:
     fontawesome,
     gsm.mapping (>= 1.1.3),
     gsm.reporting (>= 1.1.4),
-    gsm.qtl (>= 1.1.0),
+    gsm.qtl (>= 1.4.0),
     here,
     knitr,
     lubridate,
@@ -57,8 +58,9 @@ VignetteBuilder:
 Remotes:
     gsm.core=Gilead-Public/gsm.core@main,
     gsm.mapping=Gilead-Public/gsm.mapping@main,
-    gsm.qtl=Gilead-Public/gsm.qtl@main,
+    gsm.qtl=Gilead-Public/gsm.qtl@release-1.4.0,
     gsm.reporting=Gilead-Public/gsm.reporting@main,
+    gsm.vizr=Gilead-Public/gsm.vizr@main,
     qcthat=Gilead-Public/qcthat@main
 Config/roxygen2/version: 8.1.0
 Config/testthat/edition: 3

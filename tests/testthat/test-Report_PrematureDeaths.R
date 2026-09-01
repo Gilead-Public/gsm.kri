@@ -104,7 +104,9 @@ test_that("Report_PrematureDeaths renders the dynamic subtitle, not literal pseu
   expect_true(grepl("Snapshot Date: 2026-05-01", html, fixed = TRUE))
   # ...and the old mid-document "--- subtitle:/date: ---" block (which pandoc only
   # honours in the top header, so it leaked as a literal "subtitle:" line) is gone.
-  expect_false(grepl("subtitle:", html, fixed = TRUE))
+  # Exclude the gsm.viz bundle's `subtitle: {` JS config (a Chart.js plugin key,
+  # not a leaked YAML line) by requiring a non-`{` char after the colon.
+  expect_false(grepl("subtitle: [^{]", html))
 })
 
 test_that("Report_PrematureDeaths renders the studcomp discontinuation note {#246}", {
@@ -123,7 +125,7 @@ test_that("Report_PrematureDeaths renders the studcomp discontinuation note {#24
   expect_true(grepl("studcomp", html, ignore.case = TRUE))
 })
 
-test_that("Report bucket-bar toggle updates labels and autoranges both modes {#246}", {
+test_that("Report no longer emits the custom count/% toggle scaffolding (#264)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
   out <- Report_PrematureDeaths(
@@ -135,16 +137,11 @@ test_that("Report bucket-bar toggle updates labels and autoranges both modes {#2
     strOutputDir = tempdir()
   )
   html <- paste(readLines(out, warn = FALSE), collapse = "\n")
-  # applyMode rebuilds the on-bar text per mode (count vs %) and pushes it with y.
-  expect_match(html, "var texts =", fixed = TRUE)
-  expect_match(html, "text: texts", fixed = TRUE)
-  # % mode autoranges the y-axis (no pinned [0, 100]) so a legend deselect
-  # rescales the bars, consistent with count mode.
-  expect_match(
-    html,
-    '"yaxis.ticksuffix": "%", "yaxis.autorange": true',
-    fixed = TRUE
-  )
+  # The hand-rolled sticky toggle is gone; the bucket charts rely on gsm.viz's
+  # native stack/dodge/fill control. None of its markers may survive.
+  expect_false(grepl("pd-mode-sticky", html, fixed = TRUE))
+  expect_false(grepl("pd-mode-count", html, fixed = TRUE))
+  expect_false(grepl("pdSetMode", html, fixed = TRUE))
 })
 
 test_that("Report_PrematureDeaths includes country filter JS and banner {#246}", {
@@ -165,7 +162,6 @@ test_that("Report_PrematureDeaths includes country filter JS and banner {#246}",
 
   # JS controller present
   expect_true(grepl("pdResetFilter", html))
-  expect_true(grepl("plotly_click", html))
 
   # Country-site map JSON present
   expect_true(grepl("countrySiteMap", html))
@@ -175,9 +171,12 @@ test_that("Report_PrematureDeaths includes country filter JS and banner {#246}",
   expect_true(grepl("pd-filter-country-chip", html))
   expect_false(grepl("sites with at least 1 premature death", html))
 
-  # Chart container IDs present
-  expect_true(grepl('id="pd-country-buckets"', html))
-  expect_true(grepl('id="pd-site-buckets"', html))
+  # Chart container IDs present. The gsm.viz bucket widgets set their element id
+  # at runtime (el.id = metadata.chartId), so the chartId lands in the serialized
+  # metadata rather than a static id= attribute; the scatter div is still an
+  # htmltools div carrying id= server-side.
+  expect_true(grepl("pd-country-buckets", html))
+  expect_true(grepl("pd-site-buckets", html))
   expect_true(grepl('id="pd-site-scatter"', html))
 })
 
@@ -194,10 +193,11 @@ test_that("Report_PrematureDeaths wires the site-barchart listing filter {#221}"
   )
   html <- paste(readLines(out, warn = FALSE), collapse = "\n")
 
-  # Site click is wired as a second, independent filter source.
-  expect_match(html, "attachSiteClick", fixed = TRUE)
-  expect_match(html, "function applySiteFilter", fixed = TRUE)
-  expect_match(html, "highlightSiteBar", fixed = TRUE)
+  # Site click is wired as a second, independent filter source via gsm.vizr's
+  # gsm-viz-select event and its handler (which branches on detail.level "site").
+  expect_match(html, "gsm-viz-select", fixed = TRUE)
+  expect_match(html, "function pdApplyBucketFilter", fixed = TRUE)
+  expect_match(html, "pdHighlightBuckets", fixed = TRUE)
   # Both filters route through one listing owner.
   expect_match(html, "function applyListingFilter", fixed = TRUE)
   # Site chip + its reset.
@@ -221,6 +221,16 @@ test_that("Report wires the numeric-y scatter point filter {#247}", {
   expect_match(html, "function filterScatterChart", fixed = TRUE)
   expect_match(html, "pd-country-scatter", fixed = TRUE)
   expect_match(html, "pd-site-scatter", fixed = TRUE)
+})
+
+test_that("Report_PrematureDeaths still guards on plotly for the deferred scatter (#264)", {
+  # Buckets and reasons moved to gsm.viz (Chart.js), but the rand->death scatter
+  # stays on Plotly (migration deferred with #120), so the report entrypoint must
+  # still require plotly. Inspect the loaded function body rather than the HTML
+  # (where the vendored plotly.js bundle would match "plotly" incidentally) or an
+  # R/ source file (absent once the package is built for R CMD check).
+  body_src <- paste(deparse(body(Report_PrematureDeaths)), collapse = " ")
+  expect_true(grepl('check_installed\\("plotly"', body_src, perl = TRUE))
 })
 
 test_that("Report drops subjects without a randomization date from the cohort {#247}", {
@@ -399,7 +409,7 @@ test_that("Report listing shows Treatment Related Yes for a fatal related AE dea
   expect_true(grepl('"Yes"', html, fixed = TRUE)) # S1: deathcls AE + grade-5 RELATED AE
 })
 
-test_that("Report count/% toggle is sticky and follows scroll {#253}", {
+test_that("Report renders a country-reactive Reasons chart via gsm.vizr::bars() {#254} {#264} {#288}", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
   out <- Report_PrematureDeaths(
@@ -411,25 +421,27 @@ test_that("Report count/% toggle is sticky and follows scroll {#253}", {
     strOutputDir = tempdir()
   )
   html <- paste(readLines(out, warn = FALSE), collapse = "\n")
-  expect_match(html, "pd-mode-sticky", fixed = TRUE)
-  # the toggle buttons live inside the sticky bar
-  expect_match(html, "pd-mode-count", fixed = TRUE)
-  # Regression guard: a `position: sticky` element only pins within its PARENT
-  # block, so the toggle must sit in the report's top-level section -- NOT nested
-  # inside the short `## Overview` section, where it would scroll away. Assert it
-  # renders ahead of the Overview preamble (i.e. before the `## Overview`
-  # heading), so its containing block spans the whole report and it actually pins.
-  toggle_at <- regexpr("pd-mode-toggle", html, fixed = TRUE)
-  overview_at <- regexpr(
-    "Premature death analysis supports",
+  # chartId is stamped on the element at runtime; statically it lives in the
+  # reasons chart's serialized metadata.
+  expect_match(html, "pd-country-reasons", fixed = TRUE)
+  # The reason bar swaps to the clicked country's slice via updateData on the
+  # bucket filter event, replacing the old Plotly rebuildReasons bridge.
+  expect_match(html, "pdBucketFilterChanged", fixed = TRUE)
+  expect_match(html, "helpers.updateData", fixed = TRUE)
+  expect_false(grepl("function rebuildReasons", html, fixed = TRUE))
+  # pdReasonRowsByCountry only has keys for countries with >=1 premature death,
+  # but the country bucket chart renders every enrolled country, so a
+  # zero-premature-death country is clickable and misses. That miss must empty
+  # the chart: __ALL__ describes the cleared state only, and serving it under a
+  # country filter would read as deaths in that country.
+  expect_match(
     html,
+    'country ? (pdReasonRowsByCountry[country] || []) : pdReasonRowsByCountry["__ALL__"]',
     fixed = TRUE
   )
-  expect_true(toggle_at > 0 && overview_at > 0)
-  expect_lt(toggle_at, overview_at)
 })
 
-test_that("Report adds a country-reactive Reasons chart {#254}", {
+test_that("Report renders the bucket/reason charts via gsm.vizr::bars() and inlines pdSiteRows/pdReasonRowsByCountry {#288}", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
   out <- Report_PrematureDeaths(
@@ -441,11 +453,50 @@ test_that("Report adds a country-reactive Reasons chart {#254}", {
     strOutputDir = tempdir()
   )
   html <- paste(readLines(out, warn = FALSE), collapse = "\n")
-  expect_true(grepl('id="pd-country-reasons"', html))
-  expect_match(html, "reasonByCountry", fixed = TRUE)
-  expect_match(html, "function rebuildReasons", fixed = TRUE)
-  expect_match(html, "rebuildReasons(country);", fixed = TRUE) # wired into applyFilter
-  expect_match(html, "rebuildReasons(null);", fixed = TRUE) # wired into reset
+
+  # Pair each htmlwidget's container div (its class names the widget, e.g.
+  # "bars" post-migration vs "Widget_PrematureDeathBucketBar" today) with its
+  # adjacent serialized JSON payload (matched on the shared htmlwidget-<hash>
+  # id), then keep only the "bars"-classed payloads. A bare grepl("chartId":
+  # "pd-study-buckets"...) would pass today too -- the OLD widget calls pass
+  # the identical metadata -- so scoping to bars-classed payloads specifically
+  # is what proves the chart lives behind gsm.vizr::bars(), not the old widget.
+  widget_pairs <- stringr::str_match_all(
+    html,
+    '<div class="([a-zA-Z_]+) html-widget[^"]*"[^>]*id="(htmlwidget-[^"]*)"[^>]*></div>\\s*<script[^>]*data-for="\\2">(.*?)</script>'
+  )[[1]]
+  bars_payloads <- widget_pairs[widget_pairs[, 2] == "bars", 4]
+
+  # At least the three bucket charts render through gsm.vizr::bars().
+  expect_gte(length(bars_payloads), 3)
+
+  # Each chart's id is carried in its serialized metadata (el.id is stamped at
+  # runtime from metadata.chartId; there is no static id= to match on) --
+  # inside a bars-classed payload specifically, not merely anywhere in the HTML.
+  expect_true(any(grepl(
+    '"chartId":"pd-study-buckets"',
+    bars_payloads,
+    fixed = TRUE
+  )))
+  expect_true(any(grepl(
+    '"chartId":"pd-country-buckets"',
+    bars_payloads,
+    fixed = TRUE
+  )))
+  expect_true(any(grepl(
+    '"chartId":"pd-site-buckets"',
+    bars_payloads,
+    fixed = TRUE
+  )))
+
+  # The old package-local widgets (P4: removed with no re-export) leave no trace.
+  expect_false(grepl("Widget_PrematureDeath", html, fixed = TRUE))
+
+  # filter-js inlines what the removed el.pdAllData / meta.reactive closures
+  # used to carry (P2): the site chart's rows for the country->site drilldown,
+  # and the per-country reason slices for the country-click swap.
+  expect_true(grepl("pdSiteRows", html, fixed = TRUE))
+  expect_true(grepl("pdReasonRowsByCountry", html, fixed = TRUE))
 })
 
 test_that("Report sources rgmn_dt from Mapped_Randomization when Mapped_SUBJ lacks it {#248}", {
@@ -477,4 +528,56 @@ test_that("Report sources rgmn_dt from Mapped_Randomization when Mapped_SUBJ lac
     "(?s)<tbody>\\s*<tr>\\s*<td[^>]*>\\s*2\\s*</td>",
     perl = TRUE
   )
+})
+
+test_that("Report_PrematureDeaths renders the empty-state cleanly with zero premature deaths {#288}", {
+  testthat::skip_if_not_installed("plotly")
+  testthat::skip_if_not_installed("DT")
+  # Regression: the setup chunk built reason_rows_by_country / pd_site_rows
+  # unconditionally (not gated on has_premature), and pd_ReasonSlice crashed on
+  # an empty cohort -- so a zero-premature-death snapshot aborted the render.
+  lL <- lListings
+  lL$Mapped_Death <- dplyr::filter(lListings$Mapped_Death, FALSE)
+  lL$Mapped_STUDCOMP <- dplyr::filter(lListings$Mapped_STUDCOMP, FALSE)
+  dfResults0 <- dfResults
+  dfResults0$Numerator <- 0
+  dfResults0$Metric <- 0
+  dfResults0$Score <- 0
+  dfResults0$Flag <- 0
+  out <- Report_PrematureDeaths(
+    dfResults = dfResults0,
+    dfMetrics = dfMetrics,
+    dfGroups = dfGroups,
+    lListings = lL,
+    nWindowDays = 90,
+    strOutputDir = tempdir()
+  )
+  expect_true(file.exists(out))
+  html <- paste(readLines(out, warn = FALSE), collapse = "\n")
+  expect_match(html, "No premature deaths in window", fixed = TRUE)
+})
+
+test_that("inlined JSON data cannot terminate the report's script block {#288}", {
+  testthat::skip_if_not_installed("plotly")
+  testthat::skip_if_not_installed("DT")
+  # HTML ends a <script> element at the first "</script" regardless of JS
+  # string context, so a data value carrying that sequence would cut the
+  # filter-js block short and let the remainder parse as markup.
+  payload <- "</script><script>alert(1)"
+  lL <- lListings
+  lL$Mapped_SUBJ$invid[1] <- paste0("INV", payload)
+  lL$Mapped_Death$deathcls[1] <- paste0("Reason", payload)
+  out <- Report_PrematureDeaths(
+    dfResults = dfResults,
+    dfMetrics = dfMetrics,
+    dfGroups = dfGroups,
+    lListings = lL,
+    nWindowDays = 90,
+    strOutputDir = tempdir()
+  )
+  html <- paste(readLines(out, warn = FALSE), collapse = "\n")
+  expect_false(grepl(payload, html, fixed = TRUE))
+  # jsonlite renders "</" as "<\/" and script_safe_json escapes the "<", so the
+  # payload survives only as \u003c\/script -- inert to the HTML parser.
+  expect_true(grepl("\\u003c\\/script", html, fixed = TRUE))
 })

@@ -81,10 +81,10 @@ testthat::test_that("Qual: Given summarized analytics data, all appropriate aspe
     arrange(GroupID)
 
   # Diagnostic output for debugging CI failures
-  if(any(unique(SRS_by_hand$Denominator) != unique(SRS_auto$Denominator))) {
+  if (any(unique(SRS_by_hand$Denominator) != unique(SRS_auto$Denominator))) {
     cat("DIAGNOSTIC: Denominator mismatch detected\n")
-    cat("SRS_by_hand denominators:", paste(unique(SRS_by_hand$Denominator), collapse=", "), "\n")
-    cat("SRS_auto denominators:", paste(unique(SRS_auto$Denominator), collapse=", "), "\n")
+    cat("SRS_by_hand denominators:", paste(unique(SRS_by_hand$Denominator), collapse = ", "), "\n")
+    cat("SRS_auto denominators:", paste(unique(SRS_auto$Denominator), collapse = ", "), "\n")
   }
 
   # Use tolerance for numerical comparisons and check structure first

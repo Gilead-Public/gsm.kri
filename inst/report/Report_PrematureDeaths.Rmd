@@ -81,6 +81,12 @@ y_max <- max(c(dfClassified$follow_up, nWindowDays), na.rm = TRUE)
 vXRange <- c(0, x_max * 1.05)
 vYRange <- c(0, y_max * 1.05)
 
+# The JSON built here is pasted verbatim into the inline <script> block of
+# filter-js. jsonlite already renders "</" as "<\/" so data cannot terminate
+# the block, but escape every "<" as \u003c anyway: it also closes the
+# "<!--<script>" escaped-state edge and stops relying on a serializer default.
+script_safe_json <- function(json) gsub("<", "\\\\u003c", json)
+
 # Country → site lookup for JS filtering (all enrolled sites in the country).
 # Built from dfClassified -- the same cohort the bucket bars use -- so its keys
 # are exactly the bars' country labels (incl. "Unknown"); clicking any bar always
@@ -90,7 +96,8 @@ country_site_map <- dfClassified %>%
   dplyr::group_by(country) %>%
   dplyr::summarise(sites = list(invid), .groups = "drop") %>%
   tibble::deframe() %>%
-  jsonlite::toJSON(auto_unbox = FALSE)
+  jsonlite::toJSON(auto_unbox = FALSE) %>%
+  script_safe_json()
 
 has_eligibility <- !is.null(Mapped_EXCLUSION) && "Source" %in% names(Mapped_EXCLUSION)
 
@@ -115,11 +122,23 @@ enrolled_by_country <- dfClassified %>%
   tibble::deframe()
 
 # Reason aggregate computed ONCE: per-country slices + "__ALL__", each with prebuilt
-# hover (now incl. % of enrolled). Drives the static charts AND the JS rebuildReasons handler.
+# hover (incl. % of enrolled). filter-js inlines the per-country rows as JSON
+# and swaps the reasons chart's data client-side on a country click.
 reason_data <- pd_ReasonByCountry(Mapped_Death, Mapped_SUBJ, nWindowDays,
                                   nEnrolledByCountry = enrolled_by_country,
                                   nEnrolled = nEnrolled)
-reason_by_country <- jsonlite::toJSON(reason_data, auto_unbox = FALSE)
+reason_rows_by_country <- lapply(reason_data, pd_ReasonRows)
+reason_rows_by_country_json <- script_safe_json(
+  jsonlite::toJSON(reason_rows_by_country, dataframe = "rows", na = "null")
+)
+
+# Site rows computed ONCE: the site-buckets chunk renders them and filter-js
+# inlines the same frame (as JSON) for the country->site drilldown -- one
+# source of truth instead of a client-side el.pdAllData copy.
+pd_site_rows <- pd_BucketRows(dfClassified, nWindowDays, "invid", strOuterCol = "country")
+pd_site_rows_json <- script_safe_json(
+  jsonlite::toJSON(pd_site_rows, dataframe = "rows", na = "null")
+)
 
 # Study-discontinuation caveat, shared verbatim by the Study Buckets and the
 # Study Rand -> Death tabs (single source of truth so the embedded nWindowDays
@@ -166,8 +185,7 @@ cat(sprintf(
 # styles.css, but the pkgdown example embeds this report through knit_child and
 # does NOT load styles.css -- there the chips would render unstyled and
 # non-sticky. Literal hex (no var(--...) tokens) for the same reason: the :root
-# tokens defined in styles.css aren't present in the embedded context. Same
-# inline-<style> pattern the rangeslider-css chunk below uses.
+# tokens defined in styles.css aren't present in the embedded context.
 cat('
 <style>
 .pd-filter-strip { position: sticky; top: 48px; z-index: 1029; display: none; align-items: center; flex-wrap: wrap; gap: 10px; background-color: #f1f7fe; border-bottom: 1px solid #cfe3fb; padding: 8px 14px; margin: 0 0 16px; }
@@ -213,19 +231,6 @@ htmltools::tags$div(
     )
   )
 )
-```
-
-```{r mode-toggle, echo=FALSE, results='asis', eval=has_premature}
-cat('
-<style>
-.pd-mode-sticky { position: sticky; top: 0; z-index: 1031; display: flex; align-items: center; background:#ffffff; border-bottom: 1px solid #e3e8ef; padding: 8px 4px; margin: 0 0 8px; }
-</style>
-<div class="pd-mode-sticky" id="pd-mode-toggle">
-  <span style="font-size:13px; color:#555; margin-right:8px;">Bucket bars:</span>
-  <button id="pd-mode-count" onclick="pdSetMode(\'count\')" style="background:#1a73e8; color:white; border:none; border-radius:4px; padding:4px 14px; cursor:pointer; font-size:12px;">Count</button>
-  <button id="pd-mode-pct" onclick="pdSetMode(\'pct\')" style="background:#cfd8dc; color:#37474f; border:none; border-radius:4px; padding:4px 14px; cursor:pointer; font-size:12px;">%</button>
-</div>
-')
 ```
 
 ## Overview
@@ -281,33 +286,14 @@ knitr::kable(
 cat("\n> **No premature deaths in window.** All charts and the patient listing are empty for this snapshot.\n")
 ```
 
-```{r rangeslider-css, echo=FALSE, results='asis', eval=has_premature}
-# Hide each bucket bar's range-slider mini-preview, leaving a scroll-only track,
-# and recolor its grabber handles. Plotly draws the handles white (fill="#fff"),
-# which is invisible on the grey track styled in pd_BucketBar(); a fill of #828282
-# (colorScheme gray/dark) makes them read as grips. CSS fill overrides Plotly's
-# presentation attribute. Scoped to the three bucket-bar container ids so it never
-# reaches another gsm.kri report sharing styles.css; a stylesheet rule (not inline
-# JS) re-matches the slider DOM that Plotly.react rebuilds on every filter.
-cat('
-<style>
-#pd-study-buckets .rangeslider-rangeplot,
-#pd-country-buckets .rangeslider-rangeplot,
-#pd-site-buckets .rangeslider-rangeplot { display: none !important; }
-#pd-study-buckets .rangeslider-handle-min, #pd-study-buckets .rangeslider-handle-max,
-#pd-country-buckets .rangeslider-handle-min, #pd-country-buckets .rangeslider-handle-max,
-#pd-site-buckets .rangeslider-handle-min, #pd-site-buckets .rangeslider-handle-max { fill: #828282 !important; }
-</style>
-')
-```
-
 ## Study {.tabset .tabset-pills}
 
 ### Buckets
 ```{r study-buckets, echo=FALSE, eval=has_premature}
-htmltools::div(
-  id = "pd-study-buckets",
-  pd_BucketBar(dfClassified, nWindowDays, strGroupCol = "studyid", strGroupLabel = "Study", bRangeSlider = TRUE)
+gsm.vizr::bars(
+  data = pd_BucketRows(dfClassified, nWindowDays, strGroupCol = "studyid"),
+  spec = pd_BucketBarSpec(nWindowDays, "Study"),
+  metadata = list(chartId = "pd-study-buckets", level = "study")
 )
 ```
 
@@ -329,16 +315,25 @@ cat(study_discont_note)
 
 ### Reasons
 ```{r study-reasons, echo=FALSE, eval=has_premature}
-pd_ReasonBar(reason_data[["__ALL__"]])
+gsm.vizr::bars(
+  data = pd_ReasonRows(reason_data[["__ALL__"]]),
+  # reason_order pins the study-wide count sort as a stable axis; the country
+  # tab reuses the same order so its bar keeps position when a country is picked.
+  spec = pd_ReasonBarSpec(reason_order = reason_data[["__ALL__"]]$reason),
+  metadata = list(chartId = "pd-study-reasons", level = "study")
+)
 ```
 
 ## Country {.tabset .tabset-pills}
 
 ### Buckets
 ```{r country-buckets, echo=FALSE, eval=has_premature}
-htmltools::div(
-  id = "pd-country-buckets",
-  pd_BucketBar(dfClassified, nWindowDays, strGroupCol = "country", strGroupLabel = "Country", strOuterCol = "studyid", bRangeSlider = TRUE)
+gsm.vizr::bars(
+  data = pd_BucketRows(dfClassified, nWindowDays, strGroupCol = "country"),
+  # Country and site charts opt into zoom/pan (x-axis) — a multinational study
+  # can carry many country bars; the single-bar study chart stays zoom-free.
+  spec = pd_BucketBarSpec(nWindowDays, "Country", zoom = list(enabled = TRUE, mode = "x")),
+  metadata = list(chartId = "pd-country-buckets", level = "country")
 )
 ```
 
@@ -352,9 +347,13 @@ htmltools::div(
 
 ### Reasons
 ```{r country-reasons, echo=FALSE, eval=has_premature}
-htmltools::div(
-  id = "pd-country-reasons",
-  pd_ReasonBar(reason_data[["__ALL__"]])
+# reason_rows_by_country (setup chunk): a country bucket click broadcasts
+# pdBucketFilterChanged, and filter-js swaps this chart to that country's
+# slice via helpers.updateData — no per-country spec, no rebuildReasons.
+gsm.vizr::bars(
+  data = reason_rows_by_country[["__ALL__"]],
+  spec = pd_ReasonBarSpec(reason_order = reason_data[["__ALL__"]]$reason),
+  metadata = list(chartId = "pd-country-reasons", level = "country")
 )
 ```
 
@@ -362,9 +361,21 @@ htmltools::div(
 
 ### Buckets
 ```{r site-buckets, echo=FALSE, eval=has_premature}
-htmltools::div(
-  id = "pd-site-buckets",
-  pd_BucketBar(dfClassified, nWindowDays, strGroupCol = "invid", strGroupLabel = "Site", strOuterCol = "country", strOuterLabel = "Country", bRangeSlider = TRUE)
+gsm.vizr::bars(
+  # pd_site_rows (setup chunk): its OuterGroupID lets the country->site
+  # drilldown re-slice this chart to one country's sites (see filter-js).
+  data = pd_site_rows,
+  # Zoom/pan (x-axis): the site chart always renders every enrolled site (see
+  # the country chart chunk for the shared rationale). dynamicCategoryAxis drops
+  # a site off the axis once a disabled legend entry leaves it with nothing to
+  # show, so hiding a death window thins the axis instead of leaving blank slots.
+  spec = pd_BucketBarSpec(
+    nWindowDays,
+    "Site",
+    zoom = list(enabled = TRUE, mode = "x"),
+    theme = list(dynamicCategoryAxis = TRUE)
+  ),
+  metadata = list(chartId = "pd-site-buckets", level = "site")
 )
 ```
 
@@ -402,9 +413,19 @@ cat(paste0('
 <script>
 (function() {
   var countrySiteMap = ', country_site_map, ';
-  var reasonByCountry = ', reason_by_country, ';
+  // input.metadata is closure-bound per gsm.vizr chart instance, so cross-chart
+  // data (country->site drilldown rows, per-country reason slices) is inlined
+  // here instead -- the same pattern countrySiteMap already uses.
+  var pdSiteRows = ', pd_site_rows_json, ';
+  var pdReasonRowsByCountry = ', reason_rows_by_country_json, ';
+  // activeCountry / activeSite are retained ONLY as mirrors of pdBucketState so
+  // the kept scatter helpers (applySiteScatterFilter) keep working unchanged.
   var activeCountry = null;
   var activeSite = null;
+
+  // ---- Retained Plotly scatter + listing helpers --------------------------
+  // The scatter charts stay on Plotly (migration deferred with #120); these
+  // helpers drive them and the DataTable off pdBucketState.
 
   // Find the plotly div inside a container (returns null until Plotly has
   // initialized the widget and attached its event system).
@@ -416,94 +437,10 @@ cat(paste0('
     return el;
   }
 
-  // The interactive charts carry their category dimension as a 2-D
-  // multicategory axis [[outer],[inner]] -- bars on x, scatters on y. This
-  // returns the inner tier (the site / country labels) regardless of which axis
-  // holds it, so the helpers below never branch on chart shape.
-  function catLabels(tr) {
-    if (Array.isArray(tr.x) && Array.isArray(tr.x[0])) return tr.x[1];
-    if (Array.isArray(tr.y) && Array.isArray(tr.y[0])) return tr.y[1];
-    return tr.x; // flat fallback (defensive; interactive charts are 2-D)
-  }
-
-  // Restore every bar in a chart to full opacity (one batched restyle).
-  function undimBars(containerId) {
-    var el = getPlotlyDiv(containerId);
-    if (!el) return;
-    var opacities = el.data.map(function(tr) {
-      return catLabels(tr).map(function() { return 1.0; });
-    });
-    Plotly.restyle(el, {"marker.opacity": opacities}, el.data.map(function(_, i) { return i; }));
-  }
-
-  // Dim every bar except those whose category equals `value` (one batched
-  // restyle across all traces).
-  function dimBarsExcept(el, value) {
-    var opacities = el.data.map(function(tr) {
-      return catLabels(tr).map(function(v) { return v === value ? 1.0 : 0.3; });
-    });
-    Plotly.restyle(el, {"marker.opacity": opacities}, el.data.map(function(_, i) { return i; }));
-  }
-
-  // Attach click handler to country buckets chart (retry until Plotly ready, max 20)
-  var attachRetries = 0;
-  function attachCountryClick() {
-    var el = getPlotlyDiv("pd-country-buckets");
-    if (!el) {
-      if (++attachRetries < 20) setTimeout(attachCountryClick, 500);
-      return;
-    }
-    el.on("plotly_click", function(data) {
-      var country = data.points[0].x[1]; // multicategory click -> [study, country]
-      if (country === activeCountry) {
-        pdResetFilter();
-      } else {
-        applyFilter(country);
-      }
-    });
-  }
-
-  function applyFilter(country) {
-    activeCountry = country;
-    var sites = countrySiteMap[country] || [];
-
-    // Show the country chip naming the active country.
-    document.getElementById("pd-filter-country-chip").style.display = "inline-flex";
-    document.getElementById("pd-filter-country-value").textContent = country;
-    updateBannerVisibility();
-
-    // Highlight country bar: dim non-selected
-    highlightCountryBar(country);
-
-    // Country scatter: keep points in the selected country (customdata[1]).
-    filterScatterChart("pd-country-scatter", [country], 1);
-
-    // Site scatter: single owner applies site > country precedence (a site
-    // selection, if any, stays narrowed; otherwise the country sites show).
-    applySiteScatterFilter();
-
-    // Site buckets are still multicategory -> existing bar filter.
-    filterPlotlyChart("pd-site-buckets", sites);
-
-    // The site-buckets re-render above wiped any site-bar opacity highlight;
-    // re-apply it so an active, independent site selection stays visible.
-    if (activeSite) highlightSiteBar(activeSite);
-
-    // Re-derive the listing from all active filters (site > country precedence).
-    applyListingFilter();
-    rebuildReasons(country);
-  }
-
-  function highlightCountryBar(country) {
-    var el = getPlotlyDiv("pd-country-buckets");
-    if (!el) return;
-    dimBarsExcept(el, country);
-  }
-
-  // Show/hide the banner container based on whether either row is active.
+  // Show/hide the banner container based on whether either filter is active.
   function updateBannerVisibility() {
     var banner = document.getElementById("pd-filter-banner");
-    banner.style.display = (activeCountry || activeSite) ? "flex" : "none";
+    banner.style.display = (pdBucketState.activeCountry || pdBucketState.activeSite) ? "flex" : "none";
   }
 
   // Single owner of the patient-listing column search. Only one search can be
@@ -514,10 +451,10 @@ cat(paste0('
     if (tables.length === 0) return;
     var dtApi = $(tables[tables.length - 1]).DataTable();
     var sites = null;
-    if (activeSite) {
-      sites = [activeSite];
-    } else if (activeCountry) {
-      sites = countrySiteMap[activeCountry] || [];
+    if (pdBucketState.activeSite) {
+      sites = [pdBucketState.activeSite];
+    } else if (pdBucketState.activeCountry) {
+      sites = countrySiteMap[pdBucketState.activeCountry] || [];
     }
     if (sites) {
       var regex = "^(" + sites.join("|") + ")$";
@@ -527,11 +464,9 @@ cat(paste0('
     }
   }
 
-  // Single owner of the site-scatter point filter (the scatter has the same two
-  // filter sources as the listing). Same site > country > none precedence: an
-  // active site shows just that site, else an active country shows its sites,
-  // else all points return at the shared fixed range. Routing every caller
-  // through here keeps the scatter and listing in lockstep.
+  // Single owner of the site-scatter point filter. Same site > country > none
+  // precedence as the listing: an active site shows just that site, else an
+  // active country shows its sites, else all points return at the shared range.
   function applySiteScatterFilter() {
     if (activeSite) {
       filterScatterChart("pd-site-scatter", [activeSite], 2);
@@ -542,79 +477,10 @@ cat(paste0('
     }
   }
 
-  // Attach click handler to site buckets chart (retry until Plotly ready, max 20)
-  var siteAttachRetries = 0;
-  function attachSiteClick() {
-    var el = getPlotlyDiv("pd-site-buckets");
-    if (!el) {
-      if (++siteAttachRetries < 20) setTimeout(attachSiteClick, 500);
-      return;
-    }
-    el.on("plotly_click", function(data) {
-      var invid = data.points[0].x[1]; // multicategory click -> [country, site]
-      if (invid === activeSite) {
-        pdResetSiteFilter();
-      } else {
-        applySiteFilter(invid);
-      }
-    });
-  }
-
-  function applySiteFilter(invid) {
-    activeSite = invid;
-    document.getElementById("pd-filter-site-chip").style.display = "inline-flex";
-    document.getElementById("pd-filter-site-value").textContent = invid;
-    updateBannerVisibility();
-    highlightSiteBar(invid);
-    // Narrow the site scatter to just this site (single owner, customdata[2]).
-    applySiteScatterFilter();
-    applyListingFilter();
-  }
-
-  function highlightSiteBar(invid) {
-    var el = getPlotlyDiv("pd-site-buckets");
-    if (!el) return;
-    // Seed the filter cache with CLEAN (un-dimmed) data BEFORE dimming below.
-    // pd-site-buckets is the one chart that is both a highlight target and a
-    // filter target: if a site is clicked before any country filter,
-    // filterPlotlyChart would otherwise lazily cache this dimmed chart as the
-    // "original", and a later country reset would restore a permanently-dimmed
-    // chart. cacheOriginal is idempotent, so a clean cache (seeded here on a
-    // site-first click, or by filterPlotlyChart on a country-first click) is
-    // never overwritten.
-    cacheOriginal(el, "pd-site-buckets");
-    // If the selected site isn\'t currently rendered (e.g. a country filter is
-    // showing a different country\'s sites), leave opacities untouched rather
-    // than dimming every bar to 0.3.
-    var present = el.data.some(function(tr) { return catLabels(tr).indexOf(invid) >= 0; });
-    if (!present) return;
-    dimBarsExcept(el, invid);
-  }
-
-  // Global reset for the site filter (called by the site row\'s button onclick)
-  window.pdResetSiteFilter = function() {
-    activeSite = null;
-    document.getElementById("pd-filter-site-chip").style.display = "none";
-    updateBannerVisibility();
-
-    // Un-dim site bars
-    undimBars("pd-site-buckets");
-
-    // The site click narrowed the site scatter; restore it from the remaining
-    // state (the active country\'s sites, or all points) via the single owner.
-    applySiteScatterFilter();
-
-    // Re-derive the listing from any remaining active filter (e.g. country).
-    applyListingFilter();
-  };
-
-  // Store original trace data + layout for each chart on first filter
+  // Cache each scatter clean trace data + layout the first time we touch it, so
+  // a later reset can restore the un-filtered version. Idempotent.
   var originalData = {};
   var originalLayout = {};
-
-  // Cache a chart\'s clean trace data + layout the first time we touch it, so a
-  // later reset can restore the un-filtered, un-dimmed version. Idempotent: a
-  // second call never overwrites an existing (clean) cache.
   function cacheOriginal(el, containerId) {
     if (!originalData[containerId]) {
       originalData[containerId] = JSON.parse(JSON.stringify(el.data));
@@ -624,81 +490,9 @@ cat(paste0('
     }
   }
 
-  function filterPlotlyChart(containerId, allowedValues) {
-    var el = getPlotlyDiv(containerId);
-    if (!el) return;
-    cacheOriginal(el, containerId);
-    var orig = originalData[containerId];
-    var filtered = orig.map(function(trace) {
-      // The multicategory axis is the one whose first entry is itself an array
-      // ([[outer],[inner]]); its inner tier holds the labels we filter on. Bars
-      // carry it on x, scatters on y.
-      var axis = (Array.isArray(trace.x) && Array.isArray(trace.x[0])) ? "x"
-               : (Array.isArray(trace.y) && Array.isArray(trace.y[0])) ? "y"
-               : null;
-      if (!axis) return trace;
-      var inner = trace[axis][1];
-      var indices = [];
-      inner.forEach(function(val, idx) {
-        if (allowedValues.indexOf(val) >= 0) indices.push(idx);
-      });
-      var valueAxis = axis === "x" ? "y" : "x";
-      var newTrace = Object.assign({}, trace);
-      // One `indices` list reindexes every per-point array in lockstep: both
-      // tiers of the category axis, the numeric value axis, and customdata --
-      // index i addresses the same data point in all of them.
-      newTrace[axis] = [
-        indices.map(function(i) { return trace[axis][0][i]; }),
-        indices.map(function(i) { return trace[axis][1][i]; })
-      ];
-      if (trace[valueAxis]) {
-        newTrace[valueAxis] = indices.map(function(i) { return trace[valueAxis][i]; });
-      }
-      if (trace.text) newTrace.text = indices.map(function(i) { return trace.text[i]; });
-      if (trace.customdata) newTrace.customdata = indices.map(function(i) { return trace.customdata[i]; });
-      return newTrace;
-    });
-    // A reindexed multicategory axis re-derives its own ticks from the data, so
-    // the empty-slot workaround the flat axis needed is gone. Clone the cached
-    // layout so Plotly.react cannot mutate the stored original.
-    Plotly.react(el, filtered, JSON.parse(JSON.stringify(originalLayout[containerId])));
-    // Only the bucket bars carry [count, pct]; scatters pack a hover string in
-    // customdata, so applyMode() must never run on them (it would garble y / the
-    // axis). PD_BUCKET_CHARTS already lists exactly the three bucket containers.
-    // Unconditional (not just % mode): restyle mutates el.data in place, so a
-    // cache seeded while % mode was active holds % y values; re-deriving y from
-    // customdata on every react makes that polluted cache harmless in both modes.
-    if (PD_BUCKET_CHARTS.indexOf(containerId) >= 0) applyMode(el);
-  }
-
-  // Country-reactive reasons bar. Not a bucket chart and not a scatter, so it is
-  // rebuilt from the precomputed per-country lookup (counts are aggregated, so a
-  // point-reindex like the other charts cannot apply). null -> the all-country
-  // aggregate, which restores the initial paint.
-  function rebuildReasons(country) {
-    var el = getPlotlyDiv("pd-country-reasons");
-    if (!el) return;
-    var d = reasonByCountry[country || "__ALL__"] || {reason: [], n: [], hover: []};
-    Plotly.react(el, [{
-      type: "bar", orientation: "h",
-      x: d.n, y: d.reason,
-      text: d.n, textposition: "auto",
-      customdata: d.hover,
-      hovertemplate: "%{customdata}<extra></extra>"
-      // F1: no marker.color -- omitting it uses plotly\'s default colorway[0],
-      // the same color the server-rendered pd_ReasonBar() draws, so the
-      // all-country bar is identical before any interaction and after a
-      // filter -> clear cycle.
-    }], {
-      xaxis: {title: "Premature Deaths"},
-      yaxis: {title: "Reason", categoryorder: "total ascending"}
-    });
-  }
-
   // Numeric-y scatters filter by per-point customdata: index 1 = country,
-  // index 2 = invid. Reindex each trace\'s x/y/customdata in lockstep, then
-  // react with the CACHED layout so the fixed [x]/[y] range is preserved
-  // (no autorange to the filtered subset -- AXIS-1).
+  // index 2 = invid. Reindex each trace x/y/customdata in lockstep, then react
+  // with the CACHED layout so the fixed range is preserved (AXIS-1).
   function filterScatterChart(containerId, allowedValues, cdIndex) {
     var el = getPlotlyDiv(containerId);
     if (!el) return;
@@ -719,103 +513,156 @@ cat(paste0('
     Plotly.react(el, filtered, JSON.parse(JSON.stringify(originalLayout[containerId])));
   }
 
-  // Global reset for the country filter (called by the country row\'s button onclick)
-  window.pdResetFilter = function() {
-    activeCountry = null;
-
-    // Hide the country chip (the site chip stays as-is)
-    document.getElementById("pd-filter-country-chip").style.display = "none";
-    updateBannerVisibility();
-
-    // Reset country bar opacity
-    undimBars("pd-country-buckets");
-
-    // Reset charts the country filter owns
-    resetPlotlyChart("pd-country-scatter");
-    resetPlotlyChart("pd-site-buckets");
-    // Site scatter via the single owner so a still-active site stays narrowed
-    // (else it returns to all points at the shared fixed range).
-    applySiteScatterFilter();
-
-    // The site-buckets reset above wiped any site-bar highlight; re-apply it
-    // if a site filter is still active.
-    if (activeSite) highlightSiteBar(activeSite);
-
-    // Re-derive the listing from any remaining active filter (keeps a site).
-    applyListingFilter();
-    rebuildReasons(null);
-  };
-
+  // Restore a scatter to its cached original (full point set, fixed range).
+  // Scatter-only now: the bucket bars are gsm.viz canvases, not Plotly.
   function resetPlotlyChart(containerId) {
     var el = getPlotlyDiv(containerId);
     if (!el || !originalData[containerId]) return;
-    // Restore the original layout so the full categorical axis returns
     Plotly.react(el, originalData[containerId], originalLayout[containerId] || el.layout);
-    // Bucket charts only -- see the filterPlotlyChart note: scatters are filter
-    // targets too, and applyMode() would corrupt their string customdata / y-axis.
-    // Unconditional for the same reason as filterPlotlyChart: the cached
-    // "original" may carry %-mode y values; applyMode re-derives the right y
-    // for the CURRENT mode from customdata either way.
-    if (PD_BUCKET_CHARTS.indexOf(containerId) >= 0) applyMode(el);
   }
 
-  // ---- Count <-> % toggle for the three bucket bars -----------------------
-  // pd_BucketBar packs [count, pct] per point into customdata; y is always
-  // re-derived from it, so the mode is stateless and survives the Plotly.react
-  // the filters trigger (re-applied at the tail of every react below).
-  var pdMode = "count";
-  var PD_BUCKET_CHARTS = ["pd-study-buckets", "pd-country-buckets", "pd-site-buckets"];
+  // ---- gsm.viz bucket charts (#264) ---------------------------------------
+  var PD_BUCKET_IDS = ["pd-study-buckets", "pd-country-buckets", "pd-site-buckets"];
+  var pdBucketState = { activeCountry: null, activeSite: null };
 
-  function applyMode(el) {
-    if (!el || !el.data) return;
-    var slot = pdMode === "pct" ? 1 : 0;
-    var traceIndices = el.data.map(function(_, idx) { return idx; });
-    var ys = el.data.map(function(tr) {
-      return (tr.customdata || []).map(function(cd) { return cd[slot]; });
-    });
-    // On-bar labels track the mode: the count in count mode, the rounded % in %
-    // mode; an empty bucket (count 0) stays blank either way. customdata is
-    // [count, pct] per point, so the label is re-derived alongside y.
-    var texts = el.data.map(function(tr) {
-      return (tr.customdata || []).map(function(cd) {
-        if (!cd[0]) return "";
-        return pdMode === "pct" ? Math.round(cd[1]) + "%" : String(cd[0]);
+  // Every bucket chart is a flat gsm.viz `bars` (a single Chart.js instance).
+  function pdChartsFor(id) {
+    var el = document.getElementById(id);
+    return el && el.gsmChart ? [el.gsmChart] : [];
+  }
+
+  // Country->site drilldown: re-slice the site chart to the sites in the active
+  // country (all sites when no country is active), reading the inlined
+  // pdSiteRows (metadata is closure-bound per chart, so it cannot carry these
+  // cross-chart). Runs before pdHighlightBuckets so a site highlight lands on
+  // the freshly-swapped data.
+  function pdNarrowSiteChart() {
+    var el = document.getElementById("pd-site-buckets");
+    if (!el || !el.gsmChart) return;
+    var country = pdBucketState.activeCountry;
+    var rows = country
+      ? pdSiteRows.filter(function(r) { return r.OuterGroupID === country; })
+      : pdSiteRows;
+    el.gsmChart.helpers.updateData(el.gsmChart, rows, el.gsmChart.data._spec_);
+  }
+
+  // Highlight the active group across the bucket charts. Single-owner
+  // precedence: site > country > none. Only charts whose category axis actually
+  // contains the selection are highlighted -- selectCategory with an absent
+  // value dims every bar, which would grey out the study chart (categories are
+  // studies, not countries/sites) or the country chart on a site selection.
+  // Charts without a match clear instead, staying fully visible.
+  function pdHighlightBuckets() {
+    var sel = pdBucketState.activeSite || pdBucketState.activeCountry || null;
+    PD_BUCKET_IDS.forEach(function(id) {
+      pdChartsFor(id).forEach(function(c) {
+        var labels = (c.data && c.data.labels) || [];
+        if (sel && labels.indexOf(sel) >= 0) c.helpers.selectCategory(c, sel);
+        else c.helpers.clearSelection(c);
       });
     });
-    // One atomic data+layout update (single redraw) instead of restyle+relayout
-    // avoids the bars-resized-but-axis-stale flicker frame on every react. BOTH
-    // modes autorange (range:null) so hiding a category via the legend rescales
-    // the y-axis to the remaining traces -- count to the remaining total, % to
-    // the remaining stacked share. Pinning % to [0,100] would freeze that rescale.
-    var layoutUpdate = pdMode === "pct"
-      ? {"yaxis.title.text": "% of group", "yaxis.ticksuffix": "%", "yaxis.autorange": true, "yaxis.range": null}
-      : {"yaxis.title.text": "Subjects", "yaxis.ticksuffix": "", "yaxis.autorange": true, "yaxis.range": null};
-    Plotly.update(el, {y: ys, text: texts}, layoutUpdate, traceIndices);
   }
 
-  window.pdSetMode = function(mode) {
-    pdMode = mode;
-    // Flip text color WITH background: white text on the inactive light-grey
-    // (#cfd8dc) would be illegible, so the inactive side gets dark text.
-    var btnCount = document.getElementById("pd-mode-count");
-    var btnPct = document.getElementById("pd-mode-pct");
-    btnCount.style.background = mode === "count" ? "#1a73e8" : "#cfd8dc";
-    btnCount.style.color = mode === "count" ? "white" : "#37474f";
-    btnPct.style.background = mode === "pct" ? "#1a73e8" : "#cfd8dc";
-    btnPct.style.color = mode === "pct" ? "white" : "#37474f";
-    PD_BUCKET_CHARTS.forEach(function(id) { applyMode(getPlotlyDiv(id)); });
+  // Reflect pdBucketState everywhere: mirror the scatter globals, update the
+  // filter chips + banner, highlight the buckets, refilter the listing and the
+  // two scatters (single-owner precedence), and broadcast pdBucketFilterChanged.
+  function pdSyncBucketFilters() {
+    activeCountry = pdBucketState.activeCountry;
+    activeSite = pdBucketState.activeSite;
+
+    // Show a chip and set its label when its filter value is active; hide otherwise.
+    function setChip(chipId, valueId, value) {
+      var chip = document.getElementById(chipId);
+      if (value) {
+        chip.style.display = "inline-flex";
+        document.getElementById(valueId).textContent = value;
+      } else {
+        chip.style.display = "none";
+      }
+    }
+    setChip("pd-filter-country-chip", "pd-filter-country-value", pdBucketState.activeCountry);
+    setChip("pd-filter-site-chip", "pd-filter-site-value", pdBucketState.activeSite);
+    updateBannerVisibility();
+    pdNarrowSiteChart();
+    pdHighlightBuckets();
+    applyListingFilter();
+    if (pdBucketState.activeCountry) {
+      filterScatterChart("pd-country-scatter", [pdBucketState.activeCountry], 1);
+    } else {
+      resetPlotlyChart("pd-country-scatter");
+    }
+    applySiteScatterFilter();
+    document.dispatchEvent(new CustomEvent("pdBucketFilterChanged", { bubbles: true,
+      detail: { country: pdBucketState.activeCountry, invid: pdBucketState.activeSite } }));
+  }
+
+  // Bucket click handler: derive the new state from the clicked datum, then sync.
+  // Clicking the bar that is already active toggles it off -- gsm.viz has a
+  // deselect path of its own, but it is gated on spec.selection, which these
+  // charts do not enable. Unlike a chip\'s reset button (which owns exactly one
+  // filter), the country bar owns the drilldown, so toggling it off drops the
+  // site with it.
+  function pdApplyBucketFilter(detail) {
+    if (detail.level === "country") {
+      var country = detail.country || detail.groupId;
+      pdBucketState.activeCountry = country === pdBucketState.activeCountry ? null : country;
+      pdBucketState.activeSite = null;
+    } else if (detail.level === "site") {
+      var invid = detail.invid || detail.groupId;
+      // The site is the leaf: toggling it off steps back to its country.
+      if (invid === pdBucketState.activeSite) {
+        pdBucketState.activeSite = null;
+      } else {
+        pdBucketState.activeSite = invid;
+        pdBucketState.activeCountry = detail.country || pdBucketState.activeCountry;
+      }
+    }
+    pdSyncBucketFilters();
+  }
+
+  // Chip reset buttons keep their inline onclick handlers (pdResetFilter /
+  // pdResetSiteFilter). Clearing a country leaves any active site untouched and
+  // vice-versa, matching the pre-migration single-owner behavior.
+  window.pdResetFilter = function() {
+    pdBucketState.activeCountry = null;
+    pdSyncBucketFilters();
+  };
+  window.pdResetSiteFilter = function() {
+    pdBucketState.activeSite = null;
+    pdSyncBucketFilters();
   };
 
-  // Initialize when DOM is ready
-  function attachClickHandlers() {
-    attachCountryClick();
-    attachSiteClick();
-  }
-  if (document.readyState === "complete") {
-    attachClickHandlers();
-  } else {
-    window.addEventListener("load", attachClickHandlers);
-  }
+  // Bucket click: the gsm.vizr bars() binding always dispatches gsm-viz-select
+  // (bubbling) on click; branch on chartId and ignore events from other charts.
+  // stat = "identity" on every bucket chart, so datum is the single clicked row.
+  document.addEventListener("gsm-viz-select", function(e) {
+    var d = e.detail;
+    if (d.type !== "click" || PD_BUCKET_IDS.indexOf(d.chartId) < 0) return;
+    var row = d.datum || {};
+    pdApplyBucketFilter({
+      level: d.metadata.level,
+      groupId: row.GroupID,
+      country: row.Level === "country" ? row.GroupID : row.OuterGroupID,
+      invid: row.Level === "site" ? row.GroupID : undefined
+    });
+  });
+
+  // Country-reactive reason swap (relocated from the deleted reason widget
+  // JS): a country bucket click broadcasts pdBucketFilterChanged; swap the
+  // reasons chart to that country slice via updateData -- no per-country
+  // spec, no rebuild. pdReasonRowsByCountry only has keys for countries with
+  // >=1 premature death, but the country bucket chart renders every enrolled
+  // country, so a zero-premature-death country is clickable and misses. That
+  // miss empties the chart: __ALL__ describes the cleared state only, and
+  // serving it under a country filter would read as deaths in that country.
+  document.addEventListener("pdBucketFilterChanged", function(e) {
+    var country = e.detail && e.detail.country;
+    var rows = country ? (pdReasonRowsByCountry[country] || []) : pdReasonRowsByCountry["__ALL__"];
+    var el = document.getElementById("pd-country-reasons");
+    if (rows && el && el.gsmChart) {
+      el.gsmChart.helpers.updateData(el.gsmChart, rows, el.gsmChart.data._spec_);
+    }
+  });
 })();
 </script>
 '))

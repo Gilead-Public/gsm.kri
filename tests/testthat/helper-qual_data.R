@@ -88,7 +88,7 @@ domains <- c(gsub("Raw_", "", names(lSource)), "COUNTRY", "EXCLUSION")
 mappings_wf <- workr::MakeWorkflowList(
   strNames = domains,
   strPath = "workflow/1_mappings",
-  strPackage= "gsm.mapping"
+  strPackage = "gsm.mapping"
 )
 
 # Build qualification fixtures lazily so unrelated tests do not pay the full
