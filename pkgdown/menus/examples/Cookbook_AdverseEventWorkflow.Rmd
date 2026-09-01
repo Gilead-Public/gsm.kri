@@ -1,7 +1,7 @@
 ---
 title: "Cookbook - Adverse Event Workflow Examples"
 type: "Cookbook"
-index: 6
+index: 7
 date: "`r format(Sys.time(), '%Y-%m-%d %H:%M:%S %Z')`"
 output:
   html_document:
