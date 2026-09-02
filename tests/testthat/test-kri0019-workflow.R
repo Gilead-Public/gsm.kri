@@ -34,3 +34,28 @@ test_that("kri0019 flags only high rates (#258)", {
   expect_equal(meta$Flag, "0,1,2")
   expect_true(meta$GenerateRiskSignal)
 })
+
+test_that("cou0019 aggregates the same numerator by country (#258)", {
+  res <- workr::RunWorkflows(
+    kri_workflow("cou0019"),
+    list(Mapped_IPNS = ipns_fixture())
+  )$Analysis_cou0019$Analysis_Summary
+
+  us <- res[res$GroupID == "US", ]
+  expect_equal(us$Numerator, 2)
+  expect_equal(us$Denominator, 4)
+})
+
+test_that("cou0019 stays out of the CM Action Log (#258)", {
+  meta <- yaml::read_yaml(file.path(
+    system.file(package = "gsm.kri"),
+    "workflow",
+    "2_metrics",
+    "cou0019.yaml"
+  ))$meta
+
+  # grail's KRI signal workflow admits GroupLevel IN ('Site','Country'), so
+  # country is excluded by this flag alone - assert it rather than assume it.
+  expect_false(meta$GenerateRiskSignal)
+  expect_null(meta$RiskScoreWeight)
+})
