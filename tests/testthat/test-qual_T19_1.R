@@ -28,6 +28,9 @@ test_that("Qual: kri0019/cou0019 numerators match an independent derivation (#25
     mapped
   )$Analysis_cou0019$Analysis_Summary
 
+  # A zero-row expectation would make the comparison below vacuous.
+  expect_gt(nrow(expected), 0)
+
   expect_equal(sum(site$Numerator), nrow(expected))
   expect_equal(sum(country$Numerator), nrow(expected))
 })
