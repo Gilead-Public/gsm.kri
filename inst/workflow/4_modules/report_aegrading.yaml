@@ -1,0 +1,45 @@
+meta:
+  Type: Report
+  ID: report_aegrading
+  Output: html
+  Name: AE Grading Report
+  Description: A report summarizing how consistently sites apply AE severity grading
+  Active: true
+  MetricID: Analysis_kri0016
+  MinAE: 20
+spec:
+  Mapped_AE:
+    _all:
+      required: true
+  Mapped_SUBJ:
+    _all:
+      required: true
+  Reporting_Results:
+    _all:
+      required: true
+    Numerator:
+      type: numeric
+    Denominator:
+      type: numeric
+    Metric:
+      type: numeric
+    Score:
+      type: numeric
+    Flag:
+      type: numeric
+steps:
+  - output: lListings
+    name: list
+    params:
+      Mapped_AE: Mapped_AE
+      Mapped_SUBJ: Mapped_SUBJ
+  - output: strOutputDir
+    name: getwd
+  - output: lReport
+    name: gsm.kri::Report_AEGrading
+    params:
+      dfResults: Reporting_Results
+      lListings: lListings
+      strMetricID: MetricID
+      nMinAE: MinAE
+      strOutputDir: strOutputDir
