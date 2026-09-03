@@ -18,8 +18,6 @@
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/index.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/news/index.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/AEGrading_SiteDistribution.html</loc></url>
-<url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/AEGrading_SiteTermSummary.html</loc></url>
-<url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/AEGrading_TermConsistency.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/CalculateRiskScore.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/FilterAnalysis.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/FilterByFlags.html</loc></url>
@@ -30,6 +28,7 @@
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/MakeStudyInfo.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/MakeWeights.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/RenderRmd.html</loc></url>
+<url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/Report_AEGrading.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/Report_Eligibility.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/Report_FlagChange.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/Report_FlagOverTime.html</loc></url>
@@ -48,7 +47,6 @@
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/Visualize_RiskScore.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/Visualize_Scatter.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/Visualize_Score.html</loc></url>
-<url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/Visualize_TermGradingHeatmap.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/Widget_CrossStudyRiskScore-shiny.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/Widget_CrossStudyRiskScore.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/Widget_FlagOverTime-shiny.html</loc></url>

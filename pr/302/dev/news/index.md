@@ -8,19 +8,18 @@
   numerator is AEs at the grade of interest, denominator is all graded
   AEs — flagged on a two-sided adjusted z-score so both over- and
   under-grading surface. Both read `aetoxgr`, which gsm.mapping already
-  exposes, so no mapping changes were needed. The new
-  `Report_AEGrading.Rmd` report pairs a grade-by-site distribution chart
-  ([`Visualize_GradeBySite()`](https://gilead-public.github.io/gsm.kri/dev/reference/Visualize_GradeBySite.md))
-  with a term-level consistency analysis
-  ([`AEGrading_TermConsistency()`](https://gilead-public.github.io/gsm.kri/dev/reference/AEGrading_TermConsistency.md),
-  [`AEGrading_SiteTermSummary()`](https://gilead-public.github.io/gsm.kri/dev/reference/AEGrading_SiteTermSummary.md),
-  [`Visualize_TermGradingHeatmap()`](https://gilead-public.github.io/gsm.kri/dev/reference/Visualize_TermGradingHeatmap.md))
-  that compares each site against the study for the most common
-  preferred terms. The term-level view catches sites whose overall
-  severity mix looks unremarkable but who apply the grading criteria
-  inconsistently from one term to the next — a pattern the aggregate
-  metrics cannot see. Rendered on the package website as the “AE Grading
-  Report” example.
+  exposes, so no mapping changes were needed. The report follows the
+  standard reporting pattern:
+  [`Report_AEGrading()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_AEGrading.md)
+  renders `inst/report/Report_AEGrading.Rmd`, and the `report_aegrading`
+  module in `inst/workflow/4_modules/` wires it into the workflow
+  pipeline. It shows the study-wide grade distribution, a grade-by-site
+  stacked bar chart
+  ([`AEGrading_SiteDistribution()`](https://gilead-public.github.io/gsm.kri/dev/reference/AEGrading_SiteDistribution.md)
+  /
+  [`Visualize_GradeBySite()`](https://gilead-public.github.io/gsm.kri/dev/reference/Visualize_GradeBySite.md)),
+  and the sites the grading metric flagged. Rendered on the package
+  website as the “AE Grading Report” example.
 
 - The legacy widget wrappers (`Widget_BarChart`, `Widget_ScatterPlot`,
   `Widget_TimeSeries`, `Widget_GroupOverview`), their Shiny bindings,

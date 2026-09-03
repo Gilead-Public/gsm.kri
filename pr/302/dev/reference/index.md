@@ -4,10 +4,6 @@
 
 - [`AEGrading_SiteDistribution()`](https://gilead-public.github.io/gsm.kri/dev/reference/AEGrading_SiteDistribution.md)
   : AE severity grading distribution by site
-- [`AEGrading_SiteTermSummary()`](https://gilead-public.github.io/gsm.kri/dev/reference/AEGrading_SiteTermSummary.md)
-  : Summarize term-level grading inconsistency by site
-- [`AEGrading_TermConsistency()`](https://gilead-public.github.io/gsm.kri/dev/reference/AEGrading_TermConsistency.md)
-  : Term-level AE grading consistency
 - [`CalculateRiskScore()`](https://gilead-public.github.io/gsm.kri/dev/reference/CalculateRiskScore.md)
   : Calculate Risk Score
 - [`FilterAnalysis()`](https://gilead-public.github.io/gsm.kri/dev/reference/FilterAnalysis.md)
@@ -29,6 +25,8 @@
   : Create Weight Table from Metrics Metadata
 - [`RenderRmd()`](https://gilead-public.github.io/gsm.kri/dev/reference/RenderRmd.md)
   : Custom Rmarkdown render function
+- [`Report_AEGrading()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_AEGrading.md)
+  : Report_AEGrading function
 - [`Report_Eligibility()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_Eligibility.md)
   : Report_Eligibility function
 - [`Report_FlagChange()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_FlagChange.md)
@@ -61,8 +59,6 @@
   : Group-level visualization of group-level results
 - [`Visualize_Score()`](https://gilead-public.github.io/gsm.kri/dev/reference/Visualize_Score.md)
   : Group-level visualization of scores.
-- [`Visualize_TermGradingHeatmap()`](https://gilead-public.github.io/gsm.kri/dev/reference/Visualize_TermGradingHeatmap.md)
-  : Plot term-level grading deviation as a site-by-term heatmap
 - [`Widget_CrossStudyRiskScoreOutput()`](https://gilead-public.github.io/gsm.kri/dev/reference/Widget_CrossStudyRiskScore-shiny.md)
   [`renderWidget_CrossStudyRiskScore()`](https://gilead-public.github.io/gsm.kri/dev/reference/Widget_CrossStudyRiskScore-shiny.md)
   : Shiny bindings for Widget_CrossStudyRiskScore
