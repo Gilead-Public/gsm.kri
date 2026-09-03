@@ -1,0 +1,106 @@
+---
+title: "AE Grading Report"
+author: "[gsm.kri](https://gilead-public.github.io/gsm.kri) Example"
+description: "Example AE severity grading report generated with gsm.kri"
+index: 5
+date: "`r format(Sys.time(), '%B %d, %Y %H:%M:%S %Z')`"
+output:
+  html_document:
+    mathjax: null
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    css: styles.css
+---
+# Set Up
+
+This page provides a sample AE Grading Report generated using the `gsm.kri` package. Expand the "Setup" section below to see the code used to generate the report. Or scroll down for the standard report output.
+
+The report is the visual companion to the two site-level grading metrics, `kri0016` (High-Grade AE Proportion) and `kri0017` (Low-Grade AE Proportion). It is produced by `Report_AEGrading()`, which is wired up as the `report_aegrading` workflow module.
+
+> **Note on the example data.** The `gsm.core` example data has a realistic study-wide grade distribution, but grades are assigned independently of site, so no site deviates from the study and the report has nothing to find. This page therefore redraws `aetoxgr` with `Sim_AEGrading()`, keeping the real subject/site structure and per-site AE burden while giving a few sites deliberate over- and under-grading behaviour. Every number below is illustrative; the mechanics are real.
+
+<details>
+<summary>Setup</summary>
+
+```{r}
+# Load libraries
+library(gsm.core)
+library(gsm.mapping)
+library(gsm.kri)
+library(gsm.reporting)
+library(dplyr)
+library(tibble)
+
+source("util/Sim_AEGrading.R")
+
+# --- Step 1: Map raw data (real gsm.mapping pipeline) ------------------------
+core_mappings <- c(
+  "AE", "COUNTRY", "DATAENT", "ENROLL", "SITE", "STUDY", "SUBJ"
+)
+
+mappings_wf <- MakeWorkflowList(
+  strNames = core_mappings,
+  strPath = "workflow/1_mappings",
+  strPackage = "gsm.mapping"
+)
+lRaw <- Ingest(gsm.core::lSource, CombineSpecs(mappings_wf))
+lMapped <- RunWorkflows(mappings_wf, lRaw)
+
+# --- Step 2: Simulate site-level grading behaviour (example only) ------------
+sim <- Sim_AEGrading(lMapped$Mapped_AE, lMapped$Mapped_SUBJ)
+lMapped$Mapped_AE <- sim$AE
+
+# --- Step 3: Run the AE grading metrics --------------------------------------
+metric_names <- c("kri0016", "kri0017")
+metrics_wf <- MakeWorkflowList(
+  strNames = metric_names,
+  strPath = "workflow/2_metrics",
+  strPackage = "gsm.kri"
+)
+lAnalyzed <- RunWorkflows(metrics_wf, c(lMapped, list(lWorkflows = metrics_wf)))
+
+# --- Step 4: Build reporting frames (real gsm.reporting pipeline) ------------
+reporting_wf <- MakeWorkflowList(
+  strNames = c("Results", "Metrics", "Bounds", "Groups"),
+  strPath = "workflow/3_reporting",
+  strPackage = "gsm.reporting"
+)
+lReporting <- RunWorkflows(
+  reporting_wf,
+  c(lMapped, list(lAnalyzed = lAnalyzed, lWorkflows = metrics_wf))
+)
+
+dfResults <- lReporting$Reporting_Results |>
+  FilterByLatestSnapshotDate()
+
+# --- Step 5: Assemble the listings consumed by the report --------------------
+lListings <- list(
+  Mapped_AE = lMapped$Mapped_AE,
+  Mapped_SUBJ = lMapped$Mapped_SUBJ
+)
+```
+
+</details>
+
+```{r, echo=FALSE, results='asis'}
+## Render example report inline using knit_child
+child_env <- list2env(
+  list(
+    params = list(
+      dfResults = dfResults,
+      lListings = lListings,
+      strMetricID = "Analysis_kri0016",
+      nMinAE = 20
+    )
+  ),
+  parent = environment()
+)
+report_ae_grading <- knitr::knit_child(
+  system.file("report", "Report_AEGrading.Rmd", package = "gsm.kri"),
+  envir = child_env,
+  quiet = TRUE
+)
+cat(report_ae_grading, sep = "\n")
+```

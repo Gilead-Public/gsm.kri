@@ -1,0 +1,96 @@
+meta:
+  Active: true
+  Type: Analysis
+  ID: kri0016
+  GroupLevel: Site
+  Abbreviation: AEG34
+  Metric: High-Grade AE Proportion
+  Numerator: Grade 3+ Adverse Events
+  Denominator: Total Adverse Events
+  Model: Normal Approximation
+  Score: Adjusted Z-Score
+  AnalysisType: binary
+  Threshold: -3,-2,2,3
+  Flag: "-2,-1,0,1,2"
+  RiskScoreWeight: "8,4,0,4,8"
+  AccrualThreshold: 20
+  AccrualMetric: Denominator
+  GenerateRiskSignal: true
+spec:
+  Mapped_SUBJ:
+    subjid:
+      type: character
+    invid:
+      type: character
+  Mapped_AE:
+    subjid:
+      type: character
+    aetoxgr:
+      type: integer
+steps:
+  - output: vThreshold
+    name: gsm.core::ParseThreshold
+    params:
+      strThreshold: Threshold
+  - output: vRiskScoreWeight
+    name: gsm.core::ParseThreshold
+    params:
+      strThreshold: RiskScoreWeight
+      bSort: false
+  - output: vFlag
+    name: gsm.core::ParseThreshold
+    params:
+      strThreshold: Flag
+      bSort: false
+  - output: Temp_AE_GRADED
+    name: workr::RunQuery
+    params:
+      df: Mapped_AE
+      strQuery: "SELECT * FROM df WHERE CAST(aetoxgr AS VARCHAR) IN ('1', '2', '3', '4', '5')"
+  - output: Temp_AE_HIGHGRADE
+    name: workr::RunQuery
+    params:
+      df: Mapped_AE
+      strQuery: "SELECT * FROM df WHERE CAST(aetoxgr AS VARCHAR) IN ('3', '4', '5')"
+  - output: Analysis_Input
+    name: gsm.core::Input_Rate
+    params:
+      dfSubjects: Mapped_SUBJ
+      dfNumerator: Temp_AE_HIGHGRADE
+      dfDenominator: Temp_AE_GRADED
+      strSubjectCol: subjid
+      strGroupCol: invid
+      strGroupLevel: GroupLevel
+      strNumeratorMethod: Count
+      strDenominatorMethod: Count
+  - output: Analysis_Transformed
+    name: gsm.core::Transform_Rate
+    params:
+      dfInput: Analysis_Input
+  - output: Analysis_Analyzed
+    name: Analyze_NormalApprox
+    params:
+      dfTransformed: Analysis_Transformed
+      strType: AnalysisType
+  - output: Analysis_Flagged
+    name: gsm.core::Flag_NormalApprox
+    params:
+      dfAnalyzed: Analysis_Analyzed
+      vThreshold: vThreshold
+      vFlag: vFlag
+      vRiskScoreWeight: vRiskScoreWeight
+      nAccrualThreshold: AccrualThreshold
+      strAccrualMetric: AccrualMetric
+  - output: Analysis_Summary
+    name: gsm.core::Summarize
+    params:
+      dfFlagged: Analysis_Flagged
+  - output: lAnalysis
+    name: list
+    params:
+      ID: ID
+      Analysis_Input: Analysis_Input
+      Analysis_Transformed: Analysis_Transformed
+      Analysis_Analyzed: Analysis_Analyzed
+      Analysis_Flagged: Analysis_Flagged
+      Analysis_Summary: Analysis_Summary

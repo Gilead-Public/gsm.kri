@@ -1,5 +1,19 @@
 # gsm.kri (development version)
 
+- **Experimental:** added two site-level AE severity grading metrics and a companion
+  AE Grading report. `kri0016` (High-Grade AE Proportion) and `kri0017` (Low-Grade AE
+  Proportion) are standard binary metrics — numerator is AEs at the grade of interest,
+  denominator is all graded AEs — flagged on a two-sided adjusted z-score so both
+  over- and under-grading surface. Both read `aetoxgr`, which gsm.mapping already
+  exposes, so no mapping changes were needed.
+  The report follows the standard reporting pattern: `Report_AEGrading()` renders
+  `inst/report/Report_AEGrading.Rmd`, and the `report_aegrading` module in
+  `inst/workflow/4_modules/` wires it into the workflow pipeline. It shows the
+  study-wide grade distribution, a grade-by-site stacked bar chart
+  (`AEGrading_SiteDistribution()` / `Visualize_GradeBySite()`), and the sites the
+  grading metric flagged. Rendered on the package website as the "AE Grading Report"
+  example.
+
 - The legacy widget wrappers (`Widget_BarChart`, `Widget_ScatterPlot`, `Widget_TimeSeries`,
   `Widget_GroupOverview`), their Shiny bindings, `MakeChartConfig()`, and the shared
   widget-control JS/CSS moved to gsm.vizr (#291). gsm.kri re-exports every name, so
