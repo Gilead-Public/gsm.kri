@@ -5,7 +5,13 @@ Creates an interactive risk score widget for cross-study visualization.
 ## Usage
 
 ``` r
-Visualize_RiskScore(dfResults, dfMetrics, dfGroups, strGroupLevel = "Site")
+Visualize_RiskScore(
+  dfResults,
+  dfMetrics,
+  dfGroups,
+  strGroupLevel = "Site",
+  strRiskScoreMetric = "Analysis_srs0001"
+)
 ```
 
 ## Arguments
@@ -26,6 +32,11 @@ Visualize_RiskScore(dfResults, dfMetrics, dfGroups, strGroupLevel = "Site")
 
   \`character\` The group level to filter the risk score data. Default
   is 'Site'.
+
+- strRiskScoreMetric:
+
+  \`character\` Risk score MetricID to display. Defaults to
+  \`"Analysis_srs0001"\`.
 
 ## Details
 

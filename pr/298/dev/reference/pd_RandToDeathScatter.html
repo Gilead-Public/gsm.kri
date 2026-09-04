@@ -8,7 +8,10 @@ day for deaths; the window boundary for &quot;alive at window&quot;; follow-up f
 decision: no grouped &quot;Death within `nWindowDays` days&quot; heading). Pass
 `vXRange`/`vYRange` (computed study-wide by the report) to fix a shared range
 across the study/country/site views (AXIS-1). Each point's `customdata` packs
-`[hover, country, invid]` so the report can filter points client-side."><meta property="og:description" content="`r lifecycle::badge(&quot;experimental&quot;)`
+`[hover, country, invid]` so the report can filter points client-side.
+Retained on Plotly; migration to a `gsm.viz` renderer is deferred with #120,
+pending a generic gsm.viz scatter helper (the bucket and reason bars migrated
+to gsm.viz in #264)."><meta property="og:description" content="`r lifecycle::badge(&quot;experimental&quot;)`
 Scatter of every enrolled subject from [pd_Classify()]: x = `x_anchor` (death
 day for deaths; the window boundary for &quot;alive at window&quot;; follow-up for
 &quot;alive prior&quot;; discontinuation day for discontinuations), y = `follow_up`
@@ -17,7 +20,10 @@ day for deaths; the window boundary for &quot;alive at window&quot;; follow-up f
 decision: no grouped &quot;Death within `nWindowDays` days&quot; heading). Pass
 `vXRange`/`vYRange` (computed study-wide by the report) to fix a shared range
 across the study/country/site views (AXIS-1). Each point's `customdata` packs
-`[hover, country, invid]` so the report can filter points client-side."><meta name="robots" content="noindex"></head><body>
+`[hover, country, invid]` so the report can filter points client-side.
+Retained on Plotly; migration to a `gsm.viz` renderer is deferred with #120,
+pending a generic gsm.viz scatter helper (the bucket and reason bars migrated
+to gsm.viz in #264)."><meta name="robots" content="noindex"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -25,7 +31,7 @@ across the study/country/site views (AXIS-1). Each point's `customdata` packs
 
     <a class="navbar-brand me-2" href="../index.html">gsm.kri</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">1.6.1</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">1.6.1.9001</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -78,6 +84,9 @@ decision: no grouped "Death within `nWindowDays` days" heading). Pass
 `vXRange`/`vYRange` (computed study-wide by the report) to fix a shared range
 across the study/country/site views (AXIS-1). Each point's `customdata` packs
 `[hover, country, invid]` so the report can filter points client-side.</p>
+<p>Retained on Plotly; migration to a `gsm.viz` renderer is deferred with #120,
+pending a generic gsm.viz scatter helper (the bucket and reason bars migrated
+to gsm.viz in #264).</p>
     </div>
 
     <div class="section level2">

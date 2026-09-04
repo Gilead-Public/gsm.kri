@@ -13,7 +13,7 @@ For a working example see [Cross-Study KRI Report](https://gilead-public.github.
 
     <a class="navbar-brand me-2" href="../index.html">gsm.kri</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">1.6.1</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">1.6.1.9001</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -68,7 +68,8 @@ Shows a summary view with click-to-expand details for each site.</p>
 <span>  <span class="va">dfResults</span>,</span>
 <span>  <span class="va">dfMetrics</span>,</span>
 <span>  <span class="va">dfGroups</span>,</span>
-<span>  strGroupLevel <span class="op">=</span> <span class="st">"Site"</span></span>
+<span>  strGroupLevel <span class="op">=</span> <span class="st">"Site"</span>,</span>
+<span>  strRiskScoreMetric <span class="op">=</span> <span class="st">"Analysis_srs0001"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -90,6 +91,11 @@ Shows a summary view with click-to-expand details for each site.</p>
 
 <dt id="arg-strgrouplevel">strGroupLevel<a class="anchor" aria-label="anchor" href="#arg-strgrouplevel"></a></dt>
 <dd><p>`character` The group level. Default is 'Site'.</p></dd>
+
+
+<dt id="arg-strriskscoremetric">strRiskScoreMetric<a class="anchor" aria-label="anchor" href="#arg-strriskscoremetric"></a></dt>
+<dd><p>`character` Risk score MetricID to display.
+Defaults to `"Analysis_srs0001"`.</p></dd>
 
 </dl></div>
     <div class="section level2">

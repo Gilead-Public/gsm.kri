@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">gsm.kri</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">1.6.1</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">1.6.1.9001</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -626,6 +626,70 @@ for a single study.</li>
 </ol>
 </div>
 </div>
+<div class="section level3">
+<h3 id="action-status-weighted-site-risk-score">Action-status-weighted Site Risk Score<a class="anchor" aria-label="anchor" href="#action-status-weighted-site-risk-score"></a>
+</h3>
+<p>The <code>srs0002</code> variant uses the same KRI flag weights and
+full maximum-risk denominator as <code>srs0001</code>, but multiplies
+each numerator contribution by a factor derived from the persisted
+ActionLog state:</p>
+<table class="table">
+<thead><tr class="header">
+<th>ActionLog state</th>
+<th align="right">Default factor</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Open Action</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td>Closed Action</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td>Awaiting Triage</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td>No Action</td>
+<td align="right">0</td>
+</tr>
+</tbody>
+</table>
+<p>Including <code>Awaiting Triage</code> is a conservative default so
+unresolved review does not understate site risk. Studies can configure a
+different explicit factor if the business rule changes. A missing
+ActionLog row for a nonzero KRI weight is an error by default; callers
+must explicitly choose <code>include</code> or <code>exclude</code> to
+apply a fallback. Zero-weight rows do not require an ActionLog
+state.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">action_weighted_score</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/CalculateActionRiskScore.html">CalculateActionRiskScore</a></span><span class="op">(</span></span>
+<span>  dfResults <span class="op">=</span> <span class="va">current_kri_results</span>,</span>
+<span>  dfWeights <span class="op">=</span> <span class="fu"><a href="../reference/MakeWeights.html">MakeWeights</a></span><span class="op">(</span><span class="va">reporting_metrics</span><span class="op">)</span>,</span>
+<span>  dfActionLog <span class="op">=</span> <span class="va">reporting_action_log</span>,</span>
+<span>  strMissingState <span class="op">=</span> <span class="st">"error"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>The join key is
+<code>StudyID + SnapshotDate + GroupLevel + GroupID + MetricID</code>.
+<code>Reporting_ActionLog</code> must therefore be refreshed and reduced
+to one row per key before the metric workflow runs. The
+<code>srs0002.yaml</code> workflow reads persisted
+<code>Analysis_Summary</code> and <code>Reporting_ActionLog</code>,
+which keeps ADO credentials and extraction timing outside
+<a href="https://github.com/Gilead-Public/gsm.kri" class="external-link">gsm.kri</a>.</p>
+<p>Only numerator evidence is filtered. For example, with three KRIs
+weighted <code>4</code>, <code>4</code>, and <code>8</code>, states
+<code>No Action</code>, <code>Open Action</code>, and
+<code>Closed Action</code> produce an action-weighted numerator of
+<code>0 + 4 + 8 = 12</code> while retaining the original denominator of
+<code>16</code>, for a score of <code>75</code>.</p>
+<p>The original <code>srs0001</code> remains unchanged as the comparison
+and rollback baseline. Cross-study functions accept
+<code>strRiskScoreMetric = "Analysis_srs0002"</code> to display the new
+variant explicitly.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="cross-study-site-risk-scores">Cross-Study Site Risk Scores<a class="anchor" aria-label="anchor" href="#cross-study-site-risk-scores"></a>
@@ -658,7 +722,7 @@ studies</li>
 <strong>Widget creation</strong>: Pass results, metrics, and groups
 metadata to create the interactive visualization</li>
 </ol>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Example: Create cross-study risk score widget</span></span>
 <span><span class="va">cross_study_widget</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Widget_CrossStudyRiskScore.html">Widget_CrossStudyRiskScore</a></span><span class="op">(</span></span>
 <span>  dfResults <span class="op">=</span> <span class="va">multi_study_results</span>,  <span class="co"># Must include Analysis_srs0001</span></span>

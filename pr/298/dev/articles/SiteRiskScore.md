@@ -218,6 +218,54 @@ KRI workflow using the `srs0001.yaml` workflow file located in
     includes a column showing the normalized site risk score for each
     site for a single study.
 
+### Action-status-weighted Site Risk Score
+
+The `srs0002` variant uses the same KRI flag weights and full
+maximum-risk denominator as `srs0001`, but multiplies each numerator
+contribution by a factor derived from the persisted ActionLog state:
+
+| ActionLog state | Default factor |
+|-----------------|---------------:|
+| Open Action     |              1 |
+| Closed Action   |              1 |
+| Awaiting Triage |              1 |
+| No Action       |              0 |
+
+Including `Awaiting Triage` is a conservative default so unresolved
+review does not understate site risk. Studies can configure a different
+explicit factor if the business rule changes. A missing ActionLog row
+for a nonzero KRI weight is an error by default; callers must explicitly
+choose `include` or `exclude` to apply a fallback. Zero-weight rows do
+not require an ActionLog state.
+
+``` r
+
+action_weighted_score <- CalculateActionRiskScore(
+  dfResults = current_kri_results,
+  dfWeights = MakeWeights(reporting_metrics),
+  dfActionLog = reporting_action_log,
+  strMissingState = "error"
+)
+```
+
+The join key is
+`StudyID + SnapshotDate + GroupLevel + GroupID + MetricID`.
+`Reporting_ActionLog` must therefore be refreshed and reduced to one row
+per key before the metric workflow runs. The `srs0002.yaml` workflow
+reads persisted `Analysis_Summary` and `Reporting_ActionLog`, which
+keeps ADO credentials and extraction timing outside
+[gsm.kri](https://github.com/Gilead-Public/gsm.kri).
+
+Only numerator evidence is filtered. For example, with three KRIs
+weighted `4`, `4`, and `8`, states `No Action`, `Open Action`, and
+`Closed Action` produce an action-weighted numerator of `0 + 4 + 8 = 12`
+while retaining the original denominator of `16`, for a score of `75`.
+
+The original `srs0001` remains unchanged as the comparison and rollback
+baseline. Cross-study functions accept
+`strRiskScoreMetric = "Analysis_srs0002"` to display the new variant
+explicitly.
+
 ## Cross-Study Site Risk Scores
 
 The

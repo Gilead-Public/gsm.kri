@@ -56,6 +56,7 @@ For any feature, fix, or refactor:
 
 ## Skills
 
-| Triggers              | Path                                           |
-|-----------------------|------------------------------------------------|
-| tag tests with issues | @.github/skills/tag-tests-with-issues/SKILL.md |
+| Triggers               | Path                                           |
+|------------------------|------------------------------------------------|
+| tag tests with issues  | @.github/skills/tag-tests-with-issues/SKILL.md |
+| update gsm.viz bundles | @.github/skills/update-gsm-viz-bundle/SKILL.md |

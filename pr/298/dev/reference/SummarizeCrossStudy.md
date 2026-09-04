@@ -14,7 +14,8 @@ SummarizeCrossStudy(
   strGroupLevel = "Site",
   dfGroups = NULL,
   strNameCol = "InvestigatorLastName",
-  strEnrollmentCol = "ParticipantCount"
+  strEnrollmentCol = "ParticipantCount",
+  strRiskScoreMetric = "Analysis_srs0001"
 )
 ```
 
@@ -43,6 +44,11 @@ SummarizeCrossStudy(
 
   \`character\` The Param value in dfGroups to use for site enrollment
   counts. Default is 'ParticipantCount'.
+
+- strRiskScoreMetric:
+
+  \`character\` Risk score MetricID to summarize. Defaults to
+  \`"Analysis_srs0001"\`.
 
 ## Value
 

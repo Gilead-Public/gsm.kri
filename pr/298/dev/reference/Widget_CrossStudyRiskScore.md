@@ -15,7 +15,8 @@ Widget_CrossStudyRiskScore(
   dfResults,
   dfMetrics,
   dfGroups,
-  strGroupLevel = "Site"
+  strGroupLevel = "Site",
+  strRiskScoreMetric = "Analysis_srs0001"
 )
 ```
 
@@ -36,6 +37,11 @@ Widget_CrossStudyRiskScore(
 - strGroupLevel:
 
   \`character\` The group level. Default is 'Site'.
+
+- strRiskScoreMetric:
+
+  \`character\` Risk score MetricID to display. Defaults to
+  \`"Analysis_srs0001"\`.
 
 ## Value
 
