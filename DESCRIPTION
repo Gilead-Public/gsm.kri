@@ -56,7 +56,7 @@ Suggests:
 VignetteBuilder: 
     knitr
 Remotes:
-    gsm.core=Gilead-Public/gsm.core@dev,
+    gsm.core=Gilead-Public/gsm.core@feature-177-ipns-lsource,
     gsm.mapping=Gilead-Public/gsm.mapping@feature-162-ipns-passthrough,
     gsm.qtl=Gilead-Public/gsm.qtl@dev,
     gsm.reporting=Gilead-Public/gsm.reporting@feature-ipns-t15-mapping,
