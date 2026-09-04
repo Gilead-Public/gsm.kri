@@ -3,3 +3,7 @@ dependencies:
     version: 1.0.0
     src: htmlwidgets/lib
     script: renderCrossStudyRiskScoreTable.js
+  - name: srsWeighting
+    version: 1.0.0
+    src: 'report/lib'
+    script: 'srsWeighting.js'

@@ -20,22 +20,10 @@ This vignette describes how **site-level risk scores** are calculated using Key 
 
 # Risk Indicators, Flags and Weights
 
-Each KRI (e.g., Adverse Events, Serious Adverse Events, Protocol Deviations) in the `gsm` framework is assigned a *flag* as part of the [standard analysis workflow](https://gilead-public.github.io/gsm.core/articles/DataAnalysis.html). Flags can also be associated with a *weight*, which reflects their contribution to site risk. For example, a site with a low adverse event rate could present more risk than a site with a low query rate. While both KRIs could have the same `flag` value (e.g. -2, representing low rates compared to other sites)  a higher *weight* could be assigned to the AE KRI flag than the query rate KRI flag. Default flag weights for the 12 standard `gsm` are shown below. 
+Each KRI (e.g., Adverse Events, Serious Adverse Events, Protocol Deviations) in the `gsm` framework is assigned a *flag* as part of the [standard analysis workflow](https://gilead-public.github.io/gsm.core/articles/DataAnalysis.html). Flags can also be associated with a *weight*, which reflects their contribution to site risk. For example, a site with a low adverse event rate could present more risk than a site with a low query rate. While both KRIs could have the same `flag` value (e.g. -2, representing low rates compared to other sites), a higher *weight* could be assigned to the AE KRI flag than the query rate KRI flag. The current default weights are generated from metric metadata below.
   
 ```{r, echo=FALSE}
-library(knitr)
-
-kri_weights <- data.frame(
-  KRI = c("Adverse Event", "Serious Adverse Event", "Protocol Deviations", "Important Protocol Deviations",
-          "Labs", "Query Rate", "Delayed Query Rate", "Delayed Data Entry Rate", "Data Change Rate", "Screen Failure",
-          "Treatment Discontinuation", "Study Discontinuation"),
-  Low_Red   = c(32, 8, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-  Low_Amber = c(16, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-  High_Amber= c(1, 4, 8, 16, 1, 1, 1, 1, 1, 8, 16, 16),
-  High_Red  = c(2, 8, 16, 32, 2, 2, 2, 2, 2, 16, 32, 32)
-)
-
-kable(kri_weights, caption = "Flag Weights for Key Risk Indicators")
+gsm.kri::Report_SRSWeighting(gsm.core::reportingMetrics)
 ```
 
 The `gsm.core::flag()` function is used to calculate site-level flag values and associated weights. Three key parameters are used in the site-risk score process: 
@@ -107,7 +95,7 @@ site_example <- data.frame(
   Contribution = c(32, 0, 4, 0, 0, 1, 0, 0, 0, 8, 0, 0)
 )
 
-kable(site_example, caption = "Example Site Contributions to Risk Score")
+knitr::kable(site_example, caption = "Example Site Contributions to Risk Score")
 ```
 
 These weights are added up at the site level and divided by the maximum possible score to create a **normalized risk score** between 0 and 100. This normalized site risk score is what is reported in the KRI report, and if desired, any sites above a certain threshold can be flagged for further review.
@@ -242,4 +230,3 @@ This functionality is particularly useful for portfolio-level monitoring where s
 # Conclusion
   
 This scoring framework provides an interpretable, quantitative measure of risk at each site. By combining information across KRIs and weighting severity appropriately, it allows data monitoring teams to identify high-risk sites and prioritize monitoring resources effectively.
-
