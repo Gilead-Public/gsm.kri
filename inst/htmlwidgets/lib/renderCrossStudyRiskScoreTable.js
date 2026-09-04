@@ -28,6 +28,7 @@ function renderCrossStudyRiskScoreTable(el, input) {
     }
     
     const resultsArray = input.dfResults;
+    const siteRiskScoreMetric = input.strSiteRiskMetric || 'Analysis_srs0001';
 
     // Get unique study IDs for the study filter
     const uniqueStudies = [...new Set(resultsArray.map(d => d.StudyID))].sort();
@@ -251,7 +252,7 @@ function renderCrossStudyRiskScoreTable(el, input) {
         // for just the studies selected in the "Filter by Study" control.
         const srsByStudy = {};
         siteResults
-            .filter(d => d.MetricID === 'Analysis_srs0001')
+            .filter(d => d.MetricID === siteRiskScoreMetric)
             .forEach(d => { srsByStudy[d.StudyID] = parseFloat(d.Score); });
 
         const enrollmentByStudy = {};
@@ -294,7 +295,7 @@ function renderCrossStudyRiskScoreTable(el, input) {
                     {
                         GroupLevel: 'Site',
                         groupLabelKey: 'nickname',
-                        SiteRiskScoreMetricID: 'Analysis_srs0001'
+                        SiteRiskScoreMetricID: siteRiskScoreMetric
                     },
                     studyGroups,
                     input.dfMetrics

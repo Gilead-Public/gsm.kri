@@ -1,3 +1,35 @@
+# gsm.kri (development version)
+
+- The legacy widget wrappers (`Widget_BarChart`, `Widget_ScatterPlot`, `Widget_TimeSeries`,
+  `Widget_GroupOverview`), their Shiny bindings, `MakeChartConfig()`, and the shared
+  widget-control JS/CSS moved to gsm.vizr (#291). gsm.kri re-exports every name, so
+  existing callers are unaffected. The vendored `gsm.viz-2.4.1` bundle is retired;
+  `Widget_CrossStudyRiskScore` now takes the bundle from
+  `gsm.vizr::html_dependency_gsm_viz()`.
+- The Premature Deaths bucket and reason barcharts now render through
+  `gsm.vizr::bars()` instead of the package-local `Widget_PrematureDeathBucketBar()` /
+  `Widget_PrematureDeathReasonBar()` (#288). **Breaking (development only):** those two
+  widgets and their four Shiny bindings (`*Output()` / `render*()`) are removed with no
+  replacement in gsm.kri; call `gsm.vizr::bars()` directly with `pd_BucketBarSpec()` /
+  `pd_ReasonBarSpec()`. They were added after v1.6.1 and never shipped in a release, so
+  no released API is affected. The tooltip formatters move onto the spec builders as
+  `gsm.vizr::js_hook()`s, and the `na = "string"` serialization workaround for a missing
+  `OuterGroupID` is gone — gsm.vizr serializes with `na = "null"`, so client JS now reads
+  a real `null` instead of the literal string `"NA"`.
+- The Eligibility report's 7 bar charts (Site, Country, Source, and the four
+  Criteria/… tabs) now render through gsm.qtl's `gsm.vizr::bars()`-backed
+  `eligibility_groupBar()` / `eligibility_sourceBar()` / `criteria_groupBar()` instead of
+  plotly (#286). The separate "Site (by %)" tab is folded into the Site chart's
+  position toggle, matching the QTL report. `Report_Eligibility.Rmd` no longer loads
+  `ggplot2`/`plotly`.
+- Added `CalculateActionRiskScore()` and the `srs0002` workflow for an
+  action-status-weighted Site Risk Score. Open, closed, and awaiting-triage
+  findings are included by default; no-action findings are excluded; missing
+  nonzero action states fail unless an explicit fallback is configured. The
+  full raw SRS denominator is retained (#280).
+- Added configurable risk-score MetricIDs to the cross-study summary and widget
+  APIs while retaining `Analysis_srs0001` as the default (#280).
+
 # gsm.kri v1.6.1
 
 This patch release removes the log4r package dependency, because the log4r package was archived on CRAN (#262).
