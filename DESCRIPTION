@@ -60,7 +60,7 @@ Remotes:
     gsm.mapping=Gilead-Public/gsm.mapping@feature-162-ipns-passthrough,
     gsm.qtl=Gilead-Public/gsm.qtl@dev,
     gsm.reporting=Gilead-Public/gsm.reporting@feature-ipns-t15-mapping,
-    gsm.vizr=Gilead-Public/gsm.vizr@dev,
+    gsm.vizr=Gilead-Public/gsm.vizr@for-ipns-140,
     qcthat=Gilead-Public/qcthat@main
 Config/roxygen2/version: 8.1.0
 Config/testthat/edition: 3
