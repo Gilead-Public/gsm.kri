@@ -3,9 +3,9 @@
 \`r lifecycle::badge("experimental")\`
 
 Horizontal single-series bars, each carrying its count on the bar when
-the bar is long enough to hold the label. The tooltip formatter and
-callbacks are attached in \`Widget_PrematureDeathReasonBar.js\`; this
-returns only the serializable spec.
+the bar is long enough to hold the label. Ready to hand to
+\[gsm.vizr::bars()\]; the tooltip formatter is attached here as a
+\`js_hook\`.
 
 ## Usage
 

@@ -63,16 +63,6 @@
   : Shiny bindings for Widget_FlagOverTime
 - [`Widget_FlagOverTime()`](https://gilead-public.github.io/gsm.kri/dev/reference/Widget_FlagOverTime.md)
   : Flag Over Time Widget
-- [`Widget_PrematureDeathBucketBarOutput()`](https://gilead-public.github.io/gsm.kri/dev/reference/Widget_PrematureDeathBucketBar-shiny.md)
-  [`renderWidget_PrematureDeathBucketBar()`](https://gilead-public.github.io/gsm.kri/dev/reference/Widget_PrematureDeathBucketBar-shiny.md)
-  : Shiny bindings for Widget_PrematureDeathBucketBar
-- [`Widget_PrematureDeathBucketBar()`](https://gilead-public.github.io/gsm.kri/dev/reference/Widget_PrematureDeathBucketBar.md)
-  : Premature-death bucket bar widget (gsm.viz)
-- [`Widget_PrematureDeathReasonBarOutput()`](https://gilead-public.github.io/gsm.kri/dev/reference/Widget_PrematureDeathReasonBar-shiny.md)
-  [`renderWidget_PrematureDeathReasonBar()`](https://gilead-public.github.io/gsm.kri/dev/reference/Widget_PrematureDeathReasonBar-shiny.md)
-  : Shiny bindings for Widget_PrematureDeathReasonBar
-- [`Widget_PrematureDeathReasonBar()`](https://gilead-public.github.io/gsm.kri/dev/reference/Widget_PrematureDeathReasonBar.md)
-  : Premature-death reason bar widget (gsm.viz)
 - [`add_Groups_metadata()`](https://gilead-public.github.io/gsm.kri/dev/reference/add_Groups_metadata.md)
   : Add group meta data for report
 - [`pd_BucketBarSpec()`](https://gilead-public.github.io/gsm.kri/dev/reference/pd_BucketBarSpec.md)

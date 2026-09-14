@@ -3,7 +3,7 @@
 \`r lifecycle::badge("experimental")\`
 
 Horizontal bar of \`deathcls\` counts among premature deaths, rendered
-via the \`gsm.viz\` reason widget.
+via \[gsm.vizr::bars()\].
 
 ## Usage
 
@@ -29,4 +29,4 @@ pd_ReasonDist(dfDeath, nWindowDays = 90, nEnrolled = NULL)
 
 ## Value
 
-A \`Widget_PrematureDeathReasonBar\` htmlwidget.
+A \`bars\` htmlwidget (see \[gsm.vizr::bars()\]).

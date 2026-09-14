@@ -4,7 +4,7 @@
 
 Renders the horizontal reason distribution from a reason slice produced
 by \[pd_ReasonByCountry()\] or derived inside \[pd_ReasonDist()\], via
-the \`gsm.viz\` reason widget.
+\[gsm.vizr::bars()\].
 
 ## Usage
 
@@ -22,4 +22,4 @@ pd_ReasonBar(slice)
 
 ## Value
 
-A \`Widget_PrematureDeathReasonBar\` htmlwidget.
+A \`bars\` htmlwidget (see \[gsm.vizr::bars()\]).
