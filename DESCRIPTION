@@ -59,7 +59,7 @@ Remotes:
     gsm.core=Gilead-Public/gsm.core@dev,
     gsm.mapping=Gilead-Public/gsm.mapping@dev,
     gsm.qtl=Gilead-Public/gsm.qtl@dev,
-    gsm.reporting=Gilead-Public/gsm.reporting@feature-ipns-t15-mapping,
+    gsm.reporting=Gilead-Public/gsm.reporting@dev,
     gsm.vizr=Gilead-Public/gsm.vizr@dev,
     qcthat=Gilead-Public/qcthat@main
 Config/roxygen2/version: 8.1.0
