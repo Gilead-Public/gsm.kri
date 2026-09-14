@@ -47,6 +47,30 @@ test('selecting a country swaps the country reason slice (#264)', async ({ page 
   expect(after).not.toEqual(before);
 });
 
+test('a country with no premature deaths blanks the reason slice (#288)', async ({ page }) => {
+  // pdReasonRowsByCountry is keyed only by countries that own a death, but the
+  // country bucket chart draws every ENROLLED country, so MEX is clickable and
+  // misses the lookup. A miss on a selected country must empty the chart: the
+  // study-wide __ALL__ slice belongs to the unfiltered state, and showing it
+  // here would present other countries' deaths as MEX's.
+  const drawnBars = () => page.evaluate(() => {
+    const c = document.querySelector('#pd-country-reasons').gsmChart;
+    return c.data.datasets.reduce((n, ds, di) => n + (ds.data || []).length, 0);
+  });
+  expect(await drawnBars()).toBeGreaterThan(0); // study-wide slice on load
+
+  await page.evaluate(() => document.dispatchEvent(new CustomEvent('pdBucketFilterChanged',
+    { bubbles: true, detail: { country: 'MEX', invid: null } })));
+  await page.waitForTimeout(300);
+  expect(await drawnBars()).toBe(0);
+
+  // Clearing the filter still restores __ALL__ -- the fallback keeps that job.
+  await page.evaluate(() => document.dispatchEvent(new CustomEvent('pdBucketFilterChanged',
+    { bubbles: true, detail: { country: null, invid: null } })));
+  await page.waitForTimeout(300);
+  expect(await drawnBars()).toBeGreaterThan(0);
+});
+
 test('reason bars wide enough for a label carry their count (#264)', async ({ page }) => {
   const rows = await page.evaluate(() => {
     const c = document.querySelector('#pd-study-reasons').gsmChart;

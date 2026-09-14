@@ -97,9 +97,13 @@ Because gsm.kri renders production reports against this bundle, install the upda
 ```sh
 R CMD INSTALL <path-to-gsm.vizr>
 R --quiet -e 'devtools::load_all("."); source("tests/playwright/render-kri-fixture.R")'
+R --quiet -e 'devtools::load_all("."); source("tests/playwright/render-eligibility-fixture.R")'
 npm --prefix tests/playwright ci
 npm --prefix tests/playwright test -- bundle-regression.spec.js
 ```
+`bundle-regression.spec.js` covers every report in `tests/playwright/fingerprint.js`'s
+`FIXTURES`, and `tests/playwright/fixture/` is ignored, so render each one before the run:
+a missing fixture fails the spec outright and a leftover one silently tests the old bundle.
 
 Do not refresh structural baselines merely to make failures pass; inspect and explain intentional rendering changes first.
 Review `git diff --check`, `git status --short`, the complete diff, the single-directory invariant, and all remaining `gsm.viz` references. Stop instead of completing the upgrade if provenance is uncertain, required exports disappear, a widget throws, fingerprints drift without an understood cause, R checks warn/error, or stale provisional references remain. Never approve a development-mode bundle as the final released upgrade; repeat the workflow in release mode from the official tag before merge/release.
