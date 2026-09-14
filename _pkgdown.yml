@@ -17,3 +17,24 @@ navbar:
     github:
       icon: fab fa-github
       href: https://github.com/gilead-public/gsm.kri
+    examples:
+      text: Examples
+      menu:
+      - text: Cookbook AdverseEventKRI
+        href: examples/Cookbook_AdverseEventKRI.html
+      - text: Cookbook AdverseEventWorkflow
+        href: examples/Cookbook_AdverseEventWorkflow.html
+      - text: Cookbook ReportingWorkflow
+        href: examples/Cookbook_ReportingWorkflow.html
+      - text: Example CrossStudySRS
+        href: examples/Example_CrossStudySRS.html
+      - text: Example PrematureDeaths
+        href: examples/Example_PrematureDeaths.html
+      - text: Report Eligibility
+        href: examples/Report_Eligibility.html
+      - text: Report Kri Country
+        href: examples/report_kri_country.html
+      - text: Report Kri Site
+        href: examples/report_kri_site.html
+      - text: Repeat Measurements Report
+        href: examples/Example_RecordDuplication.html
