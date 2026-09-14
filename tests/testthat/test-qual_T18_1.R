@@ -55,5 +55,4 @@ testthat::test_that("Qual: Given appropriate raw participant-level data, Deaths 
     test,
     ~ expect_true(all(c("Flag", "Weight", "WeightMax") %in% names(.x$Analysis_Flagged)))
   )
-
 })
