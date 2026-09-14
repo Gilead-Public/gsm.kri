@@ -1,6 +1,6 @@
 meta:
   Type: Report
-  ID: eligibility
+  ID: report_eligibility
   Output: html
   Name: CTQ Eligibility Report
   Description: A report summarizing CTQ
@@ -19,34 +19,68 @@ spec:
     _all:
       required: true
 steps:
+  # Subset on eligibility results.
+  - output: dfResults
+    name: workr::RunQuery
+    params:
+      df: Reporting_Results
+      strQuery: |
+        SELECT *
+        FROM df
+        WHERE MetricID = 'Analysis_qtl0001'
+        ORDER BY SnapshotDate
+
+  # Subset on eligibility metric.
+  - output: dfMetrics
+    name: workr::RunQuery
+    params:
+      df: Reporting_Metrics
+      strQuery: |
+        SELECT *
+        FROM df
+        WHERE MetricID = 'Analysis_qtl0001'
+
+  # Subset on study-level metadata.
+  - output: dfGroups
+    name: workr::RunQuery
+    params:
+      df: Reporting_Groups
+      strQuery: |
+        SELECT *
+        FROM df
+        WHERE GroupLevel = 'Study'
+
+  # Define data contributing to numerator and denominator of eligibility metric.
   - output: IE_num
     name: workr::RunQuery
     params:
       df: Mapped_EXCLUSION
       strQuery: "SELECT * FROM df WHERE Source != 'Neither'"
-  - output: reporting_listings
+  - output: lListings
     name: list
     params:
       'IE_num': IE_num
       'IE_denom': Mapped_EXCLUSION
-  - output: strOutputDir
-    name: getwd
+
+  # Define report template inputs.
   - output: strInputPath
-    names: system.file
+    name: system.file
     params:
-      ...: "report/Report_QTL.Rmd"
-      package: "gsm.qtl"
+      ...: "report/Report_Eligibility.Rmd"
+      package: "gsm.kri"
   - output: lParams
     name: list
     params:
-      'dfResults': Reporting_Results
-      'dfMetrics': Reporting_Metrics
-      'dfGroups': Reporting_Groups
-      'lListings': reporting_listings
+      dfResults: dfResults
+      dfMetrics: dfMetrics
+      dfGroups: dfGroups
+      lListings: lListings
+
+  # Generate report.
   - output: Report
     name: gsm.kri::RenderRmd
     params:
       lParams: lParams
-      strOutputDir: strOutputDir
       strOutputFile: ID
       strInputPath: strInputPath
+
