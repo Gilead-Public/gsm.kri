@@ -36,6 +36,7 @@ Imports:
     purrr,
     rlang,
     rmarkdown,
+    scales,
     stringr,
     tibble,
     tidyr,
