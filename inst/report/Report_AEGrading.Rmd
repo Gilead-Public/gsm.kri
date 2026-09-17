@@ -112,7 +112,7 @@ report the lowest. The dashed line marks the study-wide Grade 3+ proportion —
 bars that break well away from it in either direction are the sites whose grading
 behaviour differs from their peers.
 
-```{r grade-by-site, fig.width = 10, fig.height = 12}
+```{r grade-by-site}
 Visualize_GradeBySite(dfDist, dfFlagged = dfMetricResults)
 ```
 
