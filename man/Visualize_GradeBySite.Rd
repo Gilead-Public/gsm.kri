@@ -20,7 +20,7 @@ sites are called out on the axis. Default: `NULL`.}
 \item{strTitle}{`character` plot title.}
 }
 \value{
-`ggplot` object.
+A `bars` htmlwidget.
 }
 \description{
 `r lifecycle::badge("experimental")`
@@ -29,4 +29,5 @@ Renders a 100% stacked bar chart of the CTCAE grade mix at each site, sorted
 by the proportion of high-grade (Grade 3+) events. A dashed reference line
 marks the study-wide high-grade proportion, so sites whose bars break away
 from that line are the ones grading differently from the rest of the study.
+Built on [gsm.vizr::bars()], the JS `bars` module from `gsm.viz`.
 }
