@@ -68,6 +68,7 @@ AEGrading_SiteDistribution <- function(
 #' by the proportion of high-grade (Grade 3+) events. A dashed reference line
 #' marks the study-wide high-grade proportion, so sites whose bars break away
 #' from that line are the ones grading differently from the rest of the study.
+#' Built on [gsm.vizr::bars()], the JS `bars` module from `gsm.viz`.
 #'
 #' @param dfDistribution `data.frame` output of [AEGrading_SiteDistribution()].
 #' @param dfFlagged `data.frame` optional site-level results with `GroupID` and
@@ -75,7 +76,7 @@ AEGrading_SiteDistribution <- function(
 #'   sites are called out on the axis. Default: `NULL`.
 #' @param strTitle `character` plot title.
 #'
-#' @return `ggplot` object.
+#' @return A `bars` htmlwidget.
 #'
 #' @export
 Visualize_GradeBySite <- function(
@@ -84,18 +85,17 @@ Visualize_GradeBySite <- function(
   strTitle = "AE severity grade distribution by site"
 ) {
   vGradeColors <- c(
-    "1" = "#FFFFB2",
-    "2" = "#FECC5C",
-    "3" = "#FD8D3C",
-    "4" = "#F03B20",
-    "5" = "#BD0026"
+    "Grade 1" = "#FFFFB2",
+    "Grade 2" = "#FECC5C",
+    "Grade 3" = "#FD8D3C",
+    "Grade 4" = "#F03B20",
+    "Grade 5" = "#BD0026"
   )
 
   dfOrder <- dfDistribution %>%
     dplyr::group_by(.data$GroupID) %>%
     dplyr::summarize(
       HighGrade = sum(.data$Proportion[.data$Grade >= 3]),
-      SiteTotal = dplyr::first(.data$SiteTotal),
       .groups = "drop"
     ) %>%
     dplyr::arrange(.data$HighGrade)
@@ -106,12 +106,6 @@ Visualize_GradeBySite <- function(
     dplyr::pull(.data$StudyProportion) %>%
     sum()
 
-  dfPlot <- dfDistribution %>%
-    dplyr::mutate(
-      GroupID = factor(.data$GroupID, levels = dfOrder$GroupID),
-      Grade = factor(.data$Grade, levels = 5:1)
-    )
-
   vFlagged <- character(0)
   if (!is.null(dfFlagged) && nrow(dfFlagged) > 0) {
     vFlagged <- dfFlagged %>%
@@ -120,50 +114,53 @@ Visualize_GradeBySite <- function(
       unique()
   }
 
-  if (length(vFlagged)) {
-    levels(dfPlot$GroupID) <- ifelse(
-      levels(dfPlot$GroupID) %in% vFlagged,
-      paste0("\u25b6 ", levels(dfPlot$GroupID)),
-      levels(dfPlot$GroupID)
-    )
+  # Flag on the axis label itself; gsm.viz has no separate axis-annotation hook.
+  FlagLabel <- function(x) {
+    ifelse(x %in% vFlagged, paste0("\u25b6 ", x), x)
   }
 
-  ggplot2::ggplot(
-    dfPlot,
-    ggplot2::aes(x = .data$GroupID, y = .data$Proportion, fill = .data$Grade)
-  ) +
-    ggplot2::geom_col(width = 0.85) +
-    ggplot2::geom_hline(
-      yintercept = 1 - nStudyHigh,
-      linetype = "dashed",
-      color = "#1a1a1a",
-      linewidth = 0.5
-    ) +
-    ggplot2::scale_fill_manual(
-      values = vGradeColors,
-      breaks = as.character(1:5),
-      labels = paste("Grade", 1:5),
-      name = NULL
-    ) +
-    ggplot2::scale_y_continuous(labels = scales::percent, expand = c(0, 0)) +
-    ggplot2::coord_flip() +
-    ggplot2::labs(
-      title = strTitle,
-      subtitle = paste0(
-        "Sorted by proportion of Grade 3+ events. Dashed line = study-wide Grade 3+ proportion (",
-        round(nStudyHigh * 100, 1), "%). ",
-        if (length(vFlagged)) "Sites marked \u25b6 are flagged by the grading KRI." else ""
-      ),
-      x = NULL,
-      y = "Proportion of adverse events"
-    ) +
-    ggplot2::theme_minimal(base_size = 11) +
-    ggplot2::theme(
-      axis.text.y = ggplot2::element_text(size = 7, colour = "grey25"),
-      panel.grid.major.y = ggplot2::element_blank(),
-      legend.position = "top",
-      plot.subtitle = ggplot2::element_text(size = 9, colour = "grey30")
+  dfPlot <- dfDistribution %>%
+    dplyr::mutate(
+      GroupLabel = FlagLabel(.data$GroupID),
+      Grade = paste("Grade", .data$Grade)
     )
+  vSiteOrder <- FlagLabel(dfOrder$GroupID)
+
+  gsm.vizr::bars(
+    data = dfPlot,
+    spec = gsm.vizr::bars_spec(
+      x = "GroupLabel",
+      y = "Count",
+      fill = "Grade",
+      orientation = "horizontal",
+      position = "stack",
+      stat = "percent",
+      scales = list(
+        x = list(label = NULL, order = vSiteOrder),
+        y = list(label = "Proportion of adverse events"),
+        fill = list(colors = as.list(vGradeColors))
+      ),
+      labels = list(
+        title = strTitle,
+        captions = paste0(
+          "Sorted by proportion of Grade 3+ events. Dashed line = study-wide Grade 3+ proportion (",
+          round(nStudyHigh * 100, 1), "%). ",
+          if (length(vFlagged)) "Sites marked \u25b6 are flagged by the grading KRI." else ""
+        )
+      ),
+      annotations = list(
+        referenceLines = list(list(
+          value = (1 - nStudyHigh) * 100,
+          label = "Study-wide Grade 3+",
+          color = "#1a1a1a",
+          lineDash = c(4, 4)
+        ))
+      ),
+      tooltip = list(format = "percent+count"),
+      theme = list(dynamicSizing = TRUE, pxPerCategory = 22)
+    ),
+    minHeight = 500
+  )
 }
 
 #' Report_AEGrading function
