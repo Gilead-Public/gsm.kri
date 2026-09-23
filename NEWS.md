@@ -7,6 +7,10 @@
   full raw SRS denominator is retained (#280).
 - Added configurable risk-score MetricIDs to the cross-study summary and widget
   APIs while retaining `Analysis_srs0001` as the default (#280).
+- Extended the existing site overview in `Report_KRI()` to display an adjusted
+  Site Risk Score immediately after the original Risk Score when
+  `Analysis_srs0002` is available. Direct `Widget_GroupOverview()` consumers
+  retain the original single-score layout unless they opt in (#280).
 
 # gsm.kri v1.6.0
 

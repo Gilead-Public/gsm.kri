@@ -27391,6 +27391,8 @@ var gsmViz = (() => {
     defaults5.groupParticipantCountKey = "ParticipantCount";
     defaults5.groupTooltipKeys = null;
     defaults5.SiteRiskScoreMetricID = "Analysis_srs0001";
+    defaults5.ComparisonRiskScoreMetricID = null;
+    defaults5.ComparisonRiskScoreLabel = "Adjusted Risk Score";
     defaults5.SiteRiskScoreURL = "https://gilead-biostats.github.io/gsm.kri/articles/SiteRiskScore.html";
     defaults5.groupClickCallback = (datum2) => {
       console.log(datum2);
@@ -27442,6 +27444,12 @@ var gsmViz = (() => {
         );
         if (riskScoreResult) {
           group2.siteRiskScore = parseFloat(riskScoreResult.Score);
+        }
+        const comparisonRiskScoreResult = groupResults.find(
+          (result) => result.MetricID === config.ComparisonRiskScoreMetricID
+        );
+        if (comparisonRiskScoreResult) {
+          group2.comparisonRiskScore = parseFloat(comparisonRiskScoreResult.Score);
         }
       }
     });
@@ -27630,6 +27638,23 @@ var gsmViz = (() => {
       }
       columns.push(riskScoreColumn);
     }
+    const hasComparisonRiskScoreData = results && config.ComparisonRiskScoreMetricID && results.some(
+      (result) => result.MetricID === config.ComparisonRiskScoreMetricID
+    );
+    if (config.GroupLevel === "Site" && hasComparisonRiskScoreData) {
+      columns.push({
+        label: config.ComparisonRiskScoreLabel,
+        data: groupMetadata,
+        filterKey: "GroupID",
+        valueKey: "comparisonRiskScore",
+        headerTooltip: "Action-weighted site risk score.",
+        sort: sortNumber,
+        tooltip: false,
+        type: "group",
+        dataType: "number",
+        defineTooltip
+      });
+    }
     return columns;
   }
 
@@ -27714,7 +27739,7 @@ var gsmViz = (() => {
         };
         datum2.value = datum2[column.valueKey];
         datum2.text = datum2.value;
-        if (column.valueKey === "siteRiskScore" && datum2.value !== null && !isNaN(datum2.value)) {
+        if (["siteRiskScore", "comparisonRiskScore"].includes(column.valueKey) && datum2.value !== null && !isNaN(datum2.value)) {
           datum2.text = Math.round(parseFloat(datum2.value));
         }
         datum2.sortValue = column.type === "metric" ? Math.abs(parseFloat(datum2.value)) : datum2.value;
@@ -27760,12 +27785,12 @@ var gsmViz = (() => {
         return id2;
       }
     ).join("td").text((d) => d.text === "NA" ? "-" : d.text).attr("class", (d) => d.class).classed("group-overview--tooltip", (d) => {
-      if (d.column.valueKey === "siteRiskScore") {
+      if (["siteRiskScore", "comparisonRiskScore"].includes(d.column.valueKey)) {
         return false;
       }
       return d.tooltip;
     }).attr("title", (d) => {
-      if (d.column.valueKey === "siteRiskScore") {
+      if (["siteRiskScore", "comparisonRiskScore"].includes(d.column.valueKey)) {
         return null;
       }
       return d.tooltip ? d.tooltipContent : null;
@@ -27890,7 +27915,9 @@ var gsmViz = (() => {
     const groupSelected = new CustomEvent("groupSelected", {
       bubbles: true
     });
-    cells.filter(".group-overview--group").filter((d) => d.column.valueKey !== "siteRiskScore").on("click", function(event, d) {
+    cells.filter(".group-overview--group").filter(
+      (d) => !["siteRiskScore", "comparisonRiskScore"].includes(d.column.valueKey)
+    ).on("click", function(event, d) {
       config.groupClickCallback({
         GroupLevel: config.GroupLevel,
         GroupID: d.GroupID,

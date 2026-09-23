@@ -11,7 +11,9 @@ Report_KRI(
   dfGroups = NULL,
   strOutputDir = getwd(),
   strOutputFile = NULL,
-  strInputPath = system.file("report", "Report_KRI.Rmd", package = "gsm.kri")
+  strInputPath = system.file("report", "Report_KRI.Rmd", package = "gsm.kri"),
+  strComparisonRiskMetric = "Analysis_srs0002",
+  strComparisonRiskLabel = "Adjusted Risk Score"
 )
 }
 \arguments{
@@ -41,6 +43,13 @@ the report will be saved in the current working directory.}
 the report will be named based on the study ID, Group Level and Date.}
 
 \item{strInputPath}{`string` or `fs_path` Path to the template `Rmd` file.}
+
+\item{strComparisonRiskMetric}{Optional metric ID displayed immediately after
+the existing Site Risk Score in the site overview. The column is omitted
+when the metric is absent from `dfResults`. Default: `"Analysis_srs0002"`.}
+
+\item{strComparisonRiskLabel}{Column label for the comparison risk score.
+Default: `"Adjusted Risk Score"`.}
 }
 \value{
 File path of the saved report html is returned invisibly. Save to object to view absolute output path.

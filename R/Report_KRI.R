@@ -12,6 +12,11 @@
 #' @param strOutputFile The output file name for the generated report. If not provided,
 #'  the report will be named based on the study ID, Group Level and Date.
 #' @param strInputPath `string` or `fs_path` Path to the template `Rmd` file.
+#' @param strComparisonRiskMetric Optional metric ID displayed immediately after
+#'   the existing Site Risk Score in the site overview. The column is omitted
+#'   when the metric is absent from `dfResults`. Default: `"Analysis_srs0002"`.
+#' @param strComparisonRiskLabel Column label for the comparison risk score.
+#'   Default: `"Adjusted Risk Score"`.
 #'
 #' @return File path of the saved report html is returned invisibly. Save to object to view absolute output path.
 #' @examples
@@ -70,10 +75,25 @@ Report_KRI <- function(
   dfGroups = NULL,
   strOutputDir = getwd(),
   strOutputFile = NULL,
-  strInputPath = system.file("report", "Report_KRI.Rmd", package = "gsm.kri")
+  strInputPath = system.file("report", "Report_KRI.Rmd", package = "gsm.kri"),
+  strComparisonRiskMetric = "Analysis_srs0002",
+  strComparisonRiskLabel = "Adjusted Risk Score"
 ) {
   rlang::check_installed("rmarkdown", reason = "to run `Report_KRI()`")
   rlang::check_installed("knitr", reason = "to run `Report_KRI()`")
+  if (!is.null(strComparisonRiskMetric) &&
+    (!rlang::is_string(strComparisonRiskMetric) ||
+      !nzchar(strComparisonRiskMetric))) {
+    cli::cli_abort(
+      "{.arg strComparisonRiskMetric} must be NULL or a single non-missing string."
+    )
+  }
+  if (!rlang::is_string(strComparisonRiskLabel) ||
+      !nzchar(strComparisonRiskLabel)) {
+    cli::cli_abort(
+      "{.arg strComparisonRiskLabel} must be a single non-missing string."
+    )
+  }
 
   # set output path
   if (is.null(strOutputFile)) {
@@ -108,7 +128,9 @@ Report_KRI <- function(
       lCharts = lCharts,
       dfResults = dfResults,
       dfMetrics = dfMetrics,
-      dfGroups = dfGroups
+      dfGroups = dfGroups,
+      strComparisonRiskMetric = strComparisonRiskMetric,
+      strComparisonRiskLabel = strComparisonRiskLabel
     )
   )
 }

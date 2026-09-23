@@ -199,6 +199,14 @@ The original `srs0001` remains unchanged as the comparison and rollback
 baseline. Cross-study functions accept `strRiskScoreMetric =
 "Analysis_srs0002"` to display the new variant explicitly.
 
+When both metrics are present, the standard site-level `Report_KRI()` overview
+shows `Analysis_srs0002` in an **Adjusted Risk Score** column immediately after
+the existing **Risk Score** (`Analysis_srs0001`) column. Reports without
+`Analysis_srs0002` retain the original layout. Direct
+`Widget_GroupOverview()` callers can request the same layout with
+`strComparisonRiskMetric = "Analysis_srs0002"`; leaving that argument `NULL`
+preserves the single-score widget.
+
 # Cross-Study Site Risk Scores
 
 The `Widget_CrossStudyRiskScore()` function enables visualization of site risk scores across multiple studies simultaneously. This widget provides an interactive table that allows users to:

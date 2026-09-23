@@ -15,6 +15,10 @@
 #' - 'amber': Groups with 1+ amber flag.
 #' @param strGroupLabelKey `character` Value for the group label key. Default: 'InvestigatorLastName'.
 #' @param strSiteRiskMetric `character` Metric ID for the site risk score. Default: 'Analysis_srs0001'.
+#' @param strComparisonRiskMetric `character` Optional metric ID for a second
+#'   risk score displayed immediately after the site risk score.
+#' @param strComparisonRiskLabel `character` Label for the comparison risk score
+#'   column. Default: 'Adjusted Risk Score'.
 #' @param ... `any` Additional chart configuration settings.
 #'
 #' @examples
@@ -43,6 +47,16 @@
 #'   strGroupLevel = "Country"
 #' )
 #'
+#' # add a second score beside the existing Site Risk Score when available
+#' \dontrun{
+#' Widget_GroupOverview(
+#'   dfResults = results_with_srs0002,
+#'   dfMetrics = gsm.core::reportingMetrics,
+#'   dfGroups = gsm.core::reportingGroups,
+#'   strComparisonRiskMetric = "Analysis_srs0002"
+#' )
+#' }
+#'
 #' @export
 
 Widget_GroupOverview <- function(
@@ -53,6 +67,8 @@ Widget_GroupOverview <- function(
   strGroupSubset = "red",
   strGroupLabelKey = "InvestigatorLastName",
   strSiteRiskMetric = "Analysis_srs0001",
+  strComparisonRiskMetric = NULL,
+  strComparisonRiskLabel = "Adjusted Risk Score",
   strOutputLabel = paste0(
     fontawesome::fa("table", fill = "#337ab7"),
     "  ",
@@ -82,6 +98,21 @@ Widget_GroupOverview <- function(
     cnd = !is.character(strGroupLabelKey) && !is.null(strGroupLabelKey),
     "strGroupLabelKey is not a character or NULL"
   )
+  gsm.core::stop_if(
+    cnd = !is.null(strComparisonRiskMetric) &&
+      (!is.character(strComparisonRiskMetric) ||
+        length(strComparisonRiskMetric) != 1L ||
+        is.na(strComparisonRiskMetric) ||
+        !nzchar(strComparisonRiskMetric)),
+    "strComparisonRiskMetric is not NULL or a single non-empty character value"
+  )
+  gsm.core::stop_if(
+    cnd = !is.character(strComparisonRiskLabel) ||
+      length(strComparisonRiskLabel) != 1L ||
+      is.na(strComparisonRiskLabel) ||
+      !nzchar(strComparisonRiskLabel),
+    "strComparisonRiskLabel is not a single non-empty character value"
+  )
   gsm.core::stop_if(cnd = !is.logical(bDebug), "bDebug is not a logical")
 
   # set strGroupLevel if NULL and dfMetrics is not NULL
@@ -96,7 +127,9 @@ Widget_GroupOverview <- function(
 
   ## don't include site risk score in dfMetrics, so it's not in the summary charts
   dfMetrics <- dfMetrics %>%
-    dplyr::filter(.data$MetricID != strSiteRiskMetric)
+    dplyr::filter(
+      !.data$MetricID %in% c(strSiteRiskMetric, strComparisonRiskMetric)
+    )
 
   ## update dfResults to include site risk weights when available
   if (any(!is.na(dfMetrics$RiskScoreWeight))) {
@@ -132,6 +165,8 @@ Widget_GroupOverview <- function(
     strGroupSubset = strGroupSubset,
     strGroupLabelKey = strGroupLabelKey,
     strSiteRiskMetric = strSiteRiskMetric,
+    strComparisonRiskMetric = strComparisonRiskMetric,
+    strComparisonRiskLabel = strComparisonRiskLabel,
     bDebug = bDebug
   )
 
