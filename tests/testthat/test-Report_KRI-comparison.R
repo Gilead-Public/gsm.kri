@@ -4,7 +4,8 @@ test_that("Report_KRI forwards comparison score configuration (#280)", {
     RenderRmd = function(...) {
       captured <<- list(...)
       invisible("report.html")
-    }
+    },
+    .package = "gsm.kri"
   )
 
   Report_KRI(
@@ -33,7 +34,8 @@ test_that("Report_KRI can disable and validates comparison scores (#280)", {
     RenderRmd = function(...) {
       captured <<- list(...)
       invisible("report.html")
-    }
+    },
+    .package = "gsm.kri"
   )
 
   Report_KRI(
