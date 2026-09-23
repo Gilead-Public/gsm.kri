@@ -1,8 +1,8 @@
 # gsm.kri (development version)
 
-- `kri0019` (site) and `cou0019` (country) now flag on the count of IP non-starters
-  (1 = amber, 2 or more = red) instead of a z-score, with site risk score weights
-  `0,4,8` (#312).
+- Added the IP Non-Starters metric: `kri0019` (site) and `cou0019` (country) count
+  participants who are Confirmed non-starters or Potential non-starters outside the
+  window. One non-starter flags amber and two or more flag red (#258, #312).
 
 # gsm.kri v1.7.0
 
@@ -24,9 +24,6 @@ stay on Plotly (#120).
 
 **Relocations to gsm.vizr:**
 
-- Added `kri0019` (site) and `cou0019` (country), which report the rate of IP
-  non-starters (subjects Confirmed or Potential-outside-window non-starters)
-  per the upstream `drv_ip_nonstarter_status` derivation (#258).
 - The legacy widget wrappers (`Widget_BarChart`, `Widget_ScatterPlot`, `Widget_TimeSeries`,
   `Widget_GroupOverview`), their Shiny bindings, `MakeChartConfig()`, and the shared
   widget-control JS/CSS moved to gsm.vizr (#291). gsm.kri re-exports every name, so
