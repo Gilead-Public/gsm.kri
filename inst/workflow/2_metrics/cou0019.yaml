@@ -7,13 +7,13 @@ meta:
   Metric: IP Non-Starter Rate
   Numerator: IP Non-Starters (Confirmed or Potential outside window)
   Denominator: Enrolled Subjects
-  Model: Normal Approximation
-  Score: Adjusted Z-Score
-  AnalysisType: binary
-  Threshold: "2,3"
+  Model: Identity
+  Score: Numerator
+  AnalysisType: identity
+  Threshold: "1,2"
   Flag: "0,1,2"
-  AccrualThreshold: 2
-  AccrualMetric: Numerator
+  AccrualThreshold: 1
+  AccrualMetric: Denominator
   GenerateRiskSignal: false
 spec:
   Mapped_IPNS:
@@ -55,12 +55,12 @@ steps:
     params:
       dfInput: Analysis_Input
   - output: Analysis_Analyzed
-    name: Analyze_NormalApprox
+    name: Analyze_Identity
     params:
       dfTransformed: Analysis_Transformed
-      strType: AnalysisType
+      strValueCol: Score
   - output: Analysis_Flagged
-    name: gsm.core::Flag_NormalApprox
+    name: gsm.core::Flag
     params:
       dfAnalyzed: Analysis_Analyzed
       vThreshold: vThreshold
