@@ -15,7 +15,8 @@ test_that("Report_KRI forwards comparison score configuration (#280)", {
     dfGroups = data.frame(),
     strOutputFile = "report.html",
     strComparisonRiskMetric = "Analysis_custom_srs",
-    strComparisonRiskLabel = "Comparison Score"
+    strComparisonRiskLabel = "Comparison Score",
+    strGroupSubset = "all"
   )
 
   expect_equal(
@@ -26,6 +27,7 @@ test_that("Report_KRI forwards comparison score configuration (#280)", {
     captured$lParams$strComparisonRiskLabel,
     "Comparison Score"
   )
+  expect_equal(captured$lParams$strGroupSubset, "all")
 })
 
 test_that("Report_KRI can disable and validates comparison scores (#280)", {
@@ -57,5 +59,12 @@ test_that("Report_KRI can disable and validates comparison scores (#280)", {
       strComparisonRiskLabel = NA_character_
     ),
     "strComparisonRiskLabel.*must be a single"
+  )
+  expect_error(
+    Report_KRI(
+      strOutputFile = "report.html",
+      strGroupSubset = "unknown"
+    ),
+    "strGroupSubset.*must be NULL"
   )
 })

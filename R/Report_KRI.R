@@ -17,6 +17,9 @@
 #'   when the metric is absent from `dfResults`. Default: `"Analysis_srs0002"`.
 #' @param strComparisonRiskLabel Column label for the comparison risk score.
 #'   Default: `"Adjusted Risk Score"`.
+#' @param strGroupSubset Optional group subset passed to the report's group
+#'   overview. `NULL` preserves the report default (`"red"` for site reports,
+#'   `"all"` otherwise).
 #'
 #' @return File path of the saved report html is returned invisibly. Save to object to view absolute output path.
 #' @examples
@@ -77,7 +80,8 @@ Report_KRI <- function(
   strOutputFile = NULL,
   strInputPath = system.file("report", "Report_KRI.Rmd", package = "gsm.kri"),
   strComparisonRiskMetric = "Analysis_srs0002",
-  strComparisonRiskLabel = "Adjusted Risk Score"
+  strComparisonRiskLabel = "Adjusted Risk Score",
+  strGroupSubset = NULL
 ) {
   rlang::check_installed("rmarkdown", reason = "to run `Report_KRI()`")
   rlang::check_installed("knitr", reason = "to run `Report_KRI()`")
@@ -92,6 +96,13 @@ Report_KRI <- function(
       !nzchar(strComparisonRiskLabel)) {
     cli::cli_abort(
       "{.arg strComparisonRiskLabel} must be a single non-missing string."
+    )
+  }
+  if (!is.null(strGroupSubset) &&
+      (!rlang::is_string(strGroupSubset) ||
+        !strGroupSubset %in% c("all", "red", "red/amber", "amber"))) {
+    cli::cli_abort(
+      "{.arg strGroupSubset} must be NULL or one of {.or {c('all', 'red', 'red/amber', 'amber')}}."
     )
   }
 
@@ -130,7 +141,8 @@ Report_KRI <- function(
       dfMetrics = dfMetrics,
       dfGroups = dfGroups,
       strComparisonRiskMetric = strComparisonRiskMetric,
-      strComparisonRiskLabel = strComparisonRiskLabel
+      strComparisonRiskLabel = strComparisonRiskLabel,
+      strGroupSubset = strGroupSubset
     )
   )
 }
