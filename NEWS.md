@@ -1,4 +1,60 @@
-# gsm.kri (development version)
+# gsm.kri v1.7.0
+
+This minor release moves every gsm.viz-backed chart onto gsm.vizr: the vendored gsm.viz
+bundle and the legacy widget sources are gone, and the Premature Deaths and Eligibility
+bar charts render through gsm.vizr. The Premature Deaths randomization-to-death scatters
+stay on Plotly (#120).
+
+**Breaking Changes:**
+
+- `pd_BucketBar()` is removed (#264) — the Plotly bucket bar, left without a caller once
+  the Premature Deaths report moved to gsm.viz. Use `pd_BucketBarSpec()` with
+  `gsm.vizr::bars()`. Its aggregation is now the new exported `pd_BucketCounts()`, which
+  emits only the (group, category) pairs that occur (`.drop = TRUE`) rather than
+  `pd_BucketBar()`'s complete grid, so an empty category carries no zero-count row and
+  the dynamic category axis can thin.
+- gsm.kri now requires `gsm.qtl (>= 1.4.0)` for the gsm.vizr-backed eligibility charts,
+  and takes a new dependency on `gsm.vizr (>= 0.1.0)`.
+
+**Relocations to gsm.vizr:**
+
+- Added `kri0019` (site) and `cou0019` (country), which report the rate of IP
+  non-starters (subjects Confirmed or Potential-outside-window non-starters)
+  per the upstream `drv_ip_nonstarter_status` derivation (#258).
+- The legacy widget wrappers (`Widget_BarChart`, `Widget_ScatterPlot`, `Widget_TimeSeries`,
+  `Widget_GroupOverview`), their Shiny bindings, `MakeChartConfig()`, and the shared
+  widget-control JS/CSS moved to gsm.vizr (#291). gsm.kri re-exports every name, so
+  existing callers are unaffected. The vendored `gsm.viz-2.4.1` bundle is retired;
+  `Widget_CrossStudyRiskScore` now takes the bundle from
+  `gsm.vizr::html_dependency_gsm_viz()`.
+- The Premature Deaths bucket and reason barcharts render through `gsm.vizr::bars()` via
+  the new `pd_BucketBarSpec()` / `pd_BucketRows()` / `pd_ReasonBarSpec()` /
+  `pd_ReasonRows()` (#264, #288). The pilot wrappers `Widget_PrematureDeathBucketBar()` /
+  `Widget_PrematureDeathReasonBar()` and their four Shiny bindings are removed; they were
+  added after v1.6.1 and never shipped in a release. The hand-rolled count/percent toggle
+  is replaced by gsm.viz's native position toggle, and a missing `OuterGroupID` now
+  serializes to a real `null` instead of the literal string `"NA"`.
+- The Eligibility report's 7 bar charts (Site, Country, Source, and the four Criteria/…
+  tabs) render through gsm.qtl's `eligibility_groupBar()` / `eligibility_sourceBar()` /
+  `criteria_groupBar()` instead of plotly (#286). The separate "Site (by %)" tab is folded
+  into the Site chart's position toggle, matching the QTL report. `Report_Eligibility.Rmd`
+  no longer loads `ggplot2`/`plotly`.
+
+**Other:**
+
+- New `update-gsm-viz-bundle` skill under `.github/skills/`, referenced from `AGENTS.md`
+  (#282). It documents how to re-vendor the gsm.viz assets in gsm.vizr from a release tag
+  or a pinned upstream commit, and how to re-run gsm.kri's `bundle-regression` browser
+  spec afterwards. Repository tooling; not part of the installed package.
+- Repository links updated from Gilead-BioStats to Gilead-Public (#284). Two sets of
+  `Gilead-BioStats` references are intentionally kept: the `clindata` link in `README.md`,
+  because that repository has not moved, and the `Gilead-BioStats/41` project board named
+  by `.github/CONTRIBUTING.md` and the issue templates, which is org-level and shared with
+  the other gsm packages.
+
+# gsm.kri v1.6.1
+
+This patch release removes the log4r package dependency, because the log4r package was archived on CRAN (#262).
 
 - Added `CalculateActionRiskScore()` and the `srs0002` workflow for an
   action-status-weighted Site Risk Score. Open, closed, and awaiting-triage
@@ -161,24 +217,24 @@ We are happy to announce the first major release of the `gsm.kri` package, which
 ### Key Enhancements:
 - **Updated KRI Descriptions and Templates:**  
   The descriptions of Key Risk Indicators (KRIs) have been updated to improve clarity and understanding based on Risk Advisor feedback.
-  [PR #27](https://github.com/Gilead-BioStats/gsm.kri/pull/27)
+  [PR #27](https://github.com/Gilead-Public/gsm.kri/pull/27)
 
 
 - **Qualification Report GitHub Actions (GHA):**  
   A new GitHub Actions workflow for generating qualification reports has been added, automating the process and ensuring better integration with the overall pipeline.  
-  [PR #33](https://github.com/Gilead-BioStats/gsm.kri/pull/33) 
+  [PR #33](https://github.com/Gilead-Public/gsm.kri/pull/33) 
 
 - **Update to gsm.viz 2.2:**  
   The package has been updated to use `gsm.viz` version 2.2, bringing new visualization capabilities and updates.  
-  [PR #36](https://github.com/Gilead-BioStats/gsm.kri/pull/36)
+  [PR #36](https://github.com/Gilead-Public/gsm.kri/pull/36)
 
 - **Replacement of clindata with gsm.datasim:**  
   In line with updates across other GSM packages, `clindata` has been replaced with the `gsm.datasim` package.  
-  [PR #34](https://github.com/Gilead-BioStats/gsm.kri/pull/34)
+  [PR #34](https://github.com/Gilead-Public/gsm.kri/pull/34)
 
 - **"How to Add a New KRI" Vignette:**  
   A new vignette has been added that provides a step-by-step guide on how to add a new KRI to the package, making it easier for users to extend and customize the package for their needs.  
-  [PR #29](https://github.com/Gilead-BioStats/gsm.kri/pull/29)
+  [PR #29](https://github.com/Gilead-Public/gsm.kri/pull/29)
 
 ### Other Updates:
 - Several bug fixes have been applied to improve stability and functionality.

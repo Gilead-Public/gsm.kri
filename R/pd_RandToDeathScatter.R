@@ -58,6 +58,10 @@ pd_ScatterData <- function(dfClassified) {
 #' across the study/country/site views (AXIS-1). Each point's `customdata` packs
 #' `[hover, country, invid]` so the report can filter points client-side.
 #'
+#' Retained on Plotly; migration to a `gsm.viz` renderer is deferred with #120,
+#' pending a generic gsm.viz scatter helper (the bucket and reason bars migrated
+#' to gsm.viz in #264).
+#'
 #' @param dfClassified `data.frame` Output of [pd_Classify()]. May already carry
 #'   the `hover`/`pd_customdata` columns built by [pd_ScatterData()] — in that
 #'   case the per-point build is skipped (idempotent).

@@ -1,63 +1,36 @@
-test_that("Qual: action-weighted SRS matches independent AA evidence math (#280)", {
-  metric_ids <- sprintf("Analysis_kri%04d", 1:10)
-  results <- data.frame(
-    StudyID = "AA-AA-000-0000",
-    SnapshotDate = as.Date("2025-02-28"),
-    GroupLevel = "Site",
-    GroupID = "1001",
-    MetricID = metric_ids,
-    Flag = 1,
-    stringsAsFactors = FALSE
-  )
-  weights <- data.frame(
-    MetricID = metric_ids,
-    Flag = 1,
-    Weight = 2,
-    WeightMax = 2,
-    stringsAsFactors = FALSE
-  )
-  states <- c(
-    rep("No Action", 7),
-    rep("Open Action", 2),
-    "Closed Action"
-  )
-  action_log <- data.frame(
-    StudyID = results$StudyID,
-    SnapshotDate = results$SnapshotDate,
-    GroupLevel = results$GroupLevel,
-    GroupID = results$GroupID,
-    MetricID = results$MetricID,
-    State = states,
-    ExtractionDate = as.Date("2025-03-07"),
-    stringsAsFactors = FALSE
+# Double programming: the expected numerator is derived independently from the
+# status STRINGS, never from ipns_status_ord, so a recode bug cannot cancel out.
+test_that("Qual: kri0019/cou0019 numerators match an independent derivation (#258)", {
+  skip_if_not(
+    "drv_ip_nonstarter_status" %in% names(gsm.core::lSource$Raw_SUBJ),
+    "lSource predates the upstream drv_ fields"
   )
 
-  # Independent expected calculation: the AA scenario has seven findings
-  # judged No Action and three action-worthy findings (two open, one closed).
-  expected_factor <- ifelse(
-    action_log$State %in% c("Open Action", "Closed Action"),
-    1,
-    0
-  )
-  expected_numerator <- sum(weights$Weight * expected_factor)
-  expected_denominator <- sum(tapply(
-    weights$WeightMax,
-    weights$MetricID,
-    unique
-  ))
-  expected_score <- expected_numerator / expected_denominator * 100
+  wf <- ipns_mapping_workflows()
+  lRaw <- gsm.mapping::Ingest(gsm.core::lSource, gsm.mapping::CombineSpecs(wf))
+  mapped <- workr::RunWorkflows(wf, lRaw)
 
-  actual <- CalculateActionRiskScore(results, weights, action_log)
-  raw <- CalculateRiskScore(results, weights)
+  expected <- mapped$Mapped_SUBJ[
+    mapped$Mapped_SUBJ$drv_ip_nonstarter_status %in%
+      c(
+        "Confirmed Non-Starter",
+        "Potential Non-Starter outside window"
+      ),
+  ]
 
-  expect_equal(expected_numerator, 6)
-  expect_equal(expected_denominator, 20)
-  expect_equal(expected_score, 30)
-  expect_equal(actual$Numerator, expected_numerator)
-  expect_equal(actual$Denominator, expected_denominator)
-  expect_equal(actual$Metric, expected_score)
-  expect_equal(actual$Score, expected_score)
-  expect_equal(raw$Numerator, 20)
-  expect_equal(raw$Metric, 100)
-  expect_equal(actual$Denominator, raw$Denominator)
+  # RunWorkflows keys results by "<meta$Type>_<meta$ID>", not the bare ID.
+  site <- workr::RunWorkflows(
+    kri_workflow("kri0019"),
+    mapped
+  )$Analysis_kri0019$Analysis_Summary
+  country <- workr::RunWorkflows(
+    kri_workflow("cou0019"),
+    mapped
+  )$Analysis_cou0019$Analysis_Summary
+
+  # A zero-row expectation would make the comparison below vacuous.
+  expect_gt(nrow(expected), 0)
+
+  expect_equal(sum(site$Numerator), nrow(expected))
+  expect_equal(sum(country$Numerator), nrow(expected))
 })

@@ -1,6 +1,6 @@
 ---
 title: "Eligibility Report"
-author: "[gsm.kri](https://gilead-biostats.github.io/gsm.kri) Example"
+author: "[gsm.kri](https://gilead-public.github.io/gsm.kri) Example"
 description: "Example eligibility report generated with gsm.kri"
 index: 3
 date: "`r format(Sys.time(), '%B %d, %Y %H:%M:%S %Z')`"

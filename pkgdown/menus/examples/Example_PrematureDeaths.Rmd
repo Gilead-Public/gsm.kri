@@ -1,6 +1,6 @@
 ---
 title: "Premature Deaths Report"
-author: "[gsm.kri](https://gilead-biostats.github.io/gsm.kri) Example"
+author: "[gsm.kri](https://gilead-public.github.io/gsm.kri) Example"
 description: "Example Premature Deaths report generated with gsm.kri"
 index: 4
 date: "`r format(Sys.time(), '%B %d, %Y %H:%M:%S %Z')`"

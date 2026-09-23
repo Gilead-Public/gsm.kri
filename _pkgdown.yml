@@ -1,4 +1,4 @@
-url: https://gilead-biostats.github.io/gsm.kri
+url: https://gilead-public.github.io/gsm.kri
 template:
   bootstrap: 5
   bootswatch: yeti
@@ -16,4 +16,4 @@ navbar:
   components:
     github:
       icon: fab fa-github
-      href: https://github.com/gilead-biostats/gsm.kri
+      href: https://github.com/gilead-public/gsm.kri

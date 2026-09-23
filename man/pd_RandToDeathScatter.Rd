@@ -37,4 +37,8 @@ decision: no grouped "Death within `nWindowDays` days" heading). Pass
 `vXRange`/`vYRange` (computed study-wide by the report) to fix a shared range
 across the study/country/site views (AXIS-1). Each point's `customdata` packs
 `[hover, country, invid]` so the report can filter points client-side.
+
+Retained on Plotly; migration to a `gsm.viz` renderer is deferred with #120,
+pending a generic gsm.viz scatter helper (the bucket and reason bars migrated
+to gsm.viz in #264).
 }

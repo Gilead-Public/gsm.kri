@@ -1,0 +1,180 @@
+{
+  "bucketCharts": {
+    "study": {
+      "chartId": "pd-study-buckets",
+      "categories": [
+        "ST01"
+      ],
+      "stackOrder": [
+        "Death within 30 days",
+        "Death within 31–90 days",
+        "Study discontinuation within 90 days"
+      ],
+      "colors": {
+        "Death within 30 days": "#FF5859",
+        "Death within 31–90 days": "#FEAA02",
+        "Study discontinuation within 90 days": "#828282"
+      },
+      "captionShown": false,
+      "captionText": []
+    },
+    "country": {
+      "chartId": "pd-country-buckets",
+      "categories": [
+        "CAN",
+        "USA"
+      ],
+      "stackOrder": [
+        "Death within 30 days",
+        "Death within 31–90 days",
+        "Study discontinuation within 90 days"
+      ],
+      "colors": {
+        "Death within 30 days": "#FF5859",
+        "Death within 31–90 days": "#FEAA02",
+        "Study discontinuation within 90 days": "#828282"
+      },
+      "captionShown": true,
+      "captionText": [
+        "Scroll to zoom in; drag to pan."
+      ]
+    },
+    "site": {
+      "chartId": "pd-site-buckets",
+      "categories": [
+        "INV-1",
+        "INV-2"
+      ],
+      "stackOrder": [
+        "Death within 30 days",
+        "Death within 31–90 days",
+        "Study discontinuation within 90 days"
+      ],
+      "colors": {
+        "Death within 30 days": "#FF5859",
+        "Death within 31–90 days": "#FEAA02",
+        "Study discontinuation within 90 days": "#828282"
+      },
+      "captionShown": true,
+      "captionText": [
+        "Scroll to zoom in; drag to pan."
+      ]
+    }
+  },
+  "reasonCharts": {
+    "study": {
+      "chartId": "pd-study-reasons",
+      "categories": [
+        "Adverse Event",
+        "Disease Progression"
+      ],
+      "color": "#4e79a7"
+    },
+    "country": {
+      "chartId": "pd-country-reasons",
+      "categories": [
+        "Adverse Event",
+        "Disease Progression"
+      ],
+      "color": "#4e79a7"
+    }
+  },
+  "scatterChartIds": [
+    "pd-study-scatter",
+    "pd-country-scatter",
+    "pd-site-scatter"
+  ],
+  "tabsets": [
+    {
+      "group": "Study",
+      "tabs": [
+        {
+          "label": "Buckets",
+          "default": true
+        },
+        {
+          "label": "Rand -> Death",
+          "default": false
+        },
+        {
+          "label": "Reasons",
+          "default": false
+        }
+      ]
+    },
+    {
+      "group": "Country",
+      "tabs": [
+        {
+          "label": "Buckets",
+          "default": true
+        },
+        {
+          "label": "Rand -> Death",
+          "default": false
+        },
+        {
+          "label": "Reasons",
+          "default": false
+        }
+      ]
+    },
+    {
+      "group": "Site",
+      "tabs": [
+        {
+          "label": "Buckets",
+          "default": true
+        },
+        {
+          "label": "Rand -> Death",
+          "default": false
+        }
+      ]
+    }
+  ],
+  "drilldown": {
+    "trigger": "selecting a country bucket narrows the site chart to that country's sites and swaps the country reason chart to that country's reason slice",
+    "defaultChips": {
+      "bannerShown": false,
+      "countryChipShown": false,
+      "countryChipValue": "",
+      "siteChipShown": false
+    },
+    "before": {
+      "siteCategories": [
+        "INV-1",
+        "INV-2"
+      ],
+      "reasonCategories": [
+        "Adverse Event",
+        "Disease Progression"
+      ]
+    },
+    "afterCountryFilter": {
+      "country": "USA",
+      "siteCategories": [
+        "INV-1"
+      ],
+      "reasonCategories": [
+        "Adverse Event"
+      ],
+      "bannerShown": true,
+      "countryChipShown": true,
+      "countryChipValue": "USA"
+    },
+    "afterReset": {
+      "siteCategories": [
+        "INV-1",
+        "INV-2"
+      ],
+      "reasonCategories": [
+        "Adverse Event",
+        "Disease Progression"
+      ],
+      "bannerShown": false,
+      "countryChipShown": false
+    }
+  },
+  "consoleErrors": 0
+}
