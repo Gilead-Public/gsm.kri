@@ -1,3 +1,9 @@
+# gsm.kri (development version)
+
+- `kri0019` (site) and `cou0019` (country) now flag on the count of IP non-starters
+  (1 = amber, 2 or more = red) instead of a z-score, with site risk score weights
+  `0,4,8` (#312).
+
 # gsm.kri v1.7.0
 
 This minor release moves every gsm.viz-backed chart onto gsm.vizr: the vendored gsm.viz
