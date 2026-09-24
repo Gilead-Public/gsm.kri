@@ -61,7 +61,7 @@ Remotes:
     gsm.qtl=Gilead-Public/gsm.qtl@main,
     gsm.reporting=Gilead-Public/gsm.reporting@main,
     gsm.vizr=Gilead-Public/gsm.vizr@issue-63-adjusted-risk-column,
-    qcthat=Gilead-Public/qcthat@main
+    qcthat=Gilead-Public/qcthat@dev
 Config/roxygen2/version: 8.1.0
 Config/testthat/edition: 3
 Config/testthat/parallel: false
