@@ -18,6 +18,10 @@ output:
 
 This page provides a sample Site KRI Report generated using the standard KRIs included in the `gsm.kri` package. Expand the "Setup" section below to see the code used to generate the report. Or scroll down for the standard KRI report output.
 
+The example calculates `Analysis_srs0002` from the deterministic longitudinal
+`gsm.core::reportingActionLog` fixture. The existing Site Overview displays the
+adjusted score immediately after the original Site Risk Score.
+
 <details>
 <summary>Setup</summary>
 
@@ -27,9 +31,37 @@ library(gsm.core)
 library(gsm.kri)
 library(here)
 
+latest_snapshot <- max(gsm.core::reportingResults$SnapshotDate)
+weights <- gsm.kri::MakeWeights(gsm.core::reportingMetrics)
+current_kri_results <- gsm.core::reportingResults %>%
+  dplyr::filter(
+    .data$SnapshotDate == latest_snapshot,
+    .data$GroupLevel == "Site",
+    grepl("^Analysis_kri", .data$MetricID),
+    .data$MetricID %in% weights$MetricID
+  )
+current_action_log <- gsm.core::reportingActionLog %>%
+  dplyr::filter(.data$SnapshotDate == latest_snapshot)
+
+action_weighted_score <- gsm.kri::CalculateActionRiskScore(
+  dfResults = current_kri_results,
+  dfWeights = weights,
+  dfActionLog = current_action_log,
+  strMissingState = "error"
+) %>%
+  dplyr::mutate(
+    StudyID = unique(current_kri_results$StudyID),
+    SnapshotDate = latest_snapshot
+  )
+
+site_results <- dplyr::bind_rows(
+  gsm.core::reportingResults,
+  action_weighted_score
+)
+
 ## Site Report
 lCharts <- gsm.kri::MakeCharts(
-  dfResults = gsm.core::reportingResults,
+  dfResults = site_results,
   dfGroups = gsm.core::reportingGroups,
   dfMetrics = gsm.core::reportingMetrics,
   dfBounds = gsm.core::reportingBounds
@@ -46,9 +78,11 @@ child_env <- list2env(
   list(
     params = list(
       lCharts = lCharts,
-      dfResults = gsm.kri::FilterByLatestSnapshotDate(gsm.core::reportingResults),
+      dfResults = gsm.kri::FilterByLatestSnapshotDate(site_results),
       dfGroups = gsm.core::reportingGroups,
-      dfMetrics = gsm.core::reportingMetrics
+      dfMetrics = gsm.core::reportingMetrics,
+      strComparisonRiskMetric = "Analysis_srs0002",
+      strComparisonRiskLabel = "Adjusted Risk Score"
     )
   ),
   parent = environment()

@@ -26,3 +26,23 @@ test('GroupOverview omits adjusted SRS when srs0002 is absent (#280)', async ({ 
   await expect(overview).toBeVisible();
   await expect(overview.locator('th', { hasText: 'Adjusted Risk Score' })).toHaveCount(0);
 });
+
+test('pkgdown site report calculates and displays exported ActionLog score (#280)', async ({ page }) => {
+  await page.goto(fixtureUrl('Example_SiteReport.html'));
+
+  const overview = page.locator('.Widget_GroupOverview');
+  await expect(overview).toBeVisible();
+
+  const headers = await overview.locator('th').allInnerTexts();
+  const riskIndex = headers.indexOf('Risk Score');
+  expect(riskIndex).toBeGreaterThan(-1);
+  expect(headers[riskIndex + 1]).toBe('Adjusted Risk Score');
+
+  const rows = overview.locator('tbody tr');
+  expect(await rows.count()).toBeGreaterThan(0);
+  const differs = await rows.evaluateAll((items, index) =>
+    items.some((row) => row.cells[index].innerText !== row.cells[index + 1].innerText),
+    riskIndex
+  );
+  expect(differs).toBe(true);
+});

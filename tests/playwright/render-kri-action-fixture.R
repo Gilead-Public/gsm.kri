@@ -42,3 +42,11 @@ htmlwidgets::saveWidget(
   "tests/playwright/fixture/GroupOverviewAction.html",
   selfcontained = TRUE
 )
+
+rmarkdown::render(
+  "pkgdown/menus/examples/Example_SiteReport.Rmd",
+  output_file = "Example_SiteReport.html",
+  output_dir = "tests/playwright/fixture",
+  intermediates_dir = tempdir(),
+  quiet = TRUE
+)
