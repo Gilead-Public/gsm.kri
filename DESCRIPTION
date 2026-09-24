@@ -56,14 +56,13 @@ Suggests:
 VignetteBuilder: 
     knitr
 Remotes:
-    gsm.core=Gilead-Public/gsm.core@main,
-    gsm.mapping=Gilead-Public/gsm.mapping@main,
+    gsm.core=Gilead-Public/gsm.core@actionlog-report-fixture,
+    gsm.mapping=Gilead-Public/gsm.mapping@actionlog-report-fixture,
     gsm.qtl=Gilead-Public/gsm.qtl@issue-63-adjusted-risk-column,
-    gsm.reporting=Gilead-Public/gsm.reporting@main,
+    gsm.reporting=Gilead-Public/gsm.reporting@actionlog-report-fixture,
     gsm.vizr=Gilead-Public/gsm.vizr@issue-63-adjusted-risk-column,
     qcthat=Gilead-Public/qcthat@main
 Config/roxygen2/version: 8.1.0
 Config/testthat/edition: 3
 Config/testthat/parallel: false
 Encoding: UTF-8
-LazyData: true

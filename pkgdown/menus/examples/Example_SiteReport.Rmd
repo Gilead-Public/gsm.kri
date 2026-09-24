@@ -19,7 +19,7 @@ output:
 This page provides a sample Site KRI Report generated using the standard KRIs included in the `gsm.kri` package. Expand the "Setup" section below to see the code used to generate the report. Or scroll down for the standard KRI report output.
 
 The example calculates `Analysis_srs0002` from the deterministic longitudinal
-`gsm.kri::reportingActionLog` fixture. The existing Site Overview displays the
+`gsm.core::reportingActionLog` fixture. The existing Site Overview displays the
 adjusted score immediately after the original Site Risk Score.
 
 <details>
@@ -40,7 +40,7 @@ current_kri_results <- gsm.core::reportingResults %>%
     grepl("^Analysis_kri", .data$MetricID),
     .data$MetricID %in% weights$MetricID
   )
-current_action_log <- gsm.kri::reportingActionLog %>%
+current_action_log <- gsm.core::reportingActionLog %>%
   dplyr::filter(.data$SnapshotDate == latest_snapshot)
 
 action_weighted_score <- gsm.kri::CalculateActionRiskScore(

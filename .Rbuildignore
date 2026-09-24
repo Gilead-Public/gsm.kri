@@ -11,4 +11,3 @@
 ^\.claude$
 ^AGENTS\.md$
 ^tests/playwright$
-^data-raw$
