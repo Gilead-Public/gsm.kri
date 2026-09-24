@@ -8,9 +8,16 @@
   Score. Open, closed, and awaiting-triage findings are included by
   default; no-action findings are excluded; missing nonzero action
   states fail unless an explicit fallback is configured. The full raw
-  SRS denominator is retained. Action states come from the latest
-  `SnapshotDate` in the ActionLog unless `dActionSnapshotDate` selects
-  another
+  SRS denominator is retained. For each site and metric, the latest
+  ActionLog entry on or before the results snapshot (or
+  `dActionSnapshotDate`) is applied
+  ([\#280](https://github.com/Gilead-Public/gsm.kri/issues/280)).
+- Added
+  [`MakeActionRiskScoreDetail()`](https://gilead-public.github.io/gsm.kri/dev/reference/MakeActionRiskScoreDetail.md),
+  which returns the per-KRI contributions behind the action-weighted
+  score, and a `dfRiskScoreDetail` argument to
+  [`Report_KRI()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_KRI.md)
+  that shows them in the site overview
   ([\#280](https://github.com/Gilead-Public/gsm.kri/issues/280)).
 - Added configurable risk-score MetricIDs to the cross-study summary and
   widget APIs while retaining `Analysis_srs0001` as the default

@@ -67,7 +67,8 @@ This function generates a KRI report based on the provided inputs.'><meta name="
 <span>  strInputPath <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"report"</span>, <span class="st">"Report_KRI.Rmd"</span>, package <span class="op">=</span> <span class="st">"gsm.kri"</span><span class="op">)</span>,</span>
 <span>  strComparisonRiskMetric <span class="op">=</span> <span class="st">"Analysis_srs0002"</span>,</span>
 <span>  strComparisonRiskLabel <span class="op">=</span> <span class="st">"Adjusted Risk Score"</span>,</span>
-<span>  strGroupSubset <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  strGroupSubset <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  dfRiskScoreDetail <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -131,6 +132,14 @@ Default: `"Adjusted Risk Score"`.</p></dd>
 <dd><p>Optional group subset passed to the report's group
 overview. `NULL` preserves the report default (`"red"` for site reports,
 `"all"` otherwise).</p></dd>
+
+
+<dt id="arg-dfriskscoredetail">dfRiskScoreDetail<a class="anchor" aria-label="anchor" href="#arg-dfriskscoredetail"></a></dt>
+<dd><p>Optional per-KRI detail behind the comparison risk
+score, from [MakeActionRiskScoreDetail()]. When supplied, the site overview
+shows how far each comparison score is below the Site Risk Score and lists
+the KRIs responsible on click. Ignored when the comparison metric is absent
+from `dfResults`. Default: `NULL`.</p></dd>
 
 </dl></div>
     <div class="section level2">

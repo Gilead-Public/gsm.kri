@@ -1,15 +1,14 @@
-# Calculate an action-status-weighted Site Risk Score
+# Per-KRI detail behind an action-status-weighted Site Risk Score
 
-Applies Central Monitoring ActionLog states to existing KRI flag
-weights. Action factors affect only numerator contributions; the
-denominator remains the full maximum-risk denominator used by
-\[CalculateRiskScore()\]. The per-KRI contributions behind the score are
-available from \[MakeActionRiskScoreDetail()\].
+Returns one row per weighted KRI result with the ActionLog entry applied
+to it, so a reader can see why an action-weighted score differs from the
+original Site Risk Score. \[CalculateActionRiskScore()\] summarizes
+these rows.
 
 ## Usage
 
 ``` r
-CalculateActionRiskScore(
+MakeActionRiskScoreDetail(
   dfResults,
   dfWeights,
   dfActionLog,
@@ -65,5 +64,10 @@ CalculateActionRiskScore(
 
 ## Value
 
-A canonical risk score data frame with the same output schema as
-\[CalculateRiskScore()\].
+A data frame with one row per \`GroupLevel\`, \`GroupID\`, and
+\`MetricID\` and columns \`StudyID\`, \`SnapshotDate\`, \`GroupLevel\`,
+\`GroupID\`, \`MetricID\`, \`Flag\`, \`Weight\`, \`WeightMax\`,
+\`ActionState\`, \`ActionSnapshotDate\` (the \`SnapshotDate\` of the
+ActionLog entry applied), \`ActionSource\` (\`"ActionLog"\`,
+\`"Missing"\`, or \`"Zero weight"\`), \`ActionFactor\`, and
+\`EffectiveWeight\`.

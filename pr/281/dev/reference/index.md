@@ -12,6 +12,8 @@
   : Filter out non-flagged rows on FlagOverTime Widget
 - [`FilterByLatestSnapshotDate()`](https://gilead-public.github.io/gsm.kri/dev/reference/FilterByLatestSnapshotDate.md)
   : Filter by Latest Snapshot Date
+- [`MakeActionRiskScoreDetail()`](https://gilead-public.github.io/gsm.kri/dev/reference/MakeActionRiskScoreDetail.md)
+  : Per-KRI detail behind an action-status-weighted Site Risk Score
 - [`MakeCharts()`](https://gilead-public.github.io/gsm.kri/dev/reference/MakeCharts.md)
   : Helper function to create charts for multiple metrics
 - [`MakeMetricTable()`](https://gilead-public.github.io/gsm.kri/dev/reference/MakeMetricTable.md)
