@@ -43,13 +43,13 @@ ncol(reportingActionLog)\` columns:
 
   date the synthetic ActionLog was extracted
 
-- RiskSignalID:
+- WorkItemID:
 
-  synthetic risk signal identifier
+  synthetic ActionLog work item identifier
 
-- RiskSignalURL:
+- WorkItemURL:
 
-  synthetic risk signal URL
+  synthetic ActionLog work item URL
 
 - RiskSignalDuplicateFlag:
 
@@ -67,11 +67,53 @@ ncol(reportingActionLog)\` columns:
 
   age of the signal in days
 
-- AssignedTo,SignalDescription,RecommendedAction,ActionTaken,CTMSID,
-  CreatedDate,ResolvedDate,FunctionalArea,GroupLabel,MetricLabel,
-  MetricAbbreviation,Country:
+- AssignedTo:
 
-  ActionLog display and action metadata
+  assignee of the risk signal
+
+- SignalDescription:
+
+  description of the risk signal
+
+- RecommendedAction:
+
+  recommended action for the risk signal
+
+- ActionTaken:
+
+  action taken in response to the risk signal
+
+- CTMSID:
+
+  linked CTMS identifier
+
+- CreatedDate:
+
+  date the risk signal was created
+
+- ResolvedDate:
+
+  date the risk signal was resolved
+
+- FunctionalArea:
+
+  functional area owning the risk signal
+
+- GroupLabel:
+
+  display label for the group
+
+- MetricLabel:
+
+  display label for the metric
+
+- MetricAbbreviation:
+
+  metric abbreviation
+
+- Country:
+
+  site country
 
 ## Source
 
