@@ -40,13 +40,10 @@ current_kri_results <- gsm.core::reportingResults %>%
     grepl("^Analysis_kri", .data$MetricID),
     .data$MetricID %in% weights$MetricID
   )
-current_action_log <- gsm.core::reportingActionLog %>%
-  dplyr::filter(.data$SnapshotDate == latest_snapshot)
-
 action_weighted_score <- gsm.kri::CalculateActionRiskScore(
   dfResults = current_kri_results,
   dfWeights = weights,
-  dfActionLog = current_action_log,
+  dfActionLog = gsm.core::reportingActionLog,
   strMissingState = "error"
 ) %>%
   dplyr::mutate(

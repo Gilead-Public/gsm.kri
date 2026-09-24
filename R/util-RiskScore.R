@@ -4,6 +4,8 @@
   "StudyID", "SnapshotDate", "GroupLevel", "GroupID", "MetricID"
 )
 
+.risk_score_action_join_key <- setdiff(.risk_score_action_key, "SnapshotDate")
+
 .risk_score_action_states <- c(
   "Open Action", "Closed Action", "Awaiting Triage", "No Action"
 )

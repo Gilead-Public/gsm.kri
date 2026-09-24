@@ -9,13 +9,19 @@
 #'   and `Flag`.
 #' @param dfWeights Risk score weights with `MetricID`, `Flag`, `Weight`, and
 #'   `WeightMax`.
-#' @param dfActionLog Scoring-ready ActionLog rows with the five-column result
-#'   key, `State`, and `ExtractionDate`. The scoring key must be unique.
+#' @param dfActionLog ActionLog rows with the five-column result key, `State`,
+#'   and `ExtractionDate`, for the same `StudyID` as `dfResults`. It may span
+#'   several `SnapshotDate`s; only the rows at `dActionSnapshotDate` are used,
+#'   matched to `dfResults` on `StudyID`, `GroupLevel`, `GroupID`, and
+#'   `MetricID`. The five-column key must be unique.
 #' @param lActionFactors Named numeric state-factor mapping. Defaults to include
 #'   open, closed, and awaiting-triage findings and exclude no-action findings.
 #' @param strMissingState Policy for a missing action state on a nonzero KRI
 #'   weight: stop with an error, include the weight, or exclude the weight.
 #' @param strMetricID Metric ID assigned to the action-weighted score.
+#' @param dActionSnapshotDate `Date` ActionLog `SnapshotDate` whose states are
+#'   applied. `NULL` (default) uses the latest `SnapshotDate` in `dfActionLog`.
+#'   Must not be later than the `dfResults` `SnapshotDate`.
 #'
 #' @return A canonical risk score data frame with the same output schema as
 #'   [CalculateRiskScore()].
@@ -31,7 +37,8 @@ CalculateActionRiskScore <- function(
     "No Action" = 0
   ),
   strMissingState = c("error", "include", "exclude"),
-  strMetricID = "Analysis_srs0002"
+  strMetricID = "Analysis_srs0002",
+  dActionSnapshotDate = NULL
 ) {
   strMissingState <- match.arg(strMissingState)
   result_context <- .validate_single_study_snapshot(dfResults, "dfResults")
@@ -49,18 +56,15 @@ CalculateActionRiskScore <- function(
     )
   }
 
-  action_context <- .validate_single_study_snapshot(
-    dfActionLog,
-    "dfActionLog",
-    allow_empty = TRUE
-  )
-  if (!is.null(action_context) &&
-      (!identical(as.character(action_context$StudyID), as.character(result_context$StudyID)) ||
-        !identical(action_context$SnapshotDate, result_context$SnapshotDate))) {
-    stop(
-      "dfResults and dfActionLog must represent the same StudyID and SnapshotDate.",
-      call. = FALSE
-    )
+  if (!is.null(dActionSnapshotDate) &&
+      (!inherits(dActionSnapshotDate, "Date") ||
+        length(dActionSnapshotDate) != 1L || is.na(dActionSnapshotDate))) {
+    stop("dActionSnapshotDate must be NULL or a single non-missing Date.", call. = FALSE)
+  }
+  action_study <- unique(dfActionLog$StudyID[!is.na(dfActionLog$StudyID)])
+  if (nrow(dfActionLog) > 0L &&
+      !identical(as.character(action_study), as.character(result_context$StudyID))) {
+    stop("dfResults and dfActionLog must represent the same StudyID.", call. = FALSE)
   }
   if (any(!stats::complete.cases(dfResults[, .risk_score_action_key]))) {
     stop("dfResults scoring key columns must not contain missing values.", call. = FALSE)
@@ -88,6 +92,33 @@ CalculateActionRiskScore <- function(
     stop("The ActionLog scoring key must be unique before scoring.", call. = FALSE)
   }
 
+  # The ActionLog is frozen when a snapshot is generated and can span many
+  # SnapshotDates; the latest one holds the current state of every signal.
+  if (nrow(dfActionLog) > 0L) {
+    action_snapshot_date <- if (is.null(dActionSnapshotDate)) {
+      max(dfActionLog$SnapshotDate)
+    } else {
+      dActionSnapshotDate
+    }
+    if (!action_snapshot_date %in% dfActionLog$SnapshotDate) {
+      stop(
+        "dActionSnapshotDate ", format(action_snapshot_date),
+        " is not present in dfActionLog.",
+        call. = FALSE
+      )
+    }
+    if (action_snapshot_date > result_context$SnapshotDate) {
+      stop(
+        "The selected ActionLog SnapshotDate must not be later than the dfResults SnapshotDate.",
+        call. = FALSE
+      )
+    }
+    dfActionLog <- dfActionLog[
+      dfActionLog$SnapshotDate == action_snapshot_date, ,
+      drop = FALSE
+    ]
+  }
+
   action_factors <- .normalize_action_factors(lActionFactors)
   observed_states <- unique(stats::na.omit(dfActionLog$State))
   states_without_factors <- setdiff(observed_states, names(action_factors))
@@ -105,10 +136,10 @@ CalculateActionRiskScore <- function(
     dplyr::left_join(
       dfActionLog %>%
         dplyr::select(
-          dplyr::all_of(.risk_score_action_key),
+          dplyr::all_of(.risk_score_action_join_key),
           ActionState = "State"
         ),
-      by = .risk_score_action_key
+      by = .risk_score_action_join_key
     )
   if (nrow(dfEffective) != rows_before_join) {
     stop( # nocov start

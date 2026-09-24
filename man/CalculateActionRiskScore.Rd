@@ -11,7 +11,8 @@ CalculateActionRiskScore(
   lActionFactors = c(`Open Action` = 1, `Closed Action` = 1, `Awaiting Triage` = 1,
     `No Action` = 0),
   strMissingState = c("error", "include", "exclude"),
-  strMetricID = "Analysis_srs0002"
+  strMetricID = "Analysis_srs0002",
+  dActionSnapshotDate = NULL
 )
 }
 \arguments{
@@ -22,8 +23,11 @@ and `Flag`.}
 \item{dfWeights}{Risk score weights with `MetricID`, `Flag`, `Weight`, and
 `WeightMax`.}
 
-\item{dfActionLog}{Scoring-ready ActionLog rows with the five-column result
-key, `State`, and `ExtractionDate`. The scoring key must be unique.}
+\item{dfActionLog}{ActionLog rows with the five-column result key, `State`,
+and `ExtractionDate`, for the same `StudyID` as `dfResults`. It may span
+several `SnapshotDate`s; only the rows at `dActionSnapshotDate` are used,
+matched to `dfResults` on `StudyID`, `GroupLevel`, `GroupID`, and
+`MetricID`. The five-column key must be unique.}
 
 \item{lActionFactors}{Named numeric state-factor mapping. Defaults to include
 open, closed, and awaiting-triage findings and exclude no-action findings.}
@@ -32,6 +36,10 @@ open, closed, and awaiting-triage findings and exclude no-action findings.}
 weight: stop with an error, include the weight, or exclude the weight.}
 
 \item{strMetricID}{Metric ID assigned to the action-weighted score.}
+
+\item{dActionSnapshotDate}{`Date` ActionLog `SnapshotDate` whose states are
+applied. `NULL` (default) uses the latest `SnapshotDate` in `dfActionLog`.
+Must not be later than the `dfResults` `SnapshotDate`.}
 }
 \value{
 A canonical risk score data frame with the same output schema as

@@ -66,6 +66,67 @@ test_that("CalculateActionRiskScore filters numerator weights by action state (#
   expect_equal(site_1002$Metric, 75)
 })
 
+make_multi_snapshot_action_log <- function() {
+  earlier <- make_action_score_log()
+  earlier$SnapshotDate <- as.Date("2025-01-31")
+  earlier$State <- "Open Action"
+  rbind(earlier, make_action_score_log())
+}
+
+test_that("CalculateActionRiskScore defaults to the latest ActionLog snapshot (#280)", {
+  result <- CalculateActionRiskScore(
+    make_action_score_results(),
+    make_action_score_weights(),
+    make_multi_snapshot_action_log()
+  )
+
+  # The 2025-01-31 rows are all Open Action (numerator 16); the latest
+  # 2025-02-28 rows give the mixed states (numerator 12).
+  expect_equal(result$Numerator, c(12, 12))
+})
+
+test_that("CalculateActionRiskScore honours an explicit ActionLog snapshot (#280)", {
+  result <- CalculateActionRiskScore(
+    make_action_score_results(),
+    make_action_score_weights(),
+    make_multi_snapshot_action_log(),
+    dActionSnapshotDate = as.Date("2025-01-31")
+  )
+  expect_equal(result$Numerator, c(16, 16))
+
+  expect_error(
+    CalculateActionRiskScore(
+      make_action_score_results(),
+      make_action_score_weights(),
+      make_multi_snapshot_action_log(),
+      dActionSnapshotDate = as.Date("2025-01-15")
+    ),
+    "not present in dfActionLog"
+  )
+  expect_error(
+    CalculateActionRiskScore(
+      make_action_score_results(),
+      make_action_score_weights(),
+      make_multi_snapshot_action_log(),
+      dActionSnapshotDate = "2025-01-31"
+    ),
+    "dActionSnapshotDate"
+  )
+})
+
+test_that("an ActionLog frozen before the results snapshot is matched by site and metric (#280)", {
+  action_log <- make_action_score_log()
+  action_log$SnapshotDate <- as.Date("2025-01-31")
+
+  result <- CalculateActionRiskScore(
+    make_action_score_results(),
+    make_action_score_weights(),
+    action_log
+  )
+
+  expect_equal(result$Numerator, c(12, 12))
+})
+
 test_that("CalculateActionRiskScore preserves the raw SRS denominator (#280)", {
   results <- make_action_score_results()
   weights <- make_action_score_weights()
@@ -185,15 +246,27 @@ test_that("CalculateActionRiskScore rejects unsafe ActionLog joins (#280)", {
     "ActionLog scoring key must be unique"
   )
 
-  wrong_snapshot <- action_log
-  wrong_snapshot$SnapshotDate <- as.Date("2025-01-31")
+  wrong_study <- action_log
+  wrong_study$StudyID <- "BB-BB-000-0000"
   expect_error(
     CalculateActionRiskScore(
       make_action_score_results(),
       make_action_score_weights(),
-      wrong_snapshot
+      wrong_study
     ),
-    "same StudyID and SnapshotDate"
+    "same StudyID"
+  )
+
+  future_snapshot <- action_log
+  future_snapshot$SnapshotDate <- as.Date("2025-03-31")
+  future_snapshot$ExtractionDate <- as.Date("2025-04-07")
+  expect_error(
+    CalculateActionRiskScore(
+      make_action_score_results(),
+      make_action_score_weights(),
+      future_snapshot
+    ),
+    "must not be later than the dfResults SnapshotDate"
   )
 
   unknown_state <- action_log

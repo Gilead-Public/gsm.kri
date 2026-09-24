@@ -184,11 +184,17 @@ action_weighted_score <- CalculateActionRiskScore(
 )
 ```
 
-The join key is `StudyID + SnapshotDate + GroupLevel + GroupID + MetricID`.
-`Reporting_ActionLog` must therefore be refreshed and reduced to one row per key
-before the metric workflow runs. The `srs0002.yaml` workflow reads persisted
-`Analysis_Summary` and `Reporting_ActionLog`, which keeps ADO credentials and
-extraction timing outside `{gsm.kri}`.
+`Reporting_ActionLog` is a frozen extract taken when the snapshot is generated,
+so it only contains decisions made up to that point, and it can span several
+`SnapshotDate`s. By default the score uses the rows at the latest
+`SnapshotDate` in the ActionLog, which hold the current state of every signal;
+`dActionSnapshotDate` selects a different date. That date must not be later
+than the `dfResults` snapshot. The selected rows are joined to the KRI results
+on `StudyID + GroupLevel + GroupID + MetricID`, and must be unique per key
+(`StudyID + SnapshotDate + GroupLevel + GroupID + MetricID` across the whole
+extract). The `srs0002.yaml` workflow reads persisted `Analysis_Summary` and
+`Reporting_ActionLog`, which keeps ADO credentials and extraction timing
+outside `{gsm.kri}`.
 
 Only numerator evidence is filtered. For example, with three KRIs weighted
 `4`, `4`, and `8`, states `No Action`, `Open Action`, and `Closed Action` produce

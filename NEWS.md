@@ -4,7 +4,9 @@
   action-status-weighted Site Risk Score. Open, closed, and awaiting-triage
   findings are included by default; no-action findings are excluded; missing
   nonzero action states fail unless an explicit fallback is configured. The
-  full raw SRS denominator is retained (#280).
+  full raw SRS denominator is retained. Action states come from the latest
+  `SnapshotDate` in the ActionLog unless `dActionSnapshotDate` selects another
+  (#280).
 - Added configurable risk-score MetricIDs to the cross-study summary and widget
   APIs while retaining `Analysis_srs0001` as the default (#280).
 - Extended the existing site overview in `Report_KRI()` to display an adjusted
