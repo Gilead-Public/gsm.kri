@@ -67,7 +67,8 @@ the full maximum-risk denominator used by [CalculateRiskScore()].</p>
 <span>  lActionFactors <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>`Open Action` <span class="op">=</span> <span class="fl">1</span>, `Closed Action` <span class="op">=</span> <span class="fl">1</span>, `Awaiting Triage` <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>    `No Action` <span class="op">=</span> <span class="fl">0</span><span class="op">)</span>,</span>
 <span>  strMissingState <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"error"</span>, <span class="st">"include"</span>, <span class="st">"exclude"</span><span class="op">)</span>,</span>
-<span>  strMetricID <span class="op">=</span> <span class="st">"Analysis_srs0002"</span></span>
+<span>  strMetricID <span class="op">=</span> <span class="st">"Analysis_srs0002"</span>,</span>
+<span>  dActionSnapshotDate <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -87,8 +88,11 @@ and `Flag`.</p></dd>
 
 
 <dt id="arg-dfactionlog">dfActionLog<a class="anchor" aria-label="anchor" href="#arg-dfactionlog"></a></dt>
-<dd><p>Scoring-ready ActionLog rows with the five-column result
-key, `State`, and `ExtractionDate`. The scoring key must be unique.</p></dd>
+<dd><p>ActionLog rows with the five-column result key, `State`,
+and `ExtractionDate`, for the same `StudyID` as `dfResults`. It may span
+several `SnapshotDate`s; only the rows at `dActionSnapshotDate` are used,
+matched to `dfResults` on `StudyID`, `GroupLevel`, `GroupID`, and
+`MetricID`. The five-column key must be unique.</p></dd>
 
 
 <dt id="arg-lactionfactors">lActionFactors<a class="anchor" aria-label="anchor" href="#arg-lactionfactors"></a></dt>
@@ -103,6 +107,12 @@ weight: stop with an error, include the weight, or exclude the weight.</p></dd>
 
 <dt id="arg-strmetricid">strMetricID<a class="anchor" aria-label="anchor" href="#arg-strmetricid"></a></dt>
 <dd><p>Metric ID assigned to the action-weighted score.</p></dd>
+
+
+<dt id="arg-dactionsnapshotdate">dActionSnapshotDate<a class="anchor" aria-label="anchor" href="#arg-dactionsnapshotdate"></a></dt>
+<dd><p>`Date` ActionLog `SnapshotDate` whose states are
+applied. `NULL` (default) uses the latest `SnapshotDate` in `dfActionLog`.
+Must not be later than the `dfResults` `SnapshotDate`.</p></dd>
 
 </dl></div>
     <div class="section level2">

@@ -470,14 +470,21 @@ state.</p>
 <span>  dfActionLog <span class="op">=</span> <span class="va">reporting_action_log</span>,</span>
 <span>  strMissingState <span class="op">=</span> <span class="st">"error"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>The join key is
-<code>StudyID + SnapshotDate + GroupLevel + GroupID + MetricID</code>.
-<code>Reporting_ActionLog</code> must therefore be refreshed and reduced
-to one row per key before the metric workflow runs. The
-<code>srs0002.yaml</code> workflow reads persisted
-<code>Analysis_Summary</code> and <code>Reporting_ActionLog</code>,
-which keeps ADO credentials and extraction timing outside
-<a href="https://github.com/Gilead-Public/gsm.kri" class="external-link">gsm.kri</a>.</p>
+<p><code>Reporting_ActionLog</code> is a frozen extract taken when the
+snapshot is generated, so it only contains decisions made up to that
+point, and it can span several <code>SnapshotDate</code>s. By default
+the score uses the rows at the latest <code>SnapshotDate</code> in the
+ActionLog, which hold the current state of every signal;
+<code>dActionSnapshotDate</code> selects a different date. That date
+must not be later than the <code>dfResults</code> snapshot. The selected
+rows are joined to the KRI results on
+<code>StudyID + GroupLevel + GroupID + MetricID</code>, and must be
+unique per key
+(<code>StudyID + SnapshotDate + GroupLevel + GroupID + MetricID</code>
+across the whole extract). The <code>srs0002.yaml</code> workflow reads
+persisted <code>Analysis_Summary</code> and
+<code>Reporting_ActionLog</code>, which keeps ADO credentials and
+extraction timing outside <a href="https://github.com/Gilead-Public/gsm.kri" class="external-link">gsm.kri</a>.</p>
 <p>Only numerator evidence is filtered. For example, with three KRIs
 weighted <code>4</code>, <code>4</code>, and <code>8</code>, states
 <code>No Action</code>, <code>Open Action</code>, and

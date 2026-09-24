@@ -15,7 +15,8 @@ CalculateActionRiskScore(
   lActionFactors = c(`Open Action` = 1, `Closed Action` = 1, `Awaiting Triage` = 1,
     `No Action` = 0),
   strMissingState = c("error", "include", "exclude"),
-  strMetricID = "Analysis_srs0002"
+  strMetricID = "Analysis_srs0002",
+  dActionSnapshotDate = NULL
 )
 ```
 
@@ -34,8 +35,12 @@ CalculateActionRiskScore(
 
 - dfActionLog:
 
-  Scoring-ready ActionLog rows with the five-column result key,
-  \`State\`, and \`ExtractionDate\`. The scoring key must be unique.
+  ActionLog rows with the five-column result key, \`State\`, and
+  \`ExtractionDate\`, for the same \`StudyID\` as \`dfResults\`. It may
+  span several \`SnapshotDate\`s; only the rows at
+  \`dActionSnapshotDate\` are used, matched to \`dfResults\` on
+  \`StudyID\`, \`GroupLevel\`, \`GroupID\`, and \`MetricID\`. The
+  five-column key must be unique.
 
 - lActionFactors:
 
@@ -50,6 +55,12 @@ CalculateActionRiskScore(
 - strMetricID:
 
   Metric ID assigned to the action-weighted score.
+
+- dActionSnapshotDate:
+
+  \`Date\` ActionLog \`SnapshotDate\` whose states are applied. \`NULL\`
+  (default) uses the latest \`SnapshotDate\` in \`dfActionLog\`. Must
+  not be later than the \`dfResults\` \`SnapshotDate\`.
 
 ## Value
 
