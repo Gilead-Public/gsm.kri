@@ -34,12 +34,7 @@ testthat::test_that("Qual: Adverse Event Assessments can be done correctly using
   iwalk(
     test,
     ~ expect_equal(
-      n_distinct(.x$Mapped_SUBJ[[
-        kri_workflows[[.y]]$steps[[which(
-          map_chr(kri_workflows[[.y]]$steps, ~ .x$name) ==
-            "gsm.core::Input_Rate"
-        )]]$params$strGroupCol
-      ]]),
+      CountTransformedGroups(.x$Analysis_Input),
       nrow(.x$Analysis_Transformed)
     )
   )
@@ -63,7 +58,7 @@ testthat::test_that("Qual: Adverse Event Assessments can be done correctly using
   iwalk(
     test_custom,
     ~ expect_equal(
-      n_distinct(.x$Mapped_SUBJ[[tolower(kri_custom[[.y]]$meta$GroupLevel)]]),
+      CountTransformedGroups(.x$Analysis_Input),
       nrow(.x$Analysis_Transformed)
     )
   )
@@ -102,12 +97,7 @@ testthat::test_that("Qual: Adverse Event Assessments can be done correctly using
   iwalk(
     test_custom2,
     ~ expect_equal(
-      n_distinct(.x$Mapped_SUBJ[[
-        kri_custom2[[.y]]$steps[[which(
-          map_chr(kri_workflows[[.y]]$steps, ~ .x$name) ==
-            "gsm.core::Input_Rate"
-        )]]$params$strGroupCol
-      ]]),
+      CountTransformedGroups(.x$Analysis_Input),
       nrow(.x$Analysis_Transformed)
     )
   )
