@@ -109,7 +109,7 @@ the new KRI. These files include:
   in data interpretation and calculation.
 - **Metric Workflow Definition:** Specify the functions and parameters
   required to calculate the metric. This typically follows the standard
-  [gsm.core](https://gilead-biostats.github.io/gsm.core) [analysis
+  [gsm.core](https://gilead-public.github.io/gsm.core) [analysis
   workflow](https://gilead-public.github.io/gsm.core/articles/DataAnalysis.html),
   ensuring consistency with existing metrics.
 
@@ -123,10 +123,10 @@ providing granularity in data analysis.
 #### Updating Core Analytical Functions
 
 The next step involves updating
-[gsm.core](https://gilead-biostats.github.io/gsm.core) analytics
-functions to ensure they can accurately compute the new KRI. This may
-include modifying existing logic, incorporating additional parameters,
-or adjusting calculations to reflect the new metric’s requirements. This
+[gsm.core](https://gilead-public.github.io/gsm.core) analytics functions
+to ensure they can accurately compute the new KRI. This may include
+modifying existing logic, incorporating additional parameters, or
+adjusting calculations to reflect the new metric’s requirements. This
 step may not be necessary for every new metric.
 
 #### Enhancing Visualization and Reporting Functionality

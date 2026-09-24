@@ -110,5 +110,3 @@
   : Long rows for the reason bar chart
 - [`pd_SubjectFatalRelatedAE()`](https://gilead-public.github.io/gsm.kri/dev/reference/pd_SubjectFatalRelatedAE.md)
   : Per-subject fatal treatment-related AE flag
-- [`reportingActionLog`](https://gilead-public.github.io/gsm.kri/dev/reference/reportingActionLog.md)
-  : reportingActionLog Dataset

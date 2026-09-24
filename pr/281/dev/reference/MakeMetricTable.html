@@ -109,39 +109,55 @@ Default: `c(-2, -1, 1, 2)`.</p></dd>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># site-level report</span></span></span>
 <span class="r-in"><span><span class="fu">MakeMetricTable</span><span class="op">(</span></span></span>
-<span class="r-in"><span>  dfResults <span class="op">=</span> <span class="fu">gsm.core</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/gsm.core/man/reportingResults.html" class="external-link">reportingResults</a></span> <span class="op"><a href="pipe.html">%&gt;%</a></span></span></span>
+<span class="r-in"><span>  dfResults <span class="op">=</span> <span class="fu">gsm.core</span><span class="fu">::</span><span class="va"><a href="https://gilead-biostats.github.io/gsm.core/reference/reportingResults.html" class="external-link">reportingResults</a></span> <span class="op"><a href="pipe.html">%&gt;%</a></span></span></span>
 <span class="r-in"><span>    <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">.data</span><span class="op">$</span><span class="va">MetricID</span> <span class="op">==</span> <span class="st">"Analysis_kri0001"</span><span class="op">)</span> <span class="op"><a href="pipe.html">%&gt;%</a></span></span></span>
 <span class="r-in"><span>    <span class="fu"><a href="FilterByLatestSnapshotDate.html">FilterByLatestSnapshotDate</a></span><span class="op">(</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  dfGroups <span class="op">=</span> <span class="fu">gsm.core</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/gsm.core/man/reportingGroups.html" class="external-link">reportingGroups</a></span></span></span>
+<span class="r-in"><span>  dfGroups <span class="op">=</span> <span class="fu">gsm.core</span><span class="fu">::</span><span class="va"><a href="https://gilead-biostats.github.io/gsm.core/reference/reportingGroups.html" class="external-link">reportingGroups</a></span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           StudyID GroupID         MetricID          Group SnapshotDate Enrolled</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1  AA-AA-000-0000  0X1748 Analysis_kri0001   0X1748 (Doe)   2025-04-01        7</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2  AA-AA-000-0000  0X7838 Analysis_kri0001  0X7838 (Deer)   2025-04-01        3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3  AA-AA-000-0000  0X1544 Analysis_kri0001   0X1544 (Doe)   2025-04-01        2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4  AA-AA-000-0000  0X9346 Analysis_kri0001   0X9346 (Doe)   2025-04-01       11</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5  AA-AA-000-0000  0X3081 Analysis_kri0001   0X3081 (Doe)   2025-04-01       11</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6  AA-AA-000-0000  0X5611 Analysis_kri0001   0X5611 (Doe)   2025-04-01        6</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 7  AA-AA-000-0000  0X2373 Analysis_kri0001   0X2373 (Doe)   2025-04-01        5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 8  AA-AA-000-0000   0X958 Analysis_kri0001   0X958 (Deer)   2025-04-01       11</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 9  AA-AA-000-0000  0X8351 Analysis_kri0001  0X8351 (Deer)   2025-04-01        9</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 10 AA-AA-000-0000  0X8764 Analysis_kri0001 0X8764 (Smith)   2025-04-01        4</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 11 AA-AA-000-0000  0X5425 Analysis_kri0001 0X5425 (Smith)   2025-04-01        2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 12 AA-AA-000-0000  0X4671 Analysis_kri0001 0X4671 (Smith)   2025-04-01        2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 13 AA-AA-000-0000  0X8768 Analysis_kri0001  0X8768 (Deer)   2025-04-01        7</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1  AA-AA-000-0000  0X8743 Analysis_kri0001 0X8743 (Smith)   2025-04-01        3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2  AA-AA-000-0000  0X7497 Analysis_kri0001 0X7497 (Smith)   2025-04-01        3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3  AA-AA-000-0000  0X2413 Analysis_kri0001 0X2413 (Smith)   2025-04-01        9</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4  AA-AA-000-0000  0X4264 Analysis_kri0001  0X4264 (Deer)   2025-04-01       10</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5  AA-AA-000-0000  0X8788 Analysis_kri0001  0X8788 (Deer)   2025-04-01        5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6  AA-AA-000-0000  0X8318 Analysis_kri0001  0X8318 (Deer)   2025-04-01        2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7  AA-AA-000-0000  0X4874 Analysis_kri0001   0X4874 (Doe)   2025-04-01        9</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8  AA-AA-000-0000  0X8354 Analysis_kri0001  0X8354 (Deer)   2025-04-01        6</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 9  AA-AA-000-0000  0X9360 Analysis_kri0001 0X9360 (Smith)   2025-04-01       10</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10 AA-AA-000-0000  0X9346 Analysis_kri0001   0X9346 (Doe)   2025-04-01        3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 11 AA-AA-000-0000  0X8351 Analysis_kri0001  0X8351 (Deer)   2025-04-01        7</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 12 AA-AA-000-0000  0X6603 Analysis_kri0001 0X6603 (Smith)   2025-04-01        9</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 13 AA-AA-000-0000   0X759 Analysis_kri0001  0X759 (Smith)   2025-04-01       10</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 14 AA-AA-000-0000  0X3676 Analysis_kri0001 0X3676 (Smith)   2025-04-01        9</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 15 AA-AA-000-0000  0X8786 Analysis_kri0001  0X8786 (Deer)   2025-04-01       15</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 16 AA-AA-000-0000   0X539 Analysis_kri0001   0X539 (Deer)   2025-04-01        3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 17 AA-AA-000-0000  0X6666 Analysis_kri0001   0X6666 (Doe)   2025-04-01        3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 18 AA-AA-000-0000  0X1084 Analysis_kri0001  0X1084 (Deer)   2025-04-01        2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 19 AA-AA-000-0000  0X8964 Analysis_kri0001 0X8964 (Smith)   2025-04-01        2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 20 AA-AA-000-0000  0X7011 Analysis_kri0001  0X7011 (Deer)   2025-04-01        7</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 21 AA-AA-000-0000  0X9051 Analysis_kri0001 0X9051 (Smith)   2025-04-01        2</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    Numerator Denominator Metric Score Flag</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1         26         125   0.21  3.22    2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2          8          32   0.25  2.19    1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3          1          79   0.01 -1.58   -1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4         35         570   0.06 -1.47   -1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5         26         435   0.06 -1.37   -1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6          5         126   0.04 -1.27   -1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 7          7         155   0.05 -1.25   -1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 8         32         497   0.06 -1.22   -1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 9         28         440   0.06 -1.18   -1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 10         8         162   0.05 -1.15   -1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 11         2          61   0.03 -1.02   -1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 12         1          43   0.02 -1.00   -1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 13         5         107   0.05 -1.00   -1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1          8          30   0.27  2.69    1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2         15          82   0.18  2.39    1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3         25         165   0.15  2.30    1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4         43         339   0.13  2.07    1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5         11         247   0.04 -1.73   -1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6          0          46   0.00 -1.56   -1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7         22         392   0.06 -1.55   -1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8         17         311   0.05 -1.45   -1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 9         26         429   0.06 -1.38   -1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10         9         181   0.05 -1.29   -1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 11        16         278   0.06 -1.24   -1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 12        32         490   0.07 -1.19   -1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 13        22         353   0.06 -1.16   -1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 14        16         269   0.06 -1.14   -1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 15        44         639   0.07 -1.11   -1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 16         2          61   0.03 -1.11   -1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 17         1          43   0.02 -1.10   -1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 18         3          76   0.04 -1.08   -1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 19         1          42   0.02 -1.07   -1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 20        17         275   0.06 -1.05   -1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 21         1          39   0.03 -1.00   -1</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
