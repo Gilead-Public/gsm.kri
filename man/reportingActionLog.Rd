@@ -15,15 +15,24 @@ A data frame with `r nrow(reportingActionLog)` rows and
   \item{MetricID}{unique metric identifier}
   \item{State}{ActionLog state}
   \item{ExtractionDate}{date the synthetic ActionLog was extracted}
-  \item{RiskSignalID}{synthetic risk signal identifier}
-  \item{RiskSignalURL}{synthetic risk signal URL}
+  \item{WorkItemID}{synthetic ActionLog work item identifier}
+  \item{WorkItemURL}{synthetic ActionLog work item URL}
   \item{RiskSignalDuplicateFlag}{whether the signal duplicates a scoring key}
   \item{RelevantSnapshotDate}{relevant snapshot across the signal history}
   \item{RelevantSnapshotFlag}{whether this row is the relevant snapshot}
   \item{RiskSignalAge}{age of the signal in days}
-  \item{AssignedTo,SignalDescription,RecommendedAction,ActionTaken,CTMSID,
-  CreatedDate,ResolvedDate,FunctionalArea,GroupLabel,MetricLabel,
-  MetricAbbreviation,Country}{ActionLog display and action metadata}
+  \item{AssignedTo}{assignee of the risk signal}
+  \item{SignalDescription}{description of the risk signal}
+  \item{RecommendedAction}{recommended action for the risk signal}
+  \item{ActionTaken}{action taken in response to the risk signal}
+  \item{CTMSID}{linked CTMS identifier}
+  \item{CreatedDate}{date the risk signal was created}
+  \item{ResolvedDate}{date the risk signal was resolved}
+  \item{FunctionalArea}{functional area owning the risk signal}
+  \item{GroupLabel}{display label for the group}
+  \item{MetricLabel}{display label for the metric}
+  \item{MetricAbbreviation}{metric abbreviation}
+  \item{Country}{site country}
 }
 }
 \source{
