@@ -101,7 +101,16 @@ test_that("CalculateActionRiskScore honours an explicit ActionLog snapshot (#280
       make_multi_snapshot_action_log(),
       dActionSnapshotDate = as.Date("2025-01-15")
     ),
-    "not present in dfActionLog"
+    "missing for one or more nonzero KRI weights"
+  )
+  expect_error(
+    CalculateActionRiskScore(
+      make_action_score_results(),
+      make_action_score_weights(),
+      make_multi_snapshot_action_log(),
+      dActionSnapshotDate = as.Date("2025-03-31")
+    ),
+    "must not be later than the dfResults SnapshotDate"
   )
   expect_error(
     CalculateActionRiskScore(
@@ -125,6 +134,69 @@ test_that("an ActionLog frozen before the results snapshot is matched by site an
   )
 
   expect_equal(result$Numerator, c(12, 12))
+})
+
+test_that("each group and metric uses its own latest ActionLog entry (#280)", {
+  # 1001/kri0001 was last recorded on 2025-01-31; every other signal on
+  # 2025-02-28. A single latest-date filter would drop the 1001/kri0001 entry.
+  action_log <- make_action_score_log()
+  history <- action_log[1, ]
+  history$SnapshotDate <- as.Date("2025-01-31")
+  action_log <- rbind(history, action_log[-1, ])
+
+  detail <- MakeActionRiskScoreDetail(
+    make_action_score_results(),
+    make_action_score_weights(),
+    action_log
+  )
+  row <- detail[detail$GroupID == "1001" & detail$MetricID == "Analysis_kri0001", ]
+  expect_equal(row$ActionState, "No Action")
+  expect_equal(row$ActionSnapshotDate, as.Date("2025-01-31"))
+
+  result <- CalculateActionRiskScore(
+    make_action_score_results(),
+    make_action_score_weights(),
+    action_log
+  )
+  expect_equal(result$Numerator, c(12, 12))
+})
+
+test_that("MakeActionRiskScoreDetail explains every weighted contribution (#280)", {
+  action_log <- make_action_score_log()
+  action_log <- action_log[!(
+    action_log$GroupID == "1002" & action_log$MetricID == "Analysis_kri0003"
+  ), ]
+
+  detail <- MakeActionRiskScoreDetail(
+    make_action_score_results(),
+    make_action_score_weights(),
+    action_log,
+    strMissingState = "include"
+  )
+
+  expect_named(detail, c(
+    "StudyID", "SnapshotDate", "GroupLevel", "GroupID", "MetricID", "Flag",
+    "Weight", "WeightMax", "ActionState", "ActionSnapshotDate", "ActionSource",
+    "ActionFactor", "EffectiveWeight"
+  ))
+  expect_equal(nrow(detail), nrow(make_action_score_results()))
+
+  missing <- detail[detail$GroupID == "1002" & detail$MetricID == "Analysis_kri0003", ]
+  expect_equal(missing$ActionSource, "Missing")
+  expect_true(is.na(missing$ActionState))
+  expect_equal(missing$EffectiveWeight, 8)
+
+  no_action <- detail[detail$ActionState %in% "No Action", ]
+  expect_true(all(no_action$EffectiveWeight == 0))
+
+  score <- CalculateActionRiskScore(
+    make_action_score_results(),
+    make_action_score_weights(),
+    action_log,
+    strMissingState = "include"
+  )
+  numerators <- tapply(detail$EffectiveWeight, detail$GroupID, sum)
+  expect_equal(as.numeric(numerators[score$GroupID]), score$Numerator)
 })
 
 test_that("CalculateActionRiskScore preserves the raw SRS denominator (#280)", {
@@ -257,6 +329,7 @@ test_that("CalculateActionRiskScore rejects unsafe ActionLog joins (#280)", {
     "same StudyID"
   )
 
+  # Entries recorded after the results snapshot are not known at scoring time.
   future_snapshot <- action_log
   future_snapshot$SnapshotDate <- as.Date("2025-03-31")
   future_snapshot$ExtractionDate <- as.Date("2025-04-07")
@@ -266,7 +339,7 @@ test_that("CalculateActionRiskScore rejects unsafe ActionLog joins (#280)", {
       make_action_score_weights(),
       future_snapshot
     ),
-    "must not be later than the dfResults SnapshotDate"
+    "missing for one or more nonzero KRI weights"
   )
 
   unknown_state <- action_log

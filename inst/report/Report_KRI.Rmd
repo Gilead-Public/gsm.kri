@@ -15,6 +15,7 @@ params:
   strComparisonRiskMetric: "Analysis_srs0002"
   strComparisonRiskLabel: "Adjusted Risk Score"
   strGroupSubset: null
+  dfRiskScoreDetail: null
 ---
 
 ```{r setup, include=FALSE} 
@@ -83,7 +84,8 @@ GroupOverViz <- Widget_GroupOverview(
     NULL
   ),
   strComparisonRiskMetric = params$strComparisonRiskMetric,
-  strComparisonRiskLabel = params$strComparisonRiskLabel
+  strComparisonRiskLabel = params$strComparisonRiskLabel,
+  dfComparisonRiskDetail = params$dfRiskScoreDetail
 )
 
 overview_viz <- list(groupOverview = GroupOverViz)

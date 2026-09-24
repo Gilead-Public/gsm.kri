@@ -185,14 +185,22 @@ action_weighted_score <- CalculateActionRiskScore(
 ```
 
 `Reporting_ActionLog` is a frozen extract taken when the snapshot is generated,
-so it only contains decisions made up to that point, and it can span several
-`SnapshotDate`s. By default the score uses the rows at the latest
-`SnapshotDate` in the ActionLog, which hold the current state of every signal;
-`dActionSnapshotDate` selects a different date. That date must not be later
-than the `dfResults` snapshot. The selected rows are joined to the KRI results
-on `StudyID + GroupLevel + GroupID + MetricID`, and must be unique per key
-(`StudyID + SnapshotDate + GroupLevel + GroupID + MetricID` across the whole
-extract). The `srs0002.yaml` workflow reads persisted `Analysis_Summary` and
+so it only contains decisions made up to that point. It keeps a history: the
+same site and metric can have entries at several `SnapshotDate`s. For each
+site and metric, the score uses the latest entry on or before the results
+snapshot, or on or before `dActionSnapshotDate` when that is supplied (it must
+not be later than the results snapshot). Entries are matched to the KRI results
+on `StudyID + GroupLevel + GroupID + MetricID`, and
+`StudyID + SnapshotDate + GroupLevel + GroupID + MetricID` must be unique
+across the extract. Scoring an earlier snapshot therefore uses only what was
+known at that point.
+
+`MakeActionRiskScoreDetail()` returns the per-KRI rows behind the score: the
+weight, the ActionLog state and date applied, and the resulting effective
+weight. Passing it to `Report_KRI(dfRiskScoreDetail = ...)` adds a badge to each
+adjusted score showing how far it is below the Site Risk Score, and clicking an
+adjusted score lists the KRIs responsible. Reports without `Analysis_srs0002`
+are unchanged. The `srs0002.yaml` workflow reads persisted `Analysis_Summary` and
 `Reporting_ActionLog`, which keeps ADO credentials and extraction timing
 outside `{gsm.kri}`.
 

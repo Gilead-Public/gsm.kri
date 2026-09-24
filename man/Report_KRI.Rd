@@ -14,7 +14,8 @@ Report_KRI(
   strInputPath = system.file("report", "Report_KRI.Rmd", package = "gsm.kri"),
   strComparisonRiskMetric = "Analysis_srs0002",
   strComparisonRiskLabel = "Adjusted Risk Score",
-  strGroupSubset = NULL
+  strGroupSubset = NULL,
+  dfRiskScoreDetail = NULL
 )
 }
 \arguments{
@@ -55,6 +56,12 @@ Default: `"Adjusted Risk Score"`.}
 \item{strGroupSubset}{Optional group subset passed to the report's group
 overview. `NULL` preserves the report default (`"red"` for site reports,
 `"all"` otherwise).}
+
+\item{dfRiskScoreDetail}{Optional per-KRI detail behind the comparison risk
+score, from [MakeActionRiskScoreDetail()]. When supplied, the site overview
+shows how far each comparison score is below the Site Risk Score and lists
+the KRIs responsible on click. Ignored when the comparison metric is absent
+from `dfResults`. Default: `NULL`.}
 }
 \value{
 File path of the saved report html is returned invisibly. Save to object to view absolute output path.

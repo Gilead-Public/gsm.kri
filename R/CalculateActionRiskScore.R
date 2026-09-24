@@ -2,7 +2,9 @@
 #'
 #' Applies Central Monitoring ActionLog states to existing KRI flag weights.
 #' Action factors affect only numerator contributions; the denominator remains
-#' the full maximum-risk denominator used by [CalculateRiskScore()].
+#' the full maximum-risk denominator used by [CalculateRiskScore()]. The
+#' per-KRI contributions behind the score are available from
+#' [MakeActionRiskScoreDetail()].
 #'
 #' @param dfResults Current persisted KRI result rows. Must contain one
 #'   `StudyID` and one `SnapshotDate` plus `GroupLevel`, `GroupID`, `MetricID`,
@@ -10,23 +12,65 @@
 #' @param dfWeights Risk score weights with `MetricID`, `Flag`, `Weight`, and
 #'   `WeightMax`.
 #' @param dfActionLog ActionLog rows with the five-column result key, `State`,
-#'   and `ExtractionDate`, for the same `StudyID` as `dfResults`. It may span
-#'   several `SnapshotDate`s; only the rows at `dActionSnapshotDate` are used,
-#'   matched to `dfResults` on `StudyID`, `GroupLevel`, `GroupID`, and
-#'   `MetricID`. The five-column key must be unique.
+#'   and `ExtractionDate`, for the same `StudyID` as `dfResults`. It may hold
+#'   several entries per group and metric at different `SnapshotDate`s; for
+#'   each group and metric the latest entry on or before `dActionSnapshotDate`
+#'   is used. The five-column key must be unique.
 #' @param lActionFactors Named numeric state-factor mapping. Defaults to include
 #'   open, closed, and awaiting-triage findings and exclude no-action findings.
 #' @param strMissingState Policy for a missing action state on a nonzero KRI
 #'   weight: stop with an error, include the weight, or exclude the weight.
 #' @param strMetricID Metric ID assigned to the action-weighted score.
-#' @param dActionSnapshotDate `Date` ActionLog `SnapshotDate` whose states are
-#'   applied. `NULL` (default) uses the latest `SnapshotDate` in `dfActionLog`.
-#'   Must not be later than the `dfResults` `SnapshotDate`.
+#' @param dActionSnapshotDate `Date` "As of" date for ActionLog entries. `NULL`
+#'   (default) uses the `dfResults` `SnapshotDate`. Must not be later than the
+#'   `dfResults` `SnapshotDate`.
 #'
 #' @return A canonical risk score data frame with the same output schema as
 #'   [CalculateRiskScore()].
 #' @export
 CalculateActionRiskScore <- function(
+  dfResults,
+  dfWeights,
+  dfActionLog,
+  lActionFactors = c(
+    "Open Action" = 1,
+    "Closed Action" = 1,
+    "Awaiting Triage" = 1,
+    "No Action" = 0
+  ),
+  strMissingState = c("error", "include", "exclude"),
+  strMetricID = "Analysis_srs0002",
+  dActionSnapshotDate = NULL
+) {
+  dfDetail <- MakeActionRiskScoreDetail(
+    dfResults = dfResults,
+    dfWeights = dfWeights,
+    dfActionLog = dfActionLog,
+    lActionFactors = lActionFactors,
+    strMissingState = strMissingState,
+    strMetricID = strMetricID,
+    dActionSnapshotDate = dActionSnapshotDate
+  )
+
+  SummarizeRiskScore(dfDetail, "EffectiveWeight", strMetricID)
+}
+
+#' Per-KRI detail behind an action-status-weighted Site Risk Score
+#'
+#' Returns one row per weighted KRI result with the ActionLog entry applied to
+#' it, so a reader can see why an action-weighted score differs from the
+#' original Site Risk Score. [CalculateActionRiskScore()] summarizes these rows.
+#'
+#' @inheritParams CalculateActionRiskScore
+#'
+#' @return A data frame with one row per `GroupLevel`, `GroupID`, and
+#'   `MetricID` and columns `StudyID`, `SnapshotDate`, `GroupLevel`,
+#'   `GroupID`, `MetricID`, `Flag`, `Weight`, `WeightMax`, `ActionState`,
+#'   `ActionSnapshotDate` (the `SnapshotDate` of the ActionLog entry applied),
+#'   `ActionSource` (`"ActionLog"`, `"Missing"`, or `"Zero weight"`),
+#'   `ActionFactor`, and `EffectiveWeight`.
+#' @export
+MakeActionRiskScoreDetail <- function(
   dfResults,
   dfWeights,
   dfActionLog,
@@ -92,35 +136,29 @@ CalculateActionRiskScore <- function(
     stop("The ActionLog scoring key must be unique before scoring.", call. = FALSE)
   }
 
-  # The ActionLog is frozen when a snapshot is generated and can span many
-  # SnapshotDates; the latest one holds the current state of every signal.
-  if (nrow(dfActionLog) > 0L) {
-    action_snapshot_date <- if (is.null(dActionSnapshotDate)) {
-      max(dfActionLog$SnapshotDate)
-    } else {
-      dActionSnapshotDate
-    }
-    if (!action_snapshot_date %in% dfActionLog$SnapshotDate) {
-      stop(
-        "dActionSnapshotDate ", format(action_snapshot_date),
-        " is not present in dfActionLog.",
-        call. = FALSE
-      )
-    }
-    if (action_snapshot_date > result_context$SnapshotDate) {
-      stop(
-        "The selected ActionLog SnapshotDate must not be later than the dfResults SnapshotDate.",
-        call. = FALSE
-      )
-    }
-    dfActionLog <- dfActionLog[
-      dfActionLog$SnapshotDate == action_snapshot_date, ,
-      drop = FALSE
-    ]
+  as_of <- if (is.null(dActionSnapshotDate)) {
+    result_context$SnapshotDate
+  } else {
+    dActionSnapshotDate
   }
+  if (as_of > result_context$SnapshotDate) {
+    stop(
+      "dActionSnapshotDate must not be later than the dfResults SnapshotDate.",
+      call. = FALSE
+    )
+  }
+  # The ActionLog keeps a history of entries per signal; the latest entry on
+  # or before the as-of date is the state known when the snapshot was scored.
+  dfActionCurrent <- dfActionLog[
+    dfActionLog$SnapshotDate <= as_of, ,
+    drop = FALSE
+  ] %>%
+    dplyr::group_by(dplyr::across(dplyr::all_of(.risk_score_action_join_key))) %>%
+    dplyr::slice_max(.data$SnapshotDate, n = 1L, with_ties = FALSE) %>%
+    dplyr::ungroup()
 
   action_factors <- .normalize_action_factors(lActionFactors)
-  observed_states <- unique(stats::na.omit(dfActionLog$State))
+  observed_states <- unique(stats::na.omit(dfActionCurrent$State))
   states_without_factors <- setdiff(observed_states, names(action_factors))
   if (length(states_without_factors) > 0L) {
     stop(
@@ -134,10 +172,11 @@ CalculateActionRiskScore <- function(
   rows_before_join <- nrow(dfWeighted)
   dfEffective <- dfWeighted %>%
     dplyr::left_join(
-      dfActionLog %>%
+      dfActionCurrent %>%
         dplyr::select(
           dplyr::all_of(.risk_score_action_join_key),
-          ActionState = "State"
+          ActionState = "State",
+          ActionSnapshotDate = "SnapshotDate"
         ),
       by = .risk_score_action_join_key
     )
@@ -163,8 +202,18 @@ CalculateActionRiskScore <- function(
     strMissingState == "include" ~ 1,
     strMissingState == "exclude" ~ 0
   )
+  dfEffective$ActionSource <- dplyr::case_when(
+    dfEffective$Weight == 0 ~ "Zero weight",
+    !is.na(dfEffective$ActionState) ~ "ActionLog",
+    TRUE ~ "Missing"
+  )
   dfEffective$EffectiveWeight <-
     dfEffective$Weight * dfEffective$ActionFactor
 
-  SummarizeRiskScore(dfEffective, "EffectiveWeight", strMetricID)
+  dfEffective %>%
+    dplyr::select(
+      "StudyID", "SnapshotDate", "GroupLevel", "GroupID", "MetricID",
+      "Flag", "Weight", "WeightMax", "ActionState", "ActionSnapshotDate",
+      "ActionSource", "ActionFactor", "EffectiveWeight"
+    )
 }

@@ -51,6 +51,14 @@ action_weighted_score <- gsm.kri::CalculateActionRiskScore(
     SnapshotDate = latest_snapshot
   )
 
+# Per-KRI detail explains each adjusted score in the Site Overview.
+action_score_detail <- gsm.kri::MakeActionRiskScoreDetail(
+  dfResults = current_kri_results,
+  dfWeights = weights,
+  dfActionLog = gsm.core::reportingActionLog,
+  strMissingState = "error"
+)
+
 site_results <- dplyr::bind_rows(
   gsm.core::reportingResults,
   action_weighted_score
@@ -79,7 +87,8 @@ child_env <- list2env(
       dfGroups = gsm.core::reportingGroups,
       dfMetrics = gsm.core::reportingMetrics,
       strComparisonRiskMetric = "Analysis_srs0002",
-      strComparisonRiskLabel = "Adjusted Risk Score"
+      strComparisonRiskLabel = "Adjusted Risk Score",
+      dfRiskScoreDetail = action_score_detail
     )
   ),
   parent = environment()
