@@ -59,17 +59,37 @@ test('adjusted score badge and click-through list the KRIs behind it (#280)', as
     'td.group-overview--comparisonRiskScore:has(.group-overview--comparison-delta)'
   );
 
-  const detail = overview.locator('.group-overview--comparison-detail');
-  await expect(detail.locator('table')).toHaveCount(0);
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
 
-  await badgeCell.first().click();
-  const rows = detail.locator('tbody tr');
-  expect(await rows.count()).toBeGreaterThan(0);
+  const detail = overview.locator('tr.group-overview--comparison-detail');
+  await expect(detail).toHaveCount(0);
+
+  const clicked = badgeCell.first();
+  const groupID = await clicked.evaluate((td) => td.__data__.GroupID);
+  await clicked.click();
+  await expect(detail).toHaveCount(1);
   await expect(detail).toContainText('No Action');
+  await expect(detail).toContainText(groupID);
+
+  // The breakdown sits directly under the clicked group's row.
+  const followsGroup = await detail.evaluate((row, id) => {
+    const above = row.previousElementSibling.querySelector('td.group-overview--comparisonRiskScore');
+    return above !== null && above.__data__.GroupID === id;
+  }, groupID);
+  expect(followsGroup).toBe(true);
+
+  // Redrawing the table (a subset change) keeps the breakdown under its group.
+  await overview.locator('select').first().selectOption({ index: 0 });
+  await expect(detail).toHaveCount(1);
+  await expect(detail).toContainText(groupID);
+  expect(errors).toEqual([]);
 
   // A second click on the same score closes the breakdown.
-  await badgeCell.first().click();
-  await expect(detail.locator('table')).toHaveCount(0);
+  await overview.locator('td.group-overview--comparisonRiskScore')
+    .filter({ has: page.locator('.group-overview--comparison-delta') })
+    .evaluateAll((cells, id) => cells.find((td) => td.__data__.GroupID === id).click(), groupID);
+  await expect(detail).toHaveCount(0);
 });
 
 test('site overview has no adjusted score detail when srs0002 is absent (#280)', async ({ page }) => {
