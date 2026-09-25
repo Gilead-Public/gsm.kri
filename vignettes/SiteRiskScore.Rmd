@@ -158,9 +158,24 @@ The Site Risk Score is calculated automatically as part of the standard KRI work
 
 ## Action-status-weighted Site Risk Score
 
-The `srs0002` variant uses the same KRI flag weights and full maximum-risk
-denominator as `srs0001`, but multiplies each numerator contribution by a factor
-derived from the persisted ActionLog state:
+The `srs0002` variant (**Adjusted Risk Score**) starts from the same KRI flag
+weights as `srs0001` and multiplies each KRI's contribution by a factor taken
+from its Central Monitoring ActionLog state. The denominator is unchanged, so a
+finding triaged as needing no action stops counting toward the site's score
+without shrinking the scale the score is measured on.
+
+### Formula
+
+For site $s$ at snapshot $t$, summing over the site's KRI results $k$:
+
+$$
+\text{Adjusted}_{s,t} = 100 \times
+\frac{\sum_k w_k(f_{s,k,t}) \cdot a_{s,k,t}}{\sum_k W^{\max}_k}
+$$
+
+- $w_k(f)$ is the weight for flag $f$ of KRI $k$ from `MakeWeights()`, the
+  same weight `srs0001` uses, and $W^{\max}_k$ is that KRI's largest weight.
+- $a_{s,k,t}$ is the action factor for the KRI's ActionLog state:
 
 | ActionLog state | Default factor |
 |---|---:|
@@ -169,11 +184,15 @@ derived from the persisted ActionLog state:
 | Awaiting Triage | 1 |
 | No Action | 0 |
 
-Including `Awaiting Triage` is a conservative default so unresolved review does
-not understate site risk. Studies can configure a different explicit factor if
-the business rule changes. A missing ActionLog row for a nonzero KRI weight is
-an error by default; callers must explicitly choose `include` or `exclude` to
-apply a fallback. Zero-weight rows do not require an ActionLog state.
+Every factor is between 0 and 1, so the Adjusted Risk Score is never higher than
+the Site Risk Score; with all factors equal to 1 it matches `srs0001` exactly.
+For example, with three KRIs weighted `4`, `4`, and `8` in states `No Action`,
+`Open Action`, and `Closed Action`, the numerator is `0 + 4 + 8 = 12` over the
+original denominator of `16`, a score of `75`.
+
+Including `Awaiting Triage` is a conservative default so that unreviewed
+findings do not understate site risk. Factors can be changed with
+`lActionFactors`, or `meta.ActionFactors` in `srs0002.yaml`.
 
 ```{r, eval=FALSE}
 action_weighted_score <- CalculateActionRiskScore(
@@ -184,42 +203,78 @@ action_weighted_score <- CalculateActionRiskScore(
 )
 ```
 
-`Reporting_ActionLog` is a frozen extract taken when the snapshot is generated,
+### Which ActionLog entry is used
+
+`Reporting_ActionLog` is a frozen extract taken when a snapshot is generated,
 so it only contains decisions made up to that point. It keeps a history: the
-same site and metric can have entries at several `SnapshotDate`s. For each
-site and metric, the score uses the latest entry on or before the results
-snapshot, or on or before `dActionSnapshotDate` when that is supplied (it must
-not be later than the results snapshot). Entries are matched to the KRI results
-on `StudyID + GroupLevel + GroupID + MetricID`, and
-`StudyID + SnapshotDate + GroupLevel + GroupID + MetricID` must be unique
-across the extract. Scoring an earlier snapshot therefore uses only what was
-known at that point.
+same site and metric can have entries at several `SnapshotDate`s.
 
-`MakeActionRiskScoreDetail()` returns the per-KRI rows behind the score: the
-weight, the ActionLog state and date applied, and the resulting effective
-weight. Passing it to `Report_KRI(dfRiskScoreDetail = ...)` adds a badge to each
-adjusted score showing how far it is below the Site Risk Score, and clicking an
-adjusted score lists the KRIs responsible. Reports without `Analysis_srs0002`
-are unchanged. The `srs0002.yaml` workflow reads persisted `Analysis_Summary` and
-`Reporting_ActionLog`, which keeps ADO credentials and extraction timing
-outside `{gsm.kri}`.
+- For each site and metric, the latest entry on or before the results
+  `SnapshotDate` is used. `dActionSnapshotDate` sets an earlier "as of" date;
+  it cannot be later than the results snapshot.
+- Entries are matched to KRI results on
+  `StudyID + GroupLevel + GroupID + MetricID`, and
+  `StudyID + SnapshotDate + GroupLevel + GroupID + MetricID` must be unique
+  across the extract.
+- Scoring an earlier snapshot therefore uses only what was known at that point,
+  and entries dated after the results snapshot are ignored.
 
-Only numerator evidence is filtered. For example, with three KRIs weighted
-`4`, `4`, and `8`, states `No Action`, `Open Action`, and `Closed Action` produce
-an action-weighted numerator of `0 + 4 + 8 = 12` while retaining the original
-denominator of `16`, for a score of `75`.
+Only the state of that one entry is used; earlier entries for the same signal
+do not affect the score.
 
-The original `srs0001` remains unchanged as the comparison and rollback
-baseline. Cross-study functions accept `strRiskScoreMetric =
-"Analysis_srs0002"` to display the new variant explicitly.
+### Missing action states
 
-When both metrics are present, the standard site-level `Report_KRI()` overview
-shows `Analysis_srs0002` in an **Adjusted Risk Score** column immediately after
-the existing **Risk Score** (`Analysis_srs0001`) column. Reports without
-`Analysis_srs0002` retain the original layout. Direct
-`Widget_GroupOverview()` callers can request the same layout with
-`strComparisonRiskMetric = "Analysis_srs0002"`; leaving that argument `NULL`
-preserves the single-score widget.
+A KRI with a nonzero weight and no matching ActionLog entry is an error by
+default (`strMissingState = "error"`). Choose `"include"` to count its full
+weight until it is triaged, or `"exclude"` to drop it. Zero-weight KRIs never
+need an ActionLog entry.
+
+### Workflow
+
+The `srs0002.yaml` workflow reads the persisted `Analysis_Summary` and
+`Reporting_ActionLog` domains, which keeps ADO credentials and extraction timing
+outside `{gsm.kri}`, and returns `Analysis_srs0002` alongside `srs0001`. The
+original `srs0001` remains unchanged as the comparison and rollback baseline.
+
+### Reporting
+
+When both scores are present, the site-level `Report_KRI()` overview shows
+`Analysis_srs0002` in an **Adjusted Risk Score** column immediately after the
+existing **Risk Score** (`Analysis_srs0001`) column.
+
+`MakeActionRiskScoreDetail()` returns the per-KRI rows behind the score: each
+KRI's weight, the ActionLog state and date applied, and the resulting effective
+weight. `CalculateActionRiskScore()` summarizes these same rows, so the two
+always agree. Passing them to `Report_KRI(dfRiskScoreDetail = ...)` adds:
+
+- a small "▼N" marker on each Adjusted Risk Score that is lower than the Risk
+  Score, and
+- a breakdown that opens under the site's row when its Adjusted Risk Score is
+  clicked, listing each KRI's flag, action state, ActionLog date, and points,
+  with KRIs that no longer count shown struck through.
+
+```{r, eval=FALSE}
+action_score_detail <- MakeActionRiskScoreDetail(
+  dfResults = current_kri_results,
+  dfWeights = MakeWeights(reporting_metrics),
+  dfActionLog = reporting_action_log
+)
+
+Report_KRI(
+  lCharts = charts,
+  dfResults = site_results,
+  dfMetrics = reporting_metrics,
+  dfGroups = reporting_groups,
+  dfRiskScoreDetail = action_score_detail
+)
+```
+
+Reports without `Analysis_srs0002` keep the original layout, and any detail
+passed to them is ignored. `gsm.vizr::Widget_GroupOverview()` callers can
+request the same layout with `strComparisonRiskMetric = "Analysis_srs0002"`
+and `dfComparisonRiskDetail`; leaving `strComparisonRiskMetric` `NULL`
+preserves the single-score widget. Cross-study functions accept
+`strRiskScoreMetric = "Analysis_srs0002"` to display the adjusted score.
 
 # Cross-Study Site Risk Scores
 
