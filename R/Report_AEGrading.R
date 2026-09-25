@@ -163,6 +163,28 @@ Visualize_GradeBySite <- function(
   )
 }
 
+#' Grading direction of a flagged site
+#'
+#' Translates the sign of a grading-metric flag into the grading behaviour it
+#' indicates. The sign alone is ambiguous: a positive flag on the high-grade
+#' metric (`kri0016`) is an excess of Grade 3+ events, but a positive flag on
+#' the low-grade metric (`kri0017`) is an excess of Grade 1 events, which is
+#' under-grading.
+#'
+#' @param vFlag `numeric` non-zero flag values.
+#' @param strMetricID `character` MetricID the flags came from. IDs ending in
+#'   `kri0017` are read as the low-grade metric; anything else as high-grade.
+#'
+#' @return `character` vector of `"Over-grading"` / `"Under-grading"`.
+#'
+#' @keywords internal
+#' @noRd
+AEGrading_Direction <- function(vFlag, strMetricID) {
+  bLowGrade <- grepl("kri0017$", strMetricID)
+  bExcess <- vFlag > 0
+  ifelse(xor(bExcess, bLowGrade), "Over-grading", "Under-grading")
+}
+
 #' Report_AEGrading function
 #'
 #' @description
