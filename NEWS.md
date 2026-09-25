@@ -1,3 +1,22 @@
+# gsm.kri (development version)
+
+- Added `CalculateActionRiskScore()` and the `srs0002` workflow for an
+  action-status-weighted Site Risk Score. Open, closed, and awaiting-triage
+  findings are included by default; no-action findings are excluded; missing
+  nonzero action states fail unless an explicit fallback is configured. The
+  full raw SRS denominator is retained. For each site and metric, the latest
+  ActionLog entry on or before the results snapshot (or
+  `dActionSnapshotDate`) is applied (#280).
+- Added `MakeActionRiskScoreDetail()`, which returns the per-KRI contributions
+  behind the action-weighted score, and a `dfRiskScoreDetail` argument to
+  `Report_KRI()` that shows them in the site overview (#280).
+- Added configurable risk-score MetricIDs to the cross-study summary and widget
+  APIs while retaining `Analysis_srs0001` as the default (#280).
+- Extended the existing site overview in `Report_KRI()` to display an adjusted
+  Site Risk Score immediately after the original Risk Score when
+  `Analysis_srs0002` is available. Direct `Widget_GroupOverview()` consumers
+  retain the original single-score layout unless they opt in (#280).
+
 # gsm.kri v1.7.0
 
 This minor release moves every gsm.viz-backed chart onto gsm.vizr: the vendored gsm.viz

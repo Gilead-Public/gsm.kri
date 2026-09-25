@@ -12,6 +12,8 @@
 #' @param dfMetrics `data.frame` Metadata about metrics/KRIs.
 #' @param dfGroups `data.frame` Metadata about groups (sites/studies).
 #' @param strGroupLevel `character` The group level. Default is 'Site'.
+#' @param strRiskScoreMetric `character` Risk score MetricID to display.
+#'   Defaults to `"Analysis_srs0001"`.
 #'
 #' @return An htmlwidget for cross-study risk score visualization.
 #'
@@ -20,18 +22,27 @@ Widget_CrossStudyRiskScore <- function(
   dfResults,
   dfMetrics,
   dfGroups,
-  strGroupLevel = "Site"
+  strGroupLevel = "Site",
+  strRiskScoreMetric = "Analysis_srs0001"
 ) {
   stopifnot(is.data.frame(dfResults))
   stopifnot(is.data.frame(dfMetrics))
   stopifnot(is.data.frame(dfGroups))
-  # Check that Analysis_srs0001 is present
-  stopifnot("Analysis_srs0001" %in% dfResults$MetricID)
+  stopifnot(is.character(strRiskScoreMetric) && length(strRiskScoreMetric) == 1)
+  if (!strRiskScoreMetric %in% dfResults$MetricID) {
+    stop(
+      "Risk score metric ",
+      strRiskScoreMetric,
+      " is not present in dfResults.",
+      call. = FALSE
+    )
+  }
 
   dfCrossStudySummary <- SummarizeCrossStudy(
     dfResults = dfResults,
     strGroupLevel = strGroupLevel,
-    dfGroups = dfGroups
+    dfGroups = dfGroups,
+    strRiskScoreMetric = strRiskScoreMetric
   )
   # Forward options using the same pattern as Widget_GroupOverview
   lInput <- list(
@@ -41,7 +52,7 @@ Widget_CrossStudyRiskScore <- function(
     dfSummary = dfCrossStudySummary,
     strGroupLevel = strGroupLevel,
     strGroupLabelKey = "GroupID",
-    strSiteRiskMetric = "Analysis_srs0001"
+    strSiteRiskMetric = strRiskScoreMetric
   )
 
   # Create widget using the same pattern as Widget_GroupOverview

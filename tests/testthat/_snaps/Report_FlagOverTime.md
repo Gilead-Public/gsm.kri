@@ -12,7 +12,7 @@
       4 Site       0X3090  Analysis~ AE           FALSE                 0            0
       5 Site       0X3090  Analysis~ SAE          FALSE                 0            0
       6 Site       0X3090  Analysis~ PD           FALSE                 0            0
-      7 Site       0X8354  Analysis~ AE           FALSE                 0            0
+      7 Site       0X8354  Analysis~ AE           FALSE                -1           -1
       8 Site       0X8354  Analysis~ SAE          FALSE                 0            0
       9 Site       0X8354  Analysis~ PD           FALSE                 0            0
 

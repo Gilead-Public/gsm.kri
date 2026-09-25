@@ -204,6 +204,19 @@ test_that("Returns empty data frame when Analysis_srs0001 not present (#71, #144
   expect_equal(nrow(result), 0)
 })
 
+test_that("SummarizeCrossStudy supports an explicit SRS metric (#280)", {
+  dfResults <- create_test_results() %>%
+    dplyr::mutate(MetricID = "Analysis_srs0002")
+
+  result <- SummarizeCrossStudy(
+    dfResults,
+    strRiskScoreMetric = "Analysis_srs0002"
+  )
+
+  expect_equal(nrow(result), 3)
+  expect_equal(result$AvgRiskScore[result$GroupID == "Site001"], 1.9)
+})
+
 test_that("Validates input types (#71, #144)", {
   dfResults <- create_test_results()
 

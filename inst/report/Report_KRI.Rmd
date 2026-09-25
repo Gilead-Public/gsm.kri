@@ -12,6 +12,10 @@ params:
   dfResults: NA
   dfMetrics: NA
   dfGroups: NA
+  strComparisonRiskMetric: "Analysis_srs0002"
+  strComparisonRiskLabel: "Adjusted Risk Score"
+  strGroupSubset: null
+  dfRiskScoreDetail: null
 ---
 
 ```{r setup, include=FALSE} 
@@ -70,14 +74,18 @@ GroupOverViz <- Widget_GroupOverview(
   dfMetrics = params$dfMetrics,
   dfGroups = params$dfGroups,
   strGroupLevel = setup$GroupLevel,
-  strGroupSubset = switch(setup$GroupLevel,
-    Site = 'red',
-    'all'
-  ),
+  strGroupSubset = if (is.null(params$strGroupSubset)) {
+    switch(setup$GroupLevel, Site = 'red', 'all')
+  } else {
+    params$strGroupSubset
+  },
   strGroupLabelKey = switch(setup$GroupLevel,
     Site = 'InvestigatorLastName',
     NULL
-  )
+  ),
+  strComparisonRiskMetric = params$strComparisonRiskMetric,
+  strComparisonRiskLabel = params$strComparisonRiskLabel,
+  dfComparisonRiskDetail = params$dfRiskScoreDetail
 )
 
 overview_viz <- list(groupOverview = GroupOverViz)
