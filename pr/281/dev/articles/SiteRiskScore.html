@@ -428,10 +428,41 @@ for a single study.</li>
 <div class="section level3">
 <h3 id="action-status-weighted-site-risk-score">Action-status-weighted Site Risk Score<a class="anchor" aria-label="anchor" href="#action-status-weighted-site-risk-score"></a>
 </h3>
-<p>The <code>srs0002</code> variant uses the same KRI flag weights and
-full maximum-risk denominator as <code>srs0001</code>, but multiplies
-each numerator contribution by a factor derived from the persisted
-ActionLog state:</p>
+<p>The <code>srs0002</code> variant (<strong>Adjusted Risk
+Score</strong>) starts from the same KRI flag weights as
+<code>srs0001</code> and multiplies each KRI’s contribution by a factor
+taken from its Central Monitoring ActionLog state. The denominator is
+unchanged, so a finding triaged as needing no action stops counting
+toward the site’s score without shrinking the scale the score is
+measured on.</p>
+<div class="section level4">
+<h4 id="formula">Formula<a class="anchor" aria-label="anchor" href="#formula"></a>
+</h4>
+<p>For site
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>s</mi><annotation encoding="application/x-tex">s</annotation></semantics></math>
+at snapshot
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math>,
+summing over the site’s KRI results
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mtext mathvariant="normal">Adjusted</mtext><mrow><mi>s</mi><mo>,</mo><mi>t</mi></mrow></msub><mo>=</mo><mn>100</mn><mo>×</mo><mfrac><mrow><munder><mo>∑</mo><mi>k</mi></munder><msub><mi>w</mi><mi>k</mi></msub><mo stretchy="false" form="prefix">(</mo><msub><mi>f</mi><mrow><mi>s</mi><mo>,</mo><mi>k</mi><mo>,</mo><mi>t</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>⋅</mo><msub><mi>a</mi><mrow><mi>s</mi><mo>,</mo><mi>k</mi><mo>,</mo><mi>t</mi></mrow></msub></mrow><mrow><munder><mo>∑</mo><mi>k</mi></munder><msubsup><mi>W</mi><mi>k</mi><mi mathvariant="normal">max</mi></msubsup></mrow></mfrac></mrow><annotation encoding="application/x-tex">
+\text{Adjusted}_{s,t} = 100 \times
+\frac{\sum_k w_k(f_{s,k,t}) \cdot a_{s,k,t}}{\sum_k W^{\max}_k}
+</annotation></semantics></math></p>
+<ul>
+<li>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>w</mi><mi>k</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>f</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">w_k(f)</annotation></semantics></math>
+is the weight for flag
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>f</mi><annotation encoding="application/x-tex">f</annotation></semantics></math>
+of KRI
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>
+from <code><a href="../reference/MakeWeights.html">MakeWeights()</a></code>, the same weight <code>srs0001</code>
+uses, and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>W</mi><mi>k</mi><mi mathvariant="normal">max</mi></msubsup><annotation encoding="application/x-tex">W^{\max}_k</annotation></semantics></math>
+is that KRI’s largest weight.</li>
+<li>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>a</mi><mrow><mi>s</mi><mo>,</mo><mi>k</mi><mo>,</mo><mi>t</mi></mrow></msub><annotation encoding="application/x-tex">a_{s,k,t}</annotation></semantics></math>
+is the action factor for the KRI’s ActionLog state:</li>
+</ul>
 <table class="table">
 <thead><tr class="header">
 <th>ActionLog state</th>
@@ -456,13 +487,18 @@ ActionLog state:</p>
 </tr>
 </tbody>
 </table>
+<p>Every factor is between 0 and 1, so the Adjusted Risk Score is never
+higher than the Site Risk Score; with all factors equal to 1 it matches
+<code>srs0001</code> exactly. For example, with three KRIs weighted
+<code>4</code>, <code>4</code>, and <code>8</code> in states
+<code>No Action</code>, <code>Open Action</code>, and
+<code>Closed Action</code>, the numerator is <code>0 + 4 + 8 = 12</code>
+over the original denominator of <code>16</code>, a score of
+<code>75</code>.</p>
 <p>Including <code>Awaiting Triage</code> is a conservative default so
-unresolved review does not understate site risk. Studies can configure a
-different explicit factor if the business rule changes. A missing
-ActionLog row for a nonzero KRI weight is an error by default; callers
-must explicitly choose <code>include</code> or <code>exclude</code> to
-apply a fallback. Zero-weight rows do not require an ActionLog
-state.</p>
+that unreviewed findings do not understate site risk. Factors can be
+changed with <code>lActionFactors</code>, or
+<code>meta.ActionFactors</code> in <code>srs0002.yaml</code>.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">action_weighted_score</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/CalculateActionRiskScore.html">CalculateActionRiskScore</a></span><span class="op">(</span></span>
 <span>  dfResults <span class="op">=</span> <span class="va">current_kri_results</span>,</span>
@@ -470,47 +506,95 @@ state.</p>
 <span>  dfActionLog <span class="op">=</span> <span class="va">reporting_action_log</span>,</span>
 <span>  strMissingState <span class="op">=</span> <span class="st">"error"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p><code>Reporting_ActionLog</code> is a frozen extract taken when the
+</div>
+<div class="section level4">
+<h4 id="which-actionlog-entry-is-used">Which ActionLog entry is used<a class="anchor" aria-label="anchor" href="#which-actionlog-entry-is-used"></a>
+</h4>
+<p><code>Reporting_ActionLog</code> is a frozen extract taken when a
 snapshot is generated, so it only contains decisions made up to that
 point. It keeps a history: the same site and metric can have entries at
-several <code>SnapshotDate</code>s. For each site and metric, the score
-uses the latest entry on or before the results snapshot, or on or before
-<code>dActionSnapshotDate</code> when that is supplied (it must not be
-later than the results snapshot). Entries are matched to the KRI results
-on <code>StudyID + GroupLevel + GroupID + MetricID</code>, and
+several <code>SnapshotDate</code>s.</p>
+<ul>
+<li>For each site and metric, the latest entry on or before the results
+<code>SnapshotDate</code> is used. <code>dActionSnapshotDate</code> sets
+an earlier “as of” date; it cannot be later than the results
+snapshot.</li>
+<li>Entries are matched to KRI results on
+<code>StudyID + GroupLevel + GroupID + MetricID</code>, and
 <code>StudyID + SnapshotDate + GroupLevel + GroupID + MetricID</code>
-must be unique across the extract. Scoring an earlier snapshot therefore
-uses only what was known at that point.</p>
-<p><code><a href="../reference/MakeActionRiskScoreDetail.html">MakeActionRiskScoreDetail()</a></code> returns the per-KRI rows
-behind the score: the weight, the ActionLog state and date applied, and
-the resulting effective weight. Passing it to
-<code>Report_KRI(dfRiskScoreDetail = ...)</code> adds a badge to each
-adjusted score showing how far it is below the Site Risk Score, and
-clicking an adjusted score lists the KRIs responsible. Reports without
-<code>Analysis_srs0002</code> are unchanged. The
-<code>srs0002.yaml</code> workflow reads persisted
-<code>Analysis_Summary</code> and <code>Reporting_ActionLog</code>,
-which keeps ADO credentials and extraction timing outside
-<a href="https://github.com/Gilead-Public/gsm.kri" class="external-link">gsm.kri</a>.</p>
-<p>Only numerator evidence is filtered. For example, with three KRIs
-weighted <code>4</code>, <code>4</code>, and <code>8</code>, states
-<code>No Action</code>, <code>Open Action</code>, and
-<code>Closed Action</code> produce an action-weighted numerator of
-<code>0 + 4 + 8 = 12</code> while retaining the original denominator of
-<code>16</code>, for a score of <code>75</code>.</p>
-<p>The original <code>srs0001</code> remains unchanged as the comparison
-and rollback baseline. Cross-study functions accept
-<code>strRiskScoreMetric = "Analysis_srs0002"</code> to display the new
-variant explicitly.</p>
-<p>When both metrics are present, the standard site-level
+must be unique across the extract.</li>
+<li>Scoring an earlier snapshot therefore uses only what was known at
+that point, and entries dated after the results snapshot are
+ignored.</li>
+</ul>
+<p>Only the state of that one entry is used; earlier entries for the
+same signal do not affect the score.</p>
+</div>
+<div class="section level4">
+<h4 id="missing-action-states">Missing action states<a class="anchor" aria-label="anchor" href="#missing-action-states"></a>
+</h4>
+<p>A KRI with a nonzero weight and no matching ActionLog entry is an
+error by default (<code>strMissingState = "error"</code>). Choose
+<code>"include"</code> to count its full weight until it is triaged, or
+<code>"exclude"</code> to drop it. Zero-weight KRIs never need an
+ActionLog entry.</p>
+</div>
+<div class="section level4">
+<h4 id="workflow">Workflow<a class="anchor" aria-label="anchor" href="#workflow"></a>
+</h4>
+<p>The <code>srs0002.yaml</code> workflow reads the persisted
+<code>Analysis_Summary</code> and <code>Reporting_ActionLog</code>
+domains, which keeps ADO credentials and extraction timing outside
+<a href="https://github.com/Gilead-Public/gsm.kri" class="external-link">gsm.kri</a>, and returns <code>Analysis_srs0002</code>
+alongside <code>srs0001</code>. The original <code>srs0001</code>
+remains unchanged as the comparison and rollback baseline.</p>
+</div>
+<div class="section level4">
+<h4 id="reporting">Reporting<a class="anchor" aria-label="anchor" href="#reporting"></a>
+</h4>
+<p>When both scores are present, the site-level
 <code><a href="../reference/Report_KRI.html">Report_KRI()</a></code> overview shows <code>Analysis_srs0002</code>
 in an <strong>Adjusted Risk Score</strong> column immediately after the
 existing <strong>Risk Score</strong> (<code>Analysis_srs0001</code>)
-column. Reports without <code>Analysis_srs0002</code> retain the
-original layout. Direct <code><a href="https://gilead-public.github.io/gsm.vizr/reference/Widget_GroupOverview.html" class="external-link">Widget_GroupOverview()</a></code> callers can
-request the same layout with
-<code>strComparisonRiskMetric = "Analysis_srs0002"</code>; leaving that
-argument <code>NULL</code> preserves the single-score widget.</p>
+column.</p>
+<p><code><a href="../reference/MakeActionRiskScoreDetail.html">MakeActionRiskScoreDetail()</a></code> returns the per-KRI rows
+behind the score: each KRI’s weight, the ActionLog state and date
+applied, and the resulting effective weight.
+<code><a href="../reference/CalculateActionRiskScore.html">CalculateActionRiskScore()</a></code> summarizes these same rows, so
+the two always agree. Passing them to
+<code>Report_KRI(dfRiskScoreDetail = ...)</code> adds:</p>
+<ul>
+<li>a small “▼N” marker on each Adjusted Risk Score that is lower than
+the Risk Score, and</li>
+<li>a breakdown that opens under the site’s row when its Adjusted Risk
+Score is clicked, listing each KRI’s flag, action state, ActionLog date,
+and points, with KRIs that no longer count shown struck through.</li>
+</ul>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">action_score_detail</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/MakeActionRiskScoreDetail.html">MakeActionRiskScoreDetail</a></span><span class="op">(</span></span>
+<span>  dfResults <span class="op">=</span> <span class="va">current_kri_results</span>,</span>
+<span>  dfWeights <span class="op">=</span> <span class="fu"><a href="../reference/MakeWeights.html">MakeWeights</a></span><span class="op">(</span><span class="va">reporting_metrics</span><span class="op">)</span>,</span>
+<span>  dfActionLog <span class="op">=</span> <span class="va">reporting_action_log</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/Report_KRI.html">Report_KRI</a></span><span class="op">(</span></span>
+<span>  lCharts <span class="op">=</span> <span class="va">charts</span>,</span>
+<span>  dfResults <span class="op">=</span> <span class="va">site_results</span>,</span>
+<span>  dfMetrics <span class="op">=</span> <span class="va">reporting_metrics</span>,</span>
+<span>  dfGroups <span class="op">=</span> <span class="va">reporting_groups</span>,</span>
+<span>  dfRiskScoreDetail <span class="op">=</span> <span class="va">action_score_detail</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>Reports without <code>Analysis_srs0002</code> keep the original
+layout, and any detail passed to them is ignored.
+<code><a href="https://gilead-public.github.io/gsm.vizr/reference/Widget_GroupOverview.html" class="external-link">gsm.vizr::Widget_GroupOverview()</a></code> callers can request the
+same layout with
+<code>strComparisonRiskMetric = "Analysis_srs0002"</code> and
+<code>dfComparisonRiskDetail</code>; leaving
+<code>strComparisonRiskMetric</code> <code>NULL</code> preserves the
+single-score widget. Cross-study functions accept
+<code>strRiskScoreMetric = "Analysis_srs0002"</code> to display the
+adjusted score.</p>
+</div>
 </div>
 </div>
 <div class="section level2">
@@ -544,7 +628,7 @@ studies</li>
 <strong>Widget creation</strong>: Pass results, metrics, and groups
 metadata to create the interactive visualization</li>
 </ol>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Example: Create cross-study risk score widget</span></span>
 <span><span class="va">cross_study_widget</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Widget_CrossStudyRiskScore.html">Widget_CrossStudyRiskScore</a></span><span class="op">(</span></span>
 <span>  dfResults <span class="op">=</span> <span class="va">multi_study_results</span>,  <span class="co"># Must include Analysis_srs0001</span></span>
