@@ -36,7 +36,6 @@ Imports:
     purrr,
     rlang,
     rmarkdown,
-    scales,
     stringr,
     tibble,
     tidyr,
@@ -53,6 +52,7 @@ Suggests:
     qcthat,
     testthat (>= 3.0.0),
     withr,
+    xml2,
     yaml
 VignetteBuilder: 
     knitr

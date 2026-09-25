@@ -97,7 +97,7 @@ dfStudyGrade %>%
   dplyr::mutate(
     Grade = paste("Grade", Grade),
     Events = round(StudyProportion * nAE),
-    StudyProportion = scales::percent(StudyProportion, accuracy = 0.1)
+    StudyProportion = sprintf("%.1f%%", StudyProportion * 100)
   ) %>%
   dplyr::select(Grade, Events, `% of all AEs` = StudyProportion) %>%
   gt::gt() %>%
@@ -137,8 +137,8 @@ if (is.null(dfMetricResults) || nrow(dfMetricResults) == 0) {
         Site = GroupID,
         Numerator = Numerator,
         `Total AEs` = Denominator,
-        `Site %` = scales::percent(Metric, accuracy = 0.1),
-        `Study %` = scales::percent(nStudyMetric, accuracy = 0.1),
+        `Site %` = sprintf("%.1f%%", Metric * 100),
+        `Study %` = sprintf("%.1f%%", nStudyMetric * 100),
         `Z-score` = round(Score, 2),
         Direction = gsm.kri:::AEGrading_Direction(Flag, params$strMetricID)
       ) %>%

@@ -4,14 +4,16 @@
   AE Grading report. `kri0016` (High-Grade AE Proportion) and `kri0017` (Low-Grade AE
   Proportion) are standard binary metrics — numerator is AEs at the grade of interest,
   denominator is all graded AEs — flagged on a two-sided adjusted z-score so both
-  over- and under-grading surface. Both read `aetoxgr`, which gsm.mapping already
-  exposes, so no mapping changes were needed.
+  over- and under-grading surface (thresholds `-3,-2,2,3`; sites with fewer than 20
+  graded AEs are not flagged). Both read `aetoxgr`, which gsm.mapping already
+  exposes, so no mapping changes were needed (#317).
   The report follows the standard reporting pattern: `Report_AEGrading()` renders
   `inst/report/Report_AEGrading.Rmd`, and the `report_aegrading` module in
   `inst/workflow/4_modules/` wires it into the workflow pipeline. It shows the
   study-wide grade distribution, a grade-by-site stacked bar chart
   (`AEGrading_SiteDistribution()` / `Visualize_GradeBySite()`), and the sites the
-  grading metric flagged. Rendered on the package website as the "AE Grading Report"
+  grading metric flagged with their grading direction. For `kri0017` a positive flag
+  (excess Grade 1 events) is reported as under-grading. Rendered on the package website as the "AE Grading Report"
   example.
 
 # gsm.kri v1.7.0
