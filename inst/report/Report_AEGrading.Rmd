@@ -22,7 +22,7 @@ knitr::opts_chunk$set(
   fig.retina = 2
 )
 library(dplyr)
-library(ggplot2)
+library(gsm.kri)
 library(gt)
 ```
 
@@ -140,12 +140,12 @@ if (is.null(dfMetricResults) || nrow(dfMetricResults) == 0) {
         `Site %` = scales::percent(Metric, accuracy = 0.1),
         `Study %` = scales::percent(nStudyMetric, accuracy = 0.1),
         `Z-score` = round(Score, 2),
-        Direction = ifelse(Flag > 0, "Over-grading", "Under-grading")
+        Direction = gsm.kri:::AEGrading_Direction(Flag, params$strMetricID)
       ) %>%
       gt::gt() %>%
       gt::tab_options(table.width = gt::pct(100)) %>%
       gt::tab_source_note(
-        "Sites flagged by the grading metric on a two-sided adjusted z-score. Over-grading means the site reports a higher proportion of the graded events of interest than the study; under-grading, a lower proportion."
+        "Sites flagged by the grading metric on a two-sided adjusted z-score. Over-grading means the site reports more severe grades than the study: a higher Grade 3+ share, or a lower Grade 1 share. Under-grading is the reverse."
       )
   }
 }
