@@ -75,3 +75,16 @@ test_that("cou0019 stays out of the CM Action Log (#258)", {
   expect_false(meta$GenerateRiskSignal)
   expect_null(meta$RiskScoreWeight)
 })
+
+test_that("kri0019 keeps a site without non-starters green and weights flags 0/4/8 (#312)", {
+  res <- workr::RunWorkflows(
+    kri_workflow("kri0019"),
+    list(Mapped_IPNS = ipns_fixture())
+  )$Analysis_kri0019$Analysis_Flagged
+  res <- res[order(res$GroupID), ]
+
+  expect_equal(res$GroupID, c("I1", "I2", "I3"))
+  expect_equal(res$Score, c(2, 1, 0))
+  expect_equal(res$Flag, c(2, 1, 0))
+  expect_equal(res$Weight, c(8, 4, 0))
+})

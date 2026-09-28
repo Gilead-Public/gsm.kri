@@ -55,7 +55,7 @@ steps:
     params:
       dfInput: Analysis_Input
   - output: Analysis_Analyzed
-    name: Analyze_Identity
+    name: gsm.core::Analyze_Identity
     params:
       dfTransformed: Analysis_Transformed
       strValueCol: Score
