@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">gsm.kri</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">1.7.0</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">1.7.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -51,6 +51,7 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="development version" id="gsmkri-development-version">gsm.kri (development version)<a class="anchor" aria-label="anchor" href="#gsmkri-development-version"></a></h2>
 <ul><li>Added the IP Non-Starters metric: <code>kri0019</code> (site) and <code>cou0019</code> (country) count participants who are Confirmed non-starters or Potential non-starters outside the window. One non-starter flags amber and two or more flag red (<a href="https://github.com/Gilead-Public/gsm.kri/issues/258" class="external-link">#258</a>, <a href="https://github.com/Gilead-Public/gsm.kri/issues/312" class="external-link">#312</a>).</li>
+<li>Redefine <code>kri0007</code> (site) and <code>cou0007</code> (country) as Premature Treatment Discontinuation Rate: dosed participants with a treatment discontinuation date over dosed participants (<a href="https://github.com/Gilead-Public/gsm.kri/issues/301" class="external-link">#301</a>). Studies whose <code>Raw_SUBJ</code> lacks <code>drv_ip_dosed</code> or <code>drv_treatment_discontinuation_dt</code>, or has no dosed participant yet, must remove <code>kri0007</code>/<code>cou0007</code> from <code>workflow/2_metrics</code>, otherwise the metric run stops.</li>
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.7.0" id="gsmkri-v170">gsm.kri v1.7.0<a class="anchor" aria-label="anchor" href="#gsmkri-v170"></a></h2>

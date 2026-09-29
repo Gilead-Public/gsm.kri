@@ -8,6 +8,14 @@
   and two or more flag red
   ([\#258](https://github.com/Gilead-Public/gsm.kri/issues/258),
   [\#312](https://github.com/Gilead-Public/gsm.kri/issues/312)).
+- Redefine `kri0007` (site) and `cou0007` (country) as Premature
+  Treatment Discontinuation Rate: dosed participants with a treatment
+  discontinuation date over dosed participants
+  ([\#301](https://github.com/Gilead-Public/gsm.kri/issues/301)).
+  Studies whose `Raw_SUBJ` lacks `drv_ip_dosed` or
+  `drv_treatment_discontinuation_dt`, or has no dosed participant yet,
+  must remove `kri0007`/`cou0007` from `workflow/2_metrics`, otherwise
+  the metric run stops.
 
 ## gsm.kri v1.7.0
 

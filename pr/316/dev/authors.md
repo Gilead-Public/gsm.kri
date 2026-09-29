@@ -17,13 +17,13 @@ Source:
 [`DESCRIPTION`](https://github.com/Gilead-Public/gsm.kri/blob/feature-312-ipns-config/DESCRIPTION)
 
 Wildfire J, Maxwell L, Childress S (2026). *gsm.kri: Good Statistical
-Monitoring KRIs*. R package version 1.7.0,
+Monitoring KRIs*. R package version 1.7.0.9000,
 <https://github.com/Gilead-Public/gsm.kri>.
 
     @Manual{,
       title = {gsm.kri: Good Statistical Monitoring KRIs},
       author = {Jeremy Wildfire and Laura Maxwell and Spencer Childress},
       year = {2026},
-      note = {R package version 1.7.0},
+      note = {R package version 1.7.0.9000},
       url = {https://github.com/Gilead-Public/gsm.kri},
     }
