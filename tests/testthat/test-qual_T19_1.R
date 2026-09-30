@@ -7,6 +7,11 @@ test_that("Qual: kri0019/cou0019 numerators match an independent derivation (#25
   )
 
   wf <- ipns_mapping_workflows()
+  skip_if_not(
+    "drv_ip_nonstarter_status" %in%
+      names(gsm.mapping::CombineSpecs(wf)$Raw_SUBJ),
+    "installed gsm.mapping spec predates the upstream drv_ fields"
+  )
   lRaw <- gsm.mapping::Ingest(gsm.core::lSource, gsm.mapping::CombineSpecs(wf))
   mapped <- workr::RunWorkflows(wf, lRaw)
 
