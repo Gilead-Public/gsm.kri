@@ -1,0 +1,35 @@
+meta:
+  Type: Report
+  ID: report_ipcompliance
+  Output: html
+  Name: "IP monitoring: IP Non-Starter & Premature Treatment Discontinuation"
+  Description: IP non-starters and premature treatment discontinuation per participant, by study, country and site, with a participant listing
+  Active: true
+spec:
+  Mapped_IPNS:
+    _all:
+      required: true
+  Mapped_SUBJ:
+    _all:
+      required: true
+  Mapped_STUDCOMP:
+    _all:
+      required: true
+  Reporting_Results:
+    _all:
+      required: true
+steps:
+  - output: lListings
+    name: list
+    params:
+      Mapped_IPNS: Mapped_IPNS
+      Mapped_SUBJ: Mapped_SUBJ
+      Mapped_STUDCOMP: Mapped_STUDCOMP
+  - output: strOutputDir
+    name: getwd
+  - output: lReport
+    name: gsm.kri::Report_IPCompliance
+    params:
+      dfResults: Reporting_Results
+      lListings: lListings
+      strOutputDir: strOutputDir
