@@ -22,22 +22,22 @@ rates compared to other sites) a higher *weight* could be assigned to
 the AE KRI flag than the query rate KRI flag. Default flag weights for
 the 12 standard `gsm` are shown below.
 
-| KRI                                 | Low_Red | Low_Amber | High_Amber | High_Red |
-|:------------------------------------|--------:|----------:|-----------:|---------:|
-| Adverse Event                       |      32 |        16 |          1 |        2 |
-| Serious Adverse Event               |       8 |         0 |          4 |        8 |
-| Protocol Deviations                 |       8 |         4 |          8 |       16 |
-| Important Protocol Deviations       |       0 |         0 |         16 |       32 |
-| Labs                                |       0 |         0 |          1 |        2 |
-| Query Rate                          |       0 |         0 |          1 |        2 |
-| Delayed Query Rate                  |       0 |         0 |          1 |        2 |
-| Delayed Data Entry Rate             |       0 |         0 |          1 |        2 |
-| Data Change Rate                    |       0 |         0 |          1 |        2 |
-| Screen Failure                      |       0 |         0 |          8 |       16 |
-| Premature Treatment Discontinuation |       0 |         0 |         16 |       32 |
-| Study Discontinuation               |       0 |         0 |         16 |       32 |
+| KRI                           | Low_Red | Low_Amber | High_Amber | High_Red |
+|:------------------------------|--------:|----------:|-----------:|---------:|
+| Adverse Event                 |      32 |        16 |          1 |        2 |
+| Serious Adverse Event         |       8 |         0 |          4 |        8 |
+| Protocol Deviations           |       8 |         4 |          8 |       16 |
+| Important Protocol Deviations |       0 |         0 |         16 |       32 |
+| Labs                          |       0 |         0 |          1 |        2 |
+| Query Rate                    |       0 |         0 |          1 |        2 |
+| Delayed Query Rate            |       0 |         0 |          1 |        2 |
+| Delayed Data Entry Rate       |       0 |         0 |          1 |        2 |
+| Data Change Rate              |       0 |         0 |          1 |        2 |
+| Screen Failure                |       0 |         0 |          8 |       16 |
+| Treatment Discontinuation     |       0 |         0 |         16 |       32 |
+| Study Discontinuation         |       0 |         0 |         16 |       32 |
 
-Flag Weights for Key Risk Indicators {.table style="width:100%;"}
+Flag Weights for Key Risk Indicators {.table}
 
 The `gsm.core::flag()` function is used to calculate site-level flag
 values and associated weights. Three key parameters are used in the
@@ -124,20 +124,20 @@ Once all flags and weights for all metrics are calculated, a **site risk
 score** is calculated by taking the sum of the weights associated for
 each KRI. Below is a worked example for one site:
 
-| KRI                                 | Flag | Contribution |
-|:------------------------------------|-----:|-------------:|
-| Adverse Event                       |   -2 |           32 |
-| Serious Adverse Event               |    0 |            0 |
-| Protocol Deviations                 |   -1 |            4 |
-| Important Protocol Deviations       |    0 |            0 |
-| Labs                                |    0 |            0 |
-| Query Rate                          |    1 |            1 |
-| Delayed Query Rate                  |    0 |            0 |
-| Delayed Data Entry Rate             |    0 |            0 |
-| Data Change Rate                    |    0 |            0 |
-| Screen Failure                      |    1 |            8 |
-| Premature Treatment Discontinuation |    0 |            0 |
-| Study Discontinuation               |    0 |            0 |
+| KRI                           | Flag | Contribution |
+|:------------------------------|-----:|-------------:|
+| Adverse Event                 |   -2 |           32 |
+| Serious Adverse Event         |    0 |            0 |
+| Protocol Deviations           |   -1 |            4 |
+| Important Protocol Deviations |    0 |            0 |
+| Labs                          |    0 |            0 |
+| Query Rate                    |    1 |            1 |
+| Delayed Query Rate            |    0 |            0 |
+| Delayed Data Entry Rate       |    0 |            0 |
+| Data Change Rate              |    0 |            0 |
+| Screen Failure                |    1 |            8 |
+| Treatment Discontinuation     |    0 |            0 |
+| Study Discontinuation         |    0 |            0 |
 
 Example Site Contributions to Risk Score {.table}
 
