@@ -121,3 +121,11 @@ test_that("bar charts render through gsm.vizr::bars with the status stack (#320)
     )
   )
 })
+
+test_that("the filter script is inlined once (#320)", {
+  html <- render_ipc(dSnapshotDate = ipc_FixtureSnapshotDate)
+  # gregexpr() returns -1 for no match, so count positive positions.
+  hits <- gregexpr("window.ipcRegisterScatter = function", html, fixed = TRUE)[[1]]
+  expect_equal(sum(hits > 0), 1L)
+  expect_match(html, "gsm-viz-select", fixed = TRUE)
+})

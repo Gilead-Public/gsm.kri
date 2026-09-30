@@ -321,3 +321,6 @@ cat(
 ```{r ipc-data, echo=FALSE, eval=has_participants}
 ipc_DataScript(list(status = status_rows, reasons = reason_data))
 ```
+
+```{js, file=system.file("report", "lib", "ipcFilters.js", package = "gsm.kri"), echo=FALSE}
+```
