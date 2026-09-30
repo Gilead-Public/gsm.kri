@@ -260,6 +260,30 @@ test.describe('full report', () => {
     }
   });
 
+  test('a reason bar reaching the axis end keeps its label on the canvas (#320)', async ({ page }) => {
+    for (const level of ['study', 'country', 'site']) {
+      await showTab(page, level, 'Reasons');
+      const id = 'ipc-' + level + '-reasons';
+      await page.waitForTimeout(300);
+      const r = await page.evaluate((id) => {
+        const ch = document.getElementById(id).gsmChart;
+        // Worst case: the longest bar ends exactly at the axis maximum.
+        ch.options.scales.x.max = Math.max(...ch.data.datasets[0].data.map((p) => p.x));
+        ch.update('none');
+        const ctx = ch.ctx;
+        return ch.$datalabels._labels.filter((l) => l._model).map((l) => {
+          ctx.save();
+          ctx.font = l._model.font.string;
+          const w = ctx.measureText(l._model.lines.join(' ')).width;
+          ctx.restore();
+          return { right: l._el.x + 4 + w, width: ch.width };
+        });
+      }, id);
+      expect(r.length, id).toBeGreaterThan(0);
+      for (const l of r) expect(l.right, id).toBeLessThanOrEqual(l.width);
+    }
+  });
+
   test('a jump to the listing leaves its controls clear of the filter strip (#320)', async ({ page }) => {
     await page.evaluate(() => document.getElementById('participant-listing').scrollIntoView());
     await page.waitForTimeout(300);

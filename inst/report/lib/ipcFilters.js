@@ -23,6 +23,23 @@
     return el && el.gsmChart ? el.gsmChart : null;
   }
 
+  // Reason labels sit past the bar end, so the chart keeps room on the right.
+  // updateData() rebuilds scales and plugins but not layout, so this survives
+  // every filter change.
+  var REASON_PAD = 80;
+  function padReasons() {
+    LEVELS.forEach(function (level) {
+      var c = chart('ipc-' + level + '-reasons');
+      if (!c) return;
+      // Write the raw config: assigning through the resolved chart.options proxy recurses.
+      var opts = c.config.options;
+      if (opts.layout && opts.layout.padding && opts.layout.padding.right === REASON_PAD) return;
+      opts.layout = { padding: { right: REASON_PAD } };
+      c.update('none');
+    });
+  }
+  window.addEventListener('load', padReasons);
+
   function statusRows(level) {
     return (ipcData().status[level] || []).filter(function (r) {
       if (r.Dosed !== state.dosed) return false;
@@ -173,6 +190,7 @@
   }
 
   function ipcSync() {
+    padReasons();
     ['all', 'Y', 'N'].forEach(function (value) {
       var button = document.getElementById('ipc-dosed-' + value);
       if (button) button.setAttribute('aria-pressed', String(state.dosed === value));
