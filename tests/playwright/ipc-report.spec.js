@@ -240,6 +240,46 @@ test.describe('full report', () => {
     expect(csv[0]).toContain('Participant ID');
     expect(csv[0]).not.toContain('dosed');
   });
+  test('every reason chart labels each non-zero bar with % and count (#320)', async ({ page }) => {
+    for (const level of ['study', 'country', 'site']) {
+      await showTab(page, level, 'Reasons');
+      const id = 'ipc-' + level + '-reasons';
+      await page.waitForTimeout(300);
+      const r = await page.evaluate((id) => {
+        const ch = document.getElementById(id).gsmChart;
+        // Thin bars, as with a study's full reason list, are where labels went missing.
+        ch.resize(ch.width, 180);
+        ch.update('none');
+        const drawn = ch.$datalabels._labels.filter((l) => l._model).map((l) => l._model.lines.join(' '));
+        const nonZero = ch.data.datasets[0].data.filter((p) => p._datum.n > 0).length;
+        return { drawn, nonZero };
+      }, id);
+      expect(r.nonZero, id).toBeGreaterThan(0);
+      expect(r.drawn.length, id).toBe(r.nonZero);
+      for (const t of r.drawn) expect(t).toMatch(/^\d+\.\d% \(\d+\)$/);
+    }
+  });
+
+  test('a jump to the listing leaves its controls clear of the filter strip (#320)', async ({ page }) => {
+    await page.evaluate(() => document.getElementById('participant-listing').scrollIntoView());
+    await page.waitForTimeout(300);
+    const r = await page.evaluate(() => ({
+      strip: document.getElementById('ipc-filter-strip').getBoundingClientRect().bottom,
+      button: document.querySelector('#participant-listing .dt-buttons').getBoundingClientRect().top,
+    }));
+    expect(r.button).toBeGreaterThanOrEqual(r.strip);
+  });
+
+  test('the overview and listing scroll inside their column instead of widening the page (#320)', async ({ page }) => {
+    await page.setViewportSize({ width: 900, height: 800 });
+    await page.waitForTimeout(300);
+    const r = await page.evaluate(() => {
+      const x = (id) => getComputedStyle(document.getElementById(id)).overflowX;
+      return { overflowX: [x('study-overview'), x('ipc-listing')].join(), pageWider: document.documentElement.scrollWidth > document.documentElement.clientWidth };
+    });
+    expect(r.overflowX).toBe('auto,auto');
+    expect(r.pageWider).toBe(false);
+  });
 });
 
 test('degraded page shows the not-available text and no PTD segment (#320)', async ({ page }) => {

@@ -129,3 +129,10 @@ test_that("the filter script is inlined once (#320)", {
   expect_equal(sum(hits > 0), 1L)
   expect_match(html, "gsm-viz-select", fixed = TRUE)
 })
+
+test_that("the scatter note places events above the diagonal (#320)", {
+  html <- render_ipc(dSnapshotDate = ipc_FixtureSnapshotDate)
+  # Pandoc may wrap the sentence across lines.
+  expect_match(html, "Points above it\\s+had their event")
+  expect_false(grepl("Points below it", html, fixed = TRUE))
+})

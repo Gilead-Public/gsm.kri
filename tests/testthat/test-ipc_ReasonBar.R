@@ -82,4 +82,8 @@ test_that("the reason spec pins the frequency order on a horizontal bar (#320)",
   expect_equal(spec$scales$y$label, "% of dosed participants")
   expect_s3_class(spec$annotations$labels$segment$formatter, "JS_EVAL")
   expect_s3_class(spec$tooltip$formatter, "JS_EVAL")
+  # On horizontal bars gsm.viz measures label width against bar height and
+  # drops every label unless this check is off.
+  expect_false(spec$annotations$labels$segment$avoidCategoryOverlap)
+  expect_equal(spec$annotations$labels$segment$placement, "end")
 })

@@ -115,9 +115,17 @@ ipc_ReasonBarSpec <- function(vReasonOrder) {
       y = list(label = "% of dosed participants"),
       fill = list(palette = list(strColor))
     ),
-    # Centred labels; a bar too short for its label shows it on hover only.
+    # Labels sit past the bar end. gsm.viz would otherwise measure label width
+    # against bar height and drop every label on these horizontal bars.
     annotations = list(
-      labels = list(segment = list(display = TRUE, formatter = label))
+      labels = list(
+        segment = list(
+          display = TRUE,
+          formatter = label,
+          placement = "end",
+          avoidCategoryOverlap = FALSE
+        )
+      )
     ),
     tooltip = list(formatter = label)
   )

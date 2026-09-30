@@ -67,7 +67,7 @@ reasons_note <- function(level) {
   )
 }
 reasons_text <- "\n> Bars are % of dosed participants in scope; a participant counts once under each of their reasons. A discontinuation without a reason shows as **Not yet recorded**.\n"
-tte_text <- "\n> Points on the dashed diagonal have no event yet: potential IP non-starters and **Ongoing** participants. Points below it had their event: study completion (**Study complete**), treatment discontinuation (**Premature treatment discontinuation**) or study completion record (**Confirmed IP non-starter**). Squares are dosed participants, circles are not dosed. Click a legend entry to hide a status in every scatter; double-click to show only that status.\n"
+tte_text <- "\n> Points on the dashed diagonal have no event yet: potential IP non-starters and **Ongoing** participants. Points above it had their event: study completion (**Study complete**), treatment discontinuation (**Premature treatment discontinuation**) or study completion record (**Confirmed IP non-starter**). Squares are dosed participants, circles are not dosed. Click a legend entry to hide a status in every scatter; double-click to show only that status.\n"
 ```
 
 # IP monitoring: IP Non-Starter & Premature Treatment Discontinuation
@@ -97,6 +97,9 @@ cat('
 .ipc-chip button { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; padding: 0; border: none; border-radius: 50%; background-color: transparent; color: #3C587F; font-size: 13px; line-height: 1; cursor: pointer; }
 .ipc-chip button:hover { background-color: #3C587F; color: #ffffff; }
 .ipc-note { color: #8A5A00; background-color: #FFF6E0; padding: 6px 10px; border-radius: 4px; }
+/* Clears the navbar and the sticky strip when a contents link jumps to a section. */
+.section.level2, .section.level3 { scroll-margin-top: 100px; }
+#study-overview, #ipc-listing { overflow-x: auto; }
 </style>
 ')
 ```
