@@ -1,59 +1,58 @@
 meta:
   Active: true
   Type: Analysis
-  ID: kri0019
-  GroupLevel: Site
-  Abbreviation: IPNS
-  Metric: IP Non-Starter Rate
-  Numerator: IP Non-Starters (Confirmed or Potential outside window)
-  Denominator: Enrolled Subjects
-  Model: Identity
-  Score: Numerator
-  AnalysisType: identity
-  Threshold: "1,2"
+  ID: cou0007-2
+  GroupLevel: Country
+  Abbreviation: PTDC
+  Metric: Premature Treatment Discontinuation Rate
+  Numerator: Enrolled and dosed participants who discontinue IP prematurely
+  Denominator: Enrolled & Dosed Subjects
+  Model: Normal Approximation
+  Score: Adjusted Z-Score
+  AnalysisType: binary
+  Threshold: "2,3"
   Flag: "0,1,2"
-  RiskScoreWeight: "0,4,8"
-  AccrualThreshold: 1
-  AccrualMetric: Denominator
+  AccrualThreshold: 3
+  AccrualMetric: Numerator
   GenerateRiskSignal: true
 spec:
-  Mapped_IPNS:
+  Mapped_SUBJ:
     subjid:
       type: character
-    invid:
+    country:
       type: character
-    ipns_status_ord:
-      type: integer
+    drv_ip_dosed:
+      type: character
+    drv_treatment_discontinuation_dt:
+      type: Date
 steps:
   - output: vThreshold
     name: gsm.core::ParseThreshold
     params:
       strThreshold: Threshold
-  - output: vRiskScoreWeight
-    name: gsm.core::ParseThreshold
-    params:
-      strThreshold: RiskScoreWeight
-      bSort: false
   - output: vFlag
     name: gsm.core::ParseThreshold
     params:
       strThreshold: Flag
-      bSort: false
-  # NULL ordinals fall out of the numerator here and stay in the denominator
-  # below, so an unrecognised status is never counted as a non-starter.
-  - output: Temp_IPNS
+  # Dosed subjects only: a site without a dosed subject drops out of the results.
+  - output: Temp_DOSED
     name: workr::RunQuery
     params:
-      df: Mapped_IPNS
-      strQuery: "SELECT * FROM df WHERE ipns_status_ord >= 2"
+      df: Mapped_SUBJ
+      strQuery: "SELECT * FROM df WHERE drv_ip_dosed = 'Y'"
+  - output: Temp_DISCONTINUED
+    name: workr::RunQuery
+    params:
+      df: Mapped_SUBJ
+      strQuery: "SELECT * FROM df WHERE drv_ip_dosed = 'Y' AND drv_treatment_discontinuation_dt IS NOT NULL"
   - output: Analysis_Input
     name: gsm.core::Input_Rate
     params:
-      dfSubjects: Mapped_IPNS
-      dfNumerator: Temp_IPNS
-      dfDenominator: Mapped_IPNS
+      dfSubjects: Temp_DOSED
+      dfNumerator: Temp_DISCONTINUED
+      dfDenominator: Temp_DOSED
       strSubjectCol: subjid
-      strGroupCol: invid
+      strGroupCol: country
       strGroupLevel: GroupLevel
       strNumeratorMethod: Count
       strDenominatorMethod: Count
@@ -62,17 +61,16 @@ steps:
     params:
       dfInput: Analysis_Input
   - output: Analysis_Analyzed
-    name: gsm.core::Analyze_Identity
+    name: Analyze_NormalApprox
     params:
       dfTransformed: Analysis_Transformed
-      strValueCol: Score
+      strType: AnalysisType
   - output: Analysis_Flagged
-    name: gsm.core::Flag
+    name: gsm.core::Flag_NormalApprox
     params:
       dfAnalyzed: Analysis_Analyzed
       vThreshold: vThreshold
       vFlag: vFlag
-      vRiskScoreWeight: vRiskScoreWeight
       nAccrualThreshold: AccrualThreshold
       strAccrualMetric: AccrualMetric
   - output: Analysis_Summary
@@ -88,3 +86,4 @@ steps:
       Analysis_Analyzed: Analysis_Analyzed
       Analysis_Flagged: Analysis_Flagged
       Analysis_Summary: Analysis_Summary
+
