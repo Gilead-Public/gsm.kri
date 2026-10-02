@@ -1,0 +1,329 @@
+---
+# pagetitle sets only the browser tab; the visible title is the H1 below, which
+# also renders in the knit_child pkgdown embed.
+pagetitle: "IP monitoring: IP Non-Starter & Premature Treatment Discontinuation"
+output:
+  html_document:
+    mathjax: null
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    css: styles.css
+params:
+  dfResults: NA
+  lListings: NA
+  dSnapshotDate: NA
+---
+
+```{r setup, include=FALSE}
+library(gsm.kri)
+
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+
+lListings <- params$lListings
+dSnapshotDate <- params$dSnapshotDate
+Mapped_SUBJ <- lListings$Mapped_SUBJ
+
+# One classified frame feeds every chart, the overview and the listing.
+bHasPTD <- !is.null(Mapped_SUBJ) &&
+  "drv_treatment_discontinuation_dt" %in% names(Mapped_SUBJ)
+dfIPC <- ipc_ClassifyParticipants(
+  dfIPNS = lListings$Mapped_IPNS,
+  dfSubj = Mapped_SUBJ,
+  dfStudComp = lListings$Mapped_STUDCOMP,
+  dSnapshotDate = dSnapshotDate
+)
+has_participants <- nrow(dfIPC) > 0
+dfStats <- ipc_OverviewStats(dfIPC, bHasPTD)
+status_rows <- lapply(
+  c(study = "study", country = "country", site = "site"),
+  function(level) ipc_StatusRows(dfIPC, level)
+)
+reason_data <- ipc_ReasonRows(dfIPC, bHasPTD)
+has_reasons <- has_participants && length(reason_data$order) > 0
+# One range for the three scatters.
+nMaxDays <- max(c(1, dfIPC$days_since_enrl, dfIPC$days_to_event), na.rm = TRUE)
+
+status_note <- function(level) {
+  cat(
+    "\n> One bar per ", level, ", as % of its participants: all enrolled, or only dosed or not dosed when the participant filter is set. Use the chart's position control for counts.",
+    if (level != "study") paste0(" Click a ", level, " bar to filter."),
+    "\n",
+    sep = ""
+  )
+}
+reasons_empty <- if (bHasPTD) {
+  "\n> No premature treatment discontinuations recorded.\n"
+} else {
+  "\n> Premature treatment discontinuation data not available.\n"
+}
+reasons_note <- function(level) {
+  htmltools::tags$p(
+    id = paste0("ipc-", level, "-reasons-note"),
+    class = "ipc-note",
+    style = "display:none;",
+    "No premature treatment discontinuations: the Not dosed filter excludes every dosed participant."
+  )
+}
+reasons_text <- "\n> Bars are % of dosed participants in scope; a participant counts once under each of their reasons. A discontinuation without a reason shows as **Not yet recorded**.\n"
+tte_text <- "\n> Points on the dashed diagonal have no event yet: potential IP non-starters and **Ongoing** participants. Points above it had their event: study completion (**Study complete**), treatment discontinuation (**Premature treatment discontinuation**) or study completion record (**Confirmed IP non-starter**). Squares are dosed participants, circles are not dosed. Click a legend entry to hide a status in every scatter; double-click to show only that status.\n"
+```
+
+# IP monitoring: IP Non-Starter & Premature Treatment Discontinuation
+
+```{r subtitle, echo=FALSE, results='asis'}
+cat(sprintf(
+  "**Study:** %s  \n*Snapshot date: %s*\n\n",
+  paste(unique(dfIPC$studyid), collapse = ", "),
+  format(dSnapshotDate)
+))
+```
+
+```{r filter-strip-css, echo=FALSE, results='asis'}
+# Inline and literal hex: the pkgdown embed loads neither styles.css nor its
+# var(--...) tokens.
+cat('
+<style>
+.ipc-filter-strip { position: sticky; top: 48px; z-index: 1029; display: flex; align-items: center; flex-wrap: wrap; gap: 10px; background-color: #f1f7fe; border-bottom: 1px solid #cfe3fb; padding: 8px 14px; margin: 0 0 16px; }
+.ipc-filter-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #5b7193; }
+.ipc-dosed { display: inline-flex; border: 1px solid #3C587F; border-radius: 16px; overflow: hidden; }
+.ipc-dosed button { border: none; background-color: #ffffff; color: #3C587F; font-size: 13px; padding: 3px 12px; cursor: pointer; }
+.ipc-dosed button + button { border-left: 1px solid #3C587F; }
+.ipc-dosed button[aria-pressed="true"] { background-color: #3C587F; color: #ffffff; }
+.ipc-dosed button:focus-visible, .ipc-chip button:focus-visible { outline: 2px solid #3C587F; outline-offset: 2px; }
+.ipc-chip { display: inline-flex; align-items: center; gap: 6px; background-color: #ffffff; border: 1px solid #3C587F; border-radius: 16px; padding: 3px 6px 3px 12px; font-size: 13px; color: #3C587F; }
+.ipc-chip-value { font-weight: 600; }
+.ipc-chip button { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; padding: 0; border: none; border-radius: 50%; background-color: transparent; color: #3C587F; font-size: 13px; line-height: 1; cursor: pointer; }
+.ipc-chip button:hover { background-color: #3C587F; color: #ffffff; }
+.ipc-note { color: #8A5A00; background-color: #FFF6E0; padding: 6px 10px; border-radius: 4px; }
+/* Clears the navbar and the sticky strip when a contents link jumps to a section. */
+.section.level2, .section.level3 { scroll-margin-top: 100px; }
+#study-overview, #ipc-listing { overflow-x: auto; }
+</style>
+')
+```
+
+```{r filter-strip, echo=FALSE}
+# htmltools, not raw HTML, so pandoc does not wrap the controls in a <p>.
+chip <- function(key, label) {
+  htmltools::tags$span(
+    id = paste0("ipc-chip-", key),
+    class = "ipc-chip",
+    style = "display:none;",
+    htmltools::tags$span(label, ": ", htmltools::tags$span(class = "ipc-chip-value")),
+    htmltools::tags$button(
+      type = "button",
+      `data-ipc-clear` = key,
+      `aria-label` = paste("Clear", tolower(label), "filter"),
+      htmltools::HTML("&times;")
+    )
+  )
+}
+dosed_button <- function(value, label) {
+  htmltools::tags$button(
+    id = paste0("ipc-dosed-", value),
+    type = "button",
+    `data-ipc-dosed` = value,
+    `aria-pressed` = if (value == "all") "true" else "false",
+    label
+  )
+}
+htmltools::tags$div(
+  id = "ipc-filter-strip",
+  class = "ipc-filter-strip",
+  htmltools::tags$span(class = "ipc-filter-eyebrow", "Participants"),
+  htmltools::tags$span(
+    class = "ipc-dosed",
+    role = "group",
+    `aria-label` = "Dosed filter",
+    dosed_button("all", "All"),
+    dosed_button("Y", "Dosed"),
+    dosed_button("N", "Not dosed")
+  ),
+  chip("country", "Country"),
+  chip("site", "Site")
+)
+```
+
+## Study Overview
+
+```{r overview, echo=FALSE}
+overview_cell <- function(n, pct, base) {
+  if (is.na(n)) {
+    return("Premature treatment discontinuation data not available")
+  }
+  paste0(
+    "<div style='font-size:1.1em'>", n, "</div>",
+    if (!is.na(pct)) {
+      sprintf("<div style='color:#666;font-size:smaller'>%.1f%% of %s</div>", pct, base)
+    }
+  )
+}
+knitr::kable(
+  as.data.frame(
+    as.list(stats::setNames(
+      unlist(Map(overview_cell, dfStats$n, dfStats$pct, dfStats$base)),
+      dfStats$label
+    )),
+    check.names = FALSE
+  ),
+  format = "html",
+  escape = FALSE,
+  align = "r",
+  table.attr = "class=\"table table-bordered\""
+)
+```
+
+```{r empty-state, echo=FALSE, results='asis', eval=!has_participants}
+cat("\n> **No enrolled participants.** The charts and the participant listing are empty for this snapshot.\n")
+```
+
+## Study {.tabset .tabset-pills}
+
+### Status
+```{r study-status, echo=FALSE, eval=has_participants}
+gsm.vizr::bars(
+  data = status_rows$study[status_rows$study$Dosed == "all", ],
+  spec = ipc_StatusBarSpec("study"),
+  metadata = list(chartId = "ipc-study-status", level = "study"),
+  # One bar needs far less than the 500px default floor.
+  height = 230,
+  minHeight = 230
+)
+```
+
+```{r study-status-note, echo=FALSE, results='asis', eval=has_participants}
+status_note("study")
+```
+
+### Reasons
+```{r study-reasons, echo=FALSE, eval=has_reasons}
+htmltools::tagList(
+  reasons_note("study"),
+  gsm.vizr::bars(
+    data = reason_data$study,
+    spec = ipc_ReasonBarSpec(reason_data$order),
+    metadata = list(chartId = "ipc-study-reasons", level = "study")
+  )
+)
+```
+
+```{r study-reasons-text, echo=FALSE, results='asis', eval=has_participants}
+cat(if (has_reasons) reasons_text else reasons_empty)
+```
+
+### Time to event
+```{r study-tte, echo=FALSE, eval=has_participants}
+htmltools::div(id = "ipc-study-tte", ipc_TimeToEventScatter(dfIPC, nMaxDays, "ipc-study-tte"))
+```
+
+```{r study-tte-note, echo=FALSE, results='asis', eval=has_participants}
+cat(tte_text)
+```
+
+## Country {.tabset .tabset-pills}
+
+### Status
+```{r country-status, echo=FALSE, eval=has_participants}
+gsm.vizr::bars(
+  data = status_rows$country[status_rows$country$Dosed == "all", ],
+  spec = ipc_StatusBarSpec("country"),
+  metadata = list(chartId = "ipc-country-status", level = "country")
+)
+```
+
+```{r country-status-note, echo=FALSE, results='asis', eval=has_participants}
+status_note("country")
+```
+
+### Reasons
+```{r country-reasons, echo=FALSE, eval=has_reasons}
+htmltools::tagList(
+  reasons_note("country"),
+  gsm.vizr::bars(
+    data = reason_data$study,
+    spec = ipc_ReasonBarSpec(reason_data$order),
+    metadata = list(chartId = "ipc-country-reasons", level = "country")
+  )
+)
+```
+
+```{r country-reasons-text, echo=FALSE, results='asis', eval=has_participants}
+cat(if (has_reasons) reasons_text else reasons_empty)
+```
+
+### Time to event
+```{r country-tte, echo=FALSE, eval=has_participants}
+htmltools::div(id = "ipc-country-tte", ipc_TimeToEventScatter(dfIPC, nMaxDays, "ipc-country-tte"))
+```
+
+```{r country-tte-note, echo=FALSE, results='asis', eval=has_participants}
+cat(tte_text)
+```
+
+## Site {.tabset .tabset-pills}
+
+### Status
+```{r site-status, echo=FALSE, eval=has_participants}
+gsm.vizr::bars(
+  data = status_rows$site[status_rows$site$Dosed == "all", ],
+  spec = ipc_StatusBarSpec("site"),
+  metadata = list(chartId = "ipc-site-status", level = "site")
+)
+```
+
+```{r site-status-note, echo=FALSE, results='asis', eval=has_participants}
+status_note("site")
+```
+
+### Reasons
+```{r site-reasons, echo=FALSE, eval=has_reasons}
+htmltools::tagList(
+  reasons_note("site"),
+  gsm.vizr::bars(
+    data = reason_data$study,
+    spec = ipc_ReasonBarSpec(reason_data$order),
+    metadata = list(chartId = "ipc-site-reasons", level = "site")
+  )
+)
+```
+
+```{r site-reasons-text, echo=FALSE, results='asis', eval=has_participants}
+cat(if (has_reasons) reasons_text else reasons_empty)
+```
+
+### Time to event
+```{r site-tte, echo=FALSE, eval=has_participants}
+htmltools::div(id = "ipc-site-tte", ipc_TimeToEventScatter(dfIPC, nMaxDays, "ipc-site-tte"))
+```
+
+```{r site-tte-note, echo=FALSE, results='asis', eval=has_participants}
+cat(tte_text)
+```
+
+## Participant listing
+
+```{r listing, echo=FALSE, eval=has_participants}
+ipc_Listing(ipc_ListingData(dfIPC, bHasPTD))
+```
+
+```{r listing-note, echo=FALSE, results='asis'}
+cat(
+  "\n",
+  "> - Only one **Status** is assigned to each participant (enrolled only).\n",
+  "> - **IP non-starter statuses** (potential within window, potential outside window, confirmed) = participant not dosed.\n",
+  "> - **Premature treatment discontinuation** = dosed participant with a recorded treatment discontinuation date; takes precedence over Study complete.\n",
+  "> - **Study complete** = study completion CRF is completed.\n",
+  "> - **Ongoing** = no other status criteria met.\n",
+  "> - **Consent withdrawn** is a separate flag, not a status: the study completion CRF reports withdrawal of consent (`compreas`).\n",
+  sep = ""
+)
+```
+
+```{r ipc-data, echo=FALSE, eval=has_participants}
+ipc_DataScript(list(status = status_rows, reasons = reason_data))
+```
+
+```{js, file=system.file("report", "lib", "ipcFilters.js", package = "gsm.kri"), echo=FALSE}
+```

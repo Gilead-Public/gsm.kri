@@ -9,6 +9,7 @@
   Discontinuation Rate) as the default; these stay available but inactive (#301).
 - The KRI report labels inactive metrics with an "Inactive" badge and lists them last
   (#325).
+- Add the IP monitoring report, `Report_IPCompliance()` (module `report_ipcompliance`): IP non-starters and premature treatment discontinuation for every enrolled participant by study, country and site, with a participant listing (#320).
 
 # gsm.kri v1.7.0
 
