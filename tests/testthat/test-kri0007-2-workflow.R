@@ -85,22 +85,28 @@ test_that("kri0007-2/cou0007-2 read only Mapped_SUBJ and keep the PTDC calibrati
   expect_null(cou$meta$RiskScoreWeight)
 })
 
-test_that("kri0007-2/cou0007-2 ship inactive, so default workflow lists skip them (#301)", {
+test_that("kri0007-2/cou0007-2 are active and kri0007/cou0007 inactive, so default workflow lists run only the -2 pair (#301)", {
   wf <- workr::MakeWorkflowList(
     strPath = file.path(system.file(package = "gsm.kri"), "workflow", "2_metrics")
   )
 
-  expect_false(any(c("kri0007-2", "cou0007-2") %in% names(wf)))
-  expect_true(all(c("kri0007", "cou0007") %in% names(wf)))
-  expect_false(isTRUE(read_meta("kri0007-2")$meta$Active))
-  expect_false(isTRUE(read_meta("cou0007-2")$meta$Active))
+  expect_true(all(c("kri0007-2", "cou0007-2") %in% names(wf)))
+  expect_false(any(c("kri0007", "cou0007") %in% names(wf)))
+  for (id in c("kri0007-2", "cou0007-2")) {
+    expect_true(read_meta(id)$meta$Active)
+  }
+  for (id in c("kri0007", "cou0007")) {
+    expect_false(read_meta(id)$meta$Active)
+  }
 })
 
-test_that("selecting kri0007/cou0007 by name does not pick up the -2 variants (#301)", {
-  # The default name match is a pattern, so "kri0007" also hits kri0007-2.yaml;
-  # the inactive flag is what keeps the variant out.
-  expect_named(kri_workflow("kri0007"), "kri0007")
-  expect_named(kri_workflow("cou0007"), "cou0007")
+test_that("kri0007/cou0007 are still selectable by exact name with inactive workflows included (#301)", {
+  # The default name match is a pattern and skips inactive workflows, so
+  # "kri0007" alone returns kri0007-2.
+  expect_named(kri_workflow("kri0007"), "kri0007-2")
+  expect_named(kri_workflow("cou0007"), "cou0007-2")
+  expect_named(ptd_workflow("kri0007"), "kri0007")
+  expect_named(ptd_workflow("cou0007"), "cou0007")
 })
 
 test_that("kri0007/cou0007 keep the Treatment Discontinuation Rate definition (#301)", {

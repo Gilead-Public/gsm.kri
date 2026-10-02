@@ -48,8 +48,8 @@ ptd_fixture <- function() {
   )
 }
 
-# kri0007-2/cou0007-2 ship inactive; the default list (bActiveOnly = TRUE) skips
-# them. I() selects the file by exact name rather than by pattern.
+# I() selects the file by exact name rather than by pattern, and
+# bActiveOnly = FALSE also returns the inactive kri0007/cou0007.
 ptd_workflow <- function(id) {
   workr::MakeWorkflowList(
     strNames = I(id),

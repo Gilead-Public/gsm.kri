@@ -5,7 +5,8 @@
   window. One non-starter flags amber and two or more flag red (#258, #312).
 - Added the Premature Treatment Discontinuation Rate metric: `kri0007-2` (site) and
   `cou0007-2` (country), counting dosed participants with a treatment discontinuation
-  date over dosed participants. It ships inactive; set `Active: true` to use it (#301).
+  date over dosed participants. It replaces `kri0007`/`cou0007` (Treatment
+  Discontinuation Rate) as the default; these stay available but inactive (#301).
 
 # gsm.kri v1.7.0
 
