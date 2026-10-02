@@ -83,5 +83,5 @@ dfRiskScore <- CalculateRiskScore(dfResults, dfWeights)
 #> - Analysis_kri0006
 #> - Analysis_kri0010
 #> - Analysis_kri0013
-#> - Analysis_kri0007-2.
+#> - Analysis_kri0007.
 ```
