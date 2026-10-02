@@ -30,6 +30,10 @@ setup <- Report_Setup(
   dfGroups = params$dfGroups
 )
 
+# Inactive metrics are labelled and listed last, so they are not read as current signals.
+vInactive <- params$dfMetrics$MetricID[params$dfMetrics[["Active"]] %in% FALSE]
+dfMetrics <- params$dfMetrics[order(params$dfMetrics$MetricID %in% vInactive), ]
+
 ```
 
 
@@ -67,7 +71,7 @@ dfResults_current <- FilterByLatestSnapshotDate(params$dfResults)
 
 GroupOverViz <- Widget_GroupOverview(
   dfResults = dfResults_current,
-  dfMetrics = params$dfMetrics,
+  dfMetrics = dfMetrics,
   dfGroups = params$dfGroups,
   strGroupLevel = setup$GroupLevel,
   strGroupSubset = switch(setup$GroupLevel,
@@ -98,7 +102,7 @@ if (any(grepl("_Change", names(params$dfResults)))) {
 
   overview_viz$flagOverTime <- Widget_FlagOverTime(
     dfResults = dfResultsFlagged,
-    dfMetrics = params$dfMetrics,
+    dfMetrics = dfMetrics,
     strGroupLevel = setup$GroupLevel,
     strFootnote = glue::glue(
       "Table displays the {
@@ -131,7 +135,7 @@ Report_OverviewText(
 
 # Add custom GroupLabel and MetricLabel values to dfResults
 dfResults_delta <- dfResults_current %>%         
-  dplyr::left_join(params$dfMetrics %>% dplyr::select(MetricID, MetricName=Metric), 
+  dplyr::left_join(dfMetrics %>% dplyr::select(MetricID, MetricName=Metric), 
                    by = "MetricID") %>%
   dplyr::mutate(MetricLabel = dplyr::coalesce(MetricName, MetricID)) %>%
   add_Groups_metadata(
@@ -150,11 +154,21 @@ Report_FlagChange(dfResults = dfResults_delta)
 ```{r, echo=FALSE, results='asis'}
 ## remove srs metrics from the list of metrics for results section
 vMetrics <- unique(params$dfResults$MetricID)[grep("srs", unique(params$dfResults$MetricID), invert = TRUE)]
+vMetrics <- c(setdiff(vMetrics, vInactive), intersect(vMetrics, vInactive))
 
 for (i in vMetrics) {
-  lMetric <- params$dfMetrics %>% dplyr::filter(MetricID == i) %>% as.list
+  lMetric <- dfMetrics %>% dplyr::filter(MetricID == i) %>% as.list
 
-  print(htmltools::h3(lMetric$Metric))
+  print(htmltools::h3(
+    lMetric$Metric,
+    if (i %in% vInactive) {
+      htmltools::span(
+        "Inactive",
+        class = "metric-inactive",
+        style = "margin-left:8px;padding:2px 8px;border-radius:10px;background:#6c757d;color:#ffffff;font-size:12px;font-weight:normal;white-space:nowrap;vertical-align:middle;"
+      )
+    }
+  ))
   
   Report_MetricCharts(
     lCharts = params$lCharts[[lMetric$MetricID]],
@@ -170,7 +184,7 @@ for (i in vMetrics) {
 ## Metric Details
 ```{r, echo=FALSE, results='asis'}
 #print dfMetrics table
-params$dfMetrics %>%
+dfMetrics %>%
   gt::gt()
 ```
 
