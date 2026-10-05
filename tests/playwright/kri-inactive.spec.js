@@ -26,7 +26,11 @@ test('inactive metric is listed last in Results with an Inactive badge', async (
   // firstChild is the header's own text, without the badge.
   const names = await headers.evaluateAll((els) => els.map((el) => el.firstChild.textContent.trim()));
   expect(names).toEqual([...ACTIVE, INACTIVE]);
-  await expect(headers.last().locator('.metric-inactive')).toHaveText('Inactive');
+  const badge = headers.last().locator('.metric-inactive');
+  await expect(badge).toHaveText('Inactive');
+  // Light red with dark red text, so the badge stands out from the header.
+  await expect(badge).toHaveCSS('background-color', 'rgb(248, 215, 218)');
+  await expect(badge).toHaveCSS('color', 'rgb(132, 32, 41)');
   await expect(page.locator('#results .metric-inactive')).toHaveCount(1);
 });
 

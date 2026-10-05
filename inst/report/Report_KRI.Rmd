@@ -165,7 +165,7 @@ for (i in vMetrics) {
       htmltools::span(
         "Inactive",
         class = "metric-inactive",
-        style = "margin-left:8px;padding:2px 8px;border-radius:10px;background:#6c757d;color:#ffffff;font-size:12px;font-weight:normal;white-space:nowrap;vertical-align:middle;"
+        style = "margin-left:8px;padding:2px 8px;border-radius:10px;background:#f8d7da;color:#842029;border:1px solid #f5c2c7;font-size:12px;font-weight:normal;white-space:nowrap;vertical-align:middle;"
       )
     }
   ))
