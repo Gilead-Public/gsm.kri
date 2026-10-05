@@ -12,7 +12,7 @@
   (site) and `cou0007-2` (country), counting dosed participants with a
   treatment discontinuation date over dosed participants. It replaces
   `kri0007`/`cou0007` (Treatment Discontinuation Rate) as the default;
-  these stay available but inactive
+  these stay available but inactive and no longer generate risk signals
   ([\#301](https://github.com/Gilead-Public/gsm.kri/issues/301)).
 - The KRI report labels inactive metrics with an “Inactive” badge and
   lists them last
