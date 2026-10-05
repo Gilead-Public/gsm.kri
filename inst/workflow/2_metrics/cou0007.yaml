@@ -14,7 +14,7 @@ meta:
   Flag: "0,1,2"
   AccrualThreshold: 3
   AccrualMetric: Numerator
-  GenerateRiskSignal: true
+  GenerateRiskSignal: false
 spec:
   Mapped_SUBJ:
     subjid:

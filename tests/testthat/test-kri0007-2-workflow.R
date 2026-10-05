@@ -100,6 +100,13 @@ test_that("kri0007-2/cou0007-2 are active and kri0007/cou0007 inactive, so defau
   }
 })
 
+test_that("kri0007/cou0007 generate no risk signals (#301)", {
+  # Still runnable by exact name, so the flag must be off too.
+  for (id in c("kri0007", "cou0007")) {
+    expect_false(read_meta(id)$meta$GenerateRiskSignal)
+  }
+})
+
 test_that("kri0007/cou0007 are still selectable by exact name with inactive workflows included (#301)", {
   # The default name match is a pattern and skips inactive workflows, so
   # "kri0007" alone returns kri0007-2.
