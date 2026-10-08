@@ -1,6 +1,6 @@
 # gsm.kri (development version)
 
-- Add the IP monitoring report, `Report_IPCompliance()` (module `report_ipcompliance`): IP non-starters and premature treatment discontinuation for every enrolled participant by study, country and site, with a participant listing (#320).
+- Add the IP monitoring report for IP non-starters and premature treatment discontinuations (#320).
 
 # gsm.kri v1.7.0
 
