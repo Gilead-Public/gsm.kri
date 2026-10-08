@@ -1,5 +1,11 @@
 # Changelog
 
+## gsm.kri (development version)
+
+- Add the IP monitoring report for IP non-starters and premature
+  treatment discontinuations
+  ([\#320](https://github.com/Gilead-Public/gsm.kri/issues/320)).
+
 ## gsm.kri v1.7.0
 
 This minor release moves every gsm.viz-backed chart onto gsm.vizr: the
