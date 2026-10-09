@@ -1,0 +1,73 @@
+---
+title: "IP Compliance Report"
+author: "[gsm.kri](https://gilead-public.github.io/gsm.kri) Example"
+description: "Example IP monitoring report (IP non-starters and premature treatment discontinuation) generated with gsm.kri"
+index: 4
+date: "`r format(Sys.time(), '%B %d, %Y %H:%M:%S %Z')`"
+output:
+  html_document:
+    mathjax: null
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    css: ../report/styles.css
+---
+# Set Up
+This page provides a sample IP monitoring report generated using the `gsm.kri` package. Expand the "Setup" section below to see the code used to generate the report. Or scroll down for the standard report output.
+
+<details>
+<summary>Setup</summary>
+
+```{r}
+# Load libraries
+library(gsm.core)
+library(gsm.mapping)
+library(gsm.kri)
+
+# --- Step 1: Map the subject, study completion and IP non-starter data ------
+mappings_wf <- MakeWorkflowList(
+  strNames = c("SUBJ", "STUDCOMP", "IPNS"),
+  strPath = "workflow/1_mappings",
+  strPackage = "gsm.mapping",
+  bExact = TRUE
+)
+lRaw <- Ingest(gsm.core::lSource, CombineSpecs(mappings_wf))
+lMapped <- RunWorkflows(mappings_wf, lRaw)
+
+# --- Step 2: Pick "today" -----------------------------------------------------
+# The bundled data stops years before its reporting snapshots, so "today" is its
+# own as-of date, recovered from the not-dosed participants' day counts.
+dSnapshotDate <- with(
+  lMapped$Mapped_IPNS,
+  max(drv_enrollment_dt + drv_days_lapsed_since_enrl - 1, na.rm = TRUE)
+)
+
+lListings <- list(
+  Mapped_IPNS = lMapped$Mapped_IPNS,
+  Mapped_SUBJ = lMapped$Mapped_SUBJ,
+  Mapped_STUDCOMP = lMapped$Mapped_STUDCOMP
+)
+```
+
+</details>
+
+```{r, echo=FALSE, results='asis'}
+## Render example report inline using knit_child
+child_env <- list2env(
+  list(
+    params = list(
+      dfResults = NULL,
+      lListings = lListings,
+      dSnapshotDate = dSnapshotDate
+    )
+  ),
+  parent = environment()
+)
+report_ip_compliance <- knitr::knit_child(
+  system.file("report", "Report_IPCompliance.Rmd", package = "gsm.kri"),
+  envir = child_env,
+  quiet = TRUE
+)
+cat(report_ip_compliance, sep = "\n")
+```
