@@ -30,6 +30,7 @@
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/Report_FlagChange.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/Report_FlagOverTime.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/Report_FormatFlag.html</loc></url>
+<url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/Report_IPCompliance.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/Report_KRI.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/Report_MetricCharts.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/Report_MetricTable.html</loc></url>
@@ -54,6 +55,17 @@
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/gt-shared.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/gt_style.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/index.html</loc></url>
+<url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/ipc_ClassifyParticipants.html</loc></url>
+<url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/ipc_DataScript.html</loc></url>
+<url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/ipc_Listing.html</loc></url>
+<url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/ipc_ListingData.html</loc></url>
+<url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/ipc_OverviewStats.html</loc></url>
+<url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/ipc_ReasonBarSpec.html</loc></url>
+<url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/ipc_ReasonRows.html</loc></url>
+<url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/ipc_StatusBarSpec.html</loc></url>
+<url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/ipc_StatusColors.html</loc></url>
+<url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/ipc_StatusRows.html</loc></url>
+<url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/ipc_TimeToEventScatter.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/pd_BucketBarSpec.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/pd_BucketCounts.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/pd_BucketRows.html</loc></url>

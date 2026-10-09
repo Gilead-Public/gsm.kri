@@ -202,6 +202,8 @@ lCharts <- RunWorkflow(
   : Summarize flags by SnapshotDate
 - [`Report_FormatFlag()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_FormatFlag.md)
   : KRI Directionality Logo.
+- [`Report_IPCompliance()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_IPCompliance.md)
+  : Report_IPCompliance function
 - [`Report_KRI()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_KRI.md)
   : Report_KRI function
 - [`Report_MetricCharts()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_MetricCharts.md)
