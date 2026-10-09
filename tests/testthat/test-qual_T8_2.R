@@ -1,7 +1,10 @@
 ## Test Setup
+# Exact names and bActiveOnly = FALSE keep the inactive kri0007/cou0007 under
+# test; a pattern match would return the active kri0007-2/cou0007-2 instead.
 kri_workflows <- workr::MakeWorkflowList(
-  c("kri0006", "kri0007", "cou0006", "cou0007"),
-  GetDefaultKRIPath()
+  I(c("kri0006", "kri0007", "cou0006", "cou0007")),
+  GetDefaultKRIPath(),
+  bActiveOnly = FALSE
 )
 kri_custom <- workr::MakeWorkflowList(
   c("kri0006_custom", "kri0007_custom", "cou0006_custom", "cou0007_custom"),

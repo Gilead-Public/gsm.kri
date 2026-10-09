@@ -1,12 +1,12 @@
 meta:
-  Active: false
+  Active: true
   Type: Analysis
-  ID: cou0007
+  ID: cou0007-2
   GroupLevel: Country
-  Abbreviation: TDSC
-  Metric: Treatment Discontinuation Rate
-  Numerator: Subjects Discontinued - Treatment
-  Denominator: Enrolled Subjects
+  Abbreviation: PTDC
+  Metric: Premature Treatment Discontinuation Rate
+  Numerator: Enrolled and dosed participants who discontinue IP prematurely
+  Denominator: Enrolled & Dosed Subjects
   Model: Normal Approximation
   Score: Adjusted Z-Score
   AnalysisType: binary
@@ -14,20 +14,17 @@ meta:
   Flag: "0,1,2"
   AccrualThreshold: 3
   AccrualMetric: Numerator
-  GenerateRiskSignal: false
+  GenerateRiskSignal: true
 spec:
   Mapped_SUBJ:
     subjid:
       type: character
     country:
       type: character
-  Mapped_SDRGCOMP:
-    subjid:
+    drv_ip_dosed:
       type: character
-    sdrgyn:
-      type: character
-    phase:
-      type: character
+    drv_treatment_discontinuation_dt:
+      type: Date
 steps:
   - output: vThreshold
     name: gsm.core::ParseThreshold
@@ -37,17 +34,23 @@ steps:
     name: gsm.core::ParseThreshold
     params:
       strThreshold: Flag
+  # Dosed subjects only: a site without a dosed subject drops out of the results.
+  - output: Temp_DOSED
+    name: workr::RunQuery
+    params:
+      df: Mapped_SUBJ
+      strQuery: "SELECT * FROM df WHERE drv_ip_dosed = 'Y'"
   - output: Temp_DISCONTINUED
     name: workr::RunQuery
     params:
-      df: Mapped_SDRGCOMP
-      strQuery: "SELECT DISTINCT subjid FROM df WHERE sdrgyn = 'N'"
+      df: Mapped_SUBJ
+      strQuery: "SELECT * FROM df WHERE drv_ip_dosed = 'Y' AND drv_treatment_discontinuation_dt IS NOT NULL"
   - output: Analysis_Input
     name: gsm.core::Input_Rate
     params:
-      dfSubjects: Mapped_SUBJ
+      dfSubjects: Temp_DOSED
       dfNumerator: Temp_DISCONTINUED
-      dfDenominator: Mapped_SUBJ
+      dfDenominator: Temp_DOSED
       strSubjectCol: subjid
       strGroupCol: country
       strGroupLevel: GroupLevel
