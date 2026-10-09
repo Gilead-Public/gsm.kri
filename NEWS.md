@@ -1,5 +1,6 @@
 # gsm.kri (development version)
 
+- Add the IP monitoring report for IP non-starters and premature treatment discontinuations (#320).
 - Added the IP Non-Starters metric: `kri0019` (site) and `cou0019` (country) count
   participants who are Confirmed non-starters or Potential non-starters outside the
   window. One non-starter flags amber and two or more flag red (#258, #312).
