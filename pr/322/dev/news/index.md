@@ -2,6 +2,9 @@
 
 ## gsm.kri (development version)
 
+- Add the IP monitoring report for IP non-starters and premature
+  treatment discontinuations
+  ([\#320](https://github.com/Gilead-Public/gsm.kri/issues/320)).
 - Added the IP Non-Starters metric: `kri0019` (site) and `cou0019`
   (country) count participants who are Confirmed non-starters or
   Potential non-starters outside the window. One non-starter flags amber
@@ -17,12 +20,6 @@
 - The KRI report labels inactive metrics with an “Inactive” badge and
   lists them last
   ([\#325](https://github.com/Gilead-Public/gsm.kri/issues/325)).
-- Add the IP monitoring report,
-  [`Report_IPCompliance()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_IPCompliance.md)
-  (module `report_ipcompliance`): IP non-starters and premature
-  treatment discontinuation for every enrolled participant by study,
-  country and site, with a participant listing
-  ([\#320](https://github.com/Gilead-Public/gsm.kri/issues/320)).
 
 ## gsm.kri v1.7.0
 

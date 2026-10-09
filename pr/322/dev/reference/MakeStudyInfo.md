@@ -41,11 +41,11 @@ MakeStudyInfo(gsm.core::reportingGroups)
 #> 4                       status             Active                        Status
 #> 5                num_plan_site                150                 Num Plan Site
 #> 6                num_plan_subj               1000                 Num Plan Subj
-#> 7                     act_fpfv         2012-01-02                      Act Fpfv
-#> 8                     est_fpfv         2012-01-07                      Est Fpfv
-#> 9                     est_lplv         2012-07-22                      Est Lplv
-#> 10                    est_lpfv         2012-03-24                      Est Lpfv
-#> 11                  db_lock_dt         2012-03-29                    Db Lock Dt
+#> 7                     act_fpfv         2012-02-01                      Act Fpfv
+#> 8                     est_fpfv         2012-02-06                      Est Fpfv
+#> 9                     est_lplv         2012-08-21                      Est Lplv
+#> 10                    est_lpfv         2012-04-23                      Est Lpfv
+#> 11                  db_lock_dt         2012-04-28                    Db Lock Dt
 #> 12            therapeutic_area           Virology              Therapeutic Area
 #> 13         protocol_indication         Hematology           Protocol Indication
 #> 14                       phase                 P2                         Phase
@@ -66,11 +66,11 @@ MakeStudyInfo(gsm.core::reportingGroups, list(SiteCount = "# Sites"))
 #> 4                       status             Active                        Status
 #> 5                num_plan_site                150                 Num Plan Site
 #> 6                num_plan_subj               1000                 Num Plan Subj
-#> 7                     act_fpfv         2012-01-02                      Act Fpfv
-#> 8                     est_fpfv         2012-01-07                      Est Fpfv
-#> 9                     est_lplv         2012-07-22                      Est Lplv
-#> 10                    est_lpfv         2012-03-24                      Est Lpfv
-#> 11                  db_lock_dt         2012-03-29                    Db Lock Dt
+#> 7                     act_fpfv         2012-02-01                      Act Fpfv
+#> 8                     est_fpfv         2012-02-06                      Est Fpfv
+#> 9                     est_lplv         2012-08-21                      Est Lplv
+#> 10                    est_lpfv         2012-04-23                      Est Lpfv
+#> 11                  db_lock_dt         2012-04-28                    Db Lock Dt
 #> 12            therapeutic_area           Virology              Therapeutic Area
 #> 13         protocol_indication         Hematology           Protocol Indication
 #> 14                       phase                 P2                         Phase
