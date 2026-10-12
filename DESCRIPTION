@@ -55,12 +55,12 @@ Suggests:
     yaml
 VignetteBuilder: 
     knitr
-Remotes:
-    gsm.core=Gilead-Public/gsm.core@main,
-    gsm.mapping=Gilead-Public/gsm.mapping@main,
-    gsm.qtl=Gilead-Public/gsm.qtl@main,
-    gsm.reporting=Gilead-Public/gsm.reporting@main,
-    gsm.vizr=Gilead-Public/gsm.vizr@main,
+Remotes: 
+    gsm.core=Gilead-Public/gsm.core@integration-56-90-289,
+    gsm.mapping=Gilead-Public/gsm.mapping@integration-56-90-289,
+    gsm.qtl=Gilead-Public/gsm.qtl@integration-56-90-289,
+    gsm.reporting=Gilead-Public/gsm.reporting@integration-56-90-289,
+    gsm.vizr=Gilead-Public/gsm.vizr@integration-56-90-289,
     qcthat=Gilead-Public/qcthat@main
 Config/roxygen2/version: 8.1.0
 Config/testthat/edition: 3
