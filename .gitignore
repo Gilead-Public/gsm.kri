@@ -11,3 +11,4 @@ inst/.DS_Store
 
 # inst/examples/output is now tracked for gh-pages sync
 .positai
+.posit

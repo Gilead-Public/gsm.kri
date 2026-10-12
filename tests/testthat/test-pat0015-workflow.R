@@ -20,6 +20,7 @@ RunOne <- function(strMetric) {
 }
 
 test_that("pat0015 emits one row per enrolled subject with Flag=2 only for premature deaths {#221}", {
+  TestAtLogLevel()
   out <- RunOne("pat0015")
   expect_equal(nrow(out), 4) # one row per enrolled subject
   flagged <- out$GroupID[out$Flag == 2]
@@ -28,6 +29,7 @@ test_that("pat0015 emits one row per enrolled subject with Flag=2 only for prema
 })
 
 test_that("WindowDays override narrows the kri0015 numerator {#221}", {
+  TestAtLogLevel()
   wf90 <- gsm.core::MakeWorkflowList(
     strNames = "kri0015",
     strPath = GetDefaultKRIPath(),

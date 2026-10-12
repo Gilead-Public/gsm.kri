@@ -10,6 +10,7 @@ kri_custom <- workr::MakeWorkflowList(
 
 ## Test Code
 testthat::test_that("Qual: PK Compliance Assessments can be done correctly using a grouping variable, such as Site, Country, or Study, when applicable (#159)", {
+  # These tests assert on gsm.core "warn" logs, so WARN (not FATAL) is required.
   TestAtLogLevel("WARN")
   ## regular -----------------------------------------
   expect_warning(

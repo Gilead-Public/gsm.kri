@@ -1,17 +1,13 @@
 # Double programming: the expected numerator is derived independently from the
 # status STRINGS, never from ipns_status_ord, so a recode bug cannot cancel out.
 test_that("Qual: kri0019/cou0019 numerators match an independent derivation (#258)", {
+  TestAtLogLevel()
   skip_if_not(
     "drv_ip_nonstarter_status" %in% names(gsm.core::lSource$Raw_SUBJ),
     "lSource predates the upstream drv_ fields"
   )
 
   wf <- ipns_mapping_workflows()
-  skip_if_not(
-    "drv_ip_nonstarter_status" %in%
-      names(gsm.mapping::CombineSpecs(wf)$Raw_SUBJ),
-    "installed gsm.mapping spec predates the upstream drv_ fields"
-  )
   lRaw <- gsm.mapping::Ingest(gsm.core::lSource, gsm.mapping::CombineSpecs(wf))
   mapped <- workr::RunWorkflows(wf, lRaw)
 
