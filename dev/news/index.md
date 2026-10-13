@@ -11,6 +11,15 @@
   and two or more flag red
   ([\#258](https://github.com/Gilead-Public/gsm.kri/issues/258),
   [\#312](https://github.com/Gilead-Public/gsm.kri/issues/312)).
+- Added the Premature Treatment Discontinuation Rate metric: `kri0007-2`
+  (site) and `cou0007-2` (country), counting dosed participants with a
+  treatment discontinuation date over dosed participants. It replaces
+  `kri0007`/`cou0007` (Treatment Discontinuation Rate) as the default;
+  these stay available but inactive and no longer generate risk signals
+  ([\#301](https://github.com/Gilead-Public/gsm.kri/issues/301)).
+- The KRI report labels inactive metrics with an “Inactive” badge and
+  lists them last
+  ([\#325](https://github.com/Gilead-Public/gsm.kri/issues/325)).
 
 ## gsm.kri v1.7.0
 
@@ -239,7 +248,7 @@ update default accrual thresholds
 ## gsm.kri 1.1.1
 
 This patch release updates the description file to incorporate min
-version for [gsm.core](https://gilead-biostats.github.io/gsm.core).
+version for [gsm.core](https://gilead-public.github.io/gsm.core).
 
 ## gsm.kri v1.1.0
 

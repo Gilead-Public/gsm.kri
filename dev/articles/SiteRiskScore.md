@@ -53,21 +53,22 @@ site-risk score process:
   Default: `NULL`.
 
 When `vRiskScoreWeight` is provided, the
-[`Flag()`](https://rdrr.io/pkg/gsm.core/man/Flag.html) output will
-include additional columns capturing `Weight` and `MaxWeight` with the
-corresponding weight for each KRI.
+[`Flag()`](https://gilead-biostats.github.io/gsm.core/reference/Flag.html)
+output will include additional columns capturing `Weight` and
+`MaxWeight` with the corresponding weight for each KRI.
 
 These parameters allow for flexible configuration of the relative risk
 for different metrics in a study. While single metrics can be run via
-direct calls to [`Flag()`](https://rdrr.io/pkg/gsm.core/man/Flag.html),
+direct calls to
+[`Flag()`](https://gilead-biostats.github.io/gsm.core/reference/Flag.html),
 [YAML workflows are recommended for reusable
 implementations](https://gilead-public.github.io/gsm.kri/articles/AddingKRIs.html).
 As such, all standard KRIs include default thresholds, flags and
 weights. For reference, the relevant sections of the [Adverse Event KRI
 YAML](https://github.com/Gilead-Public/gsm.kri/blob/main/inst/workflow/2_metrics/kri0001.yaml),
 including the default flag and weight values and
-[`Flag()`](https://rdrr.io/pkg/gsm.core/man/Flag.html) function call are
-shown below for reference:
+[`Flag()`](https://gilead-biostats.github.io/gsm.core/reference/Flag.html)
+function call are shown below for reference:
 
     meta:
       Type: Analysis
@@ -113,9 +114,9 @@ shown below for reference:
 
 First, `Threshold`, `Flag`, and `RiskScoreWeight` values provided in the
 metadata are parsed from strings to vectors using
-[`gsm.core::ParseThreshold()`](https://rdrr.io/pkg/gsm.core/man/ParseThreshold.html).
+[`gsm.core::ParseThreshold()`](https://gilead-biostats.github.io/gsm.core/reference/ParseThreshold.html).
 These parsed vectors are then passed to the
-[`gsm.core::Flag()`](https://rdrr.io/pkg/gsm.core/man/Flag.html)
+[`gsm.core::Flag()`](https://gilead-biostats.github.io/gsm.core/reference/Flag.html)
 function to compute flags and weights for each site.
 
 ## Site Risk Score Calculation
@@ -190,7 +191,7 @@ The
 [`MakeWeights()`](https://gilead-public.github.io/gsm.kri/dev/reference/MakeWeights.md)
 function parses the `Flag` and `RiskScoreWeight` columns from the
 metrics metadata (e.g.,
-[`gsm.core::reportingMetrics`](https://rdrr.io/pkg/gsm.core/man/reportingMetrics.html))
+[`gsm.core::reportingMetrics`](https://gilead-biostats.github.io/gsm.core/reference/reportingMetrics.html))
 to create a weight lookup table. This table contains one row per
 MetricID-Flag combination with corresponding weights and maximum
 weights.

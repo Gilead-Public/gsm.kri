@@ -44,16 +44,16 @@ parameters.
 head(gsm.core::reportingGroups)
 #>          GroupID          Param            Value GroupLevel
 #> 1 AA-AA-000-0000        studyid   AA-AA-000-0000      Study
-#> 2 AA-AA-000-0000       nickname           OAK-38      Study
-#> 3 AA-AA-000-0000 protocol_title Protocol Title P      Study
+#> 2 AA-AA-000-0000       nickname           OAK-99      Study
+#> 3 AA-AA-000-0000 protocol_title Protocol Title L      Study
 #> 4 AA-AA-000-0000         status           Active      Study
 #> 5 AA-AA-000-0000  num_plan_site              150      Study
 #> 6 AA-AA-000-0000  num_plan_subj             1000      Study
 MakeParamLabels(head(gsm.core::reportingGroups))
 #>          GroupID          Param            Value GroupLevel          Label
 #> 1 AA-AA-000-0000        studyid   AA-AA-000-0000      Study        Studyid
-#> 2 AA-AA-000-0000       nickname           OAK-38      Study       Nickname
-#> 3 AA-AA-000-0000 protocol_title Protocol Title P      Study Protocol Title
+#> 2 AA-AA-000-0000       nickname           OAK-99      Study       Nickname
+#> 3 AA-AA-000-0000 protocol_title Protocol Title L      Study Protocol Title
 #> 4 AA-AA-000-0000         status           Active      Study         Status
 #> 5 AA-AA-000-0000  num_plan_site              150      Study  Num Plan Site
 #> 6 AA-AA-000-0000  num_plan_subj             1000      Study  Num Plan Subj
@@ -63,8 +63,8 @@ MakeParamLabels(
 )
 #>          GroupID          Param            Value GroupLevel          Label
 #> 1 AA-AA-000-0000        studyid   AA-AA-000-0000      Study        Studyid
-#> 2 AA-AA-000-0000       nickname           OAK-38      Study       Nickname
-#> 3 AA-AA-000-0000 protocol_title Protocol Title P      Study Protocol Title
+#> 2 AA-AA-000-0000       nickname           OAK-99      Study       Nickname
+#> 3 AA-AA-000-0000 protocol_title Protocol Title L      Study Protocol Title
 #> 4 AA-AA-000-0000         status           Active      Study         Status
 #> 5 AA-AA-000-0000  num_plan_site              150      Study  Num Plan Site
 #> 6 AA-AA-000-0000  num_plan_subj             1000      Study  Num Plan Subj
