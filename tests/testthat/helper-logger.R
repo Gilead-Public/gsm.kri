@@ -24,3 +24,19 @@ local_quiet_workr <- function(envir = rlang::caller_env()) {
     .env = envir
   )
 }
+
+# Report renders stream knitr progress, pandoc output, and log lines (which
+# may go to stdout or stderr depending on the logger) to the console.
+quiet_render <- function(expr) {
+  TestAtLogLevel()
+  out <- NULL
+  # capture.output() prints visible values, so keep the inner result invisible.
+  utils::capture.output(
+    invisible(utils::capture.output(
+      out <- suppressMessages(expr),
+      type = "output"
+    )),
+    type = "message"
+  )
+  out
+}

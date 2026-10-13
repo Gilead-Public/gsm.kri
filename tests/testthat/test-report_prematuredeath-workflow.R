@@ -1,4 +1,4 @@
-test_that("report_prematuredeath module is discoverable and wired to Report_PrematureDeaths {#223}", {
+test_that("report_prematuredeath module is discoverable and wired to Report_PrematureDeaths (#223)", {
   # MakeWorkflowList resolves strPath through base system.file when strPackage is
   # set, which under devtools::test (load_all) points at the source *root* without
   # inst/, so it cannot find the module. Resolve the dir here instead -- the test

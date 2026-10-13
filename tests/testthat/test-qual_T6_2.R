@@ -34,12 +34,11 @@ testthat::test_that("Qual: Adverse Event Assessments can be done correctly using
   iwalk(
     test,
     ~ expect_equal(
-      n_distinct(.x$Mapped_SUBJ[[
-        kri_workflows[[.y]]$steps[[which(
-          map_chr(kri_workflows[[.y]]$steps, ~ .x$name) ==
-            "gsm.core::Input_Rate"
-        )]]$params$strGroupCol
-      ]]),
+      # Transform_Rate() drops groups whose denominator sums to zero.
+      .x$Analysis_Input |>
+        dplyr::summarise(Denominator = sum(.data$Denominator), .by = "GroupID") |>
+        dplyr::filter(.data$Denominator > 0) |>
+        nrow(),
       nrow(.x$Analysis_Transformed)
     )
   )

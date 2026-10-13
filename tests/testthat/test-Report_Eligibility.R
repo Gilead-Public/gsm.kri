@@ -42,7 +42,7 @@ lListings <- list(
   IE_denom = dfEXCLUSION
 )
 
-test_that("Ensure report renders normally {#157}", {
+test_that("Ensure report renders normally (#157)", {
   testthat::skip_if_not_installed("gsm.qtl")
   expect_output(
     Report_Eligibility(
@@ -57,7 +57,7 @@ test_that("Ensure report renders normally {#157}", {
   )
 })
 
-test_that("Report_Eligibility renders its 7 bar charts through gsm.vizr-backed gsm.qtl, with the plotly/ggplot2 setup dropped {#286}", {
+test_that("Report_Eligibility renders its 7 bar charts through gsm.vizr-backed gsm.qtl, with the plotly/ggplot2 setup dropped (#286)", {
   testthat::skip_if_not_installed("gsm.qtl")
 
   # gsm.qtl's eligibility/criteria bar helpers are gsm.vizr::bars()-backed as

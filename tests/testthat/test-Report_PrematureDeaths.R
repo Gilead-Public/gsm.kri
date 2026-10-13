@@ -50,7 +50,7 @@ lListings <- list(
   )
 )
 
-test_that("Report_PrematureDeaths renders to a file {#223}", {
+test_that("Report_PrematureDeaths renders to a file (#223)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
   out <- Report_PrematureDeaths(
@@ -64,14 +64,14 @@ test_that("Report_PrematureDeaths renders to a file {#223}", {
   expect_true(file.exists(out))
 })
 
-test_that("Report_PrematureDeaths validates nWindowDays {#223}", {
+test_that("Report_PrematureDeaths validates nWindowDays (#223)", {
   expect_error(
     Report_PrematureDeaths(lListings = lListings, nWindowDays = -1),
     "nWindowDays must be a positive number"
   )
 })
 
-test_that("Report_PrematureDeaths warns when nWindowDays disagrees with dfResults {#223}", {
+test_that("Report_PrematureDeaths warns when nWindowDays disagrees with dfResults (#223)", {
   # Test the window-consistency guard directly (warnings don't propagate
   # through rmarkdown::render boundaries; the helper is exported for this purpose).
   expect_warning(
@@ -80,7 +80,7 @@ test_that("Report_PrematureDeaths warns when nWindowDays disagrees with dfResult
   )
 })
 
-test_that("pd_CheckWindowConsistency is silent when the counts agree {#223}", {
+test_that("pd_CheckWindowConsistency is silent when the counts agree (#223)", {
   # The mismatch comparison now lives inside the helper, so an agreeing call
   # (nPremature == nFlagged) returns invisibly with no warning.
   expect_no_warning(
@@ -88,7 +88,7 @@ test_that("pd_CheckWindowConsistency is silent when the counts agree {#223}", {
   )
 })
 
-test_that("Report_PrematureDeaths renders the dynamic subtitle, not literal pseudo-front-matter {#223}", {
+test_that("Report_PrematureDeaths renders the dynamic subtitle, not literal pseudo-front-matter (#223)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
   out <- Report_PrematureDeaths(
@@ -109,7 +109,7 @@ test_that("Report_PrematureDeaths renders the dynamic subtitle, not literal pseu
   expect_false(grepl("subtitle: [^{]", html))
 })
 
-test_that("Report_PrematureDeaths renders the studcomp discontinuation note {#246}", {
+test_that("Report_PrematureDeaths renders the studcomp discontinuation note (#246)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
   out <- Report_PrematureDeaths(
@@ -144,7 +144,7 @@ test_that("Report no longer emits the custom count/% toggle scaffolding (#264)",
   expect_false(grepl("pdSetMode", html, fixed = TRUE))
 })
 
-test_that("Report_PrematureDeaths includes country filter JS and banner {#246}", {
+test_that("Report_PrematureDeaths includes country filter JS and banner (#246)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
   out <- Report_PrematureDeaths(
@@ -180,7 +180,7 @@ test_that("Report_PrematureDeaths includes country filter JS and banner {#246}",
   expect_true(grepl('id="pd-site-scatter"', html))
 })
 
-test_that("Report_PrematureDeaths wires the site-barchart listing filter {#221}", {
+test_that("Report_PrematureDeaths wires the site-barchart listing filter (#221)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
   out <- Report_PrematureDeaths(
@@ -206,7 +206,7 @@ test_that("Report_PrematureDeaths wires the site-barchart listing filter {#221}"
   expect_match(html, "window.pdResetSiteFilter", fixed = TRUE)
 })
 
-test_that("Report wires the numeric-y scatter point filter {#247}", {
+test_that("Report wires the numeric-y scatter point filter (#247)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
   out <- Report_PrematureDeaths(
@@ -233,7 +233,7 @@ test_that("Report_PrematureDeaths still guards on plotly for the deferred scatte
   expect_true(grepl('check_installed\\("plotly"', body_src, perl = TRUE))
 })
 
-test_that("Report drops subjects without a randomization date from the cohort {#247}", {
+test_that("Report drops subjects without a randomization date from the cohort (#247)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
   # S4 is enrolled but never randomized (rgmn_dt NA): it has no position on the
@@ -269,7 +269,7 @@ test_that("Report drops subjects without a randomization date from the cohort {#
   )
 })
 
-test_that("Overview renders the preamble and 4-column summary table {#250}", {
+test_that("Overview renders the preamble and 4-column summary table (#250)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
   out <- Report_PrematureDeaths(
@@ -298,7 +298,7 @@ test_that("Overview renders the preamble and 4-column summary table {#250}", {
   expect_false(grepl("Configured window", html))
 })
 
-test_that("Overview shows an em-dash for Ineligible when no eligibility data {#250}", {
+test_that("Overview shows an em-dash for Ineligible when no eligibility data (#250)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
   # Default lListings carries no Mapped_EXCLUSION -> Ineligible cell is a dash.
@@ -319,7 +319,7 @@ test_that("Overview shows an em-dash for Ineligible when no eligibility data {#2
   expect_match(html, "<td[^>]*>\\s*—\\s*</td>", perl = TRUE)
 })
 
-test_that("Overview shows ineligible count and percent when eligibility data present {#250}", {
+test_that("Overview shows ineligible count and percent when eligibility data present (#250)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
   lL <- lListings
@@ -340,7 +340,7 @@ test_that("Overview shows ineligible count and percent when eligibility data pre
   expect_match(html, "1 (50.0%)", fixed = TRUE)
 })
 
-test_that("Overview table right-aligns every column, including the string-value headers {#250}", {
+test_that("Overview table right-aligns every column, including the string-value headers (#250)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
   out <- Report_PrematureDeaths(
@@ -368,7 +368,7 @@ test_that("Overview table right-aligns every column, including the string-value 
   )
 })
 
-test_that("Overview Premature Death(s) cell shows the <=30 / 31-90 breakdown sub-line {#252}", {
+test_that("Overview Premature Death(s) cell shows the <=30 / 31-90 breakdown sub-line (#252)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
   out <- Report_PrematureDeaths(
@@ -385,12 +385,12 @@ test_that("Overview Premature Death(s) cell shows the <=30 / 31-90 breakdown sub
   # glyph inside the raw-HTML kable cell -- so a raw-byte match on the glyph is
   # not portable across pandoc builds. Assert the styled sub-line span and the
   # renamed header here; the exact nDeath30 / nDeath3190 counts and the
-  # `== nPremature` invariant are covered by test-pd_OverviewStats.R {#252}.
+  # `== nPremature` invariant are covered by test-pd_OverviewStats.R (#252).
   expect_match(html, "font-size:smaller", fixed = TRUE)
   expect_match(html, "Participants Ineligible + Premature Death", fixed = TRUE)
 })
 
-test_that("Report listing shows Treatment Related Yes for a fatal related AE death {#248}", {
+test_that("Report listing shows Treatment Related Yes for a fatal related AE death (#248)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
   out <- Report_PrematureDeaths(
@@ -409,7 +409,7 @@ test_that("Report listing shows Treatment Related Yes for a fatal related AE dea
   expect_true(grepl('"Yes"', html, fixed = TRUE)) # S1: deathcls AE + grade-5 RELATED AE
 })
 
-test_that("Report renders a country-reactive Reasons chart via gsm.vizr::bars() {#254} {#264} {#288}", {
+test_that("Report renders a country-reactive Reasons chart via gsm.vizr::bars() (#254) (#264) (#288)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
   out <- Report_PrematureDeaths(
@@ -441,7 +441,7 @@ test_that("Report renders a country-reactive Reasons chart via gsm.vizr::bars() 
   )
 })
 
-test_that("Report renders the bucket/reason charts via gsm.vizr::bars() and inlines pdSiteRows/pdReasonRowsByCountry {#288}", {
+test_that("Report renders the bucket/reason charts via gsm.vizr::bars() and inlines pdSiteRows/pdReasonRowsByCountry (#288)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
   out <- Report_PrematureDeaths(
@@ -499,7 +499,7 @@ test_that("Report renders the bucket/reason charts via gsm.vizr::bars() and inli
   expect_true(grepl("pdReasonRowsByCountry", html, fixed = TRUE))
 })
 
-test_that("Report sources rgmn_dt from Mapped_Randomization when Mapped_SUBJ lacks it {#248}", {
+test_that("Report sources rgmn_dt from Mapped_Randomization when Mapped_SUBJ lacks it (#248)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
   # Production shape: Mapped_SUBJ has NO rgmn_dt; it must be sourced from
@@ -530,7 +530,7 @@ test_that("Report sources rgmn_dt from Mapped_Randomization when Mapped_SUBJ lac
   )
 })
 
-test_that("Report_PrematureDeaths renders the empty-state cleanly with zero premature deaths {#288}", {
+test_that("Report_PrematureDeaths renders the empty-state cleanly with zero premature deaths (#288)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
   # Regression: the setup chunk built reason_rows_by_country / pd_site_rows
@@ -557,7 +557,7 @@ test_that("Report_PrematureDeaths renders the empty-state cleanly with zero prem
   expect_match(html, "No premature deaths in window", fixed = TRUE)
 })
 
-test_that("inlined JSON data cannot terminate the report's script block {#288}", {
+test_that("inlined JSON data cannot terminate the report's script block (#288)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
   # HTML ends a <script> element at the first "</script" regardless of JS
