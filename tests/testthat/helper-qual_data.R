@@ -18,6 +18,8 @@ set.seed(123)
 
 ## Declare all the data
 lSource <- gsm.core::lSource
+# Temporarily drop Raw_VS since it isn't used yet.
+lSource$Raw_VS <- NULL
 
 # Step 0 - Data Ingestion - standardize tables/columns names
 lData <- list(
