@@ -59,7 +59,7 @@ Remotes:
     gsm.core=Gilead-Public/gsm.core@dev,
     gsm.mapping=Gilead-Public/gsm.mapping@dev,
     gsm.qtl=Gilead-Public/gsm.qtl@dev,
-    gsm.reporting=Gilead-Public/gsm.reporting@dev,
+    gsm.reporting=Gilead-Public/gsm.reporting@fix-kri-version,
     gsm.vizr=Gilead-Public/gsm.vizr@dev,
     qcthat=Gilead-Public/qcthat@dev
 Config/roxygen2/version: 8.1.0
