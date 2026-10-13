@@ -1,5 +1,12 @@
 # gsm.kri (development version)
 
+- Add an experimental, opt-in modern KRI report template. Render it with
+  `Report_KRI(strInputPath = system.file("report", "Report_KRI_v2.Rmd", package = "gsm.kri"))`.
+  It adds a study masthead, KPI cards, a sidebar with per-KRI flag badges, a global
+  group search, flag-change cards, collapsible per-KRI cards, dark mode and print
+  styles, and renders much faster than the standard template. `Report_KRI.Rmd` is
+  unchanged.
+
 - Add the IP monitoring report for IP non-starters and premature treatment discontinuations (#320).
 - Added the IP Non-Starters metric: `kri0019` (site) and `cou0019` (country) count
   participants who are Confirmed non-starters or Potential non-starters outside the

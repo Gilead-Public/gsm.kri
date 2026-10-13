@@ -216,12 +216,12 @@ test_that("Report_KRI renders the v2 template", {
   dfMetrics <- dplyr::filter(gsm.core::reportingMetrics, .data$MetricID %in% vMetrics)
   dfResults <- dplyr::filter(gsm.core::reportingResults, .data$MetricID %in% vMetrics)
   dfBounds <- dplyr::filter(gsm.core::reportingBounds, .data$MetricID %in% vMetrics)
-  lCharts <- MakeCharts(
+  lCharts <- suppressWarnings(MakeCharts(
     dfResults = dfResults,
     dfMetrics = dfMetrics,
     dfGroups = gsm.core::reportingGroups,
     dfBounds = dfBounds
-  )
+  ))
   dfResultsDelta <- dfResults %>%
     FilterByLatestSnapshotDate() %>%
     gsm.reporting::CalculateChange(dfResults)
