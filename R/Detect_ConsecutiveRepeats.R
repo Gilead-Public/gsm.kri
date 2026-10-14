@@ -4,21 +4,18 @@
 #' `r lifecycle::badge("experimental")`
 #'
 #' Counts, per subject, the rolling windows of `nWindowLength` consecutive
-#' measurements in which every value is identical. The result feeds
-#' [gsm.core::Input_Rate()] (with `strNumeratorMethod = "Sum"` and
-#' `strDenominatorMethod = "Sum"`) to produce the repeat-measure KRIs
-#' (`kri0020a`-`f`, `cou0020a`-`f`).
-#'
-#' Missing values are dropped before windows are formed (a missed visit is
-#' excluded, not treated as a non-match). Records are ordered by `strDateCol`
-#' within subject; ties keep their input order, so pass data pre-sorted by any
-#' intra-visit key (`Mapped_VS` is sorted by `vs_dt` then `visit`).
+#' measurements in which every value is identical. Missing values are dropped 
+#' before windows are formed. Records are ordered by `strDateCol` within 
+#' subject, then by `strOrderCol` to break same-date ties.
 #'
 #' @param df `data.frame` One row per measurement record.
 #' @param strValueCol `character` Column holding the measurement value.
 #' @param strSubjectCol `character` Subject identifier column. Default
 #'   `"subjid"`.
 #' @param strDateCol `character` Date/ordering column. Default `"vs_dt"`.
+#' @param strOrderCol `character` Optional column(s) used, in order, to break
+#'   ties on `strDateCol` (e.g. an intra-visit measurement time or `"visit"`).
+#'   Default `NULL`, in which case tied records keep their input order.
 #' @param strMeasureCol `character` Optional column identifying the measure,
 #'   for long-format data. When supplied, `df` is filtered to `strMeasureVal`.
 #' @param strMeasureVal `character` Value of `strMeasureCol` to keep. Required
@@ -45,6 +42,7 @@ Detect_ConsecutiveRepeats <- function(
   strValueCol,
   strSubjectCol = "subjid",
   strDateCol = "vs_dt",
+  strOrderCol = NULL,
   strMeasureCol = NULL,
   strMeasureVal = NULL,
   nWindowLength = 3
@@ -68,7 +66,7 @@ Detect_ConsecutiveRepeats <- function(
       "{.arg strMeasureVal} is required when {.arg strMeasureCol} is supplied."
     )
   }
-  lCols <- c(strValueCol, strSubjectCol, strDateCol, strMeasureCol)
+  lCols <- c(strValueCol, strSubjectCol, strDateCol, strOrderCol, strMeasureCol)
   if (!is.character(lCols)) {
     cli::cli_abort("Column arguments must be character strings.")
   }
@@ -84,8 +82,11 @@ Detect_ConsecutiveRepeats <- function(
   # Subjects whose values are all missing still get a 0/0 row.
   vSubjects <- unique(df[[strSubjectCol]])
   df <- df[!is.na(df[[strValueCol]]), , drop = FALSE]
-  # order() is stable, so date ties keep input order.
-  df <- df[order(df[[strSubjectCol]], df[[strDateCol]]), , drop = FALSE]
+  # arrange() is stable and sorts in the C locale, so full ties keep input order.
+  df <- dplyr::arrange(
+    df,
+    dplyr::pick(dplyr::all_of(c(strSubjectCol, strDateCol, strOrderCol)))
+  )
 
   lBySubject <- split(
     df[[strValueCol]],

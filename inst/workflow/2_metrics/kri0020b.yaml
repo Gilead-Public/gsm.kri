@@ -31,6 +31,8 @@ spec:
       type: character
     vs_dt:
       type: Date
+    visit:
+      type: character
     pulse:
       type: numeric
 steps:
@@ -43,7 +45,7 @@ steps:
     params:
       strThreshold: Flag
       bSort: false
-  # Mapped_VS is pre-sorted by vs_dt then visit, which breaks same-date ties.
+  # visit breaks same-date ties; Mapped_VS has no measurement time.
   - output: Temp_Repeats
     name: gsm.kri::Detect_ConsecutiveRepeats
     params:
@@ -51,6 +53,7 @@ steps:
       strValueCol: ValueCol
       strSubjectCol: subjid
       strDateCol: vs_dt
+      strOrderCol: visit
       nWindowLength: WindowLength
   - output: Analysis_Input
     name: gsm.core::Input_Rate

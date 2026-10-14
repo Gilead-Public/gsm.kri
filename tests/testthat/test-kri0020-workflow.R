@@ -80,3 +80,54 @@ test_that("country variants stay out of the CM Action Log (#306)", {
     expect_equal(wf[[id]]$meta$GenerateRiskSignal, startsWith(id, "kri"))
   }
 })
+
+test_that("workflow results do not depend on Mapped_VS row order (#307)", {
+  TestAtLogLevel()
+  lData <- vs_fixture()
+  lShuffled <- lData
+  lShuffled$Mapped_VS <- lData$Mapped_VS[rev(seq_len(nrow(lData$Mapped_VS))), ]
+  ids <- c("kri0020a", "cou0020a")
+  res <- workr::RunWorkflows(kri_workflow(ids), lData)
+  resShuffled <- workr::RunWorkflows(kri_workflow(ids), lShuffled)
+  for (id in ids) {
+    strName <- paste0("Analysis_", id)
+    expect_equal(
+      resShuffled[[strName]]$Analysis_Summary,
+      res[[strName]]$Analysis_Summary,
+      label = id
+    )
+  }
+})
+
+test_that("MakeWorkflowList regex path matches all suffixed variants (#306)", {
+  TestAtLogLevel()
+  strPath <- file.path(system.file(package = "gsm.kri"), "workflow", "2_metrics")
+  expect_no_warning(
+    wf <- workr::MakeWorkflowList(strNames = "kri0020", strPath = strPath)
+  )
+  expect_setequal(names(wf), paste0("kri0020", letters[1:6]))
+  # Exact-name selection loads only the requested variant.
+  wfOne <- workr::MakeWorkflowList(strNames = "kri0020b", strPath = strPath)
+  expect_equal(names(wfOne), "kri0020b")
+})
+
+test_that("MakeMetric builds Analysis_ IDs for suffixed variants (#306)", {
+  TestAtLogLevel()
+  dfMetrics <- gsm.reporting::MakeMetric(kri_workflow(vs_ids))
+  expect_setequal(dfMetrics$MetricID, paste0("Analysis_", vs_ids))
+  expect_equal(anyDuplicated(dfMetrics$MetricID), 0)
+})
+
+test_that("suffixed IDs flow through reporting outputs (#306)", {
+  TestAtLogLevel()
+  ids <- c("kri0020a", "cou0020a")
+  res <- run_vs(ids)
+  expect_setequal(names(res), paste0("Analysis_", ids))
+  dfResults <- gsm.reporting::BindResults(
+    lAnalysis = res,
+    strName = "Analysis_Summary",
+    dSnapshotDate = as.Date("2024-02-01"),
+    strStudyID = "FIXTURE"
+  )
+  expect_setequal(unique(dfResults$MetricID), paste0("Analysis_", ids))
+})

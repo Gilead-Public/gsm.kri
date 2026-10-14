@@ -58,14 +58,28 @@ test_that("a subject with all values missing is kept with 0/0 (#307)", {
   expect_equal(res$Denominator, c(0, 1))
 })
 
-test_that("date ties keep input order deterministically (#307)", {
+test_that("strOrderCol breaks date ties independent of input order (#307)", {
   df <- make_vs(c(5, 10, 10, 10))
   df$vs_dt <- as.Date("2024-01-01") + c(0, 0, 1, 2)
-  # 5,10,10,10 has a run of 3; swapping the tied first pair breaks it.
-  expect_equal(Detect_ConsecutiveRepeats(df, "weight")$Numerator, 1)
+  df$visit <- c("V1", "V2", "V3", "V4")
+  # 5,10,10,10 has a run of 3; ordering V2 before V1 would break it.
+  for (idx in list(1:4, c(2, 1, 3, 4), 4:1)) {
+    expect_equal(
+      Detect_ConsecutiveRepeats(df[idx, ], "weight", strOrderCol = "visit")$Numerator,
+      1
+    )
+  }
+  # Without a tie-breaker, ties fall back to input order.
   expect_equal(
     Detect_ConsecutiveRepeats(df[c(2, 1, 3, 4), ], "weight")$Numerator,
     0
+  )
+})
+
+test_that("strOrderCol must name existing columns (#307)", {
+  expect_error(
+    Detect_ConsecutiveRepeats(make_vs(1:3), "weight", strOrderCol = "vs_tm"),
+    "vs_tm"
   )
 })
 
@@ -152,13 +166,14 @@ test_that("subject-level results match the known-answer fixture (#307)", {
   }
 })
 
-test_that("fixture date tie is resolved by input order (#307)", {
+test_that("fixture date tie is resolved by visit, not input order (#307)", {
   dfS06 <- read_fixture("vs.csv")
   dfS06 <- dfS06[dfS06$subjid == "S06", ]
-  expect_equal(Detect_ConsecutiveRepeats(dfS06, "weight")$Numerator, 1)
-  # Swap V2 and V2U (same date).
-  expect_equal(
-    Detect_ConsecutiveRepeats(dfS06[c(1, 3, 2, 4, 5), ], "weight")$Numerator,
-    0
-  )
+  # V2 and V2U share a date; swapping them must not change the result.
+  for (idx in list(1:5, c(1, 3, 2, 4, 5), 5:1)) {
+    expect_equal(
+      Detect_ConsecutiveRepeats(dfS06[idx, ], "weight", strOrderCol = "visit")$Numerator,
+      1
+    )
+  }
 })
