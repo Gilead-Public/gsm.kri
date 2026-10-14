@@ -317,19 +317,40 @@ test_that("ReportV2_Topbar search counts exclude inactive metrics (#325)", {
   expect_equal(dfSites$amber[dfSites$GroupID == "A"], 1)
 })
 
-test_that("Report_KRI v2 template renders inactive metrics last with a label (#325)", {
+test_that("ReportV2_MetricCard flags an inactive metric missing from the latest snapshot (#325)", {
+  dummy <- htmltools::tags$div("chart")
+  lMetric <- as.list(dfMetricsInactive[1, ])
+  dfResults <- dplyr::filter(dfResultsV2, .data$MetricID != "Analysis_kri0001")
+
+  out <- paste(capture.output(ReportV2_MetricCard(list(timeSeries = dummy), lMetric, dfResults)), collapse = "\n")
+
+  expect_match(out, "Not in latest snapshot", fixed = TRUE)
+  expect_no_match(out, "0 sites", fixed = TRUE)
+})
+
+test_that("Report_KRI v2 template lists a retired metric last with only its time series (#325)", {
   skip_on_cran()
   skip_if_not(rmarkdown::pandoc_available())
 
+  # Mirrors the pkgdown example: a retired copy of the Adverse Event Rate,
+  # inactive, with results in earlier snapshots only.
   vMetrics <- c("Analysis_kri0001", "Analysis_kri0006", "Analysis_srs0001")
   dfMetrics <- dplyr::filter(gsm.core::reportingMetrics, .data$MetricID %in% vMetrics)
-  dfMetrics$Active <- dfMetrics$MetricID != "Analysis_kri0001"
+  dfMetrics <- dfMetrics %>%
+    dplyr::filter(.data$MetricID == "Analysis_kri0001") %>%
+    dplyr::mutate(MetricID = "Analysis_kri9999", Metric = "Retired Metric", Abbreviation = "RET", Active = FALSE) %>%
+    dplyr::bind_rows(dfMetrics, .)
   dfResults <- dplyr::filter(gsm.core::reportingResults, .data$MetricID %in% vMetrics)
+  dfResults <- dfResults %>%
+    dplyr::filter(.data$MetricID == "Analysis_kri0001", .data$SnapshotDate < max(.data$SnapshotDate)) %>%
+    dplyr::mutate(MetricID = "Analysis_kri9999") %>%
+    dplyr::bind_rows(dfResults, .)
+  dfBounds <- dplyr::filter(gsm.core::reportingBounds, .data$MetricID %in% vMetrics)
   lCharts <- suppressWarnings(MakeCharts(
     dfResults = dfResults,
     dfMetrics = dfMetrics,
     dfGroups = gsm.core::reportingGroups,
-    dfBounds = dplyr::filter(gsm.core::reportingBounds, .data$MetricID %in% vMetrics)
+    dfBounds = dfBounds
   ))
 
   strOutputDir <- withr::local_tempdir()
@@ -345,6 +366,11 @@ test_that("Report_KRI v2 template renders inactive metrics last with a label (#3
 
   html <- paste(readLines(file.path(strOutputDir, "v2.html"), warn = FALSE), collapse = "\n")
   vCards <- stringr::str_match_all(html, "<article class=\"v2-card v2-metric[^\"]*\" id=\"kri-(\\w+)\"")[[1]][, 2]
-  expect_equal(vCards, c("Analysis_kri0006", "Analysis_kri0001"))
-  expect_match(html, "v2-metric inactive collapsed\" id=\"kri-Analysis_kri0001\"", fixed = TRUE)
+  expect_equal(vCards[length(vCards)], "Analysis_kri9999")
+  expect_match(html, "v2-metric inactive collapsed\" id=\"kri-Analysis_kri9999\"", fixed = TRUE)
+  expect_equal(
+    stringr::str_match_all(html, "gsm-widget Analysis_kri9999 (\\w+)\"")[[1]][, 2],
+    "timeSeries"
+  )
+  expect_match(html, "Not in latest snapshot", fixed = TRUE)
 })

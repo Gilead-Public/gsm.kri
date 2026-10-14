@@ -24,11 +24,23 @@ v2_is_kri <- function(strMetricID) {
   !grepl("srs", strMetricID, ignore.case = TRUE)
 }
 
-v2_current <- function(dfResults) {
+# Inactive metrics (Active == FALSE) no longer generate risk signals; NA or a
+# missing Active column means active, matching MakeWeights() and Report_KRI.Rmd.
+v2_inactive_ids <- function(dfMetrics) {
+  if (is.null(dfMetrics) || !"Active" %in% names(dfMetrics)) {
+    return(character())
+  }
+  dfMetrics$MetricID[dfMetrics$Active %in% FALSE]
+}
+
+v2_current <- function(dfResults, dfMetrics = NULL) {
   if ("SnapshotDate" %in% names(dfResults) && nrow(dfResults) > 0) {
     dfResults <- dfResults[dfResults$SnapshotDate == max(dfResults$SnapshotDate), ]
   }
-  dfResults[v2_is_kri(dfResults$MetricID), ]
+  dfResults[
+    v2_is_kri(dfResults$MetricID) &
+      !dfResults$MetricID %in% v2_inactive_ids(dfMetrics),
+  ]
 }
 
 v2_flag_class <- function(flag) {
@@ -90,22 +102,25 @@ v2_badges <- function(intRed, intAmber) {
   )
 }
 
+# Active KRIs sorted by severity, followed by inactive KRIs (whose flags are not counted).
 v2_metric_counts <- function(dfResults, dfMetrics) {
-  dfCurrent <- v2_current(dfResults)
+  dfCurrent <- v2_current(dfResults, dfMetrics)
+  vInactive <- v2_inactive_ids(dfMetrics)
   dfMetrics[v2_is_kri(dfMetrics$MetricID), ] %>%
     dplyr::rowwise() %>%
     dplyr::mutate(
+      inactive = .data$MetricID %in% vInactive,
       red = sum(abs(dfCurrent$Flag[dfCurrent$MetricID == .data$MetricID]) == 2, na.rm = TRUE),
       amber = sum(abs(dfCurrent$Flag[dfCurrent$MetricID == .data$MetricID]) == 1, na.rm = TRUE),
       n = sum(dfCurrent$MetricID == .data$MetricID)
     ) %>%
     dplyr::ungroup() %>%
-    dplyr::arrange(dplyr::desc(.data$red), dplyr::desc(.data$amber))
+    dplyr::arrange(.data$inactive, dplyr::desc(.data$red), dplyr::desc(.data$amber))
 }
 
 #' @describeIn ReportV2 Headline counts for the current snapshot.
-ReportV2_Summary <- function(dfResults) {
-  dfCurrent <- v2_current(dfResults)
+ReportV2_Summary <- function(dfResults, dfMetrics = NULL) {
+  dfCurrent <- v2_current(dfResults, dfMetrics)
   absFlag <- abs(dfCurrent$Flag)
   bHasPrevious <- "Flag_Previous" %in% names(dfCurrent)
 
@@ -250,7 +265,7 @@ ReportV2_KPICards <- function(lSummary, strGroupLevel = "Site") {
 #' @describeIn ReportV2 Key takeaways and highest risk-score groups.
 ReportV2_Takeaways <- function(lSummary, dfResults, dfMetrics, dfGroups) {
   dfCounts <- v2_metric_counts(dfResults, dfMetrics)
-  dfTop <- dfCounts[1, ]
+  dfTop <- dfCounts[!dfCounts$inactive, ][1, ]
   strGroupLevel <- v2_group_level(dfMetrics)
   strGroups <- tolower(paste0(strGroupLevel, "s"))
   vLabels <- v2_group_labels(dfGroups, strGroupLevel)
@@ -267,13 +282,13 @@ ReportV2_Takeaways <- function(lSummary, dfResults, dfMetrics, dfGroups) {
       "red",
       htmltools::tags$b(lSummary$red, "red"), " and ",
       htmltools::tags$b(lSummary$amber, "amber"), " KRI flags across ",
-      htmltools::tags$b(lSummary$sites_flagged), " of ", lSummary$sites_total, " ", strGroups, "."
+      htmltools::tags$b(lSummary$sites_flagged), paste0(" of ", lSummary$sites_total, " ", strGroups, ".")
     ),
     if (nrow(dfTop) == 1 && (dfTop$red + dfTop$amber) > 0) {
       bullet(
         "red",
         htmltools::tags$b(dfTop$Metric), " drives the most risk with ",
-        htmltools::tags$b(dfTop$red), " red and ", dfTop$amber, " amber ", strGroups, "."
+        htmltools::tags$b(dfTop$red), " red and ", dfTop$amber, paste0(" amber ", strGroups, ".")
       )
     },
     if (!is.na(lSummary$escalated)) {
@@ -286,7 +301,7 @@ ReportV2_Takeaways <- function(lSummary, dfResults, dfMetrics, dfGroups) {
     },
     bullet(
       "green",
-      htmltools::tags$b(lSummary$sites_clear), " ", strGroups, " have no red or amber KRIs."
+      htmltools::tags$b(lSummary$sites_clear), paste0(" ", strGroups, " have no red or amber KRIs.")
     )
   )
 
@@ -372,7 +387,7 @@ ReportV2_Nav <- function(dfResults, dfMetrics) {
     ),
     group(
       "Key risk indicators",
-      lapply(seq_len(nrow(dfCounts)), function(i) {
+      lapply(which(!dfCounts$inactive), function(i) {
         link(
           paste0("#kri-", dfCounts$MetricID[i]),
           dfCounts$Metric[i],
@@ -380,6 +395,18 @@ ReportV2_Nav <- function(dfResults, dfMetrics) {
         )
       })
     ),
+    if (any(dfCounts$inactive)) {
+      group(
+        "Inactive",
+        lapply(which(dfCounts$inactive), function(i) {
+          link(
+            paste0("#kri-", dfCounts$MetricID[i]),
+            dfCounts$Metric[i],
+            htmltools::tags$span(class = "v2-badge inactive", "Inactive")
+          )
+        })
+      )
+    },
     group("Reference", link("#v2-reference", "Metric definitions"))
   )
 }
@@ -395,7 +422,7 @@ ReportV2_FlagChanges <- function(dfResults, dfMetrics, dfGroups) {
   vMetricNames <- stats::setNames(dfMetrics$Metric, dfMetrics$MetricID)
   vAbbr <- stats::setNames(dfMetrics$Abbreviation, dfMetrics$MetricID)
 
-  dfChanged <- v2_current(dfResults) %>%
+  dfChanged <- v2_current(dfResults, dfMetrics) %>%
     dplyr::filter(
       (is.na(.data$Flag) & !is.na(.data$Flag_Previous)) |
         (!is.na(.data$Flag) & is.na(.data$Flag_Previous)) |
@@ -533,11 +560,13 @@ ReportV2_FlagChanges <- function(dfResults, dfMetrics, dfGroups) {
 #' @describeIn ReportV2 A collapsible card holding the charts for one KRI.
 ReportV2_MetricCard <- function(lCharts, lMetric, dfResults) {
   dfCurrent <- v2_current(dfResults)
+  bInactive <- isFALSE(as.logical(lMetric$Active %||% NA))
   absFlag <- abs(dfCurrent$Flag[dfCurrent$MetricID == lMetric$MetricID])
+  intN <- length(absFlag)
+  if (bInactive) absFlag <- absFlag[0]
   intRed <- sum(absFlag == 2, na.rm = TRUE)
   intAmber <- sum(absFlag == 1, na.rm = TRUE)
-  intN <- length(absFlag)
-  strSeverity <- if (intRed > 0) "has-red" else if (intAmber > 0) "has-amber" else NULL
+  strSeverity <- if (bInactive) "inactive" else if (intRed > 0) "has-red" else if (intAmber > 0) "has-amber" else NULL
   bCollapsed <- intRed == 0 && intAmber == 0
   vKeys <- names(lCharts)
 
@@ -587,8 +616,16 @@ ReportV2_MetricCard <- function(lCharts, lMetric, dfResults) {
         class = "v2-metric-meta",
         if (intRed > 0) htmltools::tags$span(class = "v2-badge red", paste(intRed, "red")),
         if (intAmber > 0) htmltools::tags$span(class = "v2-badge amber", paste(intAmber, "amber")),
-        if (bCollapsed) htmltools::tags$span(class = "v2-badge green", "No flags"),
-        htmltools::tags$span(class = "v2-badge neutral", paste(intN, "groups")),
+        if (bInactive) {
+          htmltools::tags$span(title = "Inactive metric: no longer generates risk signals", class = "v2-badge inactive", "Inactive")
+        } else if (bCollapsed) {
+          htmltools::tags$span(class = "v2-badge green", "No flags")
+        },
+        if (intN == 0) {
+          htmltools::tags$span(class = "v2-badge neutral", "Not in latest snapshot")
+        } else {
+          htmltools::tags$span(class = "v2-badge neutral", paste(intN, tolower(paste0(lMetric$GroupLevel %||% "Group", "s"))))
+        },
         htmltools::HTML('<svg class="v2-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>')
       )
     ),
@@ -629,7 +666,10 @@ ReportV2_MetricReference <- function(dfMetrics) {
           class = "v2-card",
           htmltools::tags$h4(
             htmltools::tags$span(class = "v2-badge neutral v2-mono", lMetric$Abbreviation %||% ""),
-            lMetric$Metric
+            lMetric$Metric,
+            if (isFALSE(as.logical(lMetric$Active %||% NA))) {
+              htmltools::tags$span(class = "v2-badge inactive", "Inactive")
+            }
           ),
           htmltools::tags$dl(
             field("Numerator", lMetric$Numerator),
@@ -644,8 +684,10 @@ ReportV2_MetricReference <- function(dfMetrics) {
 }
 
 #' @describeIn ReportV2 Sticky top bar with the global group search.
-ReportV2_Topbar <- function(lSetup, dfResults, dfGroups) {
+ReportV2_Topbar <- function(lSetup, dfResults, dfGroups, dfMetrics = NULL) {
   dfCurrent <- v2_current(dfResults)
+  # Keep every group searchable, but count flags on active metrics only.
+  dfCurrent$Flag[dfCurrent$MetricID %in% v2_inactive_ids(dfMetrics)] <- NA
   vLabels <- v2_group_labels(dfGroups, lSetup$GroupLevel)
   dfSites <- dfCurrent %>%
     dplyr::group_by(.data$GroupID) %>%

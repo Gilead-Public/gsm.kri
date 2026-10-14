@@ -9,6 +9,7 @@
   --v2-red: #d92d20; --v2-red-bg: #fef3f2; --v2-red-bd: #fecdca;
   --v2-amber: #b54708; --v2-amber-dot: #f79009; --v2-amber-bg: #fffaeb; --v2-amber-bd: #fedf89;
   --v2-green: #079455; --v2-green-bg: #ecfdf3; --v2-green-bd: #abefc6;
+  --v2-inactive: #842029; --v2-inactive-bg: #f8d7da; --v2-inactive-bd: #f5c2c7;
   --v2-radius: 12px;
   --v2-shadow: 0 1px 2px rgb(16 24 40 / .04), 0 1px 3px rgb(16 24 40 / .06);
   --v2-shadow-lg: 0 12px 32px -8px rgb(16 24 40 / .14), 0 4px 8px -4px rgb(16 24 40 / .06);
@@ -22,6 +23,7 @@
   --v2-red: #ff6b5e; --v2-red-bg: #2a1414; --v2-red-bd: #5a2420;
   --v2-amber: #f5b54a; --v2-amber-dot: #f5a524; --v2-amber-bg: #2a2010; --v2-amber-bd: #5a4316;
   --v2-green: #3ccf8e; --v2-green-bg: #0f2a1f; --v2-green-bd: #1d4d38;
+  --v2-inactive: #ea868f; --v2-inactive-bg: #2c0b0e; --v2-inactive-bd: #842029;
   --v2-shadow: 0 1px 2px rgb(0 0 0 / .4); --v2-shadow-lg: 0 12px 32px -8px rgb(0 0 0 / .6);
 }
 /* gsm.viz widgets draw on light canvases; keep them on a light plate in dark mode. */
@@ -89,6 +91,8 @@ body {
 .v2-badge.amber { background: var(--v2-amber-bg); color: var(--v2-amber); box-shadow: inset 0 0 0 1px var(--v2-amber-bd); }
 .v2-badge.green { background: var(--v2-green-bg); color: var(--v2-green); box-shadow: inset 0 0 0 1px var(--v2-green-bd); }
 .v2-badge.neutral { background: var(--v2-surface-3); color: var(--v2-muted); }
+/* Same palette as the "Inactive" label in Report_KRI.Rmd (#325). */
+.v2-badge.inactive { background: var(--v2-inactive-bg); color: var(--v2-inactive); box-shadow: inset 0 0 0 1px var(--v2-inactive-bd); }
 .v2-chip { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 999px; font-size: 12px; font-weight: 500; background: var(--v2-surface-3); color: var(--v2-text-2); border: 1px solid var(--v2-border); }
 .v2-chip.live::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--v2-green); box-shadow: 0 0 0 3px color-mix(in srgb, var(--v2-green) 25%, transparent); }
 
@@ -181,6 +185,8 @@ body {
 .v2-metric-abbr { min-width: 44px; height: 44px; padding: 0 6px; border-radius: 10px; display: grid; place-items: center; font-weight: 700; font-size: 11.5px; background: var(--v2-surface-3); color: var(--v2-text-2); font-family: var(--v2-mono); box-sizing: border-box; }
 .v2-metric.has-red .v2-metric-abbr { background: var(--v2-red-bg); color: var(--v2-red); }
 .v2-metric.has-amber .v2-metric-abbr { background: var(--v2-amber-bg); color: var(--v2-amber); }
+.v2-metric.inactive { background: var(--v2-surface-2); border-style: dashed; }
+.v2-metric.inactive .v2-metric-title, .v2-metric.inactive .v2-metric-abbr { color: var(--v2-muted); }
 .v2-metric-title { font-size: 16px; font-weight: 600; letter-spacing: -.01em; margin: 0; color: var(--v2-text); }
 .v2-metric-def { font-size: 12.5px; color: var(--v2-muted); margin-top: 2px; }
 .v2-metric-def code, .v2-ref code { font-family: var(--v2-mono); font-size: 11.5px; background: var(--v2-surface-3); padding: 1px 5px; border-radius: 5px; color: var(--v2-text-2); }

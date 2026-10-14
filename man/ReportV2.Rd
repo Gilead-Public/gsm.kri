@@ -14,7 +14,7 @@
 \alias{ReportV2_Dependencies}
 \title{Opt-in modern KRI report (v2) building blocks}
 \usage{
-ReportV2_Summary(dfResults)
+ReportV2_Summary(dfResults, dfMetrics = NULL)
 
 ReportV2_Masthead(lSetup)
 
@@ -30,7 +30,7 @@ ReportV2_MetricCard(lCharts, lMetric, dfResults)
 
 ReportV2_MetricReference(dfMetrics)
 
-ReportV2_Topbar(lSetup, dfResults, dfGroups)
+ReportV2_Topbar(lSetup, dfResults, dfGroups, dfMetrics = NULL)
 
 ReportV2_Dependencies()
 }
@@ -41,18 +41,18 @@ Created by passing a list of results returned by [Summarize()] to
 `Denominator`, `Metric`, `Score`, `Flag`, `MetricID`, `StudyID`,
 `SnapshotDate`.}
 
-\item{lSetup}{`list` Output of [Report_Setup()].}
-
-\item{lSummary}{`list` Output of `ReportV2_Summary()`.}
-
-\item{strGroupLevel}{`character` Group level used in labels, e.g. `"Site"`.}
-
 \item{dfMetrics}{`data.frame` Metric-specific metadata for use in charts and
 reporting. Created by passing an `lWorkflow` object to [MakeMetric()].
 Expected columns: `File`, `MetricID`, `Group`, `Abbreviation`, `Metric`,
 `Numerator`, `Denominator`, `Model`, `Score`, and `Threshold`. For more
 details see the Data Model vignette: `vignette("DataModel", package =
 "gsm.core")`.}
+
+\item{lSetup}{`list` Output of [Report_Setup()].}
+
+\item{lSummary}{`list` Output of `ReportV2_Summary()`.}
+
+\item{strGroupLevel}{`character` Group level used in labels, e.g. `"Site"`.}
 
 \item{dfGroups}{`data.frame` Group-level metadata dictionary. Created by
 passing CTMS site and study data to [MakeLongMeta()]. Expected columns:
