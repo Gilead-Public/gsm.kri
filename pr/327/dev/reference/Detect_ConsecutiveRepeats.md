@@ -3,16 +3,10 @@
 \`r lifecycle::badge("experimental")\`
 
 Counts, per subject, the rolling windows of \`nWindowLength\`
-consecutive measurements in which every value is identical. The result
-feeds \[gsm.core::Input_Rate()\] (with \`strNumeratorMethod = "Sum"\`
-and \`strDenominatorMethod = "Sum"\`) to produce the repeat-measure KRIs
-(\`kri0020a\`-\`f\`, \`cou0020a\`-\`f\`).
-
-Missing values are dropped before windows are formed (a missed visit is
-excluded, not treated as a non-match). Records are ordered by
-\`strDateCol\` within subject; ties keep their input order, so pass data
-pre-sorted by any intra-visit key (\`Mapped_VS\` is sorted by \`vs_dt\`
-then \`visit\`).
+consecutive measurements in which every value is identical. Missing
+values are dropped before windows are formed. Records are ordered by
+\`strDateCol\` within subject, then by \`strOrderCol\` to break
+same-date ties.
 
 ## Usage
 
@@ -22,6 +16,7 @@ Detect_ConsecutiveRepeats(
   strValueCol,
   strSubjectCol = "subjid",
   strDateCol = "vs_dt",
+  strOrderCol = NULL,
   strMeasureCol = NULL,
   strMeasureVal = NULL,
   nWindowLength = 3
@@ -45,6 +40,12 @@ Detect_ConsecutiveRepeats(
 - strDateCol:
 
   \`character\` Date/ordering column. Default \`"vs_dt"\`.
+
+- strOrderCol:
+
+  \`character\` Optional column(s) used, in order, to break ties on
+  \`strDateCol\` (e.g. an intra-visit measurement time or \`"visit"\`).
+  Default \`NULL\`, in which case tied records keep their input order.
 
 - strMeasureCol:
 
