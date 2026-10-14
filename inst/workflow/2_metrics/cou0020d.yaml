@@ -3,7 +3,7 @@ meta:
   Type: Analysis
   ID: cou0020d
   GroupLevel: Country
-  Abbreviation: VS Repeat (Diastolic BP)
+  Abbreviation: CRR-diabp
   Metric: Diastolic BP Consecutive Repeat Rate
   Numerator: Windows of Consecutive Identical Diastolic BP Values
   Denominator: Evaluable Diastolic BP Windows

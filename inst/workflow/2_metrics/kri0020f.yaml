@@ -3,7 +3,7 @@ meta:
   Type: Analysis
   ID: kri0020f
   GroupLevel: Site
-  Abbreviation: VS Repeat (Temperature)
+  Abbreviation: CRR-temp
   Metric: Temperature Consecutive Repeat Rate
   Numerator: Windows of Consecutive Identical Temperature Values
   Denominator: Evaluable Temperature Windows

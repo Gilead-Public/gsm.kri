@@ -3,7 +3,7 @@ meta:
   Type: Analysis
   ID: kri0020c
   GroupLevel: Site
-  Abbreviation: VS Repeat (Systolic BP)
+  Abbreviation: CRR-sysbp
   Metric: Systolic BP Consecutive Repeat Rate
   Numerator: Windows of Consecutive Identical Systolic BP Values
   Denominator: Evaluable Systolic BP Windows

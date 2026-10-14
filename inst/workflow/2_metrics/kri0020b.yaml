@@ -3,7 +3,7 @@ meta:
   Type: Analysis
   ID: kri0020b
   GroupLevel: Site
-  Abbreviation: VS Repeat (Heart Rate)
+  Abbreviation: CRR-pulse
   Metric: Heart Rate Consecutive Repeat Rate
   Numerator: Windows of Consecutive Identical Heart Rate Values
   Denominator: Evaluable Heart Rate Windows

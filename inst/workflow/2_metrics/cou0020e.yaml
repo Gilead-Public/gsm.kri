@@ -3,7 +3,7 @@ meta:
   Type: Analysis
   ID: cou0020e
   GroupLevel: Country
-  Abbreviation: VS Repeat (Respiratory Rate)
+  Abbreviation: CRR-resp
   Metric: Respiratory Rate Consecutive Repeat Rate
   Numerator: Windows of Consecutive Identical Respiratory Rate Values
   Denominator: Evaluable Respiratory Rate Windows

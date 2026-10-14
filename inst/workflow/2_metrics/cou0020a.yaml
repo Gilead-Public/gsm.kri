@@ -3,7 +3,7 @@ meta:
   Type: Analysis
   ID: cou0020a
   GroupLevel: Country
-  Abbreviation: VS Repeat (Weight)
+  Abbreviation: CRR-weight
   Metric: Weight Consecutive Repeat Rate
   Numerator: Windows of Consecutive Identical Weight Values
   Denominator: Evaluable Weight Windows
