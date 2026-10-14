@@ -243,3 +243,108 @@ test_that("Report_KRI renders the v2 template", {
   expect_match(html, "v2-site-input", fixed = TRUE)
   expect_no_match(html, "fonts.googleapis.com", fixed = TRUE)
 })
+
+# Inactive metrics (#325): Active == FALSE; NA or a missing column means active.
+dfMetricsInactive <- dplyr::mutate(dfMetricsV2, Active = c(FALSE, TRUE, NA))
+
+test_that("ReportV2_Summary excludes inactive metrics from counts (#325)", {
+  lSummary <- ReportV2_Summary(dfResultsV2, dfMetricsInactive)
+
+  # Only SAE remains: A amber (green->amber escalates), B green (amber->green improves).
+  expect_equal(lSummary$red, 0)
+  expect_equal(lSummary$amber, 1)
+  expect_equal(lSummary$sites_flagged, 1)
+  expect_equal(lSummary$sites_clear, 2)
+  expect_equal(lSummary$escalated, 1)
+  expect_equal(lSummary$improved, 1)
+  expect_equal(lSummary$new, 0)
+})
+
+test_that("ReportV2_Summary treats metrics as active without an Active column (#325)", {
+  expect_equal(ReportV2_Summary(dfResultsV2, dfMetricsV2), ReportV2_Summary(dfResultsV2))
+})
+
+test_that("ReportV2_Nav lists inactive metrics in a separate group after active KRIs (#325)", {
+  html <- render_html(ReportV2_Nav(dfResultsV2, dfMetricsInactive))
+
+  expect_match(html, "Inactive", fixed = TRUE)
+  expect_lt(
+    regexpr("#kri-Analysis_kri0002", html, fixed = TRUE),
+    regexpr("#kri-Analysis_kri0001", html, fixed = TRUE)
+  )
+  expect_no_match(html, "v2-badge red\">1<", fixed = TRUE)
+})
+
+test_that("ReportV2_Takeaways ignores inactive metrics (#325)", {
+  html <- render_html(ReportV2_Takeaways(
+    ReportV2_Summary(dfResultsV2, dfMetricsInactive), dfResultsV2, dfMetricsInactive, dfGroupsV2
+  ))
+
+  expect_match(html, "<b>Serious Adverse Event Rate</b>", fixed = TRUE)
+  expect_no_match(html, "Adverse Event Rate</b> drives", fixed = TRUE)
+})
+
+test_that("ReportV2_FlagChanges omits inactive metrics (#325)", {
+  html <- render_html(ReportV2_FlagChanges(dfResultsV2, dfMetricsInactive, dfGroupsV2))
+
+  expect_equal(lengths(regmatches(html, gregexpr("class=\"v2-change\"", html))), 2)
+  expect_no_match(html, "data-cat=\"new\"", fixed = TRUE)
+})
+
+test_that("ReportV2_MetricCard collapses and labels an inactive metric (#325)", {
+  dummy <- htmltools::tags$div("chart")
+  lMetric <- as.list(dfMetricsInactive[1, ])
+
+  out <- paste(capture.output(ReportV2_MetricCard(list(scatterPlot = dummy), lMetric, dfResultsV2)), collapse = "\n")
+
+  expect_match(out, "v2-metric inactive collapsed", fixed = TRUE)
+  expect_match(out, "v2-badge inactive\">Inactive<", fixed = TRUE)
+  expect_no_match(out, "1 red", fixed = TRUE)
+})
+
+test_that("ReportV2_MetricReference labels inactive metrics (#325)", {
+  html <- render_html(ReportV2_MetricReference(dfMetricsInactive))
+
+  expect_match(html, "v2-badge inactive\">Inactive<", fixed = TRUE)
+})
+
+test_that("ReportV2_Topbar search counts exclude inactive metrics (#325)", {
+  lSetup <- Report_Setup(dfGroupsV2, dfMetricsInactive, dfResultsV2)
+  html <- render_html(ReportV2_Topbar(lSetup, dfResultsV2, dfGroupsV2, dfMetricsInactive))
+  dfSites <- jsonlite::fromJSON(sub("(?s).*id=\"v2-sites\">(.*?)</script>.*", "\\1", html, perl = TRUE))
+
+  expect_equal(dfSites$red[dfSites$GroupID == "A"], 0)
+  expect_equal(dfSites$amber[dfSites$GroupID == "A"], 1)
+})
+
+test_that("Report_KRI v2 template renders inactive metrics last with a label (#325)", {
+  skip_on_cran()
+  skip_if_not(rmarkdown::pandoc_available())
+
+  vMetrics <- c("Analysis_kri0001", "Analysis_kri0006", "Analysis_srs0001")
+  dfMetrics <- dplyr::filter(gsm.core::reportingMetrics, .data$MetricID %in% vMetrics)
+  dfMetrics$Active <- dfMetrics$MetricID != "Analysis_kri0001"
+  dfResults <- dplyr::filter(gsm.core::reportingResults, .data$MetricID %in% vMetrics)
+  lCharts <- suppressWarnings(MakeCharts(
+    dfResults = dfResults,
+    dfMetrics = dfMetrics,
+    dfGroups = gsm.core::reportingGroups,
+    dfBounds = dplyr::filter(gsm.core::reportingBounds, .data$MetricID %in% vMetrics)
+  ))
+
+  strOutputDir <- withr::local_tempdir()
+  suppressMessages(suppressWarnings(utils::capture.output(Report_KRI(
+    lCharts = lCharts,
+    dfResults = dfResults,
+    dfMetrics = dfMetrics,
+    dfGroups = gsm.core::reportingGroups,
+    strOutputDir = strOutputDir,
+    strOutputFile = "v2.html",
+    strInputPath = system.file("report", "Report_KRI_v2.Rmd", package = "gsm.kri")
+  ))))
+
+  html <- paste(readLines(file.path(strOutputDir, "v2.html"), warn = FALSE), collapse = "\n")
+  vCards <- stringr::str_match_all(html, "<article class=\"v2-card v2-metric[^\"]*\" id=\"kri-(\\w+)\"")[[1]][, 2]
+  expect_equal(vCards, c("Analysis_kri0006", "Analysis_kri0001"))
+  expect_match(html, "v2-metric inactive collapsed\" id=\"kri-Analysis_kri0001\"", fixed = TRUE)
+})
