@@ -1,6 +1,7 @@
 # Double programming: expected counts come from the raw Raw_SUBJ fields, never
 # from the metric's own queries.
 test_that("Qual: kri0007-2/cou0007-2 numerators and denominators match an independent derivation (#301)", {
+  TestAtLogLevel()
   skip_if_not(
     "drv_treatment_discontinuation_dt" %in% names(gsm.core::lSource$Raw_SUBJ),
     "lSource predates the PTD fields"

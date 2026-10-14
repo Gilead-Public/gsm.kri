@@ -3,6 +3,18 @@ TestAtLogLevel <- function(chrLevel = "FATAL", envir = rlang::caller_env()) {
   withr::defer(gsm.core::SetLogLevel(lvlStart), envir = envir)
   gsm.core::SetLogLevel(toupper(chrLevel))
   local_quiet_workr(envir = envir)
+  local_quiet_duckdb(envir = envir)
+}
+
+# duckdb prints a storage-location notice on each new connection unless the
+# home is chosen explicitly. Choosing duckdb's own default (~/.duckdb) keeps
+# behavior identical while silencing the notice.
+local_quiet_duckdb <- function(envir = rlang::caller_env()) {
+  strHomeVar <- if (.Platform$OS.type == "windows") "USERPROFILE" else "HOME"
+  withr::local_options(
+    duckdb.home = file.path(Sys.getenv(strHomeVar), ".duckdb"),
+    .local_envir = envir
+  )
 }
 
 # WORKAROUND: workr::LogMessage() emits unconditionally, ignoring the gsm.core

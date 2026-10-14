@@ -7,7 +7,7 @@ test_that("report_prematuredeath module is discoverable and wired to Report_Prem
   dir <- system.file("workflow/4_modules", package = "gsm.kri")
   skip_if(!nzchar(dir), "workflow/4_modules dir not found")
 
-  wf <- gsm.core::MakeWorkflowList(
+  wf <- workr::MakeWorkflowList(
     strNames = "report_prematuredeath",
     strPath = dir,
     bExact = TRUE
