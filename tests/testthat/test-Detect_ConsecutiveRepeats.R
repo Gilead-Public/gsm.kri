@@ -124,6 +124,22 @@ test_that("missing columns give an informative error (#307)", {
   )
 })
 
+test_that("non-data-frame df gives an informative error (#307)", {
+  expect_error(
+    Detect_ConsecutiveRepeats(list(weight = 1:3), "weight"),
+    "must be a data frame"
+  )
+})
+
+test_that("non-character column arguments give an informative error (#307)", {
+  expect_error(
+    Detect_ConsecutiveRepeats(
+      make_vs(1:3), 3, strSubjectCol = 1, strDateCol = 2
+    ),
+    "must be character strings"
+  )
+})
+
 test_that("subject-level results match the known-answer fixture (#307)", {
   dfVS <- read_fixture("vs.csv")
   dfExpected <- read_fixture("vs_expected_subject.csv")
