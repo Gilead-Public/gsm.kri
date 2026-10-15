@@ -113,24 +113,15 @@ test_that("ReportV2_KPICards omits deltas without previous snapshot", {
   expect_no_match(html, "v2-delta")
 })
 
-test_that("ReportV2_Takeaways names the riskiest metric and top risk-score sites", {
+test_that("ReportV2_Takeaways names the riskiest metric without a risk-score list", {
   html <- render_html(ReportV2_Takeaways(
     ReportV2_Summary(dfResultsV2), dfResultsV2, dfMetricsV2, dfGroupsV2
   ))
 
   expect_match(html, "Adverse Event Rate", fixed = TRUE)
-  expect_match(html, "Highest site risk scores", fixed = TRUE)
-  expect_match(html, "data-site=\"A\"", fixed = TRUE)
-  expect_match(html, "Smith", fixed = TRUE)
-})
-
-test_that("ReportV2_Takeaways skips risk-score list when no SRS metric exists", {
-  dfResults <- dplyr::filter(dfResultsV2, !grepl("srs", .data$MetricID))
-  html <- render_html(ReportV2_Takeaways(
-    ReportV2_Summary(dfResults), dfResults, dfMetricsV2, dfGroupsV2
-  ))
-
-  expect_no_match(html, "Highest site risk scores")
+  expect_match(html, "Key takeaways", fixed = TRUE)
+  # Site risk ranking now lives in the Sites tab.
+  expect_no_match(html, "Highest site risk scores", fixed = TRUE)
 })
 
 test_that("ReportV2_Nav links every KRI with flag badges and excludes SRS", {
@@ -140,8 +131,22 @@ test_that("ReportV2_Nav links every KRI with flag badges and excludes SRS", {
   expect_match(html, "href=\"#kri-Analysis_kri0002\"", fixed = TRUE)
   expect_no_match(html, "Analysis_srs0001")
   expect_match(html, "v2-badge red\">1<", fixed = TRUE)
-  expect_match(html, "href=\"#v2-changes\"", fixed = TRUE)
+  expect_match(html, "href=\"#v2-reference\"", fixed = TRUE)
+  # Overview sections moved to their own tab; the nav only lists KRIs.
+  expect_no_match(html, "href=\"#v2-changes\"", fixed = TRUE)
 })
+
+count_matches <- function(html, pattern) {
+  lengths(regmatches(html, gregexpr(pattern, html, fixed = TRUE)))
+}
+
+# The rows of one perspective ("site" or "kri") of the flag-changes card.
+change_view <- function(html, strView) {
+  sub(
+    paste0("(?s).*?data-view-panel=\"", strView, "\"(.*?)</div><!--/", strView, "-->.*"),
+    "\\1", html, perl = TRUE
+  )
+}
 
 test_that("ReportV2_FlagChanges groups changed flags into categories", {
   html <- render_html(ReportV2_FlagChanges(dfResultsV2, dfMetricsV2, dfGroupsV2))
@@ -149,10 +154,26 @@ test_that("ReportV2_FlagChanges groups changed flags into categories", {
   expect_match(html, "data-cat=\"escalated\"", fixed = TRUE)
   expect_match(html, "data-cat=\"improved\"", fixed = TRUE)
   expect_match(html, "data-cat=\"new\"", fixed = TRUE)
-  expect_equal(lengths(regmatches(html, gregexpr("class=\"v2-change\"", html))), 4)
   expect_match(html, "Serious Adverse Event Rate", fixed = TRUE)
-  expect_match(html, "A (Smith)", fixed = TRUE)
   expect_no_match(html, "Analysis_srs0001")
+})
+
+test_that("ReportV2_FlagChanges offers site and KRI perspectives over the same changes", {
+  html <- render_html(ReportV2_FlagChanges(dfResultsV2, dfMetricsV2, dfGroupsV2))
+
+  expect_match(html, "data-view=\"site\"", fixed = TRUE)
+  expect_match(html, "data-view=\"kri\"", fixed = TRUE)
+  expect_equal(count_matches(change_view(html, "site"), "class=\"v2-change-row\""), 4)
+  expect_equal(count_matches(change_view(html, "kri"), "class=\"v2-change-row\""), 4)
+
+  # Site groups follow the risk score: A (12.5) before B (4).
+  strSite <- change_view(html, "site")
+  expect_lt(
+    regexpr("data-group=\"A\"", strSite, fixed = TRUE),
+    regexpr("data-group=\"B\"", strSite, fixed = TRUE)
+  )
+  expect_match(strSite, "Smith", fixed = TRUE)
+  expect_match(change_view(html, "kri"), "data-group=\"Analysis_kri0002\"", fixed = TRUE)
 })
 
 test_that("ReportV2_FlagChanges returns NULL without delta columns", {
@@ -242,6 +263,11 @@ test_that("Report_KRI renders the v2 template", {
   expect_match(html, "id=\"kri-Analysis_kri0001\"", fixed = TRUE)
   expect_match(html, "v2-site-input", fixed = TRUE)
   expect_no_match(html, "fonts.googleapis.com", fixed = TRUE)
+  for (strTab in c("overview", "sites", "metrics")) {
+    expect_match(html, paste0("data-tab=\"", strTab, "\""), fixed = TRUE)
+  }
+  expect_match(html, "id=\"v2-site-table\"", fixed = TRUE)
+  expect_match(html, "id=\"v2-site-data\"", fixed = TRUE)
 })
 
 # Inactive metrics (#325): Active == FALSE; NA or a missing column means active.
@@ -287,7 +313,7 @@ test_that("ReportV2_Takeaways ignores inactive metrics (#325)", {
 test_that("ReportV2_FlagChanges omits inactive metrics (#325)", {
   html <- render_html(ReportV2_FlagChanges(dfResultsV2, dfMetricsInactive, dfGroupsV2))
 
-  expect_equal(lengths(regmatches(html, gregexpr("class=\"v2-change\"", html))), 2)
+  expect_equal(count_matches(change_view(html, "site"), "class=\"v2-change-row\""), 2)
   expect_no_match(html, "data-cat=\"new\"", fixed = TRUE)
 })
 
@@ -373,4 +399,153 @@ test_that("Report_KRI v2 template lists a retired metric last with only its time
     "timeSeries"
   )
   expect_match(html, "Not in latest snapshot", fixed = TRUE)
+})
+
+# Sites tab ---------------------------------------------------------------
+
+dfMetricsWeighted <- dplyr::mutate(
+  dfMetricsV2,
+  Flag = c("-2,-1,0,1,2", "-2,-1,0,1,2", NA),
+  RiskScoreWeight = c("32,16,0,1,2", "8,6,0,4,8", NA)
+)
+
+dfGroupsSites <- dplyr::bind_rows(
+  dfGroupsV2,
+  tibble::tribble(
+    ~GroupID, ~GroupLevel, ~Param, ~Value,
+    "A", "Site", "Country", "US",
+    "A", "Site", "City", "Boston",
+    "A", "Site", "ParticipantCount", "12"
+  )
+)
+
+test_that("v2_score_bands maps thresholds to flagged score intervals", {
+  dfBands <- v2_score_bands("-2,-1,2,3", "-2,-1,0,1,2")
+  expect_equal(dfBands$lo, c(-Inf, -2, -1, 2, 3))
+  expect_equal(dfBands$hi, c(-2, -1, 2, 3, Inf))
+  expect_equal(dfBands$flag, c(-2, -1, 0, 1, 2))
+
+  # Thresholds are sorted but flags are not, as in the kri0013 workflow.
+  dfLower <- v2_score_bands("0.9,0.85", "-2,-1,0")
+  expect_equal(dfLower$hi, c(0.85, 0.9, Inf))
+  expect_equal(dfLower$flag, c(-2, -1, 0))
+
+  expect_null(v2_score_bands(NA, NA))
+})
+
+test_that("v2_rate_bands converts score bands to rates at the site denominator", {
+  dfBounds <- tibble::tibble(
+    Threshold = c(2, 2, 3, 3),
+    Denominator = c(10, 20, 10, 20),
+    Metric = c(0.5, 0.4, 0.7, 0.6)
+  )
+  dfBounded <- v2_rate_bands("2,3", "0,1,2", 15, "bounds", dfBounds)
+  expect_equal(dfBounded$lo, c(0, 0.45, 0.65))
+  expect_equal(dfBounded$hi, c(0.45, 0.65, Inf))
+  expect_equal(dfBounded$flag, c(0, 1, 2))
+
+  # Identity on the numerator: a count threshold becomes count / denominator.
+  expect_equal(v2_rate_bands("1.5,2.5", "0,1,2", 10, "numerator")$hi, c(0.15, 0.25, Inf))
+  # Identity on the rate itself.
+  expect_equal(v2_rate_bands("0.9,0.85", "-2,-1,0", 40, "rate")$hi, c(0.85, 0.9, Inf))
+
+  expect_null(v2_rate_bands("2,3", "0,1,2", 15, "bounds", NULL))
+})
+
+test_that("v2_chart_bounds reads the latest-snapshot bounds embedded in scatter plots", {
+  dfBounds <- tibble::tibble(
+    Threshold = c(2, 2),
+    Denominator = c(10, 10),
+    Metric = c(0.5, 0.9),
+    MetricID = "Analysis_kri0001",
+    SnapshotDate = c("2025-03-01", "2025-04-01")
+  )
+  lCharts <- list(Analysis_kri0001 = list(
+    scatterPlot = list(x = list(dfBounds = jsonlite::toJSON(dfBounds))),
+    barChart = list(x = list())
+  ))
+
+  dfOut <- v2_chart_bounds(lCharts)
+  expect_equal(nrow(dfOut), 1)
+  expect_equal(dfOut$Metric, 0.9)
+  expect_equal(dfOut$MetricID, "Analysis_kri0001")
+  expect_equal(nrow(v2_chart_bounds(list())), 0)
+})
+
+test_that("ReportV2_SiteData ranks sites by risk score and counts new or worse flags", {
+  lData <- ReportV2_SiteData(dfResultsV2, dfMetricsWeighted, dfGroupsSites)
+
+  expect_equal(lData$sites$GroupID, c("A", "B", "C"))
+  expect_equal(lData$sites$rank, 1:3)
+  expect_equal(lData$sites$new_flags, c(2, 1, 0))
+  expect_equal(lData$sites$label[1], "Smith")
+  expect_equal(lData$sites$country[1], "US")
+  expect_equal(lData$sites$enrolled[1], 12)
+
+  dfCells <- lData$cells
+  change_of <- function(g, m) dfCells$change[dfCells$GroupID == g & dfCells$MetricID == m]
+  expect_equal(change_of("A", "Analysis_kri0001"), "worse")
+  expect_equal(change_of("B", "Analysis_kri0001"), "new")
+  expect_equal(change_of("B", "Analysis_kri0002"), "better")
+  expect_equal(change_of("C", "Analysis_kri0001"), "same")
+  expect_equal(dfCells$weight[dfCells$GroupID == "A" & dfCells$MetricID == "Analysis_kri0002"], 6)
+  expect_false("Analysis_srs0001" %in% dfCells$MetricID)
+
+  expect_equal(lData$metrics$study_rate[lData$metrics$MetricID == "Analysis_kri0001"], 0.02)
+})
+
+test_that("ReportV2_SiteData excludes inactive metrics from site counts (#325)", {
+  lData <- ReportV2_SiteData(
+    dfResultsV2,
+    dplyr::mutate(dfMetricsWeighted, Active = c(FALSE, TRUE, NA)),
+    dfGroupsSites
+  )
+
+  expect_equal(lData$sites$new_flags[lData$sites$GroupID == "A"], 1)
+  expect_equal(lData$sites$red[lData$sites$GroupID == "A"], 0)
+  expect_true(lData$metrics$inactive[lData$metrics$MetricID == "Analysis_kri0001"])
+})
+
+test_that("ReportV2_SiteData falls back to flag counts without a risk score", {
+  dfResults <- dplyr::filter(dfResultsV2, !grepl("srs", .data$MetricID))
+  lData <- ReportV2_SiteData(dfResults, dfMetricsWeighted, dfGroupsSites)
+
+  expect_equal(lData$sites$GroupID, c("A", "B", "C"))
+  expect_true(all(is.na(lData$sites$srs)))
+})
+
+test_that("ReportV2_SitesTab renders a risk-sorted heatmap with new-flag cues", {
+  html <- render_html(ReportV2_SitesTab(
+    ReportV2_SiteData(dfResultsV2, dfMetricsWeighted, dfGroupsSites)
+  ))
+  strBody <- sub("(?s).*<tbody>(.*)</tbody>.*", "\\1", html, perl = TRUE)
+
+  vRows <- stringr::str_match_all(strBody, "<tr[^>]*data-site=\"(\\w+)\"")[[1]][, 2]
+  expect_equal(vRows, c("A", "B", "C"))
+  expect_match(html, "id=\"v2-site-table\"", fixed = TRUE)
+  expect_match(html, "id=\"v2-site-panel\"", fixed = TRUE)
+  expect_match(html, "id=\"v2-site-data\"", fixed = TRUE)
+  for (strFilter in c("all", "red", "flagged", "new")) {
+    expect_match(html, paste0("data-filter=\"", strFilter, "\""), fixed = TRUE)
+  }
+
+  # New-flag badge next to the site, and thick borders on new or worse cells.
+  expect_match(html, "v2-new-badge\"[^>]*>2 new<", perl = TRUE)
+  expect_equal(count_matches(strBody, "v2-new-badge"), 2)
+  expect_match(strBody, "v2-cell r worse", fixed = TRUE)
+  expect_match(strBody, "v2-cell a worse", fixed = TRUE)
+  expect_match(strBody, "v2-cell g\"", fixed = TRUE)
+  expect_equal(count_matches(strBody, " worse"), 3)
+})
+
+test_that("ReportV2_SitesTab leaves inactive metrics out of the heatmap (#325)", {
+  html <- render_html(ReportV2_SitesTab(ReportV2_SiteData(
+    dfResultsV2,
+    dplyr::mutate(dfMetricsWeighted, Active = c(FALSE, TRUE, NA)),
+    dfGroupsSites
+  )))
+  strHead <- sub("(?s).*<thead>(.*)</thead>.*", "\\1", html, perl = TRUE)
+
+  expect_match(strHead, ">SAE<", fixed = TRUE)
+  expect_no_match(strHead, ">AE<", fixed = TRUE)
 })
