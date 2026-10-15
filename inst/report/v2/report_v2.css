@@ -361,10 +361,14 @@ body {
 .v2-metric.collapsed .v2-chev { transform: rotate(-90deg); }
 .v2-metric-body { display: grid; grid-template-rows: 1fr; transition: grid-template-rows .3s ease; border-top: 1px solid var(--v2-border); }
 .v2-metric.collapsed .v2-metric-body { grid-template-rows: 0fr; border-top-color: transparent; }
-.v2-metric-body > div { overflow: hidden; min-height: 0; }
+.v2-metric-body > div { overflow: hidden; min-height: 0; min-width: 0; }
 /* gsm.viz controls and footnotes overflow the fixed widget height (auto height makes
    Chart.js grow without bound), so reserve room below each widget instead. */
 .v2-pane .html-widget { margin-bottom: 48px; }
+/* htmlwidgets get a fixed inline size (960px) when knit; let them follow the card so the
+   gsm.viz charts (Chart.js, responsive) resize with the window. */
+.v2-pane { min-width: 0; }
+.v2-pane .html-widget { width: 100% !important; max-width: 100%; }
 .v2-metric:not(.collapsed) .v2-metric-body > div { overflow: visible; }
 .v2-metric .v2-tabs { margin: 12px 14px 0; }
 .v2-panes { padding: 8px 14px 16px; }
