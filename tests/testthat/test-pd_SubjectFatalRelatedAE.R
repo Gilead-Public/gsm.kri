@@ -39,3 +39,50 @@ test_that("pd_SubjectFatalRelatedAE tolerates missing columns {#248}", {
 test_that("pd_SubjectFatalRelatedAE validates input {#248}", {
   expect_error(pd_SubjectFatalRelatedAE(as.list(1)), "dfAE is not a data.frame")
 })
+
+test_that("pd_SubjectFatalRelatedAE treats Fatal outcome or death flag as fatal {#304}", {
+  dfAE <- tibble::tibble(
+    subjid = c("A", "B", "C"),
+    aetoxgr = c(4L, 3L, 4L),
+    aeout = c("Fatal", "Recovered/Resolved", "Recovered/Resolved"),
+    aesdth = c("No", "Yes", "No"),
+    aereldrv = "Yes"
+  )
+  out <- pd_SubjectFatalRelatedAE(dfAE)
+  flag <- stats::setNames(out$has_fatal_related_ae, out$subjid)
+  expect_true(flag[["A"]]) # aeout == "Fatal"
+  expect_true(flag[["B"]]) # aesdth == "Yes"
+  expect_false(flag[["C"]]) # grade 4, not fatal, no death flag
+})
+
+test_that("pd_SubjectFatalRelatedAE prefers aereldrv over aerel {#304}", {
+  dfAE <- tibble::tibble(
+    subjid = c("A", "B", "C"),
+    aetoxgr = 5L,
+    aereldrv = c("No", "Yes", NA),
+    aerel = c("RELATED", "NOT RELATED", "RELATED")
+  )
+  out <- pd_SubjectFatalRelatedAE(dfAE)
+  rel <- stats::setNames(out$has_fatal_related_ae, out$subjid)
+  unrel <- stats::setNames(out$has_fatal_unrelated_ae, out$subjid)
+  expect_false(rel[["A"]])
+  expect_true(unrel[["A"]])
+  expect_true(rel[["B"]])
+  expect_false(unrel[["B"]])
+  expect_true(rel[["C"]]) # aereldrv missing -> falls back to aerel
+})
+
+test_that("pd_SubjectFatalRelatedAE flags fatal AEs with unknown relatedness {#304}", {
+  dfAE <- tibble::tibble(
+    subjid = c("A", "A", "B", "C"),
+    aetoxgr = c(5L, 1L, 5L, 2L),
+    aereldrv = c(NA, NA, "Yes", NA)
+  )
+  out <- pd_SubjectFatalRelatedAE(dfAE)
+  unk <- stats::setNames(out$has_fatal_unknown_ae, out$subjid)
+  expect_true(unk[["A"]])
+  expect_false(unk[["B"]])
+  expect_false(unk[["C"]]) # missing relatedness, but not fatal
+  # Still one row per subject.
+  expect_equal(nrow(out), 3L)
+})

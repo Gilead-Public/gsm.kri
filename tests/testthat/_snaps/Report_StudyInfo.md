@@ -471,6 +471,7 @@
       <td headers="Value" class="gt_row gt_right">Ongoing</td></tr>
         </tbody>
         
+        
       </table>
       </div>
       <div id="study_table_hide" style="display: none;">
@@ -964,6 +965,7 @@
       <td headers="Value" class="gt_row gt_right">2024-01-01</td></tr>
         </tbody>
         
+        
       </table>
         </div>
       </div>
@@ -1440,10 +1442,11 @@
           <tr><td headers="Description" class="gt_row gt_left">Status</td>
       <td headers="Value" class="gt_row gt_right">Active</td></tr>
           <tr><td headers="Description" class="gt_row gt_left">Site Activation</td>
-      <td headers="Value" class="gt_row gt_right">141 / 150 (94%)</td></tr>
+      <td headers="Value" class="gt_row gt_right">145 / 150 (96.7%)</td></tr>
           <tr><td headers="Description" class="gt_row gt_left">Participant Enrollment</td>
-      <td headers="Value" class="gt_row gt_right">754 / 1000 (75.4%)</td></tr>
+      <td headers="Value" class="gt_row gt_right">760 / 1000 (76%)</td></tr>
         </tbody>
+        
         
       </table>
       </div>
@@ -1935,18 +1938,19 @@
           <tr><td headers="Description" class="gt_row gt_left">Participant Target</td>
       <td headers="Value" class="gt_row gt_right">1000</td></tr>
           <tr><td headers="Description" class="gt_row gt_left">Participants Enrolled</td>
-      <td headers="Value" class="gt_row gt_right">754</td></tr>
+      <td headers="Value" class="gt_row gt_right">760</td></tr>
           <tr><td headers="Description" class="gt_row gt_left">Sites Enrolled</td>
-      <td headers="Value" class="gt_row gt_right">141</td></tr>
+      <td headers="Value" class="gt_row gt_right">145</td></tr>
           <tr><td headers="Description" class="gt_row gt_left">Percent Sites Activated</td>
-      <td headers="Value" class="gt_row gt_right">94</td></tr>
+      <td headers="Value" class="gt_row gt_right">96.7</td></tr>
           <tr><td headers="Description" class="gt_row gt_left">Site Activation</td>
-      <td headers="Value" class="gt_row gt_right">141 / 150 (94%)</td></tr>
+      <td headers="Value" class="gt_row gt_right">145 / 150 (96.7%)</td></tr>
           <tr><td headers="Description" class="gt_row gt_left">Percent Participants Enrolled</td>
-      <td headers="Value" class="gt_row gt_right">75.4</td></tr>
+      <td headers="Value" class="gt_row gt_right">76</td></tr>
           <tr><td headers="Description" class="gt_row gt_left">Participant Enrollment</td>
-      <td headers="Value" class="gt_row gt_right">754 / 1000 (75.4%)</td></tr>
+      <td headers="Value" class="gt_row gt_right">760 / 1000 (76%)</td></tr>
         </tbody>
+        
         
       </table>
         </div>
