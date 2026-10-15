@@ -41,11 +41,13 @@ pd_CheckWindowConsistency <- function(nWindowDays, nPremature, nFlagged) {
 #' detail. Sorted by `death_dy` ascending. `death_reason` is the death
 #' classification (`deathcls`), falling back to `"Unknown"` when absent.
 #' `treatment_related` is three-valued: `"Yes"` when `deathcls` is an adverse
-#' event AND the subject has a fatal (grade 5) treatment-related AE in `dfAE`;
+#' event AND the subject has a fatal treatment-related AE in `dfAE`;
 #' `"No"` when `deathcls` is an adverse event AND the subject has a fatal
-#' (grade 5) not-treatment-related AE, or when `deathcls` is not an adverse
+#' not-treatment-related AE, or when `deathcls` is not an adverse
 #' event AND no fatal treatment-related AE exists;
-#' `"Unknown"` otherwise (mixed signals, or missing `deathcls`/AE evidence).
+#' `"Unknown"` otherwise (mixed signals, missing `deathcls`/AE evidence, or a
+#' fatal AE with missing relatedness). Fatal and related are defined by
+#' `pd_SubjectFatalRelatedAE()`.
 #' A `randomization_date` column is derived as `death_dt - death_dy`,
 #' reconstructing the randomization date (`rgmn_dt`) that `death_dy` was counted from.
 #'
@@ -62,14 +64,11 @@ pd_CheckWindowConsistency <- function(nWindowDays, nPremature, nFlagged) {
 #'   column: `"Ineligible"` when `Source != "Neither"` (matching the `kri0014`
 #'   rule), `"Eligible"` when `Source == "Neither"`, and `"Unknown"` when the
 #'   subject has no matching exclusion row.
-#' @param dfAE `data.frame` (optional) Mapped AE data with `subjid`, `aetoxgr`,
-#'   and `aerel` (`"RELATED"`/`"NOT RELATED"`). Used to compute the Treatment
-#'   Related column: `"Yes"` when `deathcls` is an adverse event AND the subject
-#'   has a fatal (`aetoxgr==5`) treatment-related AE; `"No"` when `deathcls` is
-#'   an adverse event AND the subject has a fatal (`aetoxgr==5`) not-treatment-related
-#'   AE, or when `deathcls` is not an AE AND there is no fatal treatment-related
-#'   AE; `"Unknown"` otherwise (mixed signals, or missing `deathcls`/AE
-#'   evidence). `death_reason` is `deathcls` (else `"Unknown"`).
+#' @param dfAE `data.frame` (optional) Mapped AE data with `subjid` and any of
+#'   `aeout`, `aetoxgr`, `aesdth`, `aereldrv` and `aerel`. Used to compute the
+#'   Treatment Related column; see `pd_SubjectFatalRelatedAE()` for what counts
+#'   as a fatal and a treatment-related AE. `death_reason` is `deathcls` (else
+#'   `"Unknown"`).
 #'
 #' @return A `data.frame` of one row per flagged premature-death subject.
 #' @export
@@ -93,7 +92,7 @@ pd_PatientListingData <- function(
     dfDeath[["deathcls"]] <- NA_character_
   }
 
-  # AE-side signal: a fatal (aetoxgr==5) treatment-related (aerel=="RELATED") AE.
+  # AE-side signal: fatal AEs split by relatedness (pd_SubjectFatalRelatedAE).
   # Absent dfAE -> nobody qualifies (everything resolves via deathcls alone).
   dfFatalRel <- if (!is.null(dfAE) && is.data.frame(dfAE)) {
     pd_SubjectFatalRelatedAE(dfAE)
@@ -101,7 +100,8 @@ pd_PatientListingData <- function(
     tibble::tibble(
       subjid = character(0),
       has_fatal_related_ae = logical(0),
-      has_fatal_unrelated_ae = logical(0)
+      has_fatal_unrelated_ae = logical(0),
+      has_fatal_unknown_ae = logical(0)
     )
   }
 
@@ -124,19 +124,23 @@ pd_PatientListingData <- function(
       # Treatment Related: deathcls is the AE-death gate; a fatal treatment-related
       # AE is the relatedness evidence. Both positive -> Yes; AE death + fatal
       # not-related AE -> No; both negative -> No; mixed or missing -> Unknown.
+      # A fatal AE with missing relatedness blocks any "No" inference.
+      .ae_death = grepl("a(dverse[ ]*)?e", .data$deathcls, ignore.case = TRUE),
+      .related = dplyr::coalesce(.data$has_fatal_related_ae, FALSE),
+      .unrelated = dplyr::coalesce(.data$has_fatal_unrelated_ae, FALSE),
+      .unknown = dplyr::coalesce(.data$has_fatal_unknown_ae, FALSE),
       treatment_related = dplyr::case_when(
         is.na(.data$deathcls) | trimws(.data$deathcls) == "" ~ "Unknown",
-        grepl("a(dverse[ ]*)?e", .data$deathcls, ignore.case = TRUE) &
-          dplyr::coalesce(.data$has_fatal_related_ae, FALSE) ~ "Yes",
-        grepl("a(dverse[ ]*)?e", .data$deathcls, ignore.case = TRUE) &
-          dplyr::coalesce(.data$has_fatal_unrelated_ae, FALSE) ~ "No",
-        !grepl("a(dverse[ ]*)?e", .data$deathcls, ignore.case = TRUE) &
-          !dplyr::coalesce(.data$has_fatal_related_ae, FALSE) ~ "No",
+        .data$.ae_death & .data$.related ~ "Yes",
+        .data$.unknown ~ "Unknown",
+        .data$.ae_death & .data$.unrelated ~ "No",
+        !.data$.ae_death & !.data$.related ~ "No",
         TRUE ~ "Unknown"
       )
     ) %>%
     dplyr::select(
-      -dplyr::any_of(c("has_fatal_related_ae", "has_fatal_unrelated_ae"))
+      -dplyr::starts_with("has_fatal_"),
+      -dplyr::any_of(c(".ae_death", ".related", ".unrelated", ".unknown"))
     )
 
   if (
