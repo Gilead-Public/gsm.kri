@@ -3,8 +3,8 @@ meta:
   Type: Analysis
   ID: kri0020b
   GroupLevel: Site
-  Abbreviation: CRR-pulse
-  Metric: Heart Rate Consecutive Repeat Rate
+  Abbreviation: RMHR
+  Metric: Repeat Measure (Heart Rate)
   Numerator: Windows of Consecutive Identical Heart Rate Values
   Denominator: Evaluable Heart Rate Windows
   Model: Identity

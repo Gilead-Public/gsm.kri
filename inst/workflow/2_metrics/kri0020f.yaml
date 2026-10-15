@@ -3,8 +3,8 @@ meta:
   Type: Analysis
   ID: kri0020f
   GroupLevel: Site
-  Abbreviation: CRR-temp
-  Metric: Temperature Consecutive Repeat Rate
+  Abbreviation: RMT
+  Metric: Repeat Measure (Temperature)
   Numerator: Windows of Consecutive Identical Temperature Values
   Denominator: Evaluable Temperature Windows
   Model: Identity

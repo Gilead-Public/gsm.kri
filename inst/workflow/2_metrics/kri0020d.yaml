@@ -3,8 +3,8 @@ meta:
   Type: Analysis
   ID: kri0020d
   GroupLevel: Site
-  Abbreviation: CRR-diabp
-  Metric: Diastolic BP Consecutive Repeat Rate
+  Abbreviation: RMDBP
+  Metric: Repeat Measure (Diastolic BP)
   Numerator: Windows of Consecutive Identical Diastolic BP Values
   Denominator: Evaluable Diastolic BP Windows
   Model: Identity

@@ -3,8 +3,8 @@ meta:
   Type: Analysis
   ID: cou0020a
   GroupLevel: Country
-  Abbreviation: CRR-weight
-  Metric: Weight Consecutive Repeat Rate
+  Abbreviation: RMW
+  Metric: Repeat Measure (Weight)
   Numerator: Windows of Consecutive Identical Weight Values
   Denominator: Evaluable Weight Windows
   Model: Identity
