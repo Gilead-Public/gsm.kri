@@ -91,7 +91,7 @@ test_that("records are sorted by date within subject (#307)", {
 
 test_that("nWindowLength is validated (#307)", {
   df <- make_vs(c(1, 1, 1))
-  for (bad in list(1, 2.5, "3", c(2, 3), NA_real_)) {
+  for (bad in list(1, 2.5, "3", c(2, 3), NA_real_, Inf, -Inf, NaN)) {
     expect_error(
       Detect_ConsecutiveRepeats(df, "weight", nWindowLength = bad),
       "nWindowLength"
@@ -150,7 +150,39 @@ test_that("non-character column arguments give an informative error (#307)", {
     Detect_ConsecutiveRepeats(
       make_vs(1:3), 3, strSubjectCol = 1, strDateCol = 2
     ),
-    "must be character strings"
+    "must be a single non-missing character string"
+  )
+})
+
+test_that("numeric column arguments are rejected even when mixed with character (#307)", {
+  # A column named "3" must not let strValueCol = 3 pass and read column 3.
+  df <- make_vs(c(1, 1, 1))
+  df[["3"]] <- c(5, 6, 7)
+  expect_error(
+    Detect_ConsecutiveRepeats(df, 3),
+    "strValueCol"
+  )
+  expect_error(
+    Detect_ConsecutiveRepeats(df, "weight", strSubjectCol = 1),
+    "strSubjectCol"
+  )
+  expect_error(
+    Detect_ConsecutiveRepeats(df, c("weight", "3")),
+    "strValueCol"
+  )
+  expect_error(
+    Detect_ConsecutiveRepeats(df, NA_character_),
+    "strValueCol"
+  )
+  expect_error(
+    Detect_ConsecutiveRepeats(df, "weight", strOrderCol = 3),
+    "strOrderCol"
+  )
+  expect_error(
+    Detect_ConsecutiveRepeats(
+      df, "weight", strMeasureCol = 3, strMeasureVal = "x"
+    ),
+    "strMeasureCol"
   )
 })
 

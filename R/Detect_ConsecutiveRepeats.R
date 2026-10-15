@@ -53,7 +53,7 @@ Detect_ConsecutiveRepeats <- function(
   if (
     !is.numeric(nWindowLength) ||
       length(nWindowLength) != 1 ||
-      is.na(nWindowLength) ||
+      !is.finite(nWindowLength) ||
       nWindowLength < 2 ||
       nWindowLength != round(nWindowLength)
   ) {
@@ -66,10 +66,33 @@ Detect_ConsecutiveRepeats <- function(
       "{.arg strMeasureVal} is required when {.arg strMeasureCol} is supplied."
     )
   }
-  lCols <- c(strValueCol, strSubjectCol, strDateCol, strOrderCol, strMeasureCol)
-  if (!is.character(lCols)) {
-    cli::cli_abort("Column arguments must be character strings.")
+  # Validate each argument before c(), which would coerce numerics to strings
+  # and silently drop NULLs.
+  lScalarCols <- list(
+    strValueCol = strValueCol,
+    strSubjectCol = strSubjectCol,
+    strDateCol = strDateCol
+  )
+  if (!is.null(strMeasureCol)) {
+    lScalarCols$strMeasureCol <- strMeasureCol
   }
+  for (strArg in names(lScalarCols)) {
+    x <- lScalarCols[[strArg]]
+    if (!is.character(x) || length(x) != 1 || is.na(x)) {
+      cli::cli_abort(
+        "{.arg {strArg}} must be a single non-missing character string."
+      )
+    }
+  }
+  if (
+    !is.null(strOrderCol) &&
+      (!is.character(strOrderCol) || !length(strOrderCol) || anyNA(strOrderCol))
+  ) {
+    cli::cli_abort(
+      "{.arg strOrderCol} must be a character vector without missing values."
+    )
+  }
+  lCols <- c(strValueCol, strSubjectCol, strDateCol, strOrderCol, strMeasureCol)
   strMissing <- setdiff(lCols, names(df))
   if (length(strMissing)) {
     cli::cli_abort("Column{?s} not found in {.arg df}: {.val {strMissing}}.")
