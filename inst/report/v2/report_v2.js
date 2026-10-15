@@ -255,9 +255,88 @@
     document.fonts && document.fonts.ready.then(fitSiteColumn);
 
     table.addEventListener('click', (e) => {
+      const sortBtn = e.target.closest('th[data-sort] .v2-th-btn');
+      if (sortBtn) return sortBy(sortBtn.closest('th').dataset.sort);
       const row = e.target.closest('.v2-site-row');
-      row && setSelected(row.dataset.site, { scroll: false });
+      if (!row) return;
+      setSelected(row.dataset.site, { scroll: false });
+      // A tile is a site x KRI pair: open that KRI in the site panel.
+      const cell = e.target.closest('td.v2-cell');
+      cell && focusPanelMetric(cell.dataset.m);
     });
+
+    /* Sorting: a KRI header ranks sites by that KRI's severity (new or worse first within
+       a colour); selecting it again, or the Risk header, restores the risk ranking. */
+    const tbody = $('tbody', table);
+    const riskOrder = new Map(rows.map((r, i) => [r, i]));
+    const SEV_RANK = { r: 3, a: 2, g: 1, n: 0 };
+    let sortKey = 'risk';
+    const severity = (row, m) => {
+      const td = row.querySelector(`td[data-m="${cssId(m)}"]`);
+      if (!td) return -1;
+      const cls = ['r', 'a', 'g', 'n'].find((k) => td.classList.contains(k)) || 'n';
+      return SEV_RANK[cls] + (td.classList.contains('worse') ? 0.5 : 0);
+    };
+    function sortBy(key) {
+      sortKey = key === sortKey ? 'risk' : key;
+      const ordered = rows.slice().sort((a, b) => (sortKey === 'risk' ? 0 : severity(b, sortKey) - severity(a, sortKey)) || riskOrder.get(a) - riskOrder.get(b));
+      tbody.append(...ordered);
+      $$('th[data-sort]', table).forEach((th) => th.setAttribute('aria-sort', th.dataset.sort === sortKey ? 'descending' : 'none'));
+      $('.v2-table-scroll').scrollTop = 0;
+    }
+
+    /* Crosshair + tooltip (mouse only). */
+    const tip = document.createElement('div');
+    tip.className = 'v2-tip';
+    tip.setAttribute('role', 'tooltip');
+    document.body.appendChild(tip);
+    $$('td.v2-cell[title]', table).forEach((td) => { td.dataset.title = td.title; td.removeAttribute('title'); });
+    let hoverRow = null;
+    let hoverCol = null;
+    const colCells = (m) => (m ? $$(`td[data-m="${cssId(m)}"], th[data-sort="${cssId(m)}"]`, table) : []);
+    const setHover = (row, m) => {
+      if (row !== hoverRow) {
+        hoverRow && hoverRow.classList.remove('hl-row');
+        row && row.classList.add('hl-row');
+        hoverRow = row;
+      }
+      if (m !== hoverCol) {
+        colCells(hoverCol).forEach((c) => c.classList.remove('hl-col'));
+        colCells(m).forEach((c) => c.classList.add('hl-col'));
+        hoverCol = m;
+      }
+      // Fade the rest only when a KRI is in focus (tile or header), not while scanning site names.
+      table.classList.toggle('is-hovering', !!m);
+    };
+    const hideTip = () => tip.classList.remove('show');
+    const showTip = (td) => {
+      const row = td.closest('.v2-site-row');
+      const html = tipHTML(row.dataset.site, td.dataset.m, td.dataset.title);
+      if (!html) return hideTip();
+      tip.innerHTML = html;
+      const rect = td.getBoundingClientRect();
+      const tw = tip.offsetWidth;
+      const th = tip.offsetHeight;
+      const limit = (parseFloat(getComputedStyle(root).getPropertyValue('--v2-topbar')) || 56) + 8;
+      let top = rect.top - th - 10;
+      if (top < limit) top = rect.bottom + 10;
+      const left = Math.min(Math.max(8, rect.left + rect.width / 2 - tw / 2), window.innerWidth - tw - 8);
+      tip.style.transform = '';
+      tip.style.left = left + 'px';
+      tip.style.top = top + 'px';
+      tip.classList.add('show');
+    };
+    if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+      table.addEventListener('mouseover', (e) => {
+        const row = e.target.closest('.v2-site-row');
+        const cell = e.target.closest('td.v2-cell');
+        const th = e.target.closest('th.v2-kri-th');
+        setHover(row, cell ? cell.dataset.m : th ? th.dataset.sort : null);
+        cell ? showTip(cell) : hideTip();
+      });
+      table.addEventListener('mouseleave', () => { setHover(null, null); hideTip(); });
+      $('.v2-table-scroll').addEventListener('scroll', hideTip, { passive: true });
+    }
     table.addEventListener('keydown', (e) => {
       const row = e.target.closest('.v2-site-row');
       if (!row) return;
@@ -340,6 +419,42 @@
       <div class="v2-bullet-key"><span><i class="k-bar"></i>Site rate</span><span><i class="k-mark"></i>Study rate</span><span>${key}</span></div>`;
   }
 
+  function tipHTML(siteId, metricId, fallback) {
+    const site = sitesById[siteId];
+    const m = metricsById[metricId];
+    if (!site || !m) return '';
+    const cell = site.cells.find((c) => c.m === metricId);
+    const head = `<div class="v2-tip-head"><b>${esc(m.abbr)} · ${esc(m.name)}</b><span>${esc(siteId)}</span></div>`;
+    if (!cell) return `${head}<div class="v2-tip-hint">${esc(fallback || 'No data for this site.')}</div>`;
+    const s = sev(cell.f);
+    const dir = cell.f > 0 ? ' · above expected' : cell.f < 0 ? ' · below expected' : '';
+    const flagged = s === 'r' || s === 'a';
+    const change = cell.c === 'new' && flagged ? '<em>New</em>'
+      : cell.c === 'worse' && flagged ? `<em>Up from ${SEV_NAME[sev(cell.p)]}</em>`
+        : cell.c === 'better' ? `<em class="down">Down from ${SEV_NAME[sev(cell.p)]}</em>` : '';
+    const rows = [
+      ['Score', fmtNum(cell.s)],
+      ['Site rate', `${fmtRate(cell.r)}${cell.n != null && cell.d != null ? ` <span style="color:#94a3b8">(${esc(cell.n)}/${esc(cell.d)})</span>` : ''}`],
+      ['Study rate', fmtRate(m.studyRate)],
+    ];
+    if (cell.w > 0 && !m.inactive) rows.push(['Risk points', '+' + esc(cell.w)]);
+    return `${head}
+      <div class="v2-tip-flag"><i class="${s}"></i>${SEV_NAME[s]}${dir}${change}</div>
+      <dl>${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>
+      <div class="v2-tip-hint">Click to open in the ${esc((siteData.groupLevel || 'site').toLowerCase())} panel</div>`;
+  }
+
+  // Open one KRI in the site panel and bring it into view.
+  function focusPanelMetric(metricId) {
+    const item = metricId && $(`#v2-site-panel .v2-sm[data-m="${cssId(metricId)}"]`);
+    if (!item) return;
+    item.open = true;
+    item.classList.remove('flash');
+    void item.offsetWidth;
+    item.classList.add('flash');
+    item.scrollIntoView({ block: 'center', behavior: reduceMotion ? 'auto' : 'smooth' });
+  }
+
   function metricItem(cell, open) {
     const m = metricsById[cell.m] || { abbr: cell.m, name: cell.m };
     const s = sev(cell.f);
@@ -351,7 +466,7 @@
     const inactive = m.inactive ? '<span class="v2-badge inactive">Inactive</span>' : '';
     const prev = cell.c && cell.c !== 'same' && cell.p !== undefined ? `<small>was ${SEV_NAME[sev(cell.p)]}</small>` : '';
     return `
-      <details class="v2-sm sev-${s}${m.inactive ? ' inactive' : ''}" ${open ? 'open' : ''}>
+      <details class="v2-sm sev-${s}${m.inactive ? ' inactive' : ''}" data-m="${esc(cell.m)}" ${open ? 'open' : ''}>
         <summary>
           <span class="v2-sm-strip" aria-hidden="true"></span>
           <span class="v2-badge neutral v2-mono">${esc(m.abbr)}</span>

@@ -121,7 +121,7 @@ ReportV2_SitesTab <- function(lSiteData) {
   cell_td <- function(strSite, strMetric, strAbbr) {
     dfCell <- dfCells[dfCells$GroupID == strSite & dfCells$MetricID == strMetric, ]
     if (nrow(dfCell) == 0) {
-      return(htmltools::tags$td(class = "v2-cell n", title = paste0(strAbbr, ": no data")))
+      return(htmltools::tags$td(class = "v2-cell n", `data-m` = strMetric, title = paste0(strAbbr, ": no data")))
     }
     strClass <- v2_flag_class(dfCell$flag)
     bWorse <- isTRUE(dfCell$change %in% c("new", "worse")) && strClass %in% c("r", "a")
@@ -135,6 +135,7 @@ ReportV2_SitesTab <- function(lSiteData) {
     )
     htmltools::tags$td(
       class = paste(c("v2-cell", strClass, if (bWorse) "worse"), collapse = " "),
+      `data-m` = strMetric,
       title = strTitle,
       htmltools::tags$span(class = "v2-sr", strTitle)
     )
@@ -177,6 +178,41 @@ ReportV2_SitesTab <- function(lSiteData) {
       lapply(seq_len(nrow(dfActive)), function(j) cell_td(lSite$GroupID, dfActive$MetricID[j], dfActive$abbr[j]))
     )
   })
+
+  # Flag mix per KRI across all groups, shown as a stacked bar under each header.
+  kri_header <- function(j) {
+    strMetric <- dfActive$MetricID[j]
+    vFlag <- dfCells$flag[dfCells$MetricID == strMetric]
+    vClass <- v2_flag_class(vFlag)
+    vCount <- c(
+      r = sum(vClass == "r"), a = sum(vClass == "a"), g = sum(vClass == "g"),
+      n = nrow(dfSites) - sum(vClass %in% c("r", "a", "g"))
+    )
+    strTitle <- paste0(
+      dfActive$name[j], ": ", vCount[["r"]], " red, ", vCount[["a"]], " amber, ", vCount[["g"]], " green",
+      if (vCount[["n"]] > 0) paste0(", ", vCount[["n"]], " no data"),
+      ". Select to sort by this KRI."
+    )
+    htmltools::tags$th(
+      scope = "col",
+      class = "v2-kri-th",
+      `data-sort` = strMetric,
+      `aria-sort` = "none",
+      title = strTitle,
+      htmltools::tags$button(
+        type = "button",
+        class = "v2-th-btn",
+        htmltools::tags$span(class = "v2-th-abbr", dfActive$abbr[j]),
+        htmltools::tags$span(
+          class = "v2-colbar",
+          `aria-hidden` = "true",
+          lapply(c("r", "a", "g", "n"), function(k) {
+            if (vCount[[k]] > 0) htmltools::tags$i(class = k, style = paste0("flex-grow:", vCount[[k]]))
+          })
+        )
+      )
+    )
+  }
 
   # Estimated content width of the site column (ID + badge, or the sub-line).
   vPlace <- vapply(seq_len(nrow(dfSites)), function(i) {
@@ -242,10 +278,15 @@ ReportV2_SitesTab <- function(lSiteData) {
           ),
           htmltools::tags$thead(htmltools::tags$tr(
             htmltools::tags$th(class = "v2-site-cell", scope = "col", strGroupLevel),
-            htmltools::tags$th(class = "v2-risk-cell", scope = "col", title = "Site risk score", "Risk"),
-            lapply(seq_len(nrow(dfActive)), function(j) {
-              htmltools::tags$th(scope = "col", title = dfActive$name[j], dfActive$abbr[j])
-            })
+            htmltools::tags$th(
+              class = "v2-risk-cell",
+              scope = "col",
+              `data-sort` = "risk",
+              `aria-sort` = "descending",
+              title = "Site risk score. Select to restore the risk ranking.",
+              htmltools::tags$button(type = "button", class = "v2-th-btn", "Risk")
+            ),
+            lapply(seq_len(nrow(dfActive)), kri_header)
           )),
           htmltools::tags$tbody(rows)
         )

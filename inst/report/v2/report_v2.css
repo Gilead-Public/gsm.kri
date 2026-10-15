@@ -201,9 +201,20 @@ body {
 .v2-heatmap { border-collapse: separate; border-spacing: 2px; font-size: 13px; width: 100%; table-layout: fixed; }
 .v2-site-col { width: var(--v2-site-w, 160px); }
 .v2-risk-col { width: 48px; }
-.v2-heatmap thead th { position: sticky; top: 0; z-index: 2; background: var(--v2-surface); color: var(--v2-muted); font-size: 10.5px; font-weight: 600; letter-spacing: 0; padding: 8px 0 6px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: clip; cursor: help; box-shadow: 0 1px 0 var(--v2-border); }
-.v2-heatmap thead th.v2-site-cell { left: 0; z-index: 3; text-align: left; padding-left: 12px; cursor: default; }
-.v2-heatmap thead th.v2-risk-cell { cursor: help; }
+.v2-heatmap thead th { position: sticky; top: 0; z-index: 2; background: var(--v2-surface); color: var(--v2-muted); font-size: 10.5px; font-weight: 600; letter-spacing: 0; padding: 8px 0 7px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: clip; box-shadow: 0 1px 0 var(--v2-border); vertical-align: bottom; }
+.v2-heatmap thead th.v2-site-cell { left: 0; z-index: 3; text-align: left; padding-left: 12px; }
+/* Header buttons: sort by a KRI, or back to the risk ranking. */
+.v2-th-btn { all: unset; box-sizing: border-box; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 3px 0; border-radius: 6px; cursor: pointer; color: var(--v2-muted); }
+.v2-risk-cell .v2-th-btn { align-items: flex-end; }
+.v2-th-btn:hover, .v2-kri-th.hl-col .v2-th-btn { color: var(--v2-text); }
+.v2-th-btn:focus-visible { outline: 2px solid var(--v2-accent-2); outline-offset: -2px; }
+.v2-th-abbr { font-size: 10.5px; font-weight: 650; letter-spacing: .02em; }
+.v2-heatmap th[aria-sort="descending"] .v2-th-btn { color: var(--v2-accent-2); }
+.v2-kri-th[aria-sort="descending"] .v2-th-abbr::after { content: " \25BE"; }
+.v2-colbar { display: flex; gap: 1px; width: calc(100% - 10px); height: 4px; border-radius: 999px; overflow: hidden; background: var(--v2-heat-n); }
+.v2-colbar i { display: block; min-width: 2px; }
+.v2-colbar i.r { background: var(--v2-heat-r); } .v2-colbar i.a { background: var(--v2-heat-a); }
+.v2-colbar i.g { background: var(--v2-heat-g); } .v2-colbar i.n { background: var(--v2-heat-n); }
 .v2-heatmap td { height: 36px; padding: 0; }
 .v2-site-cell { position: sticky; left: 0; z-index: 1; background: var(--v2-surface); padding: 0 10px 0 12px !important; text-align: left; border-radius: 6px; white-space: nowrap; overflow: hidden; }
 .v2-site-id { display: flex; width: max-content; align-items: center; gap: 6px; line-height: 1.15; }
@@ -212,11 +223,44 @@ body {
 .v2-risk-cell { padding: 0 10px 0 4px !important; text-align: right; white-space: nowrap; }
 .v2-risk-cell .v2-num { font-weight: 600; font-size: 13px; }
 .v2-heatmap thead th.v2-risk-cell { text-align: right; padding-right: 10px; }
-.v2-cell { border-radius: 5px; background: var(--v2-heat-n); }
-.v2-cell.r { background: var(--v2-heat-r); }
-.v2-cell.a { background: var(--v2-heat-a); }
-.v2-cell.g { background: var(--v2-heat-g); }
+/* Tiles: flat colour with a soft top light and hairline edge, so neighbours stay distinct. */
+.v2-cell {
+  position: relative; border-radius: 6px; cursor: pointer;
+  background-color: var(--v2-heat-n);
+  background-image: linear-gradient(180deg, rgb(255 255 255 / .22), rgb(255 255 255 / 0) 55%, rgb(0 0 0 / .05));
+  box-shadow: inset 0 0 0 1px var(--v2-tile-edge);
+  --v2-tile-edge: rgb(15 23 42 / .07);
+}
+.v2-cell.r { background-color: var(--v2-heat-r); }
+.v2-cell.a { background-color: var(--v2-heat-a); }
+.v2-cell.g { background-color: var(--v2-heat-g); }
+.v2-cell.n { background-image: repeating-linear-gradient(135deg, transparent 0 4px, var(--v2-hatch) 4px 5px); }
 .v2-cell.worse { box-shadow: inset 0 0 0 3px var(--v2-worse); }
+.v2-heatmap { --v2-hatch: rgb(15 23 42 / .07); }
+[data-theme="dark"] .v2-heatmap { --v2-hatch: rgb(255 255 255 / .06); }
+[data-theme="dark"] .v2-cell { --v2-tile-edge: rgb(255 255 255 / .05); background-image: linear-gradient(180deg, rgb(255 255 255 / .08), rgb(255 255 255 / 0) 55%); }
+[data-theme="dark"] .v2-cell.n { background-image: repeating-linear-gradient(135deg, transparent 0 4px, var(--v2-hatch) 4px 5px); }
+.v2-sm.flash { animation: v2-flash 1.4s ease; }
+@keyframes v2-flash { 0%, 35% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--v2-accent-2) 45%, transparent); } 100% { box-shadow: 0 0 0 0 transparent; } }
+
+/* Cell tooltip */
+.v2-tip { position: fixed; z-index: 70; left: 0; top: 0; pointer-events: none; width: 264px; padding: 10px 12px; border-radius: 10px; box-sizing: border-box;
+  background: rgb(15 23 42 / .94); color: #f1f5f9; font-size: 12px; line-height: 1.45; box-shadow: var(--v2-shadow-lg);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); opacity: 0; transform: translateY(4px); }
+[data-theme="dark"] .v2-tip { background: rgb(30 41 59 / .96); border: 1px solid rgb(255 255 255 / .08); }
+.v2-tip.show { opacity: 1; transform: none; }
+.v2-tip-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.v2-tip-head b { font-size: 12.5px; }
+.v2-tip-head span { color: #94a3b8; font-family: var(--v2-mono); font-size: 11px; }
+.v2-tip-flag { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; font-weight: 600; margin-bottom: 6px; }
+.v2-tip-flag i { width: 10px; height: 10px; border-radius: 3px; background: var(--v2-heat-n); }
+.v2-tip-flag i.r { background: var(--v2-heat-r); } .v2-tip-flag i.a { background: var(--v2-heat-a); } .v2-tip-flag i.g { background: var(--v2-heat-g); }
+.v2-tip-flag em { font-style: normal; font-weight: 700; font-size: 10px; padding: 1px 6px; border-radius: 4px; background: #f1f5f9; color: #0f172a; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
+.v2-tip-flag em.down { background: rgb(22 163 74 / .25); color: #bbf7d0; }
+.v2-tip dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 0; }
+.v2-tip dt { color: #94a3b8; }
+.v2-tip dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.v2-tip-hint { margin-top: 6px; color: #94a3b8; font-size: 11px; }
 .v2-site-row { cursor: pointer; }
 .v2-site-row:hover .v2-site-cell { background: var(--v2-surface-3); }
 .v2-site-row.selected .v2-site-cell { background: var(--v2-accent-bg); box-shadow: inset 3px 0 0 var(--v2-accent-2); }
@@ -226,6 +270,7 @@ body {
 .v2-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--v2-muted); align-items: center; }
 .v2-legend span { display: inline-flex; align-items: center; gap: 5px; }
 .v2-key { display: inline-block; width: 14px; height: 12px; border-radius: 3px; background: var(--v2-heat-n); }
+.v2-key.n { background-image: repeating-linear-gradient(135deg, transparent 0 3px, rgb(15 23 42 / .12) 3px 4px); }
 .v2-key.r { background: var(--v2-heat-r); } .v2-key.a { background: var(--v2-heat-a); } .v2-key.g { background: var(--v2-heat-g); }
 .v2-key.worse { box-shadow: inset 0 0 0 2px var(--v2-worse); }
 
@@ -343,8 +388,14 @@ body {
   @keyframes v2-enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
   @media (hover: hover) and (pointer: fine) {
     .v2-kpi:hover { transform: translateY(-2px); box-shadow: var(--v2-shadow-lg); }
-    .v2-cell { transition: transform .12s ease; }
-    .v2-site-row:hover .v2-cell { transform: scale(1.06); }
+    .v2-tip { transition: opacity .12s ease, transform .12s ease; }
+    .v2-cell { transition: transform .14s cubic-bezier(.2, .8, .2, 1), opacity .14s ease; }
+    .v2-cell:hover { transform: scale(1.12); z-index: 1; box-shadow: inset 0 0 0 1px var(--v2-tile-edge), 0 8px 16px -8px rgb(15 23 42 / .55); }
+    .v2-cell.worse:hover { box-shadow: inset 0 0 0 3px var(--v2-worse), 0 8px 16px -8px rgb(15 23 42 / .55); }
+    /* Crosshair: while hovering, tiles outside the hovered row and column recede. */
+    .v2-heatmap.is-hovering .v2-cell { opacity: .55; }
+    .v2-heatmap.is-hovering .hl-row .v2-cell, .v2-heatmap.is-hovering .v2-cell.hl-col, .v2-heatmap.is-hovering .selected .v2-cell { opacity: 1; }
+    .v2-heatmap .hl-row .v2-site-cell { background: var(--v2-surface-3); }
   }
 }
 @media (prefers-reduced-motion: reduce) { .v2-root * { transition: none !important; animation: none !important; } html { scroll-behavior: auto; } }

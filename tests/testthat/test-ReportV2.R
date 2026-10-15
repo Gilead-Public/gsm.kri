@@ -564,3 +564,22 @@ test_that("ReportV2_SitesTab gives every KRI column the same width and shows ris
   expect_no_match(html, "v2-mini", fixed = TRUE)
   expect_match(html, "<td class=\"v2-risk-cell\"><span class=\"v2-num\">12.5</span></td>", fixed = TRUE)
 })
+
+test_that("ReportV2_SitesTab links cells to KRIs and summarises each KRI column", {
+  html <- render_html(ReportV2_SitesTab(
+    ReportV2_SiteData(dfResultsV2, dfMetricsWeighted, dfGroupsSites)
+  ))
+  strHead <- sub("(?s).*<thead>(.*)</thead>.*", "\\1", html, perl = TRUE)
+  strBody <- sub("(?s).*<tbody>(.*)</tbody>.*", "\\1", html, perl = TRUE)
+
+  # Each tile knows its KRI, so hovering or clicking it can open that KRI for the site.
+  expect_equal(count_matches(strBody, "data-m=\"Analysis_kri0001\""), 3)
+  # Sortable KRI headers with a stacked red/amber/green summary across sites.
+  expect_equal(count_matches(strHead, "class=\"v2-kri-th\""), 2)
+  expect_match(strHead, "data-sort=\"Analysis_kri0001\"", fixed = TRUE)
+  expect_match(strHead, "aria-sort=\"none\"", fixed = TRUE)
+  expect_match(strHead, "v2-colbar", fixed = TRUE)
+  # AE: A red, B amber, C green.
+  expect_match(strHead, "Adverse Event Rate: 1 red, 1 amber, 1 green", fixed = TRUE)
+  expect_match(strHead, "data-sort=\"risk\"", fixed = TRUE)
+})
