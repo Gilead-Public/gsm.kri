@@ -598,6 +598,86 @@ test_that("filter buttons carry a short description shown on hover", {
   expect_match(strSites, "at least one red KRI", fixed = TRUE)
 
   strChanges <- render_html(ReportV2_FlagChanges(dfResultsV2, dfMetricsV2, dfGroupsV2))
+  # By site, By KRI, All and three change types (no Latest/History toggle with one snapshot).
   expect_equal(count_matches(strChanges, "class=\"v2-has-tip\""), 6)
   expect_match(strChanges, "more severe", fixed = TRUE)
+})
+
+# Flag history ------------------------------------------------------------
+
+# Two snapshots: the previous one rebuilt from the *_Previous columns of dfResultsV2.
+dfResultsHist <- dplyr::bind_rows(
+  dfResultsV2 %>%
+    dplyr::filter(!grepl("srs", .data$MetricID)) %>%
+    dplyr::transmute(
+      StudyID, GroupLevel, GroupID, MetricID,
+      SnapshotDate = as.Date("2025-03-01"),
+      Numerator = Numerator_Previous, Denominator = Denominator_Previous,
+      Metric = Metric_Previous, Score = Score_Previous, Flag = Flag_Previous
+    ),
+  dfResultsV2
+)
+
+test_that("v2_flag_history aligns each site x KRI flag with every snapshot", {
+  lHist <- v2_flag_history(dfResultsHist)
+
+  expect_equal(lHist$dates, c("2025-03-01", "2025-04-01"))
+  expect_equal(lHist$flags[["A\rAnalysis_kri0001"]], c(1, 2))
+  expect_equal(lHist$flags[["B\rAnalysis_kri0001"]], c(NA, 1))
+  expect_equal(lHist$scores[["A\rAnalysis_kri0002"]], c(0.5, 2.2))
+  expect_false(any(grepl("srs", names(lHist$flags))))
+  expect_equal(v2_flag_history(dfResultsV2)$dates, "2025-04-01")
+})
+
+test_that("ReportV2_FlagChanges adds a History mode with one tile per snapshot", {
+  html <- render_html(ReportV2_FlagChanges(dfResultsHist, dfMetricsV2, dfGroupsV2))
+  strSite <- change_view(html, "site")
+
+  expect_match(html, "data-mode=\"latest\"", fixed = TRUE)
+  expect_match(html, "data-mode=\"history\"", fixed = TRUE)
+  expect_match(html, "2 snapshots", fixed = TRUE)
+  # Every change row carries a strip; each strip has one tile per snapshot.
+  expect_equal(count_matches(strSite, "class=\"v2-hist\""), 4)
+  expect_equal(count_matches(strSite, "v2-ht "), 8)
+  # A/AE went amber -> red: the latest tile is red and marked as worse.
+  expect_match(strSite, "v2-ht r worse", fixed = TRUE)
+})
+
+test_that("ReportV2_FlagChanges hides History mode with a single snapshot", {
+  html <- render_html(ReportV2_FlagChanges(dfResultsV2, dfMetricsV2, dfGroupsV2))
+
+  expect_no_match(html, "data-mode=", fixed = TRUE)
+  expect_no_match(html, "class=\"v2-hist\"", fixed = TRUE)
+})
+
+test_that("ReportV2_SiteData ships flag history for the site panel", {
+  lData <- ReportV2_SiteData(dfResultsHist, dfMetricsWeighted, dfGroupsSites)
+  strJSON <- v2_site_json(lData)
+
+  expect_equal(lData$dates, c("2025-03-01", "2025-04-01"))
+  dfCell <- lData$cells[lData$cells$GroupID == "A" & lData$cells$MetricID == "Analysis_kri0001", ]
+  expect_equal(dfCell$history[[1]], c(1, 2))
+  expect_match(strJSON, "\"dates\":[\"2025-03-01\",\"2025-04-01\"]", fixed = TRUE)
+  expect_match(strJSON, "\"h\":[1,2]", fixed = TRUE)
+})
+
+test_that("ReportV2_SiteData keeps KRIs missing from the latest snapshot for their history (#325)", {
+  # A retired KRI with results in the previous snapshot only.
+  dfMetrics <- dplyr::bind_rows(
+    dfMetricsWeighted,
+    dplyr::mutate(dfMetricsWeighted[1, ], MetricID = "Analysis_kri9999", Abbreviation = "RET", Active = FALSE)
+  )
+  dfResults <- dplyr::bind_rows(
+    dfResultsHist,
+    dfResultsHist %>%
+      dplyr::filter(.data$MetricID == "Analysis_kri0001", .data$SnapshotDate == as.Date("2025-03-01")) %>%
+      dplyr::mutate(MetricID = "Analysis_kri9999")
+  )
+  lData <- ReportV2_SiteData(dfResults, dfMetrics, dfGroupsSites)
+  dfCell <- lData$cells[lData$cells$GroupID == "A" & lData$cells$MetricID == "Analysis_kri9999", ]
+
+  expect_equal(nrow(dfCell), 1)
+  expect_true(is.na(dfCell$flag))
+  expect_equal(dfCell$history[[1]], c(1, NA))
+  expect_true(dfCell$inactive)
 })

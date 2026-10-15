@@ -57,6 +57,29 @@ ReportV2_SiteData <- function(dfResults, dfMetrics, dfGroups, lCharts = NULL) {
     ) %>%
     dplyr::left_join(dfWeights, by = c("MetricID", "flag" = "Flag")) %>%
     dplyr::rename(weight = "Weight")
+  # KRIs a site has history for but no latest result (e.g. retired metrics) stay
+  # listed, so the panel can still show their flag history.
+  lHist <- v2_flag_history(dfResults)
+  vHistKey <- names(lHist$flags)
+  vHistSite <- sub("\r.*$", "", vHistKey)
+  vHistMetric <- sub("^.*\r", "", vHistKey)
+  bExtra <- vHistSite %in% dfCells$GroupID & vHistMetric %in% dfMetricInfo$MetricID &
+    !vHistKey %in% paste(dfCells$GroupID, dfCells$MetricID, sep = "\r")
+  if (any(bExtra)) {
+    dfCells <- dplyr::bind_rows(dfCells, tibble::tibble(
+      GroupID = vHistSite[bExtra],
+      MetricID = vHistMetric[bExtra],
+      flag = NA_real_, prev = NA_real_, score = NA_real_,
+      num = NA_real_, den = NA_real_, rate = NA_real_,
+      inactive = vHistMetric[bExtra] %in% vInactive,
+      change = NA_character_,
+      weight = NA_real_
+    ))
+  }
+  vCellKey <- paste(dfCells$GroupID, dfCells$MetricID, sep = "\r")
+  dfCells$history <- unname(lHist$flags[vCellKey])
+  dfCells$history_scores <- unname(lHist$scores[vCellKey])
+
   dfCells$bands <- lapply(seq_len(nrow(dfCells)), function(i) {
     lInfo <- dfMetricInfo[dfMetricInfo$MetricID == dfCells$MetricID[i], ]
     v2_rate_bands(
@@ -103,6 +126,7 @@ ReportV2_SiteData <- function(dfResults, dfMetrics, dfGroups, lCharts = NULL) {
     sites = dfSites,
     cells = dfCells,
     metrics = dfMetricInfo,
+    dates = lHist$dates,
     group_level = strGroupLevel,
     has_changes = bHasPrevious
   )
@@ -358,6 +382,56 @@ ReportV2_TabBar <- function(strGroupLevel = "Site", lCounts = list()) {
 
 # Helpers -------------------------------------------------------------------
 
+# Flag and score of every site x KRI across all snapshots, aligned to the sorted snapshot
+# dates (NA where a snapshot has no result). Keys are "GroupID\rMetricID".
+v2_flag_history <- function(dfResults) {
+  if (!"SnapshotDate" %in% names(dfResults)) {
+    return(list(dates = character(), flags = list(), scores = list()))
+  }
+  dfKRI <- dfResults[v2_is_kri(dfResults$MetricID) & !is.na(dfResults$SnapshotDate), ]
+  vDates <- sort(unique(as.character(dfKRI$SnapshotDate)))
+  vKey <- paste(dfKRI$GroupID, dfKRI$MetricID, sep = "\r")
+  vIdx <- match(as.character(dfKRI$SnapshotDate), vDates)
+  lRows <- split(seq_len(nrow(dfKRI)), vKey)
+  aligned <- function(vValue) {
+    lapply(lRows, function(i) {
+      vOut <- rep(NA_real_, length(vDates))
+      vOut[vIdx[i]] <- as.numeric(vValue[i])
+      vOut
+    })
+  }
+  list(dates = vDates, flags = aligned(dfKRI$Flag), scores = aligned(dfKRI$Score))
+}
+
+# A strip of flag tiles, oldest to latest. A tile that is amber or red and more severe
+# than the snapshot before it carries the same "worse" mark as the heatmap.
+v2_history_strip <- function(vFlag, vScore, vDates) {
+  vName <- c(r = "Red", a = "Amber", g = "Green", n = "No flag")
+  vClass <- v2_flag_class(vFlag)
+  vLabel <- vapply(seq_along(vFlag), function(i) {
+    paste0(
+      vDates[i], " \u00B7 ", vName[[vClass[i]]],
+      if (!is.na(vFlag[i]) && vFlag[i] != 0) if (vFlag[i] > 0) " (above)" else " (below)",
+      if (!is.na(vScore[i])) sprintf(" \u00B7 score %.2f", vScore[i])
+    )
+  }, character(1))
+  vWorse <- vapply(seq_along(vFlag), function(i) {
+    i > 1 && !is.na(vFlag[i]) && abs(vFlag[i]) >= 1 &&
+      (is.na(vFlag[i - 1]) || abs(vFlag[i]) > abs(vFlag[i - 1]))
+  }, logical(1))
+  htmltools::tags$span(
+    class = "v2-hist",
+    role = "img",
+    `aria-label` = paste("Flag history:", paste(vLabel, collapse = "; ")),
+    lapply(seq_along(vFlag), function(i) {
+      htmltools::tags$i(
+        class = paste(c("v2-ht", vClass[i], if (vWorse[i]) "worse"), collapse = " "),
+        title = vLabel[i]
+      )
+    })
+  )
+}
+
 v2_site_srs <- function(dfResults) {
   dfSRS <- dfResults[!v2_is_kri(dfResults$MetricID) & !is.na(dfResults$Score), ]
   if ("SnapshotDate" %in% names(dfSRS) && nrow(dfSRS) > 0) {
@@ -546,6 +620,8 @@ v2_site_json <- function(lSiteData) {
           m = dfCells$MetricID[j], f = dfCells$flag[j], p = dfCells$prev[j], c = dfCells$change[j],
           s = signif_or_na(dfCells$score[j]), n = dfCells$num[j], d = dfCells$den[j],
           r = signif_or_na(dfCells$rate[j]), w = dfCells$weight[j],
+          h = if (is.null(dfCells$history[[j]])) NULL else I(dfCells$history[[j]]),
+          hs = if (is.null(dfCells$history_scores[[j]])) NULL else I(signif_or_na(dfCells$history_scores[[j]])),
           b = if (is.null(dfB)) NULL else lapply(seq_len(nrow(dfB)), function(k) {
             c(signif_or_na(dfB$lo[k]), signif_or_na(dfB$hi[k]), dfB$flag[k])
           })
@@ -566,6 +642,7 @@ v2_site_json <- function(lSiteData) {
     list(
       groupLevel = lSiteData$group_level,
       hasChanges = lSiteData$has_changes,
+      dates = I(lSiteData$dates %||% character()),
       metrics = lMetrics,
       sites = lSites
     ),

@@ -3,9 +3,9 @@
 - Add an experimental, opt-in modern KRI report template. Render it with
   `Report_KRI(strInputPath = system.file("report", "Report_KRI_v2.Rmd", package = "gsm.kri"))`.
   It is organised in three tabs: Overview (KPI cards, key takeaways and flag changes
-  grouped by site or by KRI), Sites (a risk-score-ranked heatmap that marks new or
+  grouped by site or by KRI, with a flag-history view across all snapshots), Sites (a risk-score-ranked heatmap that marks new or
   worse flags, with KRI tooltips, sortable KRI columns and a site panel listing flagged KRIs by risk-score contribution and
-  a bullet chart of the site rate against the study rate) and Metrics (a KRI list and
+  a bullet chart of the site rate against the study rate and the flag history of each KRI) and Metrics (a KRI list and
   collapsible per-KRI chart cards). It also has a global group search, dark mode and
   print styles, and renders much faster than the standard template. Inactive metrics are
   listed last with an "Inactive" label and excluded from its flag counts (#325).

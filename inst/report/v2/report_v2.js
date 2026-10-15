@@ -47,6 +47,7 @@
 
   // Short descriptions on filter buttons: the R title attribute becomes a styled tooltip.
   function initHintTips() {
+    $$('.v2-ht[title], .v2-change-row[title]').forEach((el) => el.classList.add('v2-has-tip'));
     $$('.v2-has-tip[title]').forEach((el) => {
       el.dataset.tip = el.title;
       el.setAttribute('aria-description', el.title);
@@ -415,7 +416,10 @@
   function bulletSVG(cell, metric) {
     const rate = cell.r;
     const study = metric.studyRate;
-    if (rate == null) return '<p class="v2-section-sub">No rate available for this KRI.</p>';
+    if (rate == null) {
+      const why = cell.d == null && cell.f == null ? 'Not in the latest snapshot.' : 'No rate available for this KRI.';
+      return `<p class="v2-section-sub">${why}</p>`;
+    }
     let mode = 'flags';
     let bands = (cell.b || []).map((b) => ({ lo: b[0], hi: b[1] == null ? Infinity : b[1], f: b[2] }));
     if (!bands.length && metric.q) {
@@ -484,6 +488,23 @@
     item.scrollIntoView({ block: 'center', behavior: reduceMotion ? 'auto' : 'smooth' });
   }
 
+  function historyStrip(cell) {
+    const dates = siteData.dates || [];
+    const h = Array.isArray(cell.h) ? cell.h : cell.h == null ? [] : [cell.h];
+    if (dates.length < 2 || h.length !== dates.length) return '';
+    const hs = Array.isArray(cell.hs) ? cell.hs : [];
+    const tiles = h.map((f, i) => {
+      const s = sev(f);
+      const prev = i > 0 ? h[i - 1] : undefined;
+      const worse = i > 0 && f != null && Math.abs(f) >= 1 && (prev == null || Math.abs(f) > Math.abs(prev));
+      const dir = f > 0 ? ' (above)' : f < 0 ? ' (below)' : '';
+      const label = `${dates[i]} · ${SEV_NAME[s]}${dir}${hs[i] != null ? ' · score ' + fmtNum(hs[i]) : ''}`;
+      return `<i class="v2-ht ${s}${worse ? ' worse' : ''} v2-has-tip" data-tip="${esc(label)}"></i>`;
+    }).join('');
+    return `<div class="v2-sm-hist"><span>Flag history</span><span class="v2-hist" role="img" aria-label="Flag history">${tiles}</span>
+      <span class="v2-sm-hist-axis">${esc(dates[0])} → ${esc(dates[dates.length - 1])}</span></div>`;
+  }
+
   function metricItem(cell, open) {
     const m = metricsById[cell.m] || { abbr: cell.m, name: cell.m };
     const s = sev(cell.f);
@@ -503,12 +524,13 @@
           <span class="v2-sm-meta">${chip}${weight}${inactive}${flagTag(cell.f)}</span>
         </summary>
         <div class="v2-sm-body">
+          ${historyStrip(cell)}
           ${bulletSVG(cell, m)}
-          <dl class="v2-sm-stats">
+          ${cell.d == null && cell.f == null ? '' : `<dl class="v2-sm-stats">
             <div><dt>Site rate</dt><dd>${fmtRate(cell.r)}<small>${cell.n == null ? '' : esc(cell.n)} / ${cell.d == null ? '' : esc(cell.d)}</small></dd></div>
             <div><dt>Study rate</dt><dd>${fmtRate(m.studyRate)}<small>${esc(m.num || '')}</small></dd></div>
             <div><dt>Score</dt><dd>${fmtNum(cell.s)}${prev}</dd></div>
-          </dl>
+          </dl>`}
           <button type="button" class="v2-link" data-open-metric="${esc(cell.m)}">Open ${esc(m.abbr)} in Metrics →</button>
         </div>
       </details>`;
@@ -624,6 +646,10 @@
       limit = 12;
       render();
     }));
+    $$('.v2-change-mode button', rootEl).forEach((b) => b.addEventListener('click', () => {
+      $$('.v2-change-mode button', rootEl).forEach((x) => x.setAttribute('aria-selected', String(x === b)));
+      rootEl.classList.toggle('v2-mode-history', b.dataset.mode === 'history');
+    }));
     $$('.v2-change-tabs button', rootEl).forEach((b) => b.addEventListener('click', () => {
       $$('.v2-change-tabs button', rootEl).forEach((x) => x.setAttribute('aria-selected', String(x === b)));
       cat = b.dataset.cat;
@@ -698,7 +724,6 @@
       root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
       try { localStorage.setItem('gsm-v2-theme', root.dataset.theme); } catch (e) { /* ignore */ }
     });
-    $$('details.v2-fot').forEach((d) => d.addEventListener('toggle', refreshWidgets));
 
     document.addEventListener('keydown', (e) => {
       if (isTyping() || e.metaKey || e.ctrlKey || e.altKey) return;

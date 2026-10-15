@@ -376,6 +376,9 @@ ReportV2_FlagChanges <- function(dfResults, dfMetrics, dfGroups) {
   vMetricNames <- stats::setNames(dfMetrics$Metric, dfMetrics$MetricID)
   vAbbr <- stats::setNames(dfMetrics$Abbreviation, dfMetrics$MetricID)
   vSRS <- v2_site_srs(dfResults)
+  # History mode needs at least two snapshots.
+  lHist <- v2_flag_history(dfResults)
+  bHistory <- length(lHist$dates) >= 2
 
   dfChanged <- v2_current(dfResults, dfMetrics) %>%
     dplyr::filter(
@@ -445,7 +448,11 @@ ReportV2_FlagChanges <- function(dfResults, dfMetrics, dfGroups) {
         class = "v2-change-score",
         fmt(row$Score),
         if (!is.na(numDelta)) htmltools::tags$small(paste0(" ", v2_signed(numDelta)))
-      )
+      ),
+      if (bHistory) {
+        strKey <- paste(row$GroupID, row$MetricID, sep = "\r")
+        v2_history_strip(lHist$flags[[strKey]], lHist$scores[[strKey]], lHist$dates)
+      }
     )
   }
   # Each perspective ends with a marker comment so it can be located in the rendered HTML.
@@ -525,6 +532,8 @@ ReportV2_FlagChanges <- function(dfResults, dfMetrics, dfGroups) {
 
   vSegTip <- c(
     site = paste0("Group changes by ", tolower(strGroupLevel), ", highest risk score first."),
+    latest = "Show each change as previous flag to current flag.",
+    history = "Show each signal's flag in every snapshot, oldest on the left.",
     kri = "Group changes by KRI, most escalations first.",
     all = "Every flag change since the previous snapshot.",
     escalated = "Flag became more severe, e.g. amber to red.",
@@ -539,6 +548,7 @@ ReportV2_FlagChanges <- function(dfResults, dfMetrics, dfGroups) {
       `aria-selected` = tolower(bSelected),
       `data-view` = if (strAttr == "view") strValue,
       `data-cat` = if (strAttr == "cat") strValue,
+      `data-mode` = if (strAttr == "mode") strValue,
       class = "v2-has-tip",
       title = vSegTip[[strValue]],
       strLabel,
@@ -572,6 +582,15 @@ ReportV2_FlagChanges <- function(dfResults, dfMetrics, dfGroups) {
           seg_button("view", "site", paste("By", tolower(strGroupLevel)), TRUE),
           seg_button("view", "kri", "By KRI", FALSE)
         ),
+        if (bHistory) {
+          htmltools::tags$div(
+            class = "v2-seg v2-change-mode",
+            role = "tablist",
+            `aria-label` = "Display",
+            seg_button("mode", "latest", "Latest change", TRUE),
+            seg_button("mode", "history", "History", FALSE)
+          )
+        },
         htmltools::tags$div(
           class = "v2-seg v2-change-tabs",
           role = "tablist",
@@ -580,6 +599,15 @@ ReportV2_FlagChanges <- function(dfResults, dfMetrics, dfGroups) {
           lapply(names(vCats), function(k) seg_button("cat", k, vCats[[k]], FALSE, sum(dfChanged$cat == k)))
         )
       ),
+      if (bHistory) {
+        htmltools::tags$div(
+          class = "v2-hist-caption",
+          sprintf(
+            "Flag in each of %d snapshots, %s (left) to %s (right). Thick border: new or more severe than the snapshot before.",
+            length(lHist$dates), lHist$dates[1], utils::tail(lHist$dates, 1)
+          )
+        )
+      },
       if (nrow(dfChanged) == 0) {
         htmltools::tags$div(class = "v2-empty", "No flags changed since the previous snapshot.")
       } else {

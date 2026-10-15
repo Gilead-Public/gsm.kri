@@ -35,34 +35,6 @@ pagetitle: "`r setup$StudyLabel` · `r setup$GroupLevel` KRI Report"
 ---
 
 ```{r v2-report}
-# Flags over time, when deltas are available (Overview tab).
-flagOverTime <- NULL
-if (any(grepl("_Change", names(params$dfResults)))) {
-  strSnapshotDates <- unique(params$dfResults$SnapshotDate) %>%
-    sort(decreasing = TRUE) %>%
-    head(12L)
-  dfResultsFlagged <- params$dfResults %>%
-    FilterByFlags(bCurrentlyFlagged = TRUE) %>%
-    dplyr::filter(.data$SnapshotDate %in% strSnapshotDates)
-
-  flagOverTime <- htmltools::tags$details(
-    class = "v2-card v2-fot",
-    htmltools::tags$summary(
-      htmltools::tags$span(class = "v2-fot-title", "Flags over time"),
-      htmltools::tags$span(class = "v2-section-sub", glue::glue("{length(strSnapshotDates)} most recent snapshots, risk signals flagged in the latest one"))
-    ),
-    htmltools::tags$div(
-      class = "v2-fot-body gsm-widget flagOverTime",
-      Widget_FlagOverTime(
-        dfResults = dfResultsFlagged,
-        dfMetrics = dfMetrics,
-        strGroupLevel = setup$GroupLevel,
-        bExcludeEver = TRUE
-      )
-    )
-  )
-}
-
 # Metrics tab: KRI cards ordered by severity, inactive last, matching the KRI list.
 lSummary <- gsm.kri:::ReportV2_Summary(dfResults_current, dfMetrics)
 dfCounts <- gsm.kri:::v2_metric_counts(dfResults_current, dfMetrics)
@@ -113,8 +85,7 @@ htmltools::tags$div(
         gsm.kri:::ReportV2_KPICards(lSummary, setup$GroupLevel),
         gsm.kri:::ReportV2_Takeaways(lSummary, dfResults_current, dfMetrics, params$dfGroups)
       ),
-      gsm.kri:::ReportV2_FlagChanges(params$dfResults, dfMetrics, params$dfGroups),
-      flagOverTime
+      gsm.kri:::ReportV2_FlagChanges(params$dfResults, dfMetrics, params$dfGroups)
     ),
     tab_panel("sites", gsm.kri:::ReportV2_SitesTab(lSiteData)),
     tab_panel(
