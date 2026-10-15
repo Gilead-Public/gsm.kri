@@ -549,3 +549,18 @@ test_that("ReportV2_SitesTab leaves inactive metrics out of the heatmap (#325)",
   expect_match(strHead, ">SAE<", fixed = TRUE)
   expect_no_match(strHead, ">AE<", fixed = TRUE)
 })
+
+test_that("ReportV2_SitesTab gives every KRI column the same width and shows risk as a value", {
+  html <- render_html(ReportV2_SitesTab(
+    ReportV2_SiteData(dfResultsV2, dfMetricsWeighted, dfGroupsSites)
+  ))
+
+  # The site column is sized to its content; the KRI <col>s carry no width, so a
+  # fixed-layout table splits the remaining space between them equally.
+  expect_equal(count_matches(html, "<col class=\"v2-kri-col\"/>"), 2)
+  expect_match(html, "table id=\"v2-site-table\" class=\"v2-heatmap\" style=\"min-width:", fixed = TRUE)
+  expect_match(html, "--v2-site-w:[0-9]+px", perl = TRUE)
+  # Risk score is a plain value, without the inline bar.
+  expect_no_match(html, "v2-mini", fixed = TRUE)
+  expect_match(html, "<td class=\"v2-risk-cell\"><span class=\"v2-num\">12.5</span></td>", fixed = TRUE)
+})

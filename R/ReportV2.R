@@ -262,7 +262,7 @@ ReportV2_KPICards <- function(lSummary, strGroupLevel = "Site") {
   )
 }
 
-#' @describeIn ReportV2 Key takeaways and highest risk-score groups.
+#' @describeIn ReportV2 Key takeaways for the current snapshot.
 ReportV2_Takeaways <- function(lSummary, dfResults, dfMetrics, dfGroups) {
   dfCounts <- v2_metric_counts(dfResults, dfMetrics)
   dfTop <- dfCounts[!dfCounts$inactive, ][1, ]
@@ -305,50 +305,10 @@ ReportV2_Takeaways <- function(lSummary, dfResults, dfMetrics, dfGroups) {
     )
   )
 
-  dfSRS <- dfResults[!v2_is_kri(dfResults$MetricID) & !is.na(dfResults$Score), ]
-  if ("SnapshotDate" %in% names(dfSRS) && nrow(dfSRS) > 0) {
-    dfSRS <- dfSRS[dfSRS$SnapshotDate == max(dfSRS$SnapshotDate), ]
-  }
-  riskCard <- NULL
-  if (nrow(dfSRS) > 0) {
-    dfSRS <- dfSRS %>%
-      dplyr::arrange(dplyr::desc(.data$Score)) %>%
-      utils::head(6)
-    numMax <- max(dfSRS$Score)
-    riskCard <- htmltools::tags$div(
-      class = "v2-card v2-insight v2-reveal",
-      htmltools::tags$h3("Highest site risk scores"),
-      htmltools::tags$div(
-        class = "v2-hot-list",
-        lapply(seq_len(nrow(dfSRS)), function(i) {
-          htmltools::tags$button(
-            type = "button",
-            class = "v2-hot",
-            `data-site` = dfSRS$GroupID[i],
-            htmltools::tags$span(
-              htmltools::tags$b(class = "v2-mono", dfSRS$GroupID[i]),
-              " ",
-              htmltools::tags$span(class = "v2-muted", unname(vLabels[dfSRS$GroupID[i]]) %|% "")
-            ),
-            htmltools::tags$span(
-              class = "v2-srs",
-              htmltools::tags$span(style = sprintf("width:%.1f%%", 100 * dfSRS$Score[i] / numMax))
-            ),
-            htmltools::tags$span(class = "v2-num", sprintf("%.1f", dfSRS$Score[i]))
-          )
-        })
-      )
-    )
-  }
-
   htmltools::tags$div(
-    class = paste("v2-insights", if (is.null(riskCard)) "single"),
-    htmltools::tags$div(
-      class = "v2-card v2-insight v2-reveal",
-      htmltools::tags$h3("Key takeaways"),
-      htmltools::tags$ul(lBullets)
-    ),
-    riskCard
+    class = "v2-card v2-insight v2-reveal",
+    htmltools::tags$h3("Key takeaways"),
+    htmltools::tags$ul(lBullets)
   )
 }
 
@@ -356,10 +316,9 @@ ReportV2_Takeaways <- function(lSummary, dfResults, dfMetrics, dfGroups) {
   if (length(x) == 0 || is.na(x)) y else x
 }
 
-#' @describeIn ReportV2 Sidebar navigation with per-KRI flag badges.
+#' @describeIn ReportV2 KRI list with per-KRI flag badges (Metrics tab).
 ReportV2_Nav <- function(dfResults, dfMetrics) {
   dfCounts <- v2_metric_counts(dfResults, dfMetrics)
-  strGroupLevel <- v2_group_level(dfMetrics)
   link <- function(strHref, strLabel, badges = NULL) {
     htmltools::tags$a(
       href = strHref,
@@ -376,15 +335,9 @@ ReportV2_Nav <- function(dfResults, dfMetrics) {
   }
 
   htmltools::tags$nav(
-    class = "v2-sidebar",
-    id = "v2-sidebar",
-    `aria-label` = "Report sections",
-    group(
-      "Overview",
-      link("#v2-summary", "Summary"),
-      link("#v2-overview", paste(strGroupLevel, "overview")),
-      if ("Flag_Previous" %in% names(dfResults)) link("#v2-changes", "Flag changes")
-    ),
+    class = "v2-card v2-metric-nav",
+    id = "v2-metric-nav",
+    `aria-label` = "Key risk indicators",
     group(
       "Key risk indicators",
       lapply(which(!dfCounts$inactive), function(i) {
@@ -411,16 +364,18 @@ ReportV2_Nav <- function(dfResults, dfMetrics) {
   )
 }
 
-#' @describeIn ReportV2 Flag changes rendered as categorized cards.
+#' @describeIn ReportV2 Flag changes grouped by site or by KRI, with a perspective switch.
 ReportV2_FlagChanges <- function(dfResults, dfMetrics, dfGroups) {
   vRequired <- c("Flag_Previous", "Score_Previous", "Numerator_Previous", "Denominator_Previous")
   if (!all(vRequired %in% names(dfResults))) {
     return(NULL)
   }
 
-  vLabels <- v2_group_labels(dfGroups, unique(dfMetrics$GroupLevel)[1])
+  strGroupLevel <- v2_group_level(dfMetrics)
+  vLabels <- v2_group_labels(dfGroups, strGroupLevel)
   vMetricNames <- stats::setNames(dfMetrics$Metric, dfMetrics$MetricID)
   vAbbr <- stats::setNames(dfMetrics$Abbreviation, dfMetrics$MetricID)
+  vSRS <- v2_site_srs(dfResults)
 
   dfChanged <- v2_current(dfResults, dfMetrics) %>%
     dplyr::filter(
@@ -437,7 +392,8 @@ ReportV2_FlagChanges <- function(dfResults, dfMetrics, dfGroups) {
         .data$absNow > .data$absPrev ~ "escalated",
         .data$absNow < .data$absPrev ~ "improved",
         TRUE ~ "flipped"
-      )
+      ),
+      srs = unname(vSRS[.data$GroupID])
     ) %>%
     dplyr::arrange(dplyr::desc(.data$absNow), dplyr::desc(dplyr::coalesce(.data$absPrev, 0)))
 
@@ -449,66 +405,135 @@ ReportV2_FlagChanges <- function(dfResults, dfMetrics, dfGroups) {
   )
   vCats <- vCats[names(vCats) %in% dfChanged$cat]
 
-  stat_row <- function(strLabel, prev, cur, digits = 2, bInteger = FALSE) {
-    fmt <- function(x) {
-      if (is.na(x)) "\u2013" else if (bInteger) format(x) else format(round(x, digits), nsmall = digits)
-    }
-    htmltools::tags$tr(
-      htmltools::tags$td(strLabel),
-      htmltools::tags$td(fmt(prev)),
-      htmltools::tags$td(fmt(cur)),
-      htmltools::tags$td(
-        if (is.na(prev) || is.na(cur)) "\u2013" else if (bInteger) sprintf("%+d", as.integer(cur - prev)) else v2_signed(cur - prev, digits)
+  fmt <- function(x, digits = 2) {
+    if (is.na(x)) "\u2013" else formatC(x, format = "f", digits = digits)
+  }
+  change_row <- function(row, strView) {
+    numDelta <- row$Score - row$Score_Previous
+    strTitle <- paste0(
+      "Score ", fmt(row$Score_Previous), " \u2192 ", fmt(row$Score),
+      " \u00B7 Numerator ", fmt(row$Numerator_Previous, 0), " \u2192 ", fmt(row$Numerator, 0),
+      " \u00B7 Denominator ", fmt(row$Denominator_Previous, 0), " \u2192 ", fmt(row$Denominator, 0)
+    )
+    htmltools::tags$li(
+      class = "v2-change-row",
+      `data-cat` = row$cat,
+      `data-site` = row$GroupID,
+      `data-metric` = row$MetricID,
+      tabindex = "0",
+      title = strTitle,
+      if (strView == "site") {
+        htmltools::tags$span(
+          class = "v2-change-what",
+          htmltools::tags$span(class = "v2-badge neutral v2-mono", unname(vAbbr[row$MetricID]) %|% row$MetricID),
+          htmltools::tags$span(class = "v2-change-name", unname(vMetricNames[row$MetricID]) %|% row$MetricID)
+        )
+      } else {
+        htmltools::tags$span(
+          class = "v2-change-what",
+          htmltools::tags$span(class = "v2-mono", row$GroupID),
+          htmltools::tags$span(class = "v2-change-name v2-muted", unname(vLabels[row$GroupID]) %|% "")
+        )
+      },
+      htmltools::tags$span(
+        class = "v2-transition",
+        v2_flag_tag(row$Flag_Previous),
+        htmltools::tags$span(`aria-hidden` = "true", "\u2192"),
+        v2_flag_tag(row$Flag)
+      ),
+      htmltools::tags$span(
+        class = "v2-change-score",
+        fmt(row$Score),
+        if (!is.na(numDelta)) htmltools::tags$small(paste0(" ", v2_signed(numDelta)))
       )
     )
   }
+  # Each perspective ends with a marker comment so it can be located in the rendered HTML.
+  view_panel <- function(strView, groups, bHidden = FALSE) {
+    htmltools::HTML(paste0(
+      as.character(htmltools::tags$div(
+        class = "v2-change-view",
+        `data-view-panel` = strView,
+        hidden = if (bHidden) NA,
+        groups
+      )),
+      "<!--/", strView, "-->"
+    ))
+  }
 
-  cards <- lapply(seq_len(nrow(dfChanged)), function(i) {
-    row <- dfChanged[i, ]
-    htmltools::tags$article(
-      class = "v2-change",
-      `data-cat` = row$cat,
-      `data-site` = row$GroupID,
-      tabindex = "0",
-      htmltools::tags$div(
-        class = "v2-change-head",
-        htmltools::tags$span(class = "v2-mono", v2_group_label(row$GroupID, vLabels)),
-        htmltools::tags$span(class = "v2-badge neutral", unname(vAbbr[row$MetricID]) %|% row$MetricID)
-      ),
-      htmltools::tags$div(class = "v2-change-metric", unname(vMetricNames[row$MetricID]) %|% row$MetricID),
-      htmltools::tags$div(
-        class = "v2-change-head",
+  vSites <- dfChanged %>%
+    dplyr::group_by(.data$GroupID) %>%
+    dplyr::summarise(srs = dplyr::first(.data$srs), n = dplyr::n(), .groups = "drop") %>%
+    dplyr::arrange(dplyr::desc(dplyr::coalesce(.data$srs, -Inf)), dplyr::desc(.data$n), .data$GroupID)
+  siteGroups <- lapply(seq_len(nrow(vSites)), function(i) {
+    strSite <- vSites$GroupID[i]
+    dfRows <- dfChanged[dfChanged$GroupID == strSite, ]
+    htmltools::tags$section(
+      class = "v2-change-group",
+      `data-group` = strSite,
+      htmltools::tags$button(
+        type = "button",
+        class = "v2-change-group-head",
+        `data-open-site` = strSite,
+        title = paste("Open", strSite, "in the", strGroupLevel, "tab"),
         htmltools::tags$span(
-          class = "v2-transition",
-          v2_flag_tag(row$Flag_Previous),
-          htmltools::tags$span(`aria-hidden` = "true", "\u2192"),
-          v2_flag_tag(row$Flag)
+          htmltools::tags$b(class = "v2-mono", strSite), " ",
+          htmltools::tags$span(class = "v2-muted", unname(vLabels[strSite]) %|% "")
         ),
         htmltools::tags$span(
-          class = "v2-muted",
-          "Score ", htmltools::tags$b(if (is.na(row$Score)) "\u2013" else sprintf("%.2f", row$Score))
+          class = "v2-change-group-meta",
+          if (!is.na(vSites$srs[i])) htmltools::tags$span(class = "v2-badge neutral", sprintf("Risk %.1f", vSites$srs[i])),
+          htmltools::tags$span(class = "v2-badge neutral v2-group-count", nrow(dfRows))
         )
       ),
-      htmltools::tags$div(
-        class = "v2-change-detail",
-        htmltools::tags$div(
-          htmltools::tags$table(
-            class = "v2-detail-table",
-            htmltools::tags$thead(htmltools::tags$tr(
-              htmltools::tags$th(""), htmltools::tags$th("Previous"),
-              htmltools::tags$th("Current"), htmltools::tags$th("\u0394")
-            )),
-            htmltools::tags$tbody(
-              stat_row("Score", row$Score_Previous, row$Score),
-              stat_row("Numerator", row$Numerator_Previous, row$Numerator, bInteger = TRUE),
-              stat_row("Denominator", row$Denominator_Previous, row$Denominator, bInteger = TRUE),
-              if ("Metric_Previous" %in% names(row)) stat_row("Metric", row$Metric_Previous, row$Metric, digits = 4)
-            )
-          )
-        )
-      )
+      htmltools::tags$ul(lapply(seq_len(nrow(dfRows)), function(j) change_row(dfRows[j, ], "site")))
     )
   })
+
+  vKRIs <- dfChanged %>%
+    dplyr::group_by(.data$MetricID) %>%
+    dplyr::summarise(
+      up = sum(.data$cat %in% c("escalated", "new")),
+      n = dplyr::n(),
+      .groups = "drop"
+    ) %>%
+    dplyr::arrange(dplyr::desc(.data$up), dplyr::desc(.data$n), .data$MetricID)
+  kriGroups <- lapply(seq_len(nrow(vKRIs)), function(i) {
+    strMetric <- vKRIs$MetricID[i]
+    dfRows <- dfChanged[dfChanged$MetricID == strMetric, ] %>%
+      dplyr::arrange(
+        dplyr::desc(.data$absNow),
+        dplyr::desc(dplyr::coalesce(.data$srs, -Inf))
+      )
+    htmltools::tags$section(
+      class = "v2-change-group",
+      `data-group` = strMetric,
+      htmltools::tags$button(
+        type = "button",
+        class = "v2-change-group-head",
+        `data-open-metric` = strMetric,
+        title = "Open in the Metrics tab",
+        htmltools::tags$span(
+          htmltools::tags$span(class = "v2-badge neutral v2-mono", unname(vAbbr[strMetric]) %|% strMetric), " ",
+          htmltools::tags$b(unname(vMetricNames[strMetric]) %|% strMetric)
+        ),
+        htmltools::tags$span(class = "v2-badge neutral v2-group-count", nrow(dfRows))
+      ),
+      htmltools::tags$ul(lapply(seq_len(nrow(dfRows)), function(j) change_row(dfRows[j, ], "kri")))
+    )
+  })
+
+  seg_button <- function(strAttr, strValue, strLabel, bSelected, intCount = NULL) {
+    htmltools::tags$button(
+      type = "button",
+      role = "tab",
+      `aria-selected` = tolower(bSelected),
+      `data-view` = if (strAttr == "view") strValue,
+      `data-cat` = if (strAttr == "cat") strValue,
+      strLabel,
+      if (!is.null(intCount)) htmltools::tagList(" ", htmltools::tags$span(class = "v2-badge neutral", intCount))
+    )
+  }
 
   htmltools::tags$section(
     id = "v2-changes",
@@ -519,8 +544,8 @@ ReportV2_FlagChanges <- function(dfResults, dfMetrics, dfGroups) {
         htmltools::tags$p(
           class = "v2-section-sub",
           sprintf(
-            "%d risk signal%s changed flag since the previous snapshot.",
-            nrow(dfChanged), if (nrow(dfChanged) == 1) "" else "s"
+            "%d risk signal%s changed flag since the previous snapshot. Select a %s or KRI to open it.",
+            nrow(dfChanged), if (nrow(dfChanged) == 1) "" else "s", tolower(strGroupLevel)
           )
         )
       )
@@ -530,26 +555,26 @@ ReportV2_FlagChanges <- function(dfResults, dfMetrics, dfGroups) {
       htmltools::tags$div(
         class = "v2-toolbar",
         htmltools::tags$div(
+          class = "v2-seg v2-change-persp",
+          role = "tablist",
+          `aria-label` = "Perspective",
+          seg_button("view", "site", paste("By", tolower(strGroupLevel)), TRUE),
+          seg_button("view", "kri", "By KRI", FALSE)
+        ),
+        htmltools::tags$div(
           class = "v2-seg v2-change-tabs",
           role = "tablist",
-          lapply(seq_along(vCats), function(i) {
-            htmltools::tags$button(
-              type = "button",
-              role = "tab",
-              `data-cat` = names(vCats)[i],
-              `aria-selected` = tolower(i == 1),
-              vCats[[i]], " ",
-              htmltools::tags$span(class = "v2-badge neutral", sum(dfChanged$cat == names(vCats)[i]))
-            )
-          })
-        ),
-        htmltools::tags$span(class = "v2-section-sub", "Select a card for snapshot details")
+          `aria-label` = "Change type",
+          seg_button("cat", "all", "All", TRUE, nrow(dfChanged)),
+          lapply(names(vCats), function(k) seg_button("cat", k, vCats[[k]], FALSE, sum(dfChanged$cat == k)))
+        )
       ),
       if (nrow(dfChanged) == 0) {
         htmltools::tags$div(class = "v2-empty", "No flags changed since the previous snapshot.")
       } else {
         htmltools::tagList(
-          htmltools::tags$div(class = "v2-changes-grid", cards),
+          view_panel("site", siteGroups),
+          view_panel("kri", kriGroups, bHidden = TRUE),
           htmltools::tags$div(class = "v2-more")
         )
       }
@@ -708,7 +733,6 @@ ReportV2_Topbar <- function(lSetup, dfResults, dfGroups, dfMetrics = NULL) {
     htmltools::tags$div(
       class = "v2-topbar",
       id = "v2-topbar",
-      htmltools::tags$button(type = "button", class = "v2-icon-btn", id = "v2-nav-toggle", `aria-label` = "Toggle navigation", "\u2630"),
       htmltools::tags$div(
         class = "v2-brand",
         htmltools::tags$span(class = "v2-brand-mark", "gsm"),

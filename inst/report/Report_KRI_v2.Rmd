@@ -35,18 +35,8 @@ pagetitle: "`r setup$StudyLabel` · `r setup$GroupLevel` KRI Report"
 ---
 
 ```{r v2-report}
-# Overview widgets: group overview plus flags over time when deltas are available.
-lOverview <- list(
-  groupOverview = Widget_GroupOverview(
-    dfResults = dfResults_current,
-    dfMetrics = dfMetrics,
-    dfGroups = params$dfGroups,
-    strGroupLevel = setup$GroupLevel,
-    strGroupSubset = switch(setup$GroupLevel, Site = "red", "all"),
-    strGroupLabelKey = switch(setup$GroupLevel, Site = "InvestigatorLastName", NULL)
-  )
-)
-
+# Flags over time, when deltas are available (Overview tab).
+flagOverTime <- NULL
 if (any(grepl("_Change", names(params$dfResults)))) {
   strSnapshotDates <- unique(params$dfResults$SnapshotDate) %>%
     sort(decreasing = TRUE) %>%
@@ -55,48 +45,25 @@ if (any(grepl("_Change", names(params$dfResults)))) {
     FilterByFlags(bCurrentlyFlagged = TRUE) %>%
     dplyr::filter(.data$SnapshotDate %in% strSnapshotDates)
 
-  lOverview$flagOverTime <- Widget_FlagOverTime(
-    dfResults = dfResultsFlagged,
-    dfMetrics = dfMetrics,
-    strGroupLevel = setup$GroupLevel,
-    strFootnote = glue::glue(
-      "Table displays the {length(strSnapshotDates)} most recent snapshots and only includes risk signals flagged in the most recent snapshot."
+  flagOverTime <- htmltools::tags$details(
+    class = "v2-card v2-fot",
+    htmltools::tags$summary(
+      htmltools::tags$span(class = "v2-fot-title", "Flags over time"),
+      htmltools::tags$span(class = "v2-section-sub", glue::glue("{length(strSnapshotDates)} most recent snapshots, risk signals flagged in the latest one"))
     ),
-    bExcludeEver = TRUE
+    htmltools::tags$div(
+      class = "v2-fot-body gsm-widget flagOverTime",
+      Widget_FlagOverTime(
+        dfResults = dfResultsFlagged,
+        dfMetrics = dfMetrics,
+        strGroupLevel = setup$GroupLevel,
+        bExcludeEver = TRUE
+      )
+    )
   )
 }
 
-overviewTabs <- htmltools::tags$div(
-  class = "v2-card v2-reveal",
-  `data-tabs-scope` = "overview",
-  htmltools::tags$div(
-    class = "v2-toolbar",
-    htmltools::tags$div(
-      class = "v2-tabs",
-      role = "tablist",
-      lapply(seq_along(lOverview), function(i) {
-        htmltools::tags$button(
-          type = "button", role = "tab", class = "v2-tab",
-          `data-pane` = names(lOverview)[i],
-          `aria-selected` = tolower(i == 1),
-          htmltools::HTML(rlang::`%||%`(attr(lOverview[[i]], "output_label", exact = TRUE), names(lOverview)[i]))
-        )
-      })
-    )
-  ),
-  htmltools::tags$div(
-    class = "v2-overview-body",
-    lapply(seq_along(lOverview), function(i) {
-      htmltools::tags$div(
-        class = paste("v2-pane", if (i == 1) "active"),
-        `data-pane` = names(lOverview)[i],
-        htmltools::tags$div(class = paste("gsm-widget", names(lOverview)[i]), lOverview[[i]])
-      )
-    })
-  )
-)
-
-# KRI cards ordered by severity, matching the sidebar.
+# Metrics tab: KRI cards ordered by severity, inactive last, matching the KRI list.
 lSummary <- gsm.kri:::ReportV2_Summary(dfResults_current, dfMetrics)
 dfCounts <- gsm.kri:::v2_metric_counts(dfResults_current, dfMetrics)
 metricCards <- lapply(dfCounts$MetricID, function(strMetricID) {
@@ -112,61 +79,84 @@ metricCards <- lapply(dfCounts$MetricID, function(strMetricID) {
 intCollapsed <- sum(!dfCounts$inactive & dfCounts$red + dfCounts$amber == 0)
 intInactive <- sum(dfCounts$inactive)
 
+# Sites tab.
+lSiteData <- gsm.kri:::ReportV2_SiteData(params$dfResults, dfMetrics, params$dfGroups, params$lCharts)
+
+tab_panel <- function(strTab, ..., bHidden = TRUE) {
+  htmltools::tags$section(
+    class = "v2-tabpanel",
+    id = paste0("v2-panel-", strTab),
+    role = "tabpanel",
+    `data-tabpanel` = strTab,
+    `aria-labelledby` = paste0("v2-tab-", strTab),
+    hidden = if (bHidden) NA,
+    ...
+  )
+}
+
 htmltools::tags$div(
   class = "v2-root",
   gsm.kri:::ReportV2_Dependencies(),
   gsm.kri:::ReportV2_Topbar(setup, dfResults_current, params$dfGroups, dfMetrics),
-  htmltools::tags$div(
-    class = "v2-shell",
-    gsm.kri:::ReportV2_Nav(params$dfResults, dfMetrics),
-    htmltools::tags$main(
-      class = "v2-main",
-      gsm.kri:::ReportV2_Masthead(setup),
-      gsm.kri:::ReportV2_KPICards(lSummary, setup$GroupLevel),
-      gsm.kri:::ReportV2_Takeaways(lSummary, dfResults_current, dfMetrics, params$dfGroups),
-      htmltools::tags$section(
-        id = "v2-overview",
-        htmltools::tags$div(
-          class = "v2-section-head",
-          htmltools::tags$div(
-            htmltools::tags$h2(paste(setup$GroupLevel, "overview")),
-            htmltools::tags$p(class = "v2-section-sub", "Current flag status for every KRI.")
-          )
-        ),
-        overviewTabs
+  htmltools::tags$main(
+    class = "v2-main",
+    gsm.kri:::ReportV2_Masthead(setup),
+    gsm.kri:::ReportV2_TabBar(
+      setup$GroupLevel,
+      list(sites = nrow(lSiteData$sites), metrics = sum(!dfCounts$inactive))
+    ),
+    tab_panel(
+      "overview",
+      bHidden = FALSE,
+      htmltools::tags$div(
+        class = "v2-overview-top",
+        gsm.kri:::ReportV2_KPICards(lSummary, setup$GroupLevel),
+        gsm.kri:::ReportV2_Takeaways(lSummary, dfResults_current, dfMetrics, params$dfGroups)
       ),
       gsm.kri:::ReportV2_FlagChanges(params$dfResults, dfMetrics, params$dfGroups),
-      htmltools::tags$section(
-        id = "v2-kris",
+      flagOverTime
+    ),
+    tab_panel("sites", gsm.kri:::ReportV2_SitesTab(lSiteData)),
+    tab_panel(
+      "metrics",
+      htmltools::tags$div(
+        class = "v2-split v2-metrics",
         htmltools::tags$div(
-          class = "v2-section-head",
-          htmltools::tags$div(
-            htmltools::tags$h2("Key risk indicators"),
-            htmltools::tags$p(class = "v2-section-sub", "Sorted by severity. KRIs without red or amber flags start collapsed.")
-          ),
-          htmltools::tags$div(
-            class = "v2-seg",
-            htmltools::tags$button(type = "button", `data-v2-expand` = "expand", "Expand all"),
-            htmltools::tags$button(type = "button", `data-v2-expand` = "collapse", "Collapse all")
-          )
+          class = "v2-pane-left",
+          gsm.kri:::ReportV2_Nav(params$dfResults, dfMetrics)
         ),
-        metricCards,
-        if (intCollapsed + intInactive > 0) {
-          htmltools::tags$p(
-            class = "v2-collapse-note",
-            paste(c(
-              if (intCollapsed > 0) sprintf("%d KRI%s without flags %s collapsed.", intCollapsed, if (intCollapsed == 1) "" else "s", if (intCollapsed == 1) "is" else "are"),
-              if (intInactive > 0) sprintf("%d inactive KRI%s %s listed last and excluded from flag counts.", intInactive, if (intInactive == 1) "" else "s", if (intInactive == 1) "is" else "are")
-            ), collapse = " ")
-          )
-        }
-      ),
-      gsm.kri:::ReportV2_MetricReference(dfMetrics),
-      htmltools::tags$footer(
-        class = "v2-footer",
-        htmltools::tags$span(paste("Generated by gsm.kri", utils::packageVersion("gsm.kri"))),
-        htmltools::tags$span(paste(setup$StudyLabel, "\u00B7 snapshot", setup$SnapshotDate))
+        htmltools::tags$div(
+          class = "v2-metrics-main",
+          htmltools::tags$div(
+            class = "v2-section-head",
+            htmltools::tags$div(
+              htmltools::tags$h2("Key risk indicators"),
+              htmltools::tags$p(class = "v2-section-sub", "Sorted by severity. KRIs without red or amber flags start collapsed.")
+            ),
+            htmltools::tags$div(
+              class = "v2-seg",
+              htmltools::tags$button(type = "button", `data-v2-expand` = "expand", "Expand all"),
+              htmltools::tags$button(type = "button", `data-v2-expand` = "collapse", "Collapse all")
+            )
+          ),
+          metricCards,
+          if (intCollapsed + intInactive > 0) {
+            htmltools::tags$p(
+              class = "v2-collapse-note",
+              paste(c(
+                if (intCollapsed > 0) sprintf("%d KRI%s without flags %s collapsed.", intCollapsed, if (intCollapsed == 1) "" else "s", if (intCollapsed == 1) "is" else "are"),
+                if (intInactive > 0) sprintf("%d inactive KRI%s %s listed last and excluded from flag counts.", intInactive, if (intInactive == 1) "" else "s", if (intInactive == 1) "is" else "are")
+              ), collapse = " ")
+            )
+          },
+          gsm.kri:::ReportV2_MetricReference(dfMetrics)
+        )
       )
+    ),
+    htmltools::tags$footer(
+      class = "v2-footer",
+      htmltools::tags$span(paste("Generated by gsm.kri", utils::packageVersion("gsm.kri"))),
+      htmltools::tags$span(paste(setup$StudyLabel, "\u00B7 snapshot", setup$SnapshotDate))
     )
   )
 )
