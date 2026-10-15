@@ -1,0 +1,72 @@
+---
+title: "Site KRI Report (v2, experimental)"
+author: "[gsm.kri](https://gilead-public.github.io/gsm.kri) Example"
+description: "Experimental tabbed Site KRI Report rendered with the opt-in Report_KRI_v2.Rmd template"
+index: 8
+date: "`r format(Sys.time(), '%B %d, %Y %H:%M:%S %Z')`"
+output:
+  html_document:
+    theme: null
+    highlight: null
+    mathjax: null
+    toc: false
+---
+
+```{r example-data, include=FALSE}
+# Same data as the Site KRI Report example, plus flag changes since the previous
+# snapshot so the Overview and Sites tabs can show new and escalated flags.
+library(gsm.core)
+library(gsm.kri)
+
+## Retired metric: inactive, with results in earlier snapshots only.
+## The example data have none, so one is copied from the Adverse Event Rate.
+dfMetrics <- gsm.core::reportingMetrics %>%
+  dplyr::filter(MetricID == "Analysis_kri0001") %>%
+  dplyr::mutate(
+    MetricID = "Analysis_kri9999",
+    Metric = "Retired Metric",
+    Abbreviation = "RET",
+    Active = FALSE
+  ) %>%
+  dplyr::bind_rows(gsm.core::reportingMetrics, .)
+dfResults <- gsm.core::reportingResults %>%
+  dplyr::filter(
+    MetricID == "Analysis_kri0001",
+    SnapshotDate < max(SnapshotDate)
+  ) %>%
+  dplyr::mutate(MetricID = "Analysis_kri9999") %>%
+  dplyr::bind_rows(gsm.core::reportingResults, .)
+
+lCharts <- gsm.kri::MakeCharts(
+  dfResults = dfResults,
+  dfGroups = gsm.core::reportingGroups,
+  dfMetrics = dfMetrics,
+  dfBounds = gsm.core::reportingBounds
+)
+
+dfResultsDelta <- dfResults %>%
+  FilterByLatestSnapshotDate() %>%
+  gsm.reporting::CalculateChange(dfResults)
+```
+
+```{r example-report, echo=FALSE, results='asis'}
+## Render the v2 template inline. Outside this example, use:
+## Report_KRI(..., strInputPath = system.file("report", "Report_KRI_v2.Rmd", package = "gsm.kri"))
+child_env <- list2env(
+  list(
+    params = list(
+      lCharts = lCharts,
+      dfResults = dfResultsDelta,
+      dfGroups = gsm.core::reportingGroups,
+      dfMetrics = dfMetrics
+    )
+  ),
+  parent = environment()
+)
+report_kri <- knitr::knit_child(
+  system.file("report", "Report_KRI_v2.Rmd", package = "gsm.kri"),
+  envir = child_env,
+  quiet = TRUE
+)
+cat(report_kri, sep = "\n")
+```
