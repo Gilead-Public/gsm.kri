@@ -523,6 +523,15 @@ ReportV2_FlagChanges <- function(dfResults, dfMetrics, dfGroups) {
     )
   })
 
+  vSegTip <- c(
+    site = paste0("Group changes by ", tolower(strGroupLevel), ", highest risk score first."),
+    kri = "Group changes by KRI, most escalations first.",
+    all = "Every flag change since the previous snapshot.",
+    escalated = "Flag became more severe, e.g. amber to red.",
+    new = "No flag in the previous snapshot; amber or red now.",
+    improved = "Flag became less severe, e.g. red to amber or green.",
+    flipped = "Same severity, opposite direction (above vs below expected)."
+  )
   seg_button <- function(strAttr, strValue, strLabel, bSelected, intCount = NULL) {
     htmltools::tags$button(
       type = "button",
@@ -530,6 +539,8 @@ ReportV2_FlagChanges <- function(dfResults, dfMetrics, dfGroups) {
       `aria-selected` = tolower(bSelected),
       `data-view` = if (strAttr == "view") strValue,
       `data-cat` = if (strAttr == "cat") strValue,
+      class = "v2-has-tip",
+      title = vSegTip[[strValue]],
       strLabel,
       if (!is.null(intCount)) htmltools::tagList(" ", htmltools::tags$span(class = "v2-badge neutral", intCount))
     )

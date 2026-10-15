@@ -583,3 +583,21 @@ test_that("ReportV2_SitesTab links cells to KRIs and summarises each KRI column"
   expect_match(strHead, "Adverse Event Rate: 1 red, 1 amber, 1 green", fixed = TRUE)
   expect_match(strHead, "data-sort=\"risk\"", fixed = TRUE)
 })
+
+test_that("filter buttons carry a short description shown on hover", {
+  strSites <- render_html(ReportV2_SitesTab(
+    ReportV2_SiteData(dfResultsV2, dfMetricsWeighted, dfGroupsSites)
+  ))
+  for (strFilter in c("all", "red", "flagged", "new")) {
+    expect_match(
+      strSites,
+      paste0("data-filter=\"", strFilter, "\"[^>]*class=\"v2-has-tip\"[^>]*title=\"[^\"]{10,}\""),
+      perl = TRUE
+    )
+  }
+  expect_match(strSites, "at least one red KRI", fixed = TRUE)
+
+  strChanges <- render_html(ReportV2_FlagChanges(dfResultsV2, dfMetricsV2, dfGroupsV2))
+  expect_equal(count_matches(strChanges, "class=\"v2-has-tip\""), 6)
+  expect_match(strChanges, "more severe", fixed = TRUE)
+})

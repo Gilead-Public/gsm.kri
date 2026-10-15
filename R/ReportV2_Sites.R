@@ -224,12 +224,21 @@ ReportV2_SitesTab <- function(lSiteData) {
   intRed <- sum(dfSites$red > 0)
   intFlagged <- sum(dfSites$red + dfSites$amber > 0)
   intNew <- sum(dfSites$new_flags > 0)
+  strGroup <- tolower(strGroupLevel)
+  vFilterTip <- c(
+    all = paste0("Every ", strGroup, ", ranked by risk score."),
+    red = paste0(paste0(strGroupLevel, "s"), " with at least one red KRI."),
+    flagged = paste0(paste0(strGroupLevel, "s"), " with at least one red or amber KRI."),
+    new = paste0(paste0(strGroupLevel, "s"), " with a KRI that turned amber or red, or got worse, since the previous snapshot.")
+  )
   filter_button <- function(strValue, strLabel, intCount, bSelected = FALSE) {
     htmltools::tags$button(
       type = "button",
       role = "tab",
       `data-filter` = strValue,
       `aria-selected` = tolower(bSelected),
+      class = "v2-has-tip",
+      title = vFilterTip[[strValue]],
       strLabel, " ", htmltools::tags$span(class = "v2-badge neutral", intCount)
     )
   }

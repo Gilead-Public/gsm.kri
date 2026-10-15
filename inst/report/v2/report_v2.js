@@ -18,6 +18,52 @@
   // Charts in hidden tabs or panes render at 0px; a resize lets htmlwidgets and Chart.js re-measure.
   const refreshWidgets = () => requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
 
+  /* ---------- Shared tooltip ---------- */
+  let tipEl = null;
+  function tip() {
+    if (!tipEl) {
+      tipEl = document.createElement('div');
+      tipEl.className = 'v2-tip';
+      tipEl.setAttribute('role', 'tooltip');
+      tipEl.id = 'v2-tip';
+      document.body.appendChild(tipEl);
+    }
+    return tipEl;
+  }
+  function showTipAt(target, html, compact) {
+    const el = tip();
+    el.classList.toggle('compact', !!compact);
+    el.innerHTML = html;
+    const rect = target.getBoundingClientRect();
+    const limit = (parseFloat(getComputedStyle(root).getPropertyValue('--v2-topbar')) || 56) + 8;
+    let top = rect.top - el.offsetHeight - 10;
+    if (top < limit) top = rect.bottom + 10;
+    const left = Math.min(Math.max(8, rect.left + rect.width / 2 - el.offsetWidth / 2), window.innerWidth - el.offsetWidth - 8);
+    el.style.left = left + 'px';
+    el.style.top = top + 'px';
+    el.classList.add('show');
+  }
+  const hideTip = () => tipEl && tipEl.classList.remove('show');
+
+  // Short descriptions on filter buttons: the R title attribute becomes a styled tooltip.
+  function initHintTips() {
+    $$('.v2-has-tip[title]').forEach((el) => {
+      el.dataset.tip = el.title;
+      el.setAttribute('aria-description', el.title);
+      el.removeAttribute('title');
+    });
+    const show = (e) => {
+      const el = e.target.closest('.v2-has-tip');
+      el && showTipAt(el, `<div class="v2-tip-text">${esc(el.dataset.tip)}</div>`, true);
+    };
+    const hide = (e) => { if (e.target.closest('.v2-has-tip')) hideTip(); };
+    document.addEventListener('mouseover', show);
+    document.addEventListener('mouseout', hide);
+    document.addEventListener('focusin', show);
+    document.addEventListener('focusout', hide);
+    document.addEventListener('click', (e) => { if (e.target.closest('.v2-has-tip')) hideTip(); });
+  }
+
   /* ---------- Site data (Sites tab payload) ---------- */
   let siteData = null;
   const sitesById = {};
@@ -286,10 +332,6 @@
     }
 
     /* Crosshair + tooltip (mouse only). */
-    const tip = document.createElement('div');
-    tip.className = 'v2-tip';
-    tip.setAttribute('role', 'tooltip');
-    document.body.appendChild(tip);
     $$('td.v2-cell[title]', table).forEach((td) => { td.dataset.title = td.title; td.removeAttribute('title'); });
     let hoverRow = null;
     let hoverCol = null;
@@ -308,23 +350,10 @@
       // Fade the rest only when a KRI is in focus (tile or header), not while scanning site names.
       table.classList.toggle('is-hovering', !!m);
     };
-    const hideTip = () => tip.classList.remove('show');
     const showTip = (td) => {
       const row = td.closest('.v2-site-row');
       const html = tipHTML(row.dataset.site, td.dataset.m, td.dataset.title);
-      if (!html) return hideTip();
-      tip.innerHTML = html;
-      const rect = td.getBoundingClientRect();
-      const tw = tip.offsetWidth;
-      const th = tip.offsetHeight;
-      const limit = (parseFloat(getComputedStyle(root).getPropertyValue('--v2-topbar')) || 56) + 8;
-      let top = rect.top - th - 10;
-      if (top < limit) top = rect.bottom + 10;
-      const left = Math.min(Math.max(8, rect.left + rect.width / 2 - tw / 2), window.innerWidth - tw - 8);
-      tip.style.transform = '';
-      tip.style.left = left + 'px';
-      tip.style.top = top + 'px';
-      tip.classList.add('show');
+      html ? showTipAt(td, html) : hideTip();
     };
     if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
       table.addEventListener('mouseover', (e) => {
@@ -711,6 +740,7 @@
     initChanges();
     initMetrics();
     initChrome();
+    initHintTips();
     route();
     // The tab bar may still shift while fonts and widgets settle.
     window.addEventListener('load', moveInk);

@@ -249,6 +249,8 @@ body {
   -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); opacity: 0; transform: translateY(4px); }
 [data-theme="dark"] .v2-tip { background: rgb(30 41 59 / .96); border: 1px solid rgb(255 255 255 / .08); }
 .v2-tip.show { opacity: 1; transform: none; }
+.v2-tip.compact { width: auto; max-width: 240px; padding: 7px 10px; }
+.v2-tip-text { font-size: 12px; line-height: 1.4; }
 .v2-tip-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
 .v2-tip-head b { font-size: 12.5px; }
 .v2-tip-head span { color: #94a3b8; font-family: var(--v2-mono); font-size: 11px; }
