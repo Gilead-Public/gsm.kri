@@ -175,6 +175,8 @@ lCharts <- RunWorkflow(
 
 - [`CalculateRiskScore()`](https://gilead-public.github.io/gsm.kri/dev/reference/CalculateRiskScore.md)
   : Calculate Risk Score
+- [`Detect_ConsecutiveRepeats()`](https://gilead-public.github.io/gsm.kri/dev/reference/Detect_ConsecutiveRepeats.md)
+  : Detect consecutive repeated measurements
 - [`FilterAnalysis()`](https://gilead-public.github.io/gsm.kri/dev/reference/FilterAnalysis.md)
   : Filter Analysis Outputs
 - [`FilterByFlags()`](https://gilead-public.github.io/gsm.kri/dev/reference/FilterByFlags.md)
