@@ -47,7 +47,7 @@ test_that("the report_ipcompliance module renders the report (#320)", {
     list(Reporting_Results = data.frame(SnapshotDate = ipc_FixtureSnapshotDate))
   )
   withr::with_dir(tempdir(), {
-    out <- suppressWarnings(workr::RunWorkflows(wf, lData))
+    out <- quiet_render(suppressWarnings(workr::RunWorkflows(wf, lData)))
   })
   expect_true(file.exists(file.path(tempdir(), "Report_IPCompliance.html")))
 })

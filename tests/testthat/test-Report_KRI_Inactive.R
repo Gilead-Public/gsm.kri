@@ -17,7 +17,7 @@ render_kri_report <- function(
   }
 
   strOutputDir <- withr::local_tempdir()
-  suppressMessages(Report_KRI(
+  quiet_render(Report_KRI(
     lCharts = MakeCharts(
       dfResults = dfResults,
       dfMetrics = dfMetrics,

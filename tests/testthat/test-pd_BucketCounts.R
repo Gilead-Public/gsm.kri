@@ -12,7 +12,7 @@ make_classified <- function() {
   )
 }
 
-test_that("pd_BucketCounts emits only the category cells that occur {#246}", {
+test_that("pd_BucketCounts emits only the category cells that occur (#246)", {
   counts <- pd_BucketCounts(make_classified(), strGroupCol = "invid")
   # The Bucket factor still carries the whole vocabulary -- .drop = TRUE drops
   # unused (group, bucket) COMBINATIONS, not the levels themselves -- so colour
@@ -25,7 +25,7 @@ test_that("pd_BucketCounts emits only the category cells that occur {#246}", {
   expect_equal(sum(s1$n), 3) # A, B, E are at S1
 })
 
-test_that("pd_BucketCounts carries a contiguous Outer tier when strOuterCol set {#246}", {
+test_that("pd_BucketCounts carries a contiguous Outer tier when strOuterCol set (#246)", {
   counts <- pd_BucketCounts(
     make_classified(),
     strGroupCol = "invid",
@@ -39,7 +39,7 @@ test_that("pd_BucketCounts carries a contiguous Outer tier when strOuterCol set 
   expect_equal(as.vector(table(counts$GroupID)[c("S1", "S2")]), c(3L, 2L))
 })
 
-test_that("pd_BucketCounts labels a missing parent 'Unknown' {#246}", {
+test_that("pd_BucketCounts labels a missing parent 'Unknown' (#246)", {
   dfC <- make_classified()
   dfC$country[dfC$invid == "S2"] <- NA
   counts <- pd_BucketCounts(
@@ -50,7 +50,7 @@ test_that("pd_BucketCounts labels a missing parent 'Unknown' {#246}", {
   expect_true("Unknown" %in% counts$Outer)
 })
 
-test_that("a pd_Classify-normalised missing country yields a clickable 'Unknown' bar resolvable in the site map {#221}", {
+test_that("a pd_Classify-normalised missing country yields a clickable 'Unknown' bar resolvable in the site map (#221)", {
   subj <- tibble::tibble(
     subjid = c("A", "B"),
     studyid = "ST01",

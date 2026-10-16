@@ -1,8 +1,8 @@
 run_ptd <- function(id) {
-  workr::RunWorkflows(ptd_workflow(id), ptd_fixture())[[paste0(
-    "Analysis_",
-    id
-  )]]
+  TestAtLogLevel()
+  suppressMessages(
+    workr::RunWorkflows(ptd_workflow(id), ptd_fixture())
+  )[[paste0("Analysis_", id)]]
 }
 
 read_meta <- function(id) {
