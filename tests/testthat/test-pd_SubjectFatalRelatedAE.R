@@ -1,4 +1,4 @@
-test_that("pd_SubjectFatalRelatedAE flags fatal treatment-related AEs {#248}", {
+test_that("pd_SubjectFatalRelatedAE flags fatal treatment-related AEs (#248)", {
   dfAE <- tibble::tibble(
     subjid = c("A", "A", "B", "C", "D"),
     aetoxgr = c(5L, 3L, 5L, 4L, 5L),
@@ -18,29 +18,29 @@ test_that("pd_SubjectFatalRelatedAE flags fatal treatment-related AEs {#248}", {
   expect_false(unrel[["D"]]) # grade-5 but relatedness missing -> not qualifying
 })
 
-test_that("pd_SubjectFatalRelatedAE is case-insensitive and trims {#248}", {
+test_that("pd_SubjectFatalRelatedAE is case-insensitive and trims (#248)", {
   dfAE <- tibble::tibble(subjid = "A", aetoxgr = 5L, aerel = " related ")
   expect_true(pd_SubjectFatalRelatedAE(dfAE)$has_fatal_related_ae)
 })
 
-test_that("pd_SubjectFatalRelatedAE 'NOT RELATED' is never read as related {#248}", {
+test_that("pd_SubjectFatalRelatedAE 'NOT RELATED' is never read as related (#248)", {
   dfAE <- tibble::tibble(subjid = "A", aetoxgr = 5L, aerel = "Not Related")
   out <- pd_SubjectFatalRelatedAE(dfAE)
   expect_false(out$has_fatal_related_ae)
   expect_true(out$has_fatal_unrelated_ae)
 })
 
-test_that("pd_SubjectFatalRelatedAE tolerates missing columns {#248}", {
+test_that("pd_SubjectFatalRelatedAE tolerates missing columns (#248)", {
   out <- pd_SubjectFatalRelatedAE(tibble::tibble(subjid = "A"))
   expect_false(out$has_fatal_related_ae)
   expect_false(out$has_fatal_unrelated_ae)
 })
 
-test_that("pd_SubjectFatalRelatedAE validates input {#248}", {
+test_that("pd_SubjectFatalRelatedAE validates input (#248)", {
   expect_error(pd_SubjectFatalRelatedAE(as.list(1)), "dfAE is not a data.frame")
 })
 
-test_that("pd_SubjectFatalRelatedAE treats Fatal outcome or death flag as fatal {#304}", {
+test_that("pd_SubjectFatalRelatedAE treats Fatal outcome or death flag as fatal (#304)", {
   dfAE <- tibble::tibble(
     subjid = c("A", "B", "C"),
     aetoxgr = c(4L, 3L, 4L),
@@ -55,7 +55,7 @@ test_that("pd_SubjectFatalRelatedAE treats Fatal outcome or death flag as fatal 
   expect_false(flag[["C"]]) # grade 4, not fatal, no death flag
 })
 
-test_that("pd_SubjectFatalRelatedAE prefers aereldrv over aerel {#304}", {
+test_that("pd_SubjectFatalRelatedAE prefers aereldrv over aerel (#304)", {
   dfAE <- tibble::tibble(
     subjid = c("A", "B", "C"),
     aetoxgr = 5L,
@@ -72,7 +72,7 @@ test_that("pd_SubjectFatalRelatedAE prefers aereldrv over aerel {#304}", {
   expect_true(rel[["C"]]) # aereldrv missing -> falls back to aerel
 })
 
-test_that("pd_SubjectFatalRelatedAE flags fatal AEs with unknown relatedness {#304}", {
+test_that("pd_SubjectFatalRelatedAE flags fatal AEs with unknown relatedness (#304)", {
   dfAE <- tibble::tibble(
     subjid = c("A", "A", "B", "C"),
     aetoxgr = c(5L, 1L, 5L, 2L),

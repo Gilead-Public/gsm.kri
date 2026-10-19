@@ -15,6 +15,7 @@ ipc_lsource_mapped <- function() {
 }
 
 test_that("lSource statuses agree with kri0007-2 and kri0019 (#320)", {
+  TestAtLogLevel()
   skip_if_not(
     all(
       c("drv_kit_assigned", "drv_treatment_discontinuation_dt") %in%

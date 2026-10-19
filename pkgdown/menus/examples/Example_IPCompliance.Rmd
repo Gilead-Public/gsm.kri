@@ -1,7 +1,7 @@
 ---
-title: "IP Compliance Report"
+title: "IP Monitoring Report"
 author: "[gsm.kri](https://gilead-public.github.io/gsm.kri) Example"
-description: "Example IP monitoring report (IP non-starters and premature treatment discontinuation) generated with gsm.kri"
+description: "Example IP monitoring report generated with gsm.kri"
 index: 4
 date: "`r format(Sys.time(), '%B %d, %Y %H:%M:%S %Z')`"
 output:

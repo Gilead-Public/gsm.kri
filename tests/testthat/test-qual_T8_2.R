@@ -13,7 +13,7 @@ kri_custom <- workr::MakeWorkflowList(
 
 ## Test Code
 testthat::test_that("Qual: Disposition Assessments can be done correctly using a grouping variable, such as Site or Country for KRIs, and Study for QTLs, when applicable (#159)", {
-  TestAtLogLevel("WARN")
+  TestAtLogLevel()
   ## regular -----------------------------------------
   test <- map(kri_workflows, ~ robust_runworkflow(.x, mapped_data, steps = 1:7))
 

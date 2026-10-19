@@ -5,6 +5,8 @@ pagetitle: "IP monitoring: IP Non-Starter & Premature Treatment Discontinuation"
 output:
   html_document:
     mathjax: null
+    # Inline code uses `$`; without this, pandoc reads pairs of them as TeX math.
+    md_extensions: "-tex_math_dollars"
     toc: true
     toc_float:
       collapsed: false

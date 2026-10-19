@@ -1,14 +1,24 @@
 render_ipc <- function(lListings = ipc_Fixture(), ...) {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
-  out <- suppressWarnings(Report_IPCompliance(
+  out <- quiet_render(suppressWarnings(Report_IPCompliance(
     lListings = lListings,
     strOutputDir = tempdir(),
     strOutputFile = paste0(basename(tempfile("ipc")), ".html"),
     ...
-  ))
+  )))
   paste(readLines(out, warn = FALSE), collapse = "\n")
 }
+# Each render takes several seconds, so share the default render across tests.
+ipc_default_html <- local({
+  html <- NULL
+  function() {
+    if (is.null(html)) {
+      html <<- render_ipc(dSnapshotDate = ipc_FixtureSnapshotDate)
+    }
+    html
+  }
+})
 # gsm.vizr serializes each widget's spec into a JSON <script data-for=...> block.
 bars_specs <- function(html) {
   payloads <- stringr::str_match_all(
@@ -22,7 +32,7 @@ bars_specs <- function(html) {
 }
 
 test_that("Report_IPCompliance renders to a file (#320)", {
-  html <- render_ipc(dSnapshotDate = ipc_FixtureSnapshotDate)
+  html <- ipc_default_html()
   expect_match(
     html,
     "IP monitoring: IP Non-Starter &amp; Premature Treatment",
@@ -110,7 +120,7 @@ test_that("inlined data cannot close its script block (#320)", {
 })
 
 test_that("bar charts render through gsm.vizr::bars with the status stack (#320)", {
-  specs <- bars_specs(render_ipc(dSnapshotDate = ipc_FixtureSnapshotDate))
+  specs <- bars_specs(ipc_default_html())
   ids <- vapply(specs, function(x) x$metadata$chartId, "")
   expect_setequal(
     ids,
@@ -123,7 +133,7 @@ test_that("bar charts render through gsm.vizr::bars with the status stack (#320)
 })
 
 test_that("the filter script is inlined once (#320)", {
-  html <- render_ipc(dSnapshotDate = ipc_FixtureSnapshotDate)
+  html <- ipc_default_html()
   # gregexpr() returns -1 for no match, so count positive positions.
   hits <- gregexpr("window.ipcRegisterScatter = function", html, fixed = TRUE)[[1]]
   expect_equal(sum(hits > 0), 1L)
@@ -131,7 +141,7 @@ test_that("the filter script is inlined once (#320)", {
 })
 
 test_that("the scatter note places events above the diagonal (#320)", {
-  html <- render_ipc(dSnapshotDate = ipc_FixtureSnapshotDate)
+  html <- ipc_default_html()
   # Pandoc may wrap the sentence across lines.
   expect_match(html, "Points above it\\s+had their event")
   expect_false(grepl("Points below it", html, fixed = TRUE))
