@@ -107,23 +107,23 @@ coerced to a character vector.</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2   0X002               Country             US       Site</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 3   0X002 InvestigatorFirstName           Fred       Site</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 4   0X002  InvestigatorLastName          Smith       Site</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5   0X002      ParticipantCount              1       Site</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6   0X002             SiteCount              1       Site</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5   0X002                 invid          0X002       Site</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6   0X002      ParticipantCount              1       Site</span>
 <span class="r-in"><span><span class="fu">MakeParamLabels</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu">gsm.core</span><span class="fu">::</span><span class="va"><a href="https://gilead-biostats.github.io/gsm.core/reference/reportingGroups.html" class="external-link">reportingGroups</a></span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   GroupID                 Param          Value GroupLevel</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1   0X002                  City Newtown Square       Site</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2   0X002               Country             US       Site</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 3   0X002 InvestigatorFirstName           Fred       Site</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 4   0X002  InvestigatorLastName          Smith       Site</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5   0X002      ParticipantCount              1       Site</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6   0X002             SiteCount              1       Site</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5   0X002                 invid          0X002       Site</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6   0X002      ParticipantCount              1       Site</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                     Label</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1                    City</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2                 Country</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 3 Investigator First Name</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 4  Investigator Last Name</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5       Participant Count</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6              Site Count</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5                   Invid</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6       Participant Count</span>
 <span class="r-in"><span><span class="fu">MakeParamLabels</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu">gsm.core</span><span class="fu">::</span><span class="va"><a href="https://gilead-biostats.github.io/gsm.core/reference/reportingGroups.html" class="external-link">reportingGroups</a></span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>ParticipantCount <span class="op">=</span> <span class="st">"Number of Participants"</span><span class="op">)</span></span></span>
@@ -133,15 +133,15 @@ coerced to a character vector.</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2   0X002               Country             US       Site</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 3   0X002 InvestigatorFirstName           Fred       Site</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 4   0X002  InvestigatorLastName          Smith       Site</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5   0X002      ParticipantCount              1       Site</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6   0X002             SiteCount              1       Site</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5   0X002                 invid          0X002       Site</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6   0X002      ParticipantCount              1       Site</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                     Label</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1                    City</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2                 Country</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 3 Investigator First Name</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 4  Investigator Last Name</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5  Number of Participants</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6              Site Count</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5                   Invid</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6  Number of Participants</span>
 <span class="r-in"><span><span class="fu">MakeParamLabelsList</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu">gsm.core</span><span class="fu">::</span><span class="va"><a href="https://gilead-biostats.github.io/gsm.core/reference/reportingGroups.html" class="external-link">reportingGroups</a></span><span class="op">$</span><span class="va">Param</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $City</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "City"</span>
@@ -155,11 +155,11 @@ coerced to a character vector.</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $InvestigatorLastName</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Investigator Last Name"</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $invid</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Invid"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $ParticipantCount</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Participant Count"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $SiteCount</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Site Count"</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

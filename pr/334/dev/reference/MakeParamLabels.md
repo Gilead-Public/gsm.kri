@@ -47,23 +47,23 @@ head(gsm.core::reportingGroups)
 #> 2   0X002               Country             US       Site
 #> 3   0X002 InvestigatorFirstName           Fred       Site
 #> 4   0X002  InvestigatorLastName          Smith       Site
-#> 5   0X002      ParticipantCount              1       Site
-#> 6   0X002             SiteCount              1       Site
+#> 5   0X002                 invid          0X002       Site
+#> 6   0X002      ParticipantCount              1       Site
 MakeParamLabels(head(gsm.core::reportingGroups))
 #>   GroupID                 Param          Value GroupLevel
 #> 1   0X002                  City Newtown Square       Site
 #> 2   0X002               Country             US       Site
 #> 3   0X002 InvestigatorFirstName           Fred       Site
 #> 4   0X002  InvestigatorLastName          Smith       Site
-#> 5   0X002      ParticipantCount              1       Site
-#> 6   0X002             SiteCount              1       Site
+#> 5   0X002                 invid          0X002       Site
+#> 6   0X002      ParticipantCount              1       Site
 #>                     Label
 #> 1                    City
 #> 2                 Country
 #> 3 Investigator First Name
 #> 4  Investigator Last Name
-#> 5       Participant Count
-#> 6              Site Count
+#> 5                   Invid
+#> 6       Participant Count
 MakeParamLabels(
   head(gsm.core::reportingGroups),
   list(ParticipantCount = "Number of Participants")
@@ -73,15 +73,15 @@ MakeParamLabels(
 #> 2   0X002               Country             US       Site
 #> 3   0X002 InvestigatorFirstName           Fred       Site
 #> 4   0X002  InvestigatorLastName          Smith       Site
-#> 5   0X002      ParticipantCount              1       Site
-#> 6   0X002             SiteCount              1       Site
+#> 5   0X002                 invid          0X002       Site
+#> 6   0X002      ParticipantCount              1       Site
 #>                     Label
 #> 1                    City
 #> 2                 Country
 #> 3 Investigator First Name
 #> 4  Investigator Last Name
-#> 5  Number of Participants
-#> 6              Site Count
+#> 5                   Invid
+#> 6  Number of Participants
 MakeParamLabelsList(head(gsm.core::reportingGroups$Param))
 #> $City
 #> [1] "City"
@@ -95,10 +95,10 @@ MakeParamLabelsList(head(gsm.core::reportingGroups$Param))
 #> $InvestigatorLastName
 #> [1] "Investigator Last Name"
 #> 
+#> $invid
+#> [1] "Invid"
+#> 
 #> $ParticipantCount
 #> [1] "Participant Count"
-#> 
-#> $SiteCount
-#> [1] "Site Count"
 #> 
 ```
