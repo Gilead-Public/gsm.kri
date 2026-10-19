@@ -143,6 +143,57 @@ test_that("Treatment Related AE death with a fatal NOT RELATED AE is No (#248)",
   expect_equal(out$treatment_related, "No") # AE death + fatal(5) NOT RELATED AE
 })
 
+dfResultsFatalTR <- tibble::tibble(
+  GroupID = c("J", "K", "L", "M"),
+  MetricID = "Analysis_pat0015",
+  Flag = 2
+)
+dfDeathFatalTR <- tibble::tibble(
+  subjid = c("J", "K", "L", "M"),
+  death_dt = as.Date("2026-02-01"),
+  death_dy = c(10, 20, 30, 40),
+  deathcls = c("Adverse Event", "Adverse Event", "Disease Progression", "Adverse Event")
+)
+
+test_that("Treatment Related uses fatal outcome and aereldrv (#304)", {
+  # J: grade 4 but outcome Fatal, related per aereldrv.
+  dfAE <- tibble::tibble(subjid = "J", aetoxgr = 4L, aeout = "Fatal", aereldrv = "Yes")
+  out <- pd_PatientListingData(dfResultsFatalTR, dfDeathFatalTR, dfAE = dfAE)
+  tr <- stats::setNames(out$treatment_related, out$subjid)
+  expect_equal(tr[["J"]], "Yes")
+})
+
+test_that("Treatment Related is Unknown when a fatal AE lacks relatedness (#304)", {
+  dfAE <- tibble::tibble(
+    subjid = c("K", "K", "L", "M"),
+    aetoxgr = c(5L, 5L, 5L, 2L),
+    aeout = c("Fatal", "Fatal", NA, NA),
+    aereldrv = c("No", NA, NA, NA)
+  )
+  out <- pd_PatientListingData(dfResultsFatalTR, dfDeathFatalTR, dfAE = dfAE)
+  tr <- stats::setNames(out$treatment_related, out$subjid)
+  # K: AE death, one not-related and one unknown-relatedness fatal AE -> no
+  # inference from the not-related one alone.
+  expect_equal(tr[["K"]], "Unknown")
+  # L: non-AE death with a fatal AE of unknown relatedness.
+  expect_equal(tr[["L"]], "Unknown")
+  # M: AE death, missing relatedness on a non-fatal AE only.
+  expect_equal(tr[["M"]], "Unknown")
+})
+
+test_that("pd_PatientListingData keeps one row per participant with several fatal AEs (#304)", {
+  dfAE <- tibble::tibble(
+    subjid = c("J", "J", "J"),
+    aetoxgr = 5L,
+    aeout = "Fatal",
+    aereldrv = c("Yes", "No", NA)
+  )
+  out <- pd_PatientListingData(dfResultsFatalTR, dfDeathFatalTR, dfAE = dfAE)
+  expect_equal(nrow(out), 4L)
+  expect_equal(sum(out$subjid == "J"), 1L)
+  expect_false(any(grepl("^has_fatal", names(out))))
+})
+
 dfSubjects <- tibble::tibble(
   subjid = c("S1", "S2", "S3"),
   invid = c("INV-1", "INV-1", "INV-2"),

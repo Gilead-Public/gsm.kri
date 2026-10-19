@@ -17,6 +17,12 @@
 - New repeat-measure vital-sign metrics `kri0020a`-`f` (site) and
   `cou0020a`-`f` (country) for weight, heart rate, systolic/diastolic BP,
   respiratory rate, and temperature (#306).
+- The Premature Deaths report adds a Fatal AE Listing: one row per fatal adverse event
+  for premature-death participants, with the MedDRA term, outcome and relatedness,
+  filtered with the patient listing by country and site (`pd_FatalAEListing()`,
+  `pd_FatalAEListingData()`). Fatal AEs are now identified by outcome (`aeout`),
+  grade 5 (`aetoxgr`) or death flag (`aesdth`), with relatedness from `aereldrv`.
+  Treatment Related shows Unknown when a fatal AE lacks relatedness (#304).
 
 # gsm.kri v1.7.0
 

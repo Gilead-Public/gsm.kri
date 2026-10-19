@@ -7,24 +7,27 @@
 pd_SubjectFatalRelatedAE(dfAE)
 }
 \arguments{
-\item{dfAE}{`data.frame` Mapped AE data with `subjid`, `aetoxgr` (integer
-CTCAE grade) and `aerel` (`"RELATED"` / `"NOT RELATED"`).}
+\item{dfAE}{`data.frame` Mapped AE data with `subjid` and any of `aeout`,
+`aetoxgr`, `aesdth`, `aereldrv` and `aerel`.}
 }
 \value{
-A `tibble` with one row per subject: `subjid`, a logical
-  `has_fatal_related_ae` (a fatal grade-5 `"RELATED"` AE), and a logical
-  `has_fatal_unrelated_ae` (a fatal grade-5 `"NOT RELATED"` AE).
+A `tibble` with one row per subject: `subjid` and the logicals
+  `has_fatal_related_ae`, `has_fatal_unrelated_ae` and `has_fatal_unknown_ae`
+  (a fatal AE with missing relatedness).
 }
 \description{
 `r lifecycle::badge("experimental")`
 
 For each subject in `dfAE`, whether they have at least one adverse event that
-is both fatal (`aetoxgr == 5`) and treatment-related (`aerel == "RELATED"`,
-case-insensitive). Also flags fatal (`aetoxgr == 5`) not-treatment-related
-(`aerel == "NOT RELATED"`) AEs — the AE-side signal for the "No" case in the
-premature-death Treatment Related column. Centralizing both rules keeps them
-in one tested place.
+is both fatal and treatment-related, fatal and not treatment-related, or fatal
+with unknown relatedness — the AE-side signals for the premature-death
+Treatment Related column. Centralizing the rules keeps them in one tested
+place.
 
-Comparisons are NA-safe: a row with a missing grade or relatedness does not
-qualify and never flips a subject to `TRUE`.
+An AE is fatal when its outcome is fatal (`aeout == "Fatal"`), it is graded
+CTCAE 5 (`aetoxgr == 5`), or it is flagged as resulting in death
+(`aesdth == "Yes"`). Relatedness comes from `aereldrv` (`"Yes"` / `"No"`),
+falling back to `aerel` (`"RELATED"` / `"NOT RELATED"`) when `aereldrv` is
+absent or missing. Comparisons are case-insensitive and NA-safe: a missing
+field never makes an AE fatal or related.
 }

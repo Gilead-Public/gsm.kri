@@ -409,6 +409,36 @@ test_that("Report listing shows Treatment Related Yes for a fatal related AE dea
   expect_true(grepl('"Yes"', html, fixed = TRUE)) # S1: deathcls AE + grade-5 RELATED AE
 })
 
+test_that("Report renders a Fatal AE Listing for premature-death participants (#304)", {
+  testthat::skip_if_not_installed("plotly")
+  testthat::skip_if_not_installed("DT")
+  lListingsFatal <- lListings
+  lListingsFatal$Mapped_AE <- tibble::tibble(
+    subjid = c("S1", "S3"),
+    mdrpt_nsv = c("Cardiac arrest", "Pulmonary embolism"),
+    aest_dt = as.Date(c("2026-02-13", "2026-04-20")),
+    aetoxgr = 5L,
+    aeout = "Fatal",
+    aereldrv = c("Yes", "No")
+  )
+  out <- quiet_render(Report_PrematureDeaths(
+    dfResults = dfResults,
+    dfMetrics = dfMetrics,
+    dfGroups = dfGroups,
+    lListings = lListingsFatal,
+    nWindowDays = 90,
+    strOutputDir = tempdir()
+  ))
+  html <- paste(readLines(out, warn = FALSE), collapse = "\n")
+  expect_match(html, "Fatal AE Listing", fixed = TRUE)
+  expect_match(html, "Cardiac arrest", fixed = TRUE)
+  # S3 is not a premature death, so its fatal AE is not listed.
+  expect_false(grepl("Pulmonary embolism", html, fixed = TRUE))
+  # The country/site filter drives every listing with an invid column, not just
+  # the last table on the page.
+  expect_match(html, 'columns("invid:name")', fixed = TRUE)
+})
+
 test_that("Report renders a country-reactive Reasons chart via gsm.vizr::bars() (#254) (#264) (#288)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")

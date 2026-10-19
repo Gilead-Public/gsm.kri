@@ -30,14 +30,11 @@ column: `"Ineligible"` when `Source != "Neither"` (matching the `kri0014`
 rule), `"Eligible"` when `Source == "Neither"`, and `"Unknown"` when the
 subject has no matching exclusion row.}
 
-\item{dfAE}{`data.frame` (optional) Mapped AE data with `subjid`, `aetoxgr`,
-and `aerel` (`"RELATED"`/`"NOT RELATED"`). Used to compute the Treatment
-Related column: `"Yes"` when `deathcls` is an adverse event AND the subject
-has a fatal (`aetoxgr==5`) treatment-related AE; `"No"` when `deathcls` is
-an adverse event AND the subject has a fatal (`aetoxgr==5`) not-treatment-related
-AE, or when `deathcls` is not an AE AND there is no fatal treatment-related
-AE; `"Unknown"` otherwise (mixed signals, or missing `deathcls`/AE
-evidence). `death_reason` is `deathcls` (else `"Unknown"`).}
+\item{dfAE}{`data.frame` (optional) Mapped AE data with `subjid` and any of
+`aeout`, `aetoxgr`, `aesdth`, `aereldrv` and `aerel`. Used to compute the
+Treatment Related column; see `pd_SubjectFatalRelatedAE()` for what counts
+as a fatal and a treatment-related AE. `death_reason` is `deathcls` (else
+`"Unknown"`).}
 }
 \value{
 A `DT::datatable` htmlwidget.
