@@ -14,9 +14,10 @@ ipc_ClassifyParticipants(
 \arguments{
 \item{dfIPNS}{`data.frame` `Mapped_IPNS`.}
 
-\item{dfSubj}{`data.frame` `Mapped_SUBJ`, the source of the premature
-treatment discontinuation fields. `NULL`, or a frame without
-`drv_treatment_discontinuation_dt`, runs without them.}
+\item{dfSubj}{`data.frame` `Mapped_SUBJ`, the source of
+`drv_drg_completion` and the treatment discontinuation date and reason.
+`NULL`, or a frame without `drv_drg_completion`, leaves every dosed
+participant Unrecognized.}
 
 \item{dfStudComp}{`data.frame` `Mapped_STUDCOMP`, or `NULL`.}
 

@@ -10,8 +10,9 @@
 #' @param dfResults `data.frame` Reporting results; the latest `SnapshotDate`
 #'   is "today" unless `dSnapshotDate` is given.
 #' @param lListings `list` with `Mapped_IPNS`, `Mapped_SUBJ` and
-#'   `Mapped_STUDCOMP`. Without `drv_treatment_discontinuation_dt` in
-#'   `Mapped_SUBJ` the report runs without premature treatment discontinuation.
+#'   `Mapped_STUDCOMP`. Without `drv_drg_completion` in `Mapped_SUBJ`, dosed
+#'   participants show as Unrecognized status and the treatment completion
+#'   figures and reasons are not available.
 #' @param dSnapshotDate `Date` "Today" for the day counts. Default: the latest
 #'   `dfResults$SnapshotDate`.
 #' @param strOutputDir `string` Output directory. Default: working directory.

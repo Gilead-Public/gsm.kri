@@ -28,8 +28,14 @@ ipc_TimeToEventScatter <- function(dfIPC, nMaxDays, strId) {
   vRange <- c(if (nMin < 0) nMin - nPad else 0, nMaxDays + nPad)
 
   # Dosed statuses draw first so not-dosed points on the diagonal stay visible
-  # over Ongoing; legendrank keeps the legend in stack order.
-  vDrawOrder <- names(vColors)[c(1, 5, 7, 2, 3, 4, 6)]
+  # over Treatment ongoing; legendrank keeps the legend in stack order.
+  vDosed <- c(
+    "Treatment complete per protocol",
+    "Premature treatment discontinuation",
+    "Potential premature treatment discontinuation",
+    "Treatment ongoing"
+  )
+  vDrawOrder <- c(vDosed, setdiff(names(vColors), vDosed))
   p <- plotly::plot_ly()
   for (strStatus in vDrawOrder) {
     d <- df[df$status %in% strStatus, ]

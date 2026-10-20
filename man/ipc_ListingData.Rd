@@ -4,13 +4,10 @@
 \alias{ipc_ListingData}
 \title{Participant listing rows for the IP Compliance report}
 \usage{
-ipc_ListingData(dfIPC, bHasPTD)
+ipc_ListingData(dfIPC)
 }
 \arguments{
 \item{dfIPC}{`data.frame` Output of [ipc_ClassifyParticipants()].}
-
-\item{bHasPTD}{`logical` Whether premature treatment discontinuation data
-was delivered. When `FALSE`, the discontinuation columns are blank.}
 }
 \value{
 A `tibble` with the listing columns in display order.
