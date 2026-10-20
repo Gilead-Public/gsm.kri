@@ -318,7 +318,7 @@ cat(
   "> - **Potential premature treatment discontinuation** = dosed, permanently withdrawn from study drug, with no completion outcome recorded yet.\n",
   "> - **Treatment complete per protocol** = dosed, completed study drug per protocol.\n",
   "> - **Treatment ongoing** = dosed, still on study drug.\n",
-  "> - **Study Drug Completed per Protocol** shows the delivered treatment completion outcome; **Discontinuation reason** is filled for both discontinuation statuses.\n",
+  "> - **Study Drug Completed per Protocol** shows the delivered treatment completion outcome; **Drug discontinuation reason** is filled for both discontinuation statuses.\n",
   "> - **Study complete** is the study completion CRF answer (`compyn`): Y, N, or blank when not yet answered. It does not set the status.\n",
   "> - **Consent withdrawn** is a separate flag, not a status: the study completion CRF reports withdrawal of consent (`compreas`).\n",
   sep = ""
