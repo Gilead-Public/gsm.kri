@@ -29,22 +29,22 @@ Mapped_SUBJ <- lListings$Mapped_SUBJ
 
 # One classified frame feeds every chart, the overview and the listing.
 bHasPTD <- !is.null(Mapped_SUBJ) && "drv_drg_completion" %in% names(Mapped_SUBJ)
-dfIPC <- ipc_ClassifyParticipants(
+dfIPM <- ipm_ClassifyParticipants(
   dfIPNS = lListings$Mapped_IPNS,
   dfSubj = Mapped_SUBJ,
   dfStudComp = lListings$Mapped_STUDCOMP,
   dSnapshotDate = dSnapshotDate
 )
-has_participants <- nrow(dfIPC) > 0
-dfStats <- ipc_OverviewStats(dfIPC, bHasPTD)
+has_participants <- nrow(dfIPM) > 0
+dfStats <- ipm_OverviewStats(dfIPM, bHasPTD)
 status_rows <- lapply(
   c(study = "study", country = "country", site = "site"),
-  function(level) ipc_StatusRows(dfIPC, level)
+  function(level) ipm_StatusRows(dfIPM, level)
 )
-reason_data <- ipc_ReasonRows(dfIPC, bHasPTD)
+reason_data <- ipm_ReasonRows(dfIPM, bHasPTD)
 has_reasons <- has_participants && length(reason_data$order) > 0
 # One range for the three scatters.
-nMaxDays <- max(c(1, dfIPC$days_since_enrl, dfIPC$days_to_event), na.rm = TRUE)
+nMaxDays <- max(c(1, dfIPM$days_since_enrl, dfIPM$days_to_event), na.rm = TRUE)
 
 status_note <- function(level) {
   cat(
@@ -76,7 +76,7 @@ tte_text <- "\n> Points on the dashed diagonal have no event yet: potential IP n
 ```{r subtitle, echo=FALSE, results='asis'}
 cat(sprintf(
   "**Study:** %s  \n*Snapshot date: %s*\n\n",
-  paste(unique(dfIPC$studyid), collapse = ", "),
+  paste(unique(dfIPM$studyid), collapse = ", "),
   format(dSnapshotDate)
 ))
 ```
@@ -186,7 +186,7 @@ cat("\n> **No enrolled participants.** The charts and the participant listing ar
 ```{r study-status, echo=FALSE, eval=has_participants}
 gsm.vizr::bars(
   data = status_rows$study[status_rows$study$Dosed == "all", ],
-  spec = ipc_StatusBarSpec("study"),
+  spec = ipm_StatusBarSpec("study"),
   metadata = list(chartId = "ipc-study-status", level = "study"),
   # One bar needs far less than the 500px default floor.
   height = 230,
@@ -204,7 +204,7 @@ htmltools::tagList(
   reasons_note("study"),
   gsm.vizr::bars(
     data = reason_data$study,
-    spec = ipc_ReasonBarSpec(reason_data$order),
+    spec = ipm_ReasonBarSpec(reason_data$order),
     metadata = list(chartId = "ipc-study-reasons", level = "study")
   )
 )
@@ -216,7 +216,7 @@ cat(if (has_reasons) reasons_text else reasons_empty)
 
 ### Time to event
 ```{r study-tte, echo=FALSE, eval=has_participants}
-htmltools::div(id = "ipc-study-tte", ipc_TimeToEventScatter(dfIPC, nMaxDays, "ipc-study-tte"))
+htmltools::div(id = "ipc-study-tte", ipm_TimeToEventScatter(dfIPM, nMaxDays, "ipc-study-tte"))
 ```
 
 ```{r study-tte-note, echo=FALSE, results='asis', eval=has_participants}
@@ -229,7 +229,7 @@ cat(tte_text)
 ```{r country-status, echo=FALSE, eval=has_participants}
 gsm.vizr::bars(
   data = status_rows$country[status_rows$country$Dosed == "all", ],
-  spec = ipc_StatusBarSpec("country"),
+  spec = ipm_StatusBarSpec("country"),
   metadata = list(chartId = "ipc-country-status", level = "country")
 )
 ```
@@ -244,7 +244,7 @@ htmltools::tagList(
   reasons_note("country"),
   gsm.vizr::bars(
     data = reason_data$study,
-    spec = ipc_ReasonBarSpec(reason_data$order),
+    spec = ipm_ReasonBarSpec(reason_data$order),
     metadata = list(chartId = "ipc-country-reasons", level = "country")
   )
 )
@@ -256,7 +256,7 @@ cat(if (has_reasons) reasons_text else reasons_empty)
 
 ### Time to event
 ```{r country-tte, echo=FALSE, eval=has_participants}
-htmltools::div(id = "ipc-country-tte", ipc_TimeToEventScatter(dfIPC, nMaxDays, "ipc-country-tte"))
+htmltools::div(id = "ipc-country-tte", ipm_TimeToEventScatter(dfIPM, nMaxDays, "ipc-country-tte"))
 ```
 
 ```{r country-tte-note, echo=FALSE, results='asis', eval=has_participants}
@@ -269,7 +269,7 @@ cat(tte_text)
 ```{r site-status, echo=FALSE, eval=has_participants}
 gsm.vizr::bars(
   data = status_rows$site[status_rows$site$Dosed == "all", ],
-  spec = ipc_StatusBarSpec("site"),
+  spec = ipm_StatusBarSpec("site"),
   metadata = list(chartId = "ipc-site-status", level = "site")
 )
 ```
@@ -284,7 +284,7 @@ htmltools::tagList(
   reasons_note("site"),
   gsm.vizr::bars(
     data = reason_data$study,
-    spec = ipc_ReasonBarSpec(reason_data$order),
+    spec = ipm_ReasonBarSpec(reason_data$order),
     metadata = list(chartId = "ipc-site-reasons", level = "site")
   )
 )
@@ -296,7 +296,7 @@ cat(if (has_reasons) reasons_text else reasons_empty)
 
 ### Time to event
 ```{r site-tte, echo=FALSE, eval=has_participants}
-htmltools::div(id = "ipc-site-tte", ipc_TimeToEventScatter(dfIPC, nMaxDays, "ipc-site-tte"))
+htmltools::div(id = "ipc-site-tte", ipm_TimeToEventScatter(dfIPM, nMaxDays, "ipc-site-tte"))
 ```
 
 ```{r site-tte-note, echo=FALSE, results='asis', eval=has_participants}
@@ -306,7 +306,7 @@ cat(tte_text)
 ## Participant listing
 
 ```{r listing, echo=FALSE, eval=has_participants}
-ipc_Listing(ipc_ListingData(dfIPC))
+ipm_Listing(ipm_ListingData(dfIPM))
 ```
 
 ```{r listing-note, echo=FALSE, results='asis'}
@@ -326,8 +326,8 @@ cat(
 ```
 
 ```{r ipc-data, echo=FALSE, eval=has_participants}
-ipc_DataScript(list(status = status_rows, reasons = reason_data))
+ipm_DataScript(list(status = status_rows, reasons = reason_data))
 ```
 
-```{js, file=system.file("report", "lib", "ipcFilters.js", package = "gsm.kri"), echo=FALSE}
+```{js, file=system.file("report", "lib", "ipmFilters.js", package = "gsm.kri"), echo=FALSE}
 ```

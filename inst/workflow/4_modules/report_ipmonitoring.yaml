@@ -1,6 +1,6 @@
 meta:
   Type: Report
-  ID: report_ipcompliance
+  ID: report_ipmonitoring
   Output: html
   Name: "IP monitoring: IP Non-Starter & Premature Treatment Discontinuation"
   Description: IP non-starters and premature treatment discontinuation per participant, by study, country and site, with a participant listing
@@ -28,7 +28,7 @@ steps:
   - output: strOutputDir
     name: getwd
   - output: lReport
-    name: gsm.kri::Report_IPCompliance
+    name: gsm.kri::Report_IPMonitoring
     params:
       dfResults: Reporting_Results
       lListings: lListings

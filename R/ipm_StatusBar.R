@@ -1,4 +1,4 @@
-#' Long status rows for the IP Compliance status charts
+#' Long status rows for the IP Monitoring status charts
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`
@@ -7,14 +7,14 @@
 #' (`"all"`, `"Y"`, `"N"`), so the report's filter script only picks rows.
 #' Participants whose dosed flag is unrecognised appear under `"all"` only.
 #'
-#' @param dfIPC `data.frame` Output of [ipc_ClassifyParticipants()].
+#' @param dfIPM `data.frame` Output of [ipm_ClassifyParticipants()].
 #' @param strLevel `character` `"study"`, `"country"` or `"site"`.
 #'
 #' @return A `tibble` with `Dosed`, `GroupID`, `OuterGroupID` (country for
 #'   site rows, else `NA`), `Status`, `n` and `Level`. Only non-zero cells.
 #' @keywords internal
 #' @export
-ipc_StatusRows <- function(dfIPC, strLevel = c("study", "country", "site")) {
+ipm_StatusRows <- function(dfIPM, strLevel = c("study", "country", "site")) {
   strLevel <- match.arg(strLevel)
   strGroupCol <- switch(
     strLevel,
@@ -25,10 +25,10 @@ ipc_StatusRows <- function(dfIPC, strLevel = c("study", "country", "site")) {
   df <- tibble::tibble(
     # Character, not factor: a factor would pin an x order that updateData
     # then carries into every narrowed slice.
-    GroupID = as.character(dfIPC[[strGroupCol]]),
-    OuterGroupID = if (strLevel == "site") dfIPC$country else NA_character_,
-    Status = as.character(dfIPC$status),
-    dosed = dfIPC$dosed
+    GroupID = as.character(dfIPM[[strGroupCol]]),
+    OuterGroupID = if (strLevel == "site") dfIPM$country else NA_character_,
+    Status = as.character(dfIPM$status),
+    dosed = dfIPM$dosed
   )
   dplyr::bind_rows(
     dplyr::mutate(df, Dosed = "all"),
@@ -48,11 +48,11 @@ ipc_StatusRows <- function(dfIPC, strLevel = c("study", "country", "site")) {
     dplyr::arrange(
       match(.data$Dosed, c("all", "Y", "N")),
       .data$GroupID,
-      match(.data$Status, names(ipc_StatusColors()))
+      match(.data$Status, names(ipm_StatusColors()))
     )
 }
 
-#' gsm.viz spec for the IP Compliance status charts
+#' gsm.viz spec for the IP Monitoring status charts
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`
@@ -66,7 +66,7 @@ ipc_StatusRows <- function(dfIPC, strLevel = c("study", "country", "site")) {
 #' @return A named `list` for [gsm.vizr::bars()].
 #' @keywords internal
 #' @export
-ipc_StatusBarSpec <- function(strLevel = c("study", "country", "site")) {
+ipm_StatusBarSpec <- function(strLevel = c("study", "country", "site")) {
   strLevel <- match.arg(strLevel)
   segment <- list(
     display = TRUE,
@@ -97,7 +97,7 @@ ipc_StatusBarSpec <- function(strLevel = c("study", "country", "site")) {
       ),
       # Mode-neutral: the position toggle cannot change the axis title.
       y = list(label = "Participants"),
-      fill = list(colors = as.list(ipc_StatusColors()), label = "")
+      fill = list(colors = as.list(ipm_StatusColors()), label = "")
     ),
     # A title row gives the position toggle its own line above the legend.
     labels = list(title = "Participants by status"),

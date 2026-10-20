@@ -1,4 +1,4 @@
-#' Inline data block for the IP Compliance filter script
+#' Inline data block for the IP Monitoring filter script
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`
@@ -12,7 +12,7 @@
 #' @return An `htmltools` `<script type="application/json" id="ipc-data">` tag.
 #' @keywords internal
 #' @export
-ipc_DataScript <- function(lData) {
+ipm_DataScript <- function(lData) {
   json <- jsonlite::toJSON(
     lData,
     dataframe = "rows",

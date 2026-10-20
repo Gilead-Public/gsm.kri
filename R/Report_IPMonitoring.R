@@ -1,4 +1,4 @@
-#' Report_IPCompliance function
+#' Report_IPMonitoring function
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`
@@ -17,14 +17,14 @@
 #'   `dfResults$SnapshotDate`.
 #' @param strOutputDir `string` Output directory. Default: working directory.
 #' @param strOutputFile `string` Output filename. Default:
-#'   `Report_IPCompliance.html`.
+#'   `Report_IPMonitoring.html`.
 #' @param strInputPath `string` Path to the template `Rmd`.
 #'
 #' @return File path of the saved report HTML, returned invisibly.
 #'
 #' @keywords KRI report
 #' @export
-Report_IPCompliance <- function(
+Report_IPMonitoring <- function(
   dfResults = NULL,
   lListings = NULL,
   dSnapshotDate = NULL,
@@ -32,14 +32,14 @@ Report_IPCompliance <- function(
   strOutputFile = NULL,
   strInputPath = system.file(
     "report",
-    "Report_IPCompliance.Rmd",
+    "Report_IPMonitoring.Rmd",
     package = "gsm.kri"
   )
 ) {
-  rlang::check_installed("rmarkdown", reason = "to run `Report_IPCompliance()`")
-  rlang::check_installed("knitr", reason = "to run `Report_IPCompliance()`")
-  rlang::check_installed("plotly", reason = "to run `Report_IPCompliance()`")
-  rlang::check_installed("DT", reason = "to run `Report_IPCompliance()`")
+  rlang::check_installed("rmarkdown", reason = "to run `Report_IPMonitoring()`")
+  rlang::check_installed("knitr", reason = "to run `Report_IPMonitoring()`")
+  rlang::check_installed("plotly", reason = "to run `Report_IPMonitoring()`")
+  rlang::check_installed("DT", reason = "to run `Report_IPMonitoring()`")
 
   if (is.null(dSnapshotDate) && !is.null(dfResults$SnapshotDate)) {
     dSnapshotDate <- max(as.Date(dfResults$SnapshotDate))
@@ -50,7 +50,7 @@ Report_IPCompliance <- function(
   )
 
   if (is.null(strOutputFile)) {
-    strOutputFile <- "Report_IPCompliance.html"
+    strOutputFile <- "Report_IPMonitoring.html"
   }
 
   gsm.kri::RenderRmd(

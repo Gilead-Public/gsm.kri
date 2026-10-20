@@ -1,4 +1,4 @@
-#' Participant listing rows for the IP Compliance report
+#' Participant listing rows for the IP Monitoring report
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`
@@ -6,47 +6,47 @@
 #' One row per participant in status stack order, then participant ID. The
 #' `dosed` column is hidden in the table and drives its dosed filter.
 #'
-#' @param dfIPC `data.frame` Output of [ipc_ClassifyParticipants()].
+#' @param dfIPM `data.frame` Output of [ipm_ClassifyParticipants()].
 #'
 #' @return A `tibble` with the listing columns in display order.
 #' @keywords internal
 #' @export
-ipc_ListingData <- function(dfIPC) {
-  status <- as.character(dfIPC$status)
+ipm_ListingData <- function(dfIPM) {
+  status <- as.character(dfIPM$status)
   bUnrecognized <- status %in% "Unrecognized status"
   status[bUnrecognized] <- paste0(
     "Unrecognized status: ",
-    dplyr::coalesce(dfIPC$status_raw[bUnrecognized], "missing")
+    dplyr::coalesce(dfIPM$status_raw[bUnrecognized], "missing")
   )
-  bDiscontinued <- dfIPC$status %in%
+  bDiscontinued <- dfIPM$status %in%
     c(
       "Premature treatment discontinuation",
       "Potential premature treatment discontinuation"
     )
-  reason <- dplyr::na_if(trimws(dfIPC$ptd_reason), "")
+  reason <- dplyr::na_if(trimws(dfIPM$ptd_reason), "")
   df <- tibble::tibble(
-    subjid = dfIPC$subjid,
-    invid = dfIPC$invid,
-    country = dfIPC$country,
+    subjid = dfIPM$subjid,
+    invid = dfIPM$invid,
+    country = dfIPM$country,
     status = status,
-    kit_assigned = dplyr::coalesce(dfIPC$kit_assigned, ""),
-    first_dose_dt = dfIPC$first_dose_dt,
-    days_to_first_dose = dfIPC$days_to_first_dose,
-    days_to_event = dfIPC$days_to_event,
-    study_complete = dfIPC$study_complete,
-    consent_withdrawn = dfIPC$consent_withdrawn,
-    drg_completion = dfIPC$drg_completion,
+    kit_assigned = dplyr::coalesce(dfIPM$kit_assigned, ""),
+    first_dose_dt = dfIPM$first_dose_dt,
+    days_to_first_dose = dfIPM$days_to_first_dose,
+    days_to_event = dfIPM$days_to_event,
+    study_complete = dfIPM$study_complete,
+    consent_withdrawn = dfIPM$consent_withdrawn,
+    drg_completion = dfIPM$drg_completion,
     ptd_reason = ifelse(
       bDiscontinued,
       dplyr::coalesce(reason, "Not yet recorded"),
       ""
     ),
-    dosed = dfIPC$dosed
+    dosed = dfIPM$dosed
   )
-  df[order(as.integer(dfIPC$status), dfIPC$subjid, method = "radix"), ]
+  df[order(as.integer(dfIPM$status), dfIPM$subjid, method = "radix"), ]
 }
 
-#' Participant listing table for the IP Compliance report
+#' Participant listing table for the IP Monitoring report
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`
@@ -55,12 +55,12 @@ ipc_ListingData <- function(dfIPC) {
 #' searches the named `dosed`, `country` and `invid` columns. The CSV holds
 #' every participant whatever the filters and search.
 #'
-#' @param dfListing `data.frame` Output of [ipc_ListingData()].
+#' @param dfListing `data.frame` Output of [ipm_ListingData()].
 #'
 #' @return A `DT` htmlwidget with element id `ipc-listing`.
 #' @keywords internal
 #' @export
-ipc_Listing <- function(dfListing) {
+ipm_Listing <- function(dfListing) {
   vLabels <- c(
     "Participant ID" = "subjid",
     "Investigator ID" = "invid",
@@ -88,7 +88,7 @@ ipc_Listing <- function(dfListing) {
       buttons = list(list(
         extend = "csv",
         text = "Download CSV",
-        filename = "ip-compliance-participants",
+        filename = "ip-monitoring-participants",
         exportOptions = list(
           modifier = list(search = "none"),
           columns = ":visible"

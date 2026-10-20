@@ -1,4 +1,4 @@
-#' Discontinuation reason slices for the IP Compliance reasons charts
+#' Discontinuation reason slices for the IP Monitoring reasons charts
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`
@@ -9,7 +9,7 @@
 #' category that has no row. `pct` is over the dosed participants in scope,
 #' which is the same for the All and Dosed filters.
 #'
-#' @param dfIPC `data.frame` Output of [ipc_ClassifyParticipants()].
+#' @param dfIPM `data.frame` Output of [ipm_ClassifyParticipants()].
 #' @param bHasPTD `logical` Whether premature treatment discontinuation data
 #'   was delivered.
 #'
@@ -19,12 +19,12 @@
 #'   filter). Each slice is a `tibble` with `reason`, `n` and `pct`.
 #' @keywords internal
 #' @export
-ipc_ReasonRows <- function(dfIPC, bHasPTD) {
+ipm_ReasonRows <- function(dfIPM, bHasPTD) {
   if (!bHasPTD) {
     return(NULL)
   }
-  dfDosed <- dfIPC[
-    dfIPC$dosed %in% "Y",
+  dfDosed <- dfIPM[
+    dfIPM$dosed %in% "Y",
     c("country", "invid", "status", "ptd_reason")
   ]
   dfPTD <- dfDosed[dfDosed$status %in% "Premature treatment discontinuation", ]
@@ -55,9 +55,9 @@ ipc_ReasonRows <- function(dfIPC, bHasPTD) {
       pct = if (nDosed > 0) 100 * unname(n) / nDosed else 0
     )
   }
-  vCountries <- sort(unique(dfIPC$country), method = "radix")
+  vCountries <- sort(unique(dfIPM$country), method = "radix")
   lSites <- lapply(vCountries, function(c) {
-    vSites <- sort(unique(dfIPC$invid[dfIPC$country == c]), method = "radix")
+    vSites <- sort(unique(dfIPM$invid[dfIPM$country == c]), method = "radix")
     stats::setNames(
       lapply(vSites, function(s) {
         slice(
@@ -83,7 +83,7 @@ ipc_ReasonRows <- function(dfIPC, bHasPTD) {
   )
 }
 
-#' gsm.viz spec for the IP Compliance reasons charts
+#' gsm.viz spec for the IP Monitoring reasons charts
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`
@@ -92,19 +92,19 @@ ipc_ReasonRows <- function(dfIPC, bHasPTD) {
 #' top. Labels and hover read "x.x% (n)".
 #'
 #' @param vReasonOrder `character` Reasons in display order, from
-#'   [ipc_ReasonRows()].
+#'   [ipm_ReasonRows()].
 #'
 #' @return A named `list` for [gsm.vizr::bars()].
 #' @keywords internal
 #' @export
-ipc_ReasonBarSpec <- function(vReasonOrder) {
+ipm_ReasonBarSpec <- function(vReasonOrder) {
   label <- gsm.vizr::js_hook(
     "function (value, context, details) {
       var d = (details && details.datum) || {};
       return Number(d.pct).toFixed(1) + '% (' + d.n + ')';
     }"
   )
-  strColor <- ipc_StatusColors()[["Premature treatment discontinuation"]]
+  strColor <- ipm_StatusColors()[["Premature treatment discontinuation"]]
   list(
     mapping = list(x = "reason", y = "pct"),
     orientation = "horizontal",

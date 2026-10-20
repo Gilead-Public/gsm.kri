@@ -1,4 +1,4 @@
-#' IP Compliance time-to-event scatter
+#' IP Monitoring time-to-event scatter
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`
@@ -9,7 +9,7 @@
 #' filter script registers the widget on render and redraws it on filter and
 #' legend changes.
 #'
-#' @param dfIPC `data.frame` Output of [ipc_ClassifyParticipants()].
+#' @param dfIPM `data.frame` Output of [ipm_ClassifyParticipants()].
 #' @param nMaxDays `numeric` Largest day count in the study, so the three
 #'   scatters share one range.
 #' @param strId `character` Scatter id handed to the filter script.
@@ -17,10 +17,10 @@
 #' @return A `plotly` htmlwidget.
 #' @keywords internal
 #' @export
-ipc_TimeToEventScatter <- function(dfIPC, nMaxDays, strId) {
-  rlang::check_installed("plotly", reason = "to run `ipc_TimeToEventScatter()`")
-  vColors <- ipc_StatusColors()
-  df <- dfIPC[!is.na(dfIPC$days_since_enrl), ]
+ipm_TimeToEventScatter <- function(dfIPM, nMaxDays, strId) {
+  rlang::check_installed("plotly", reason = "to run `ipm_TimeToEventScatter()`")
+  vColors <- ipm_StatusColors()
+  df <- dfIPM[!is.na(dfIPM$days_since_enrl), ]
   # 5% padding keeps edge points clear; the axis starts at 0 unless an event
   # predates enrollment.
   nPad <- 0.05 * nMaxDays

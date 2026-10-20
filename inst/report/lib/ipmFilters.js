@@ -1,4 +1,4 @@
-// IP Compliance report filters. R precomputes every chart slice into the
+// IP Monitoring report filters. R precomputes every chart slice into the
 // #ipc-data JSON block; this script only keeps the reviewer's selection and
 // hands each widget the matching slice. Nothing is counted here.
 (function () {

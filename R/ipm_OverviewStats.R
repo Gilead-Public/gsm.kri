@@ -1,4 +1,4 @@
-#' IP Compliance overview figures
+#' IP Monitoring overview figures
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`
@@ -7,7 +7,7 @@
 #' are shares of enrolled participants; the four treatment completion statuses
 #' are shares of dosed participants.
 #'
-#' @param dfIPC `data.frame` Output of [ipc_ClassifyParticipants()].
+#' @param dfIPM `data.frame` Output of [ipm_ClassifyParticipants()].
 #' @param bHasPTD `logical` Whether `drv_drg_completion` was delivered. When
 #'   `FALSE`, the four treatment completion figures are `NA`.
 #'
@@ -15,7 +15,7 @@
 #'   and `base` (`"enrolled"`, `"dosed"`, or `NA` for Total enrolled).
 #' @keywords internal
 #' @export
-ipc_OverviewStats <- function(dfIPC, bHasPTD) {
+ipm_OverviewStats <- function(dfIPM, bHasPTD) {
   vNotDosed <- c(
     "Potential IP non-starter - within window",
     "Potential IP non-starter - outside window",
@@ -27,9 +27,9 @@ ipc_OverviewStats <- function(dfIPC, bHasPTD) {
     "Premature treatment discontinuation",
     "Potential premature treatment discontinuation"
   )
-  nEnrolled <- nrow(dfIPC)
-  nDosed <- sum(dfIPC$dosed %in% "Y")
-  n_status <- function(x) sum(dfIPC$status %in% x)
+  nEnrolled <- nrow(dfIPM)
+  nDosed <- sum(dfIPM$dosed %in% "Y")
+  n_status <- function(x) sum(dfIPM$status %in% x)
   stats <- tibble::tibble(
     label = c(
       "Total enrolled",
@@ -43,8 +43,8 @@ ipc_OverviewStats <- function(dfIPC, bHasPTD) {
       nDosed,
       vapply(vNotDosed, n_status, integer(1), USE.NAMES = FALSE),
       sum(
-        dfIPC$status %in% "Confirmed IP non-starter" &
-          dfIPC$consent_withdrawn %in% "Y"
+        dfIPM$status %in% "Confirmed IP non-starter" &
+          dfIPM$consent_withdrawn %in% "Y"
       ),
       if (bHasPTD) {
         vapply(vDosed, n_status, integer(1), USE.NAMES = FALSE)

@@ -1,4 +1,4 @@
-#' IP Compliance status vocabulary
+#' IP Monitoring status vocabulary
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`
@@ -10,7 +10,7 @@
 #' @return Named `character` vector of hex colours.
 #' @keywords internal
 #' @export
-ipc_StatusColors <- function() {
+ipm_StatusColors <- function() {
   c(
     "Potential IP non-starter - within window" = "#EDA100",
     "Potential IP non-starter - outside window" = "#EB6834",
@@ -25,7 +25,7 @@ ipc_StatusColors <- function() {
   )
 }
 
-#' Classify enrolled participants for the IP Compliance report
+#' Classify enrolled participants for the IP Monitoring report
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`
@@ -45,7 +45,7 @@ ipc_StatusColors <- function() {
 #' @return A `tibble` with one row per participant.
 #' @keywords internal
 #' @export
-ipc_ClassifyParticipants <- function(
+ipm_ClassifyParticipants <- function(
   dfIPNS,
   dfSubj = NULL,
   dfStudComp = NULL,
@@ -79,7 +79,7 @@ ipc_ClassifyParticipants <- function(
   )
 
   bHasPTD <- !is.null(dfSubj) && "drv_drg_completion" %in% names(dfSubj)
-  df <- ipc_Dedupe(dfIPNS, "Mapped_IPNS")
+  df <- ipm_Dedupe(dfIPNS, "Mapped_IPNS")
   vSubjCols <- c(
     if (!is.null(dfSubj)) {
       intersect(
@@ -97,20 +97,20 @@ ipc_ClassifyParticipants <- function(
     }
   )
   if (length(vSubjCols) > 0) {
-    dfSubj <- ipc_Dedupe(dfSubj, "Mapped_SUBJ")
+    dfSubj <- ipm_Dedupe(dfSubj, "Mapped_SUBJ")
     df <- dplyr::left_join(df, dfSubj[c("subjid", vSubjCols)], by = "subjid")
   }
-  df <- dplyr::left_join(df, ipc_StudCompSummary(dfStudComp), by = "subjid")
+  df <- dplyr::left_join(df, ipm_StudCompSummary(dfStudComp), by = "subjid")
 
   col <- function(name) {
     if (name %in% names(df)) df[[name]] else rep(NA, nrow(df))
   }
-  vLabels <- names(ipc_StatusColors())
+  vLabels <- names(ipm_StatusColors())
   dosed <- toupper(trimws(as.character(df$drv_ip_dosed)))
   dosed[!dosed %in% c("Y", "N")] <- NA
   ord <- suppressWarnings(as.integer(df$ipns_status_ord))
   bKnownLabel <- df$ipns_status %in% vLabels
-  dPTD <- ipc_AsDate(col("drv_treatment_discontinuation_dt"))
+  dPTD <- ipm_AsDate(col("drv_treatment_discontinuation_dt"))
   drg <- as.character(col("drv_drg_completion"))
   bNullDrg <- is.na(drg) | drg == ""
   vDosedStatus <- c(
@@ -126,7 +126,7 @@ ipc_ClassifyParticipants <- function(
     dosed %in% "N" & ord %in% 1:3 & bKnownLabel ~ as.character(df$ipns_status),
     TRUE ~ "Unrecognized status"
   )
-  dEnrollment <- ipc_AsDate(df$drv_enrollment_dt)
+  dEnrollment <- ipm_AsDate(df$drv_enrollment_dt)
   # Study completion no longer dates a dosed participant; without a
   # discontinuation date the point sits on the diagonal.
   dEvent <- dplyr::case_when(
@@ -139,52 +139,52 @@ ipc_ClassifyParticipants <- function(
   nDaysSinceEnrl <- day_count(dSnapshotDate)
 
   id <- df$subjid
-  ipc_Warn(
+  ipm_Warn(
     is.na(dosed),
     id,
     "drv_ip_dosed is not Y or N, so the status is Unrecognized for"
   )
-  ipc_Warn(
+  ipm_Warn(
     dosed %in% "N" & ord %in% 0L,
     id,
     "Not dosed with the Dosed IP non-starter status, so the status is Unrecognized for"
   )
-  ipc_Warn(
+  ipm_Warn(
     dosed %in% "Y" & ord %in% 1:3,
     id,
     "Dosed with a not-dosed IP non-starter status; the dosed flag wins for"
   )
-  ipc_Warn(
+  ipm_Warn(
     dosed %in% "N" & !is.na(dPTD),
     id,
     "Not dosed with a treatment discontinuation date; the date is ignored for"
   )
-  ipc_Warn(
+  ipm_Warn(
     dosed %in% "N" & !bNullDrg,
     id,
     "Not dosed with a drv_drg_completion value; the value is ignored for"
   )
-  ipc_Warn(
+  ipm_Warn(
     dosed %in% "Y" & bHasPTD & !bNullDrg & !drg %in% names(vDosedStatus),
     id,
     "drv_drg_completion is not Y, N or Potential No, so the status is Unrecognized for"
   )
-  ipc_Warn(
+  ipm_Warn(
     dosed %in% "N" & ord %in% 1:3 & !bKnownLabel,
     id,
     "ipns_status is not a report status label, so the status is Unrecognized for"
   )
-  ipc_Warn(
+  ipm_Warn(
     status == "Confirmed IP non-starter" & is.na(dEvent),
     id,
     "No event date, so the time-to-event point sits on the diagonal for"
   )
-  ipc_Warn(
+  ipm_Warn(
     is.na(dEnrollment),
     id,
     "No enrollment date, so there are no day counts or time-to-event point for"
   )
-  ipc_Warn(
+  ipm_Warn(
     !is.na(dEvent) & (dEvent < dEnrollment | dEvent > dSnapshotDate),
     id,
     "Event date before enrollment or after the snapshot date for"
@@ -205,11 +205,11 @@ ipc_ClassifyParticipants <- function(
       as.character(col("drv_ip_nonstarter_status"))
     ),
     enrollment_dt = dEnrollment,
-    first_dose_dt = ipc_AsDate(col("drv_ip_first_dose_dt")),
+    first_dose_dt = ipm_AsDate(col("drv_ip_first_dose_dt")),
     event_dt = dEvent,
     days_since_enrl = nDaysSinceEnrl,
     days_to_event = dplyr::coalesce(day_count(dEvent), nDaysSinceEnrl),
-    days_to_first_dose = day_count(ipc_AsDate(col("drv_ip_first_dose_dt"))),
+    days_to_first_dose = day_count(ipm_AsDate(col("drv_ip_first_dose_dt"))),
     kit_assigned = as.character(col("drv_kit_assigned")),
     study_complete = dplyr::coalesce(df$study_complete, ""),
     consent_withdrawn = ifelse(df$consent_withdrawn %in% TRUE, "Y", "N"),
@@ -225,7 +225,7 @@ ipc_ClassifyParticipants <- function(
 # One row per participant: several completion records are allowed, the
 # earliest qualifying record dates the event, and any Y answer completes the
 # study.
-ipc_StudCompSummary <- function(dfStudComp = NULL) {
+ipm_StudCompSummary <- function(dfStudComp = NULL) {
   if (is.null(dfStudComp) || nrow(dfStudComp) == 0) {
     return(tibble::tibble(
       subjid = character(),
@@ -240,7 +240,7 @@ ipc_StudCompSummary <- function(dfStudComp = NULL) {
   tibble::tibble(
     subjid = dfStudComp$subjid,
     cy = toupper(trimws(dfStudComp$compyn)),
-    d = ipc_AsDate(dfStudComp$mincreated_dts),
+    d = ipm_AsDate(dfStudComp$mincreated_dts),
     withdrew = toupper(trimws(dfStudComp$compreas)) %in% "WITHDREW CONSENT"
   ) %>%
     dplyr::group_by(.data$subjid) %>%
@@ -258,16 +258,16 @@ ipc_StudCompSummary <- function(dfStudComp = NULL) {
 
 # as.Date() converts date-times in UTC, which moves a late-evening timestamp of
 # a non-UTC column onto the next day; format() keeps its own calendar date.
-ipc_AsDate <- function(x) {
+ipm_AsDate <- function(x) {
   if (inherits(x, "POSIXt")) {
     return(as.Date(format(x, "%Y-%m-%d")))
   }
   as.Date(x)
 }
 
-ipc_Dedupe <- function(df, strName) {
+ipm_Dedupe <- function(df, strName) {
   bDuplicate <- duplicated(df$subjid)
-  ipc_Warn(
+  ipm_Warn(
     bDuplicate,
     df$subjid,
     paste(strName, "has duplicate rows; the first row is kept for")
@@ -277,7 +277,7 @@ ipc_Dedupe <- function(df, strName) {
 
 # One warning per data check, naming at most ten participants so a large study
 # does not flood the log.
-ipc_Warn <- function(vFlag, vSubjid, strMessage) {
+ipm_Warn <- function(vFlag, vSubjid, strMessage) {
   ids <- unique(vSubjid[vFlag %in% TRUE])
   if (length(ids) == 0) {
     return(invisible())

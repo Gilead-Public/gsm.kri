@@ -65,7 +65,7 @@ child_env <- list2env(
   parent = environment()
 )
 report_ip_compliance <- knitr::knit_child(
-  system.file("report", "Report_IPCompliance.Rmd", package = "gsm.kri"),
+  system.file("report", "Report_IPMonitoring.Rmd", package = "gsm.kri"),
   envir = child_env,
   quiet = TRUE
 )
