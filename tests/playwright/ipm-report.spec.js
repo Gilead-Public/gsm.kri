@@ -2,10 +2,10 @@ const { test, expect } = require('@playwright/test');
 const fs = require('fs');
 const path = require('path');
 
-const FULL = 'file://' + path.resolve(__dirname, 'fixture', 'IPC.html');
-const DEGRADED = 'file://' + path.resolve(__dirname, 'fixture', 'IPC_degraded.html');
+const FULL = 'file://' + path.resolve(__dirname, 'fixture', 'IPM.html');
+const DEGRADED = 'file://' + path.resolve(__dirname, 'fixture', 'IPM_degraded.html');
 
-// Facts of the fixture in tests/testthat/helper-ipc.R (render-ipc-fixture.R).
+// Facts of the fixture in tests/testthat/helper-ipm.R (render-ipm-fixture.R).
 const STACK = [
   'Potential IP non-starter - within window',
   'Potential IP non-starter - outside window',

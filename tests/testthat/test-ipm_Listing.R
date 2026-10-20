@@ -1,5 +1,5 @@
 test_that("the listing has the report columns in order (#320, #332)", {
-  df <- ipc_ListingData(ipc_classified())
+  df <- ipm_ListingData(ipm_classified())
   expect_equal(
     names(df),
     c(
@@ -23,7 +23,7 @@ test_that("the listing has the report columns in order (#320, #332)", {
 })
 
 test_that("the reason fills for both discontinuation statuses, else Not yet recorded (#332)", {
-  df <- ipc_ListingData(ipc_classified())
+  df <- ipm_ListingData(ipm_classified())
   row <- function(id) df[df$subjid == id, ]
   expect_equal(row("P08")$ptd_reason, "Adverse Event, Physician Decision")
   expect_equal(row("P07")$ptd_reason, "Not yet recorded")
@@ -35,7 +35,7 @@ test_that("the reason fills for both discontinuation statuses, else Not yet reco
 })
 
 test_that("Study Drug Completed per Protocol shows Y, N, Potential No or blank (#332)", {
-  df <- ipc_ListingData(ipc_classified())
+  df <- ipm_ListingData(ipm_classified())
   value <- stats::setNames(df$drg_completion, df$subjid)
   expect_equal(
     unname(value[c("P06", "P09", "P02", "P01", "P19", "P12")]),
@@ -44,10 +44,10 @@ test_that("Study Drug Completed per Protocol shows Y, N, Potential No or blank (
 })
 
 test_that("Study complete shows Y, N or blank next to Consent withdrawn (#332)", {
-  df <- ipc_ListingData(ipc_classified())
+  df <- ipm_ListingData(ipm_classified())
   value <- stats::setNames(df$study_complete, df$subjid)
   expect_equal(unname(value[c("P02", "P19", "P01")]), c("Y", "N", ""))
-  w <- ipc_Listing(df)
+  w <- ipm_Listing(df)
   expect_match(
     w$x$container,
     "<th>Study complete</th>\\s*<th>Consent withdrawn</th>"
@@ -55,20 +55,20 @@ test_that("Study complete shows Y, N or blank next to Consent withdrawn (#332)",
 })
 
 test_that("the listing names Drug discontinuation reason and leaves out Days since enrollment (#332)", {
-  w <- ipc_Listing(ipc_ListingData(ipc_classified()))
+  w <- ipm_Listing(ipm_ListingData(ipm_classified()))
   expect_match(w$x$container, "<th>Drug discontinuation reason</th>", fixed = TRUE)
   expect_no_match(w$x$container, "<th>Discontinuation reason</th>", fixed = TRUE)
   expect_no_match(w$x$container, "Days since enrollment", fixed = TRUE)
 })
 
 test_that("without drv_drg_completion the outcome and reason columns are blank (#332)", {
-  df <- ipc_ListingData(ipc_classified(bPTD = FALSE))
+  df <- ipm_ListingData(ipm_classified(bPTD = FALSE))
   expect_true(all(df$drg_completion == ""))
   expect_true(all(df$ptd_reason == ""))
 })
 
 test_that("an unrecognised status shows the delivered value; a missing kit is blank (#320, #332)", {
-  df <- ipc_ListingData(ipc_classified())
+  df <- ipm_ListingData(ipm_classified())
   expect_equal(
     df$status[df$subjid == "P13"],
     "Unrecognized status: Pending review"
@@ -78,7 +78,7 @@ test_that("an unrecognised status shows the delivered value; a missing kit is bl
 })
 
 test_that("the CSV exports every participant and hides the dosed column (#320, #332)", {
-  w <- ipc_Listing(ipc_ListingData(ipc_classified()))
+  w <- ipm_Listing(ipm_ListingData(ipm_classified()))
   expect_match(w$x$container, "<th>Study Drug Completed per Protocol</th>", fixed = TRUE)
   expect_no_match(w$x$container, "Premature treatment discontinuation", fixed = TRUE)
   expect_equal(w$elementId, "ipc-listing")

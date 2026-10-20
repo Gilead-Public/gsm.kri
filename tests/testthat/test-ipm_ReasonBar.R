@@ -1,4 +1,4 @@
-reason_slices <- function() ipc_ReasonRows(ipc_classified(), TRUE)
+reason_slices <- function() ipm_ReasonRows(ipm_classified(), TRUE)
 counts_of <- function(slice) stats::setNames(slice$n, slice$reason)
 
 test_that("reasons split, trim and count each participant once per reason (#320, #332)", {
@@ -66,19 +66,19 @@ test_that("slices exist for every country and every country/site pair (#320)", {
 })
 
 test_that("without discontinuation data there are no reason slices (#320)", {
-  expect_null(ipc_ReasonRows(ipc_classified(bPTD = FALSE), FALSE))
+  expect_null(ipm_ReasonRows(ipm_classified(bPTD = FALSE), FALSE))
 })
 
 test_that("no discontinuations give an empty order (#320, #332)", {
-  df <- ipc_classified()
+  df <- ipm_classified()
   df$status[df$status == "Premature treatment discontinuation"] <- "Treatment ongoing"
-  r <- ipc_ReasonRows(df, TRUE)
+  r <- ipm_ReasonRows(df, TRUE)
   expect_length(r$order, 0)
   expect_equal(nrow(r$study), 0)
 })
 
 test_that("the reason spec pins the frequency order on a horizontal bar (#320)", {
-  spec <- ipc_ReasonBarSpec(reason_slices()$order)
+  spec <- ipm_ReasonBarSpec(reason_slices()$order)
   expect_equal(spec$orientation, "horizontal")
   expect_equal(spec$stat, "identity")
   expect_equal(unlist(spec$scales$x$order), reason_slices()$order)

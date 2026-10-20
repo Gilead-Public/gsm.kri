@@ -1,7 +1,7 @@
-render_ipc <- function(lListings = ipc_Fixture(), ...) {
+render_ipc <- function(lListings = ipm_Fixture(), ...) {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
-  out <- quiet_render(suppressWarnings(Report_IPCompliance(
+  out <- quiet_render(suppressWarnings(Report_IPMonitoring(
     lListings = lListings,
     strOutputDir = tempdir(),
     strOutputFile = paste0(basename(tempfile("ipc")), ".html"),
@@ -10,11 +10,11 @@ render_ipc <- function(lListings = ipc_Fixture(), ...) {
   paste(readLines(out, warn = FALSE), collapse = "\n")
 }
 # Each render takes several seconds, so share the default render across tests.
-ipc_default_html <- local({
+ipm_default_html <- local({
   html <- NULL
   function() {
     if (is.null(html)) {
-      html <<- render_ipc(dSnapshotDate = ipc_FixtureSnapshotDate)
+      html <<- render_ipc(dSnapshotDate = ipm_FixtureSnapshotDate)
     }
     html
   }
@@ -31,8 +31,8 @@ bars_specs <- function(html) {
   Filter(function(x) !is.null(x$spec) && !is.null(x$metadata), specs)
 }
 
-test_that("Report_IPCompliance renders to a file (#320)", {
-  html <- ipc_default_html()
+test_that("Report_IPMonitoring renders to a file (#320, #337)", {
+  html <- ipm_default_html()
   expect_match(
     html,
     "IP monitoring: IP Non-Starter &amp; Premature Treatment",
@@ -62,13 +62,13 @@ test_that("the snapshot date defaults to the latest reporting snapshot (#320)", 
     "Snapshot date: 2026-07-01",
     fixed = TRUE
   )
-  expect_error(Report_IPCompliance(lListings = ipc_Fixture()), "dSnapshotDate")
+  expect_error(Report_IPMonitoring(lListings = ipm_Fixture()), "dSnapshotDate")
 })
 
 test_that("without drv_drg_completion the report says so and shows dosed participants as Unrecognized (#320, #332)", {
   html <- render_ipc(
-    ipc_Fixture(bPTD = FALSE),
-    dSnapshotDate = ipc_FixtureSnapshotDate
+    ipm_Fixture(bPTD = FALSE),
+    dSnapshotDate = ipm_FixtureSnapshotDate
   )
   expect_match(html, "Treatment completion data not available", fixed = TRUE)
   expect_false(grepl("ipc-study-reasons", html, fixed = TRUE))
@@ -90,9 +90,9 @@ test_that("without drv_drg_completion the report says so and shows dosed partici
 })
 
 test_that("a study with no discontinuations yet shows a message, not an empty chart (#320, #332)", {
-  f <- ipc_Fixture()
+  f <- ipm_Fixture()
   f$Mapped_SUBJ$drv_drg_completion[f$Mapped_SUBJ$drv_drg_completion %in% "N"] <- "Y"
-  html <- render_ipc(f, dSnapshotDate = ipc_FixtureSnapshotDate)
+  html <- render_ipc(f, dSnapshotDate = ipm_FixtureSnapshotDate)
   expect_match(
     html,
     "No premature treatment discontinuations recorded.",
@@ -102,16 +102,16 @@ test_that("a study with no discontinuations yet shows a message, not an empty ch
 })
 
 test_that("no enrolled participants renders the empty state (#320)", {
-  f <- lapply(ipc_Fixture(), function(df) df[0, ])
-  html <- render_ipc(f, dSnapshotDate = ipc_FixtureSnapshotDate)
+  f <- lapply(ipm_Fixture(), function(df) df[0, ])
+  html <- render_ipc(f, dSnapshotDate = ipm_FixtureSnapshotDate)
   expect_match(html, "No enrolled participants.", fixed = TRUE)
   expect_false(grepl('id="ipc-data"', html, fixed = TRUE))
 })
 
 test_that("inlined data cannot close its script block (#320)", {
-  f <- ipc_Fixture()
+  f <- ipm_Fixture()
   f$Mapped_IPNS$invid[1] <- "JP01</script><script>alert(1)"
-  html <- render_ipc(f, dSnapshotDate = ipc_FixtureSnapshotDate)
+  html <- render_ipc(f, dSnapshotDate = ipm_FixtureSnapshotDate)
   data <- sub(
     '.*<script type="application/json" id="ipc-data">(.*?)</script>.*',
     "\\1",
@@ -122,7 +122,7 @@ test_that("inlined data cannot close its script block (#320)", {
 })
 
 test_that("bar charts render through gsm.vizr::bars with the status stack (#320)", {
-  specs <- bars_specs(ipc_default_html())
+  specs <- bars_specs(ipm_default_html())
   ids <- vapply(specs, function(x) x$metadata$chartId, "")
   expect_setequal(
     ids,
@@ -135,7 +135,7 @@ test_that("bar charts render through gsm.vizr::bars with the status stack (#320)
 })
 
 test_that("the filter script is inlined once (#320)", {
-  html <- ipc_default_html()
+  html <- ipm_default_html()
   # gregexpr() returns -1 for no match, so count positive positions.
   hits <- gregexpr("window.ipcRegisterScatter = function", html, fixed = TRUE)[[1]]
   expect_equal(sum(hits > 0), 1L)
@@ -143,14 +143,14 @@ test_that("the filter script is inlined once (#320)", {
 })
 
 test_that("the scatter note places events above the diagonal (#320)", {
-  html <- ipc_default_html()
+  html <- ipm_default_html()
   # Pandoc may wrap the sentence across lines.
   expect_match(html, "Points above it\\s+had their event")
   expect_false(grepl("Points below it", html, fixed = TRUE))
 })
 
 test_that("the report shows the treatment completion statuses, not the Study complete or Ongoing statuses (#332)", {
-  html <- ipc_default_html()
+  html <- ipm_default_html()
   # Pandoc may wrap a definition across lines.
   for (status in c(
     "Potential premature treatment discontinuation",

@@ -1,7 +1,7 @@
 test_that("status rows sum to the participants under each dosed filter (#320, #332)", {
-  df <- ipc_classified()
+  df <- ipm_classified()
   for (level in c("study", "country", "site")) {
-    rows <- ipc_StatusRows(df, level)
+    rows <- ipm_StatusRows(df, level)
     expect_equal(sum(rows$n[rows$Dosed == "all"]), 29)
     expect_equal(sum(rows$n[rows$Dosed == "Y"]), 17)
     expect_equal(sum(rows$n[rows$Dosed == "N"]), 11)
@@ -12,15 +12,15 @@ test_that("status rows sum to the participants under each dosed filter (#320, #3
 })
 
 test_that("only site rows carry their country (#320)", {
-  df <- ipc_classified()
-  site <- ipc_StatusRows(df, "site")
+  df <- ipm_classified()
+  site <- ipm_StatusRows(df, "site")
   expect_equal(unique(site$OuterGroupID[site$GroupID == "JP02"]), "Japan")
   expect_equal(unique(site$OuterGroupID[site$GroupID == "Unknown"]), "Unknown")
-  expect_true(all(is.na(ipc_StatusRows(df, "country")$OuterGroupID)))
+  expect_true(all(is.na(ipm_StatusRows(df, "country")$OuterGroupID)))
 })
 
 test_that("an unrecognised dosed flag appears under All only; an unrecognised outcome under Dosed (#320, #332)", {
-  rows <- ipc_StatusRows(ipc_classified(), "study")
+  rows <- ipm_StatusRows(ipm_classified(), "study")
   unrecognized <- rows[rows$Status == "Unrecognized status", ]
   # P15's dosed flag is unrecognised; P29 is dosed with an unrecognised outcome.
   expect_equal(unrecognized$n[unrecognized$Dosed == "all"], 5)
@@ -30,8 +30,8 @@ test_that("an unrecognised dosed flag appears under All only; an unrecognised ou
 
 test_that("the status spec stacks in vocabulary order as a 100% bar (#320)", {
   for (level in c("study", "country", "site")) {
-    spec <- ipc_StatusBarSpec(level)
-    expect_identical(names(spec$scales$fill$colors), names(ipc_StatusColors()))
+    spec <- ipm_StatusBarSpec(level)
+    expect_identical(names(spec$scales$fill$colors), names(ipm_StatusColors()))
     expect_null(spec$stat)
     expect_equal(spec$position, "fill")
     expect_equal(spec$mapping, list(x = "GroupID", y = "n", fill = "Status"))
@@ -44,16 +44,16 @@ test_that("the status spec stacks in vocabulary order as a 100% bar (#320)", {
 })
 
 test_that("the study bar is horizontal; country and site zoom (#320)", {
-  study <- ipc_StatusBarSpec("study")
+  study <- ipm_StatusBarSpec("study")
   expect_equal(study$orientation, "horizontal")
   expect_null(study$zoom)
   expect_false(study$annotations$labels$segment$avoidCategoryOverlap)
   expect_equal(study$annotations$labels$segment$minSize, 80)
   for (level in c("country", "site")) {
-    spec <- ipc_StatusBarSpec(level)
+    spec <- ipm_StatusBarSpec(level)
     expect_equal(spec$orientation, "vertical")
     expect_equal(spec$zoom, list(enabled = TRUE, mode = "x"))
   }
-  expect_true(ipc_StatusBarSpec("site")$theme$dynamicCategoryAxis)
-  expect_null(ipc_StatusBarSpec("country")$theme)
+  expect_true(ipm_StatusBarSpec("site")$theme$dynamicCategoryAxis)
+  expect_null(ipm_StatusBarSpec("country")$theme)
 })

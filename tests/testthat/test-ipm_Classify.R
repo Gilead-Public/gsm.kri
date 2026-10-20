@@ -1,17 +1,17 @@
 classify_fixture <- function(bPTD = TRUE, ...) {
-  f <- ipc_Fixture(bPTD)
-  suppressWarnings(ipc_ClassifyParticipants(
+  f <- ipm_Fixture(bPTD)
+  suppressWarnings(ipm_ClassifyParticipants(
     f$Mapped_IPNS,
     f$Mapped_SUBJ,
     f$Mapped_STUDCOMP,
-    ipc_FixtureSnapshotDate
+    ipm_FixtureSnapshotDate
   ))
 }
 status_of <- function(df, id) as.character(df$status[df$subjid == id])
 
 test_that("the not-dosed labels equal gsm.mapping's ipns_status values (#320, #332)", {
   expect_identical(
-    names(ipc_StatusColors())[1:3],
+    names(ipm_StatusColors())[1:3],
     c(
       "Potential IP non-starter - within window",
       "Potential IP non-starter - outside window",
@@ -21,7 +21,7 @@ test_that("the not-dosed labels equal gsm.mapping's ipns_status values (#320, #3
 })
 
 test_that("dosed statuses follow treatment completion in stack order and colour (#332)", {
-  vColors <- ipc_StatusColors()
+  vColors <- ipm_StatusColors()
   # Treatment complete per protocol ends the stack, after Treatment ongoing.
   expect_identical(
     names(vColors)[4:8],
@@ -83,7 +83,7 @@ test_that("every fixture participant lands in its status (#320, #332)", {
     stats::setNames(as.character(df$status), df$subjid)[names(expected)],
     expected
   )
-  expect_identical(levels(df$status), names(ipc_StatusColors()))
+  expect_identical(levels(df$status), names(ipm_StatusColors()))
 })
 
 test_that("each drv_drg_completion value maps to one dosed status (#332)", {
@@ -148,13 +148,13 @@ test_that("day counts include the enrollment day (#320, #332)", {
 })
 
 test_that("each data conflict warns and names the participant (#320, #332)", {
-  f <- ipc_Fixture()
+  f <- ipm_Fixture()
   run <- function() {
-    ipc_ClassifyParticipants(
+    ipm_ClassifyParticipants(
       f$Mapped_IPNS,
       f$Mapped_SUBJ,
       f$Mapped_STUDCOMP,
-      ipc_FixtureSnapshotDate
+      ipm_FixtureSnapshotDate
     )
   }
   w <- testthat::capture_warnings(run())
@@ -172,12 +172,12 @@ test_that("each data conflict warns and names the participant (#320, #332)", {
 })
 
 test_that("a blank or NA outcome on a not-dosed participant does not warn (#332)", {
-  f <- ipc_Fixture()
-  w <- testthat::capture_warnings(ipc_ClassifyParticipants(
+  f <- ipm_Fixture()
+  w <- testthat::capture_warnings(ipm_ClassifyParticipants(
     f$Mapped_IPNS,
     f$Mapped_SUBJ,
     f$Mapped_STUDCOMP,
-    ipc_FixtureSnapshotDate
+    ipm_FixtureSnapshotDate
   ))
   ignored <- grep("drv_drg_completion value", w, value = TRUE)
   expect_length(ignored, 1)
@@ -185,12 +185,12 @@ test_that("a blank or NA outcome on a not-dosed participant does not warn (#332)
 })
 
 test_that("no dosed status raises the No event date warning (#332)", {
-  f <- ipc_Fixture()
-  w <- testthat::capture_warnings(ipc_ClassifyParticipants(
+  f <- ipm_Fixture()
+  w <- testthat::capture_warnings(ipm_ClassifyParticipants(
     f$Mapped_IPNS,
     f$Mapped_SUBJ,
     f$Mapped_STUDCOMP,
-    ipc_FixtureSnapshotDate
+    ipm_FixtureSnapshotDate
   ))
   no_date <- grep("No event date", w, value = TRUE)
   expect_length(no_date, 1)
@@ -200,11 +200,11 @@ test_that("no dosed status raises the No event date warning (#332)", {
 })
 
 test_that("a warning names at most ten participants (#320)", {
-  f <- ipc_Fixture()
+  f <- ipm_Fixture()
   ipns <- f$Mapped_IPNS[rep(which(f$Mapped_IPNS$subjid == "P15"), 12), ]
   ipns$subjid <- sprintf("U%02d", 1:12)
   expect_warning(
-    ipc_ClassifyParticipants(ipns, NULL, NULL, ipc_FixtureSnapshotDate),
+    ipm_ClassifyParticipants(ipns, NULL, NULL, ipm_FixtureSnapshotDate),
     "U10 and 2 more"
   )
 })
@@ -240,14 +240,14 @@ test_that("drg_completion shows the delivered value for dosed participants only 
 })
 
 test_that("a mapping without ipns_status or ipns_status_ord errors (#320)", {
-  f <- ipc_Fixture()
+  f <- ipm_Fixture()
   for (col in c("ipns_status", "ipns_status_ord")) {
     expect_error(
-      ipc_ClassifyParticipants(
+      ipm_ClassifyParticipants(
         f$Mapped_IPNS[setdiff(names(f$Mapped_IPNS), col)],
         NULL,
         NULL,
-        ipc_FixtureSnapshotDate
+        ipm_FixtureSnapshotDate
       ),
       col
     )
@@ -255,21 +255,21 @@ test_that("a mapping without ipns_status or ipns_status_ord errors (#320)", {
 })
 
 test_that("dSnapshotDate must be a single Date (#320)", {
-  f <- ipc_Fixture()
+  f <- ipm_Fixture()
   expect_error(
-    ipc_ClassifyParticipants(f$Mapped_IPNS, dSnapshotDate = "2026-06-30"),
+    ipm_ClassifyParticipants(f$Mapped_IPNS, dSnapshotDate = "2026-06-30"),
     "single Date"
   )
 })
 
 test_that("kit assignment falls back to Mapped_SUBJ (#320)", {
-  f <- ipc_Fixture()
+  f <- ipm_Fixture()
   ipns <- f$Mapped_IPNS[setdiff(names(f$Mapped_IPNS), "drv_kit_assigned")]
-  df <- suppressWarnings(ipc_ClassifyParticipants(
+  df <- suppressWarnings(ipm_ClassifyParticipants(
     ipns,
     f$Mapped_SUBJ,
     f$Mapped_STUDCOMP,
-    ipc_FixtureSnapshotDate
+    ipm_FixtureSnapshotDate
   ))
   expect_equal(df$kit_assigned, classify_fixture()$kit_assigned)
   expect_true(is.na(df$kit_assigned[df$subjid == "P21"]))
@@ -289,7 +289,7 @@ test_that("study_complete is Y or N from the completion records, else blank (#33
     compreas = NA,
     mincreated_dts = as.POSIXct("2026-05-01", tz = "UTC")
   )
-  summary <- ipc_StudCompSummary(studcomp)
+  summary <- ipm_StudCompSummary(studcomp)
   expect_equal(
     summary$study_complete[match(paste0("S", 1:5), summary$subjid)],
     c("", "", "Y", "Y", "N")
@@ -303,19 +303,19 @@ test_that("a completion timestamp keeps its own calendar date (#320, #332)", {
     compreas = NA,
     mincreated_dts = as.POSIXct("2026-05-01 23:30:00", tz = "America/New_York")
   )
-  expect_equal(ipc_StudCompSummary(studcomp)$confirm_dt, as.Date("2026-05-01"))
-  expect_false("complete_dt" %in% names(ipc_StudCompSummary(studcomp)))
+  expect_equal(ipm_StudCompSummary(studcomp)$confirm_dt, as.Date("2026-05-01"))
+  expect_false("complete_dt" %in% names(ipm_StudCompSummary(studcomp)))
 })
 
 test_that("no study completion data leaves every dosed status unchanged (#320, #332)", {
-  f <- ipc_Fixture()
+  f <- ipm_Fixture()
   full <- classify_fixture()
   for (studcomp in list(NULL, f$Mapped_STUDCOMP[0, ])) {
-    df <- suppressWarnings(ipc_ClassifyParticipants(
+    df <- suppressWarnings(ipm_ClassifyParticipants(
       f$Mapped_IPNS,
       f$Mapped_SUBJ,
       studcomp,
-      ipc_FixtureSnapshotDate
+      ipm_FixtureSnapshotDate
     ))
     bDosed <- df$dosed %in% "Y"
     expect_equal(df$status[bDosed], full$status[bDosed])
@@ -324,13 +324,13 @@ test_that("no study completion data leaves every dosed status unchanged (#320, #
 })
 
 test_that("zero enrolled participants give zero rows (#320)", {
-  f <- ipc_Fixture()
-  df <- ipc_ClassifyParticipants(
+  f <- ipm_Fixture()
+  df <- ipm_ClassifyParticipants(
     f$Mapped_IPNS[0, ],
     f$Mapped_SUBJ[0, ],
     f$Mapped_STUDCOMP[0, ],
-    ipc_FixtureSnapshotDate
+    ipm_FixtureSnapshotDate
   )
   expect_equal(nrow(df), 0)
-  expect_identical(levels(df$status), names(ipc_StatusColors()))
+  expect_identical(levels(df$status), names(ipm_StatusColors()))
 })

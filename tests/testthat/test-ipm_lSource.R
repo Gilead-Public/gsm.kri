@@ -1,6 +1,6 @@
 # Integration check on the bundled reference data: the report's statuses must
 # agree with the IPNS and PTD metrics computed from the same mapped data.
-ipc_lsource_mapped <- function() {
+ipm_lsource_mapped <- function() {
   wf <- workr::MakeWorkflowList(
     strNames = c("SUBJ", "STUDCOMP", "IPNS"),
     strPath = file.path(
@@ -47,7 +47,7 @@ test_that("lSource statuses agree with kri0007-2 and kri0019 (#320, #332)", {
     "kri0007-2 not on this branch"
   )
 
-  mapped <- ipc_lsource_mapped()
+  mapped <- ipm_lsource_mapped()
   ipns <- mapped$Mapped_IPNS
   # lSource has no dosed "today"; not-dosed rows count days up to its as-of date.
   dAsOf <- max(
@@ -55,7 +55,7 @@ test_that("lSource statuses agree with kri0007-2 and kri0019 (#320, #332)", {
     na.rm = TRUE
   )
   expect_warning(
-    dfIPC <- ipc_ClassifyParticipants(
+    dfIPM <- ipm_ClassifyParticipants(
       ipns,
       mapped$Mapped_SUBJ,
       mapped$Mapped_STUDCOMP,
@@ -65,19 +65,19 @@ test_that("lSource statuses agree with kri0007-2 and kri0019 (#320, #332)", {
   )
 
   expect_setequal(
-    as.character(unique(dfIPC$status)),
-    setdiff(names(ipc_StatusColors()), "Unrecognized status")
+    as.character(unique(dfIPM$status)),
+    setdiff(names(ipm_StatusColors()), "Unrecognized status")
   )
-  expect_equal(nrow(dfIPC), nrow(ipns))
+  expect_equal(nrow(dfIPM), nrow(ipns))
   expect_true(all(
-    stats::na.omit(ipns$ipns_status) %in% c("Dosed", names(ipc_StatusColors()))
+    stats::na.omit(ipns$ipns_status) %in% c("Dosed", names(ipm_StatusColors()))
   ))
-  bFirstDose <- !is.na(dfIPC$days_to_first_dose)
+  bFirstDose <- !is.na(dfIPM$days_to_first_dose)
   expect_equal(
-    dfIPC$days_to_first_dose[bFirstDose],
-    ipns$drv_enrl_first_dose_days[match(dfIPC$subjid[bFirstDose], ipns$subjid)]
+    dfIPM$days_to_first_dose[bFirstDose],
+    ipns$drv_enrl_first_dose_days[match(dfIPM$subjid[bFirstDose], ipns$subjid)]
   )
-  expect_true(all(dfIPC$days_to_event >= 1))
+  expect_true(all(dfIPM$days_to_event >= 1))
 
   metrics <- workr::RunWorkflows(
     workr::MakeWorkflowList(
@@ -94,7 +94,7 @@ test_that("lSource statuses agree with kri0007-2 and kri0019 (#320, #332)", {
     mapped
   )
   by_site <- function(bNumerator, bDenominator) {
-    df <- tibble::tibble(GroupID = dfIPC$invid, numerator = bNumerator)[
+    df <- tibble::tibble(GroupID = dfIPM$invid, numerator = bNumerator)[
       bDenominator,
     ]
     dplyr::summarise(
@@ -105,16 +105,16 @@ test_that("lSource statuses agree with kri0007-2 and kri0019 (#320, #332)", {
   }
   checks <- list(
     `kri0007-2` = by_site(
-      dfIPC$status %in% "Premature treatment discontinuation",
-      dfIPC$dosed %in% "Y"
+      dfIPM$status %in% "Premature treatment discontinuation",
+      dfIPM$dosed %in% "Y"
     ),
     kri0019 = by_site(
-      dfIPC$status %in%
+      dfIPM$status %in%
         c(
           "Potential IP non-starter - outside window",
           "Confirmed IP non-starter"
         ),
-      rep(TRUE, nrow(dfIPC))
+      rep(TRUE, nrow(dfIPM))
     )
   )
   for (id in names(checks)) {

@@ -1,11 +1,11 @@
-# Edge-case fixture for the IP Compliance report: one participant per case.
+# Edge-case fixture for the IP Monitoring report: one participant per case.
 # Four countries (Japan with two sites, "Unknown" from missing values) and five
 # sites. "PL-01 (B)" carries regex metacharacters for the listing's exact-match
 # filter. bPTD = FALSE drops drv_drg_completion, as a study without the
 # completion outcome would deliver.
-ipc_FixtureSnapshotDate <- as.Date("2026-06-30")
+ipm_FixtureSnapshotDate <- as.Date("2026-06-30")
 
-ipc_Fixture <- function(bPTD = TRUE) {
+ipm_Fixture <- function(bPTD = TRUE) {
   p <- function(
     subjid,
     country,
@@ -148,12 +148,12 @@ ipc_Fixture <- function(bPTD = TRUE) {
   )
 }
 
-ipc_classified <- function(bPTD = TRUE) {
-  f <- ipc_Fixture(bPTD)
-  suppressWarnings(ipc_ClassifyParticipants(
+ipm_classified <- function(bPTD = TRUE) {
+  f <- ipm_Fixture(bPTD)
+  suppressWarnings(ipm_ClassifyParticipants(
     f$Mapped_IPNS,
     f$Mapped_SUBJ,
     f$Mapped_STUDCOMP,
-    ipc_FixtureSnapshotDate
+    ipm_FixtureSnapshotDate
   ))
 }

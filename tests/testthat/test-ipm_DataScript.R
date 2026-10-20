@@ -1,5 +1,5 @@
 test_that("the data block escapes < and round-trips (#320)", {
-  tag <- ipc_DataScript(list(
+  tag <- ipm_DataScript(list(
     status = list(study = data.frame(GroupID = "</script><b>"))
   ))
   html <- as.character(tag)
