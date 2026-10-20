@@ -65,31 +65,33 @@ test_that("the snapshot date defaults to the latest reporting snapshot (#320)", 
   expect_error(Report_IPCompliance(lListings = ipc_Fixture()), "dSnapshotDate")
 })
 
-test_that("without discontinuation data the report says so and draws no discontinuation (#320)", {
+test_that("without drv_drg_completion the report says so and shows dosed participants as Unrecognized (#320, #332)", {
   html <- render_ipc(
     ipc_Fixture(bPTD = FALSE),
     dSnapshotDate = ipc_FixtureSnapshotDate
   )
-  expect_match(
-    html,
-    "Premature treatment discontinuation data not available",
-    fixed = TRUE
-  )
+  expect_match(html, "Treatment completion data not available", fixed = TRUE)
   expect_false(grepl("ipc-study-reasons", html, fixed = TRUE))
   data <- jsonlite::fromJSON(sub(
     '.*<script type="application/json" id="ipc-data">(.*?)</script>.*',
     "\\1",
     html
   ))
+  study <- data$status$study
   expect_false(
-    "Premature treatment discontinuation" %in% data$status$study$Status
+    any(c("Premature treatment discontinuation", "Treatment ongoing") %in%
+      study$Status)
   )
+  expect_true(
+    "Unrecognized status" %in% study$Status[study$Dosed == "Y"]
+  )
+  expect_true("Confirmed IP non-starter" %in% study$Status)
   expect_null(data$reasons)
 })
 
-test_that("a study with no discontinuations yet shows a message, not an empty chart (#320)", {
+test_that("a study with no discontinuations yet shows a message, not an empty chart (#320, #332)", {
   f <- ipc_Fixture()
-  f$Mapped_SUBJ$drv_treatment_discontinuation_dt <- as.Date(NA)
+  f$Mapped_SUBJ$drv_drg_completion[f$Mapped_SUBJ$drv_drg_completion %in% "N"] <- "Y"
   html <- render_ipc(f, dSnapshotDate = ipc_FixtureSnapshotDate)
   expect_match(
     html,
@@ -145,4 +147,19 @@ test_that("the scatter note places events above the diagonal (#320)", {
   # Pandoc may wrap the sentence across lines.
   expect_match(html, "Points above it\\s+had their event")
   expect_false(grepl("Points below it", html, fixed = TRUE))
+})
+
+test_that("the report shows the treatment completion statuses, not Study complete or Ongoing (#332)", {
+  html <- ipc_default_html()
+  # Pandoc may wrap a definition across lines.
+  for (status in c(
+    "Potential premature treatment discontinuation",
+    "Treatment complete per protocol",
+    "Treatment ongoing"
+  )) {
+    expect_match(html, gsub(" ", "\\\\s+", status), label = status)
+  }
+  expect_match(html, "did\\s+not\\s+complete\\s+study\\s+drug\\s+per\\s+protocol")
+  expect_false(grepl("Study complete", html, fixed = TRUE))
+  expect_false(grepl("\\bOngoing\\b", html))
 })

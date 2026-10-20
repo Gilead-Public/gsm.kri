@@ -7,18 +7,25 @@ const DEGRADED = 'file://' + path.resolve(__dirname, 'fixture', 'IPC_degraded.ht
 
 // Facts of the fixture in tests/testthat/helper-ipc.R (render-ipc-fixture.R).
 const STACK = [
-  'Study complete',
+  'Treatment complete per protocol',
   'Potential IP non-starter - within window',
   'Potential IP non-starter - outside window',
   'Confirmed IP non-starter',
   'Premature treatment discontinuation',
+  'Potential premature treatment discontinuation',
   'Unrecognized status',
-  'Ongoing',
+  'Treatment ongoing',
 ];
-const N_ENROLLED = 24;
-const N_DOSED = 12;
-const N_DOSED_PLOTTED = 11; // P23 has no enrollment date, so no scatter point
-const N_DOSED_JAPAN = 6;
+const DOSED_STATUSES = [
+  'Treatment complete per protocol',
+  'Premature treatment discontinuation',
+  'Potential premature treatment discontinuation',
+  'Treatment ongoing',
+];
+const N_ENROLLED = 29;
+const N_DOSED = 17;
+const N_DOSED_PLOTTED = 16; // P23 has no enrollment date, so no scatter point
+const N_DOSED_JAPAN = 9;
 
 // The same bubbling event gsm.vizr's bars() dispatches on a bar click, so the
 // test does not depend on bar geometry that zoom can move.
@@ -26,7 +33,7 @@ function clickBar(page, chartId, row) {
   return page.evaluate(({ chartId, row }) => {
     document.getElementById(chartId).dispatchEvent(new CustomEvent('gsm-viz-select', {
       bubbles: true,
-      detail: { type: 'click', chartId, category: row.GroupID, fill: 'Ongoing', datum: row, metadata: { chartId, level: row.Level } },
+      detail: { type: 'click', chartId, category: row.GroupID, fill: 'Treatment ongoing', datum: row, metadata: { chartId, level: row.Level } },
     }));
   }, { chartId, row });
 }
@@ -96,7 +103,7 @@ test.describe('full report', () => {
     }
   });
 
-  test('status datasets follow the stack order (#320)', async ({ page }) => {
+  test('status datasets follow the stack order (#320, #332)', async ({ page }) => {
     for (const level of ['study', 'country', 'site']) {
       expect(await datasetLabels(page, 'ipc-' + level + '-status')).toEqual(STACK);
     }
@@ -112,12 +119,14 @@ test.describe('full report', () => {
     expect(await wheel('ipc-site-status')).toBe(true);
   });
 
-  test('Dosed narrows statuses, scatters and listing, not reasons (#320)', async ({ page }) => {
+  test('Dosed narrows statuses, scatters and listing, not reasons (#320, #332)', async ({ page }) => {
     const reasonsBefore = await reasonCounts(page, 'ipc-study-reasons');
     await page.click('#ipc-dosed-Y');
     expect(await page.getAttribute('#ipc-dosed-Y', 'aria-pressed')).toBe('true');
+    // P29's outcome is unrecognised, so Unrecognized status stays under Dosed.
     expect(await datasetLabels(page, 'ipc-study-status')).toEqual(
-      ['Study complete', 'Premature treatment discontinuation', 'Ongoing']);
+      ['Treatment complete per protocol', 'Premature treatment discontinuation',
+        'Potential premature treatment discontinuation', 'Unrecognized status', 'Treatment ongoing']);
     expect(await reasonCounts(page, 'ipc-study-reasons')).toEqual(reasonsBefore);
     expect(await scatterPoints(page, 'ipc-study-tte')).toBe(N_DOSED_PLOTTED);
     expect(await listingRows(page)).toBe(N_DOSED);
@@ -154,7 +163,7 @@ test.describe('full report', () => {
     expect(await listingRows(page)).toBe(N_DOSED_JAPAN);
   });
 
-  test('a site click narrows the Site tab and listing; re-click and chips clear (#320)', async ({ page }) => {
+  test('a site click narrows the Site tab and listing; re-click and chips clear (#320, #332)', async ({ page }) => {
     await clickBar(page, 'ipc-country-status', country('Japan'));
     await clickBar(page, 'ipc-site-status', site('JP02', 'Japan'));
     expect(await page.textContent('#ipc-chip-site .ipc-chip-value')).toBe('JP02');
@@ -163,13 +172,13 @@ test.describe('full report', () => {
       { 'Adverse Event': 0, 'Not yet recorded': 1, 'Physician Decision': 0, 'Withdrawal by Subject': 0 });
     expect(await reasonCounts(page, 'ipc-country-reasons')).toEqual(
       { 'Adverse Event': 1, 'Not yet recorded': 1, 'Physician Decision': 0, 'Withdrawal by Subject': 0 });
-    expect(await scatterPoints(page, 'ipc-site-tte')).toBe(5);
-    expect(await listingRows(page)).toBe(5);
+    expect(await scatterPoints(page, 'ipc-site-tte')).toBe(6);
+    expect(await listingRows(page)).toBe(6);
 
     await clickBar(page, 'ipc-site-status', site('JP02', 'Japan'));
     expect(await page.isVisible('#ipc-chip-site')).toBe(false);
     expect(await page.textContent('#ipc-chip-country .ipc-chip-value')).toBe('Japan');
-    expect(await listingRows(page)).toBe(12);
+    expect(await listingRows(page)).toBe(15);
 
     await clickBar(page, 'ipc-site-status', site('JP02', 'Japan'));
     await page.click('#ipc-chip-country button');
@@ -183,22 +192,22 @@ test.describe('full report', () => {
     expect(await listingRows(page)).toBe(5);
   });
 
-  test('fill mode survives a filter and count mode shows counts (#320)', async ({ page }) => {
+  test('fill mode survives a filter and count mode shows counts (#320, #332)', async ({ page }) => {
     const ongoingJP01 = () => page.evaluate(() => {
       const c = document.getElementById('ipc-site-status').gsmChart;
-      const ds = c.data.datasets.find((d) => d.label === 'Ongoing');
+      const ds = c.data.datasets.find((d) => d.label === 'Treatment ongoing');
       return ds.data.find((p) => p.x === 'JP01').y;
     });
     await clickBar(page, 'ipc-country-status', country('Japan'));
     expect(await categories(page, 'ipc-site-status')).toEqual(['JP01', 'JP02']);
     expect(await page.evaluate(() =>
       document.getElementById('ipc-site-status').gsmChart.data._spec_.stat)).toBe('percent');
-    expect(await ongoingJP01()).toBeCloseTo(300 / 7, 1);
+    expect(await ongoingJP01()).toBeCloseTo(400 / 9, 1);
     await page.evaluate(() => {
       const c = document.getElementById('ipc-site-status').gsmChart;
       c.helpers.updateSpec(c, { position: 'stack', stat: 'count' });
     });
-    expect(await ongoingJP01()).toBe(3);
+    expect(await ongoingJP01()).toBe(4);
   });
 
   test('segment labels lead with the value the axis shows (#320)', async ({ page }) => {
@@ -209,24 +218,46 @@ test.describe('full report', () => {
     expect(await label('raw')).toBe('41 (62.3%)');
   });
 
-  test('legend clicks hide and isolate a status in every scatter, across filters (#320)', async ({ page }) => {
+  test('legend clicks hide and isolate a status in every scatter, across filters (#320, #332)', async ({ page }) => {
     const ids = ['ipc-study-tte', 'ipc-country-tte', 'ipc-site-tte'];
-    await legendClick(page, 'ipc-study-tte', 'Ongoing', false);
-    for (const id of ids) expect((await scatterVisibility(page, id)).Ongoing).toBe('legendonly');
-    await legendClick(page, 'ipc-study-tte', 'Ongoing', false);
-    await legendClick(page, 'ipc-study-tte', 'Ongoing', true);
+    await legendClick(page, 'ipc-study-tte', 'Treatment ongoing', false);
+    for (const id of ids) expect((await scatterVisibility(page, id))['Treatment ongoing']).toBe('legendonly');
+    await legendClick(page, 'ipc-study-tte', 'Treatment ongoing', false);
+    await legendClick(page, 'ipc-study-tte', 'Treatment ongoing', true);
     for (const id of ids) {
       const v = await scatterVisibility(page, id);
-      expect(v.Ongoing).toBe(true);
-      expect(v['Study complete']).toBe('legendonly');
+      expect(v['Treatment ongoing']).toBe(true);
+      expect(v['Treatment complete per protocol']).toBe('legendonly');
     }
     await page.click('#ipc-dosed-Y');
     const v = await scatterVisibility(page, 'ipc-site-tte');
-    expect(v.Ongoing).toBe(true);
-    expect(v['Study complete']).toBe('legendonly');
+    expect(v['Treatment ongoing']).toBe(true);
+    expect(v['Treatment complete per protocol']).toBe('legendonly');
   });
 
-  test('search narrows the listing; the CSV holds every participant (#320)', async ({ page }) => {
+  test('every scatter legend lists the four dosed statuses in stack order (#332)', async ({ page }) => {
+    for (const id of ['ipc-study-tte', 'ipc-country-tte', 'ipc-site-tte']) {
+      const names = await page.evaluate((id) => document.querySelector('#' + id + ' .js-plotly-plot').data
+        .filter((t) => t.name).sort((a, b) => a.legendrank - b.legendrank).map((t) => t.name), id);
+      expect(names, id).toEqual(STACK);
+      for (const status of DOSED_STATUSES) expect(names, id).toContain(status);
+    }
+  });
+
+  test('the listing shows Study Drug Completed per Protocol instead of the PTD flag (#332)', async ({ page }) => {
+    const r = await page.evaluate(() => {
+      const dt = jQuery('#ipc-listing table.dataTable').DataTable();
+      const headers = dt.columns().header().toArray().map((h) => h.textContent);
+      const col = headers.indexOf('Study Drug Completed per Protocol');
+      const value = (id) => dt.rows().data().toArray().find((row) => row[0] === id)[col];
+      return { headers, values: ['P06', 'P09', 'P02', 'P01', 'P19'].map(value) };
+    });
+    expect(r.headers).toContain('Study Drug Completed per Protocol');
+    expect(r.headers).not.toContain('Premature treatment discontinuation');
+    expect(r.values).toEqual(['N', 'Potential No', 'Y', '', '']);
+  });
+
+  test('search narrows the listing; the CSV holds every participant (#320, #332)', async ({ page }) => {
     await page.click('#ipc-dosed-Y');
     expect(await listingRows(page)).toBe(N_DOSED);
     await page.fill('#ipc-listing input[type="search"]', 'Canada');
@@ -239,6 +270,7 @@ test.describe('full report', () => {
     expect(csv.length).toBe(N_ENROLLED + 1);
     expect(csv[0]).toContain('Participant ID');
     expect(csv[0]).not.toContain('dosed');
+    expect(csv[0]).toContain('Study Drug Completed per Protocol');
   });
   test('every reason chart labels each non-zero bar with % and count (#320)', async ({ page }) => {
     for (const level of ['study', 'country', 'site']) {
@@ -306,13 +338,16 @@ test.describe('full report', () => {
   });
 });
 
-test('degraded page shows the not-available text and no PTD segment (#320)', async ({ page }) => {
+test('degraded page shows the not-available text and dosed participants as Unrecognized (#320, #332)', async ({ page }) => {
   await page.goto(DEGRADED);
   await page.waitForFunction(() => document.getElementById('ipc-study-status') &&
     document.getElementById('ipc-study-status').gsmChart, null, { timeout: 30000 });
-  expect(await page.locator('text=Premature treatment discontinuation data not available').count()).toBeGreaterThan(0);
+  expect(await page.locator('text=Treatment completion data not available').count()).toBeGreaterThan(0);
   expect(await page.locator('#ipc-study-reasons').count()).toBe(0);
   for (const level of ['study', 'country', 'site']) {
-    expect(await datasetLabels(page, 'ipc-' + level + '-status')).not.toContain('Premature treatment discontinuation');
+    const labels = await datasetLabels(page, 'ipc-' + level + '-status');
+    for (const status of DOSED_STATUSES) expect(labels).not.toContain(status);
+    expect(labels).toContain('Unrecognized status');
+    expect(labels).toContain('Confirmed IP non-starter');
   }
 });

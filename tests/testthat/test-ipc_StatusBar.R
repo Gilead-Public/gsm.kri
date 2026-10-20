@@ -1,9 +1,9 @@
-test_that("status rows sum to the participants under each dosed filter (#320)", {
+test_that("status rows sum to the participants under each dosed filter (#320, #332)", {
   df <- ipc_classified()
   for (level in c("study", "country", "site")) {
     rows <- ipc_StatusRows(df, level)
-    expect_equal(sum(rows$n[rows$Dosed == "all"]), 24)
-    expect_equal(sum(rows$n[rows$Dosed == "Y"]), 12)
+    expect_equal(sum(rows$n[rows$Dosed == "all"]), 29)
+    expect_equal(sum(rows$n[rows$Dosed == "Y"]), 17)
     expect_equal(sum(rows$n[rows$Dosed == "N"]), 11)
     expect_true(all(rows$n > 0))
     expect_true(all(rows$Level == level))
@@ -19,12 +19,13 @@ test_that("only site rows carry their country (#320)", {
   expect_true(all(is.na(ipc_StatusRows(df, "country")$OuterGroupID)))
 })
 
-test_that("an unrecognised dosed flag appears under All only (#320)", {
+test_that("an unrecognised dosed flag appears under All only; an unrecognised outcome under Dosed (#320, #332)", {
   rows <- ipc_StatusRows(ipc_classified(), "study")
   unrecognized <- rows[rows$Status == "Unrecognized status", ]
-  expect_equal(unrecognized$n[unrecognized$Dosed == "all"], 4)
+  # P15's dosed flag is unrecognised; P29 is dosed with an unrecognised outcome.
+  expect_equal(unrecognized$n[unrecognized$Dosed == "all"], 5)
   expect_equal(unrecognized$n[unrecognized$Dosed == "N"], 3)
-  expect_false("Y" %in% unrecognized$Dosed)
+  expect_equal(unrecognized$n[unrecognized$Dosed == "Y"], 1)
 })
 
 test_that("the status spec stacks in vocabulary order as a 100% bar (#320)", {

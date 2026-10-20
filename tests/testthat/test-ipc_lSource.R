@@ -14,7 +14,7 @@ ipc_lsource_mapped <- function() {
   workr::RunWorkflows(wf, lRaw)
 }
 
-test_that("lSource statuses agree with kri0007-2 and kri0019 (#320)", {
+test_that("lSource statuses agree with kri0007-2 and kri0019 (#320, #332)", {
   TestAtLogLevel()
   skip_if_not(
     all(
@@ -103,10 +103,19 @@ test_that("lSource statuses agree with kri0007-2 and kri0019 (#320)", {
       Denominator = dplyr::n()
     )
   }
-  vLabels <- names(ipc_StatusColors())
   checks <- list(
-    `kri0007-2` = by_site(dfIPC$status %in% vLabels[5], dfIPC$dosed %in% "Y"),
-    kri0019 = by_site(dfIPC$status %in% vLabels[3:4], rep(TRUE, nrow(dfIPC)))
+    `kri0007-2` = by_site(
+      dfIPC$status %in% "Premature treatment discontinuation",
+      dfIPC$dosed %in% "Y"
+    ),
+    kri0019 = by_site(
+      dfIPC$status %in%
+        c(
+          "Potential IP non-starter - outside window",
+          "Confirmed IP non-starter"
+        ),
+      rep(TRUE, nrow(dfIPC))
+    )
   )
   for (id in names(checks)) {
     want <- checks[[id]]
