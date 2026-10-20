@@ -9,9 +9,9 @@ classify_fixture <- function(bPTD = TRUE, ...) {
 }
 status_of <- function(df, id) as.character(df$status[df$subjid == id])
 
-test_that("the not-dosed labels equal gsm.mapping's ipns_status values (#320)", {
+test_that("the not-dosed labels equal gsm.mapping's ipns_status values (#320, #332)", {
   expect_identical(
-    names(ipc_StatusColors())[2:4],
+    names(ipc_StatusColors())[1:3],
     c(
       "Potential IP non-starter - within window",
       "Potential IP non-starter - outside window",
@@ -22,14 +22,15 @@ test_that("the not-dosed labels equal gsm.mapping's ipns_status values (#320)", 
 
 test_that("dosed statuses follow treatment completion in stack order and colour (#332)", {
   vColors <- ipc_StatusColors()
+  # Treatment complete per protocol ends the stack, after Treatment ongoing.
   expect_identical(
-    names(vColors)[c(1, 5:8)],
+    names(vColors)[4:8],
     c(
-      "Treatment complete per protocol",
       "Premature treatment discontinuation",
       "Potential premature treatment discontinuation",
       "Unrecognized status",
-      "Treatment ongoing"
+      "Treatment ongoing",
+      "Treatment complete per protocol"
     )
   )
   expect_equal(

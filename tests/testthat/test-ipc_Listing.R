@@ -19,7 +19,7 @@ test_that("the listing has the report columns in order (#320, #332)", {
     )
   )
   expect_equal(nrow(df), 29)
-  expect_equal(df$subjid[1:2], c("P02", "P25"))
+  expect_equal(df$subjid[1:2], c("P03", "P12"))
 })
 
 test_that("the reason fills for both discontinuation statuses, else Not yet recorded (#332)", {

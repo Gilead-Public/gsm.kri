@@ -7,7 +7,6 @@ const DEGRADED = 'file://' + path.resolve(__dirname, 'fixture', 'IPC_degraded.ht
 
 // Facts of the fixture in tests/testthat/helper-ipc.R (render-ipc-fixture.R).
 const STACK = [
-  'Treatment complete per protocol',
   'Potential IP non-starter - within window',
   'Potential IP non-starter - outside window',
   'Confirmed IP non-starter',
@@ -15,6 +14,7 @@ const STACK = [
   'Potential premature treatment discontinuation',
   'Unrecognized status',
   'Treatment ongoing',
+  'Treatment complete per protocol',
 ];
 const DOSED_STATUSES = [
   'Treatment complete per protocol',
@@ -125,8 +125,8 @@ test.describe('full report', () => {
     expect(await page.getAttribute('#ipc-dosed-Y', 'aria-pressed')).toBe('true');
     // P29's outcome is unrecognised, so Unrecognized status stays under Dosed.
     expect(await datasetLabels(page, 'ipc-study-status')).toEqual(
-      ['Treatment complete per protocol', 'Premature treatment discontinuation',
-        'Potential premature treatment discontinuation', 'Unrecognized status', 'Treatment ongoing']);
+      ['Premature treatment discontinuation', 'Potential premature treatment discontinuation',
+        'Unrecognized status', 'Treatment ongoing', 'Treatment complete per protocol']);
     expect(await reasonCounts(page, 'ipc-study-reasons')).toEqual(reasonsBefore);
     expect(await scatterPoints(page, 'ipc-study-tte')).toBe(N_DOSED_PLOTTED);
     expect(await listingRows(page)).toBe(N_DOSED);
