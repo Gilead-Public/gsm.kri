@@ -1,16 +1,15 @@
 # Double programming: expected counts come from the raw Raw_SUBJ fields, never
 # from the metric's own queries.
-test_that("Qual: kri0007-2/cou0007-2 numerators and denominators match an independent derivation (#301)", {
+test_that("Qual: kri0007-2/cou0007-2 numerators and denominators match an independent derivation (#301, #331)", {
   TestAtLogLevel()
   skip_if_not(
-    "drv_treatment_discontinuation_dt" %in% names(gsm.core::lSource$Raw_SUBJ),
-    "lSource predates the PTD fields"
+    "drv_drg_completion" %in% names(gsm.core::lSource$Raw_SUBJ),
+    "lSource predates drv_drg_completion"
   )
   wf <- ipns_mapping_workflows()
   skip_if_not(
-    "drv_treatment_discontinuation_dt" %in%
-      names(gsm.mapping::CombineSpecs(wf)$Raw_SUBJ),
-    "installed gsm.mapping spec predates the PTD fields"
+    "drv_drg_completion" %in% names(gsm.mapping::CombineSpecs(wf)$Raw_SUBJ),
+    "installed gsm.mapping spec predates drv_drg_completion"
   )
   lRaw <- gsm.mapping::Ingest(gsm.core::lSource, gsm.mapping::CombineSpecs(wf))
   mapped <- workr::RunWorkflows(wf, lRaw)
@@ -20,7 +19,7 @@ test_that("Qual: kri0007-2/cou0007-2 numerators and denominators match an indepe
   for (level in list(c("kri0007-2", "invid"), c("cou0007-2", "country"))) {
     want <- dplyr::summarise(
       dplyr::group_by(dosed, GroupID = .data[[level[[2]]]]),
-      Numerator = sum(!is.na(.data$drv_treatment_discontinuation_dt)),
+      Numerator = sum(.data$drv_drg_completion %in% "N"),
       Denominator = dplyr::n()
     )
     got <- workr::RunWorkflows(ptd_workflow(level[[1]]), mapped)[[paste0(

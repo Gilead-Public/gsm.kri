@@ -1,7 +1,3 @@
-# Six sites of 10 dosed subjects (I1-I3 US, I4-I6 DE). I1 has 8 discontinuations,
-# among them a null reason (S01), a comma-joined reason (S02) and a completion
-# record (S03); S09 has a reason but no date. S61 (not dosed) and S62 (dosing
-# unknown) carry dates yet count toward neither side.
 ptd_fixture <- function() {
   subj <- data.frame(
     studyid = "S",
@@ -16,13 +12,19 @@ ptd_fixture <- function() {
   subj$drv_treatment_discontinuation_dt[c(
     1:8,
     11,
+    12,
     21,
+    22,
     31,
+    32,
     41,
     51,
     61,
     62
   )] <- as.Date("2025-02-01")
+  subj$drv_drg_completion <- NA_character_
+  subj$drv_drg_completion[c(1:7, 9, 11, 21, 31, 41, 51, 61, 62)] <- "N"
+  subj$drv_drg_completion[c(8, 12, 32)] <- c("Potential No", "Y", "")
   subj$drv_premature_discontinuation_reason[c(
     2:9,
     11,
