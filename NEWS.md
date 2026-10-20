@@ -5,10 +5,8 @@
   participants who are Confirmed non-starters or Potential non-starters outside the
   window. One non-starter flags amber and two or more flag red (#258, #312).
 - Added the Premature Treatment Discontinuation Rate metric: `kri0007-2` (site) and
-  `cou0007-2` (country), counting dosed participants with a treatment discontinuation
-  date over dosed participants. It replaces `kri0007`/`cou0007` (Treatment
-  Discontinuation Rate) as the default; these stay available but inactive and no
-  longer generate risk signals (#301).
+  `cou0007-2` (country), that replaces `kri0007`/`cou0007` these stay
+  available but inactive and no longer generate risk signals (#301, #331).
 - The KRI report labels inactive metrics with an "Inactive" badge and lists them last
   (#325).
 - New `Detect_ConsecutiveRepeats()` counts, per subject, rolling windows of

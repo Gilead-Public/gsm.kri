@@ -1,11 +1,10 @@
 TestAtLogLevel("WARN")
 ## Test Code
 testthat::test_that("Qual: Given summarized analytics data, all appropriate aspects of site risk score are available to calculate it correctly (#159)", {
-  # "kri0007" matches the active kri0007-2, which reads the premature treatment
-  # discontinuation fields.
+  # "kri0007" matches the active kri0007-2, which reads drv_drg_completion.
   skip_if_not(
-    "drv_treatment_discontinuation_dt" %in% names(gsm.core::lSource$Raw_SUBJ),
-    "lSource predates the PTD fields"
+    "drv_drg_completion" %in% names(gsm.core::lSource$Raw_SUBJ),
+    "lSource predates drv_drg_completion"
   )
   kri_workflows <- workr::MakeWorkflowList(
     strNames = c(paste0("kri000", 1:9), paste0("kri00", 10:12), "srs"),
