@@ -285,6 +285,8 @@ test.describe('full report', () => {
     expect(csv[0]).not.toContain('dosed');
     expect(csv[0]).toContain('Study Drug Completed per Protocol');
     expect(csv[0]).toContain('Study complete');
+    expect(csv[0]).toContain('Drug discontinuation reason');
+    expect(csv[0]).not.toContain('Days since enrollment');
   });
   test('every reason chart labels each non-zero bar with % and count (#320)', async ({ page }) => {
     for (const level of ['study', 'country', 'site']) {

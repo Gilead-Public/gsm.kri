@@ -10,7 +10,6 @@ test_that("the listing has the report columns in order (#320, #332)", {
       "kit_assigned",
       "first_dose_dt",
       "days_to_first_dose",
-      "days_since_enrl",
       "days_to_event",
       "study_complete",
       "consent_withdrawn",
@@ -55,6 +54,13 @@ test_that("Study complete shows Y, N or blank next to Consent withdrawn (#332)",
   )
 })
 
+test_that("the listing names Drug discontinuation reason and leaves out Days since enrollment (#332)", {
+  w <- ipc_Listing(ipc_ListingData(ipc_classified()))
+  expect_match(w$x$container, "<th>Drug discontinuation reason</th>", fixed = TRUE)
+  expect_no_match(w$x$container, "<th>Discontinuation reason</th>", fixed = TRUE)
+  expect_no_match(w$x$container, "Days since enrollment", fixed = TRUE)
+})
+
 test_that("without drv_drg_completion the outcome and reason columns are blank (#332)", {
   df <- ipc_ListingData(ipc_classified(bPTD = FALSE))
   expect_true(all(df$drg_completion == ""))
@@ -85,5 +91,5 @@ test_that("the CSV exports every participant and hides the dosed column (#320, #
   expect_true(all(lengths(lapply(c("invid", "country", "dosed"), def_for)) > 0))
   hidden <- Filter(function(d) identical(d$visible, FALSE), defs)
   expect_length(hidden, 1)
-  expect_equal(hidden[[1]]$targets, 13L)
+  expect_equal(hidden[[1]]$targets, 12L)
 })
