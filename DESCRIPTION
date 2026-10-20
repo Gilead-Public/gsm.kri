@@ -56,11 +56,11 @@ Suggests:
 VignetteBuilder: 
     knitr
 Remotes:
-    gsm.core=Gilead-Public/gsm.core@dev,
-    gsm.mapping=Gilead-Public/gsm.mapping@dev,
-    gsm.qtl=Gilead-Public/gsm.qtl@dev,
-    gsm.reporting=Gilead-Public/gsm.reporting@dev,
-    gsm.vizr=Gilead-Public/gsm.vizr@dev,
+    gsm.core=Gilead-Public/gsm.core@feature-201-lsource-drg-completion,
+    gsm.mapping=Gilead-Public/gsm.mapping@feature-174-drg-completion,
+    gsm.qtl=Gilead-Public/gsm.qtl@for-gsm.kri-332,
+    gsm.reporting=Gilead-Public/gsm.reporting@for-gsm.kri-332,
+    gsm.vizr=Gilead-Public/gsm.vizr@for-gsm.kri-332,
     qcthat=Gilead-Public/qcthat@dev
 Config/roxygen2/version: 8.1.0
 Config/testthat/edition: 3
