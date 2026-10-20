@@ -12,16 +12,16 @@
 #' @export
 ipc_StatusColors <- function() {
   c(
-    "Treatment complete per protocol" = "#1E7B3C",
     "Potential IP non-starter - within window" = "#EDA100",
     "Potential IP non-starter - outside window" = "#EB6834",
     "Confirmed IP non-starter" = "#C62F4B",
     "Premature treatment discontinuation" = "#111111",
     "Potential premature treatment discontinuation" = "#5F6B7A",
-    # Below Treatment ongoing so it stays on top; gsm.viz only draws it when
-    # present.
+    # Before the treatment statuses so they end the stack; gsm.viz only draws
+    # it when present.
     "Unrecognized status" = "#9AA4B2",
-    "Treatment ongoing" = "#8CCB7E"
+    "Treatment ongoing" = "#8CCB7E",
+    "Treatment complete per protocol" = "#1E7B3C"
   )
 }
 
