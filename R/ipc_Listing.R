@@ -34,6 +34,7 @@ ipc_ListingData <- function(dfIPC) {
     days_to_first_dose = dfIPC$days_to_first_dose,
     days_since_enrl = dfIPC$days_since_enrl,
     days_to_event = dfIPC$days_to_event,
+    study_complete = dfIPC$study_complete,
     consent_withdrawn = dfIPC$consent_withdrawn,
     drg_completion = dfIPC$drg_completion,
     ptd_reason = ifelse(
@@ -71,6 +72,7 @@ ipc_Listing <- function(dfListing) {
     "Days from enrollment to first dose" = "days_to_first_dose",
     "Days since enrollment" = "days_since_enrl",
     "Days to event or today" = "days_to_event",
+    "Study complete" = "study_complete",
     "Consent withdrawn" = "consent_withdrawn",
     "Study Drug Completed per Protocol" = "drg_completion",
     "Discontinuation reason" = "ptd_reason",

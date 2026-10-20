@@ -211,6 +211,7 @@ ipc_ClassifyParticipants <- function(
     days_to_event = dplyr::coalesce(day_count(dEvent), nDaysSinceEnrl),
     days_to_first_dose = day_count(ipc_AsDate(col("drv_ip_first_dose_dt"))),
     kit_assigned = as.character(col("drv_kit_assigned")),
+    study_complete = dplyr::coalesce(df$study_complete, ""),
     consent_withdrawn = ifelse(df$consent_withdrawn %in% TRUE, "Y", "N"),
     drg_completion = ifelse(dosed %in% "Y" & !bNullDrg, drg, ""),
     ptd_reason = ifelse(
@@ -221,12 +222,14 @@ ipc_ClassifyParticipants <- function(
   )
 }
 
-# One row per participant: several completion records are allowed, and the
-# earliest qualifying record dates the event.
+# One row per participant: several completion records are allowed, the
+# earliest qualifying record dates the event, and any Y answer completes the
+# study.
 ipc_StudCompSummary <- function(dfStudComp = NULL) {
   if (is.null(dfStudComp) || nrow(dfStudComp) == 0) {
     return(tibble::tibble(
       subjid = character(),
+      study_complete = character(),
       confirm_dt = as.Date(character()),
       consent_withdrawn = logical()
     ))
@@ -242,6 +245,11 @@ ipc_StudCompSummary <- function(dfStudComp = NULL) {
   ) %>%
     dplyr::group_by(.data$subjid) %>%
     dplyr::summarise(
+      study_complete = dplyr::case_when(
+        any(.data$cy %in% "Y") ~ "Y",
+        any(.data$cy %in% "N") ~ "N",
+        TRUE ~ ""
+      ),
       confirm_dt = first_date(.data$d[!is.na(.data$cy) & .data$cy != ""]),
       consent_withdrawn = any(.data$withdrew),
       .groups = "drop"
