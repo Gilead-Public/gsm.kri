@@ -244,6 +244,19 @@ test.describe('full report', () => {
     }
   });
 
+  test('the listing shows Study complete as Y, N or blank next to Consent withdrawn (#332)', async ({ page }) => {
+    const r = await page.evaluate(() => {
+      const dt = jQuery('#ipc-listing table.dataTable').DataTable();
+      const headers = dt.columns().header().toArray().map((h) => h.textContent);
+      const col = headers.indexOf('Study complete');
+      const value = (id) => dt.rows().data().toArray().find((row) => row[0] === id)[col];
+      return { col, next: headers[col + 1], values: ['P02', 'P19', 'P01'].map(value) };
+    });
+    expect(r.col).toBeGreaterThan(-1);
+    expect(r.next).toBe('Consent withdrawn');
+    expect(r.values).toEqual(['Y', 'N', '']);
+  });
+
   test('the listing shows Study Drug Completed per Protocol instead of the PTD flag (#332)', async ({ page }) => {
     const r = await page.evaluate(() => {
       const dt = jQuery('#ipc-listing table.dataTable').DataTable();
@@ -271,6 +284,7 @@ test.describe('full report', () => {
     expect(csv[0]).toContain('Participant ID');
     expect(csv[0]).not.toContain('dosed');
     expect(csv[0]).toContain('Study Drug Completed per Protocol');
+    expect(csv[0]).toContain('Study complete');
   });
   test('every reason chart labels each non-zero bar with % and count (#320)', async ({ page }) => {
     for (const level of ['study', 'country', 'site']) {

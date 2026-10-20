@@ -274,6 +274,27 @@ test_that("kit assignment falls back to Mapped_SUBJ (#320)", {
   expect_true(is.na(df$kit_assigned[df$subjid == "P21"]))
 })
 
+test_that("study_complete is Y or N from the completion records, else blank (#332)", {
+  df <- classify_fixture()
+  value <- stats::setNames(df$study_complete, df$subjid)
+  # P20 has N, Y and Y records: any Y wins. P01 and P03 have no record.
+  expect_equal(
+    unname(value[c("P02", "P20", "P19", "P05", "P01", "P03")]),
+    c("Y", "Y", "N", "N", "", "")
+  )
+  studcomp <- data.frame(
+    subjid = c("S1", "S2", "S3", "S4", "S4", "S5"),
+    compyn = c(NA, "", " y", "N", "Y", "n"),
+    compreas = NA,
+    mincreated_dts = as.POSIXct("2026-05-01", tz = "UTC")
+  )
+  summary <- ipc_StudCompSummary(studcomp)
+  expect_equal(
+    summary$study_complete[match(paste0("S", 1:5), summary$subjid)],
+    c("", "", "Y", "Y", "N")
+  )
+})
+
 test_that("a completion timestamp keeps its own calendar date (#320, #332)", {
   studcomp <- data.frame(
     subjid = "S1",

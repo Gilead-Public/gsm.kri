@@ -12,6 +12,7 @@ test_that("the listing has the report columns in order (#320, #332)", {
       "days_to_first_dose",
       "days_since_enrl",
       "days_to_event",
+      "study_complete",
       "consent_withdrawn",
       "drg_completion",
       "ptd_reason",
@@ -40,6 +41,17 @@ test_that("Study Drug Completed per Protocol shows Y, N, Potential No or blank (
   expect_equal(
     unname(value[c("P06", "P09", "P02", "P01", "P19", "P12")]),
     c("N", "Potential No", "Y", "", "", "")
+  )
+})
+
+test_that("Study complete shows Y, N or blank next to Consent withdrawn (#332)", {
+  df <- ipc_ListingData(ipc_classified())
+  value <- stats::setNames(df$study_complete, df$subjid)
+  expect_equal(unname(value[c("P02", "P19", "P01")]), c("Y", "N", ""))
+  w <- ipc_Listing(df)
+  expect_match(
+    w$x$container,
+    "<th>Study complete</th>\\s*<th>Consent withdrawn</th>"
   )
 })
 
@@ -73,5 +85,5 @@ test_that("the CSV exports every participant and hides the dosed column (#320, #
   expect_true(all(lengths(lapply(c("invid", "country", "dosed"), def_for)) > 0))
   hidden <- Filter(function(d) identical(d$visible, FALSE), defs)
   expect_length(hidden, 1)
-  expect_equal(hidden[[1]]$targets, 12L)
+  expect_equal(hidden[[1]]$targets, 13L)
 })

@@ -149,7 +149,7 @@ test_that("the scatter note places events above the diagonal (#320)", {
   expect_false(grepl("Points below it", html, fixed = TRUE))
 })
 
-test_that("the report shows the treatment completion statuses, not Study complete or Ongoing (#332)", {
+test_that("the report shows the treatment completion statuses, not the Study complete or Ongoing statuses (#332)", {
   html <- ipc_default_html()
   # Pandoc may wrap a definition across lines.
   for (status in c(
@@ -160,6 +160,16 @@ test_that("the report shows the treatment completion statuses, not Study complet
     expect_match(html, gsub(" ", "\\\\s+", status), label = status)
   }
   expect_match(html, "did\\s+not\\s+complete\\s+study\\s+drug\\s+per\\s+protocol")
-  expect_false(grepl("Study complete", html, fixed = TRUE))
+  # Study complete remains a listing column, but no longer a status.
+  data <- jsonlite::fromJSON(sub(
+    '.*<script type="application/json" id="ipc-data">(.*?)</script>.*',
+    "\\1",
+    html
+  ))
+  expect_false(
+    "Study complete" %in% unlist(lapply(data$status, `[[`, "Status"))
+  )
+  expect_false(grepl('"name":"Study complete"', html, fixed = TRUE))
+  expect_false(grepl('"Study complete":"#', html, fixed = TRUE))
   expect_false(grepl("\\bOngoing\\b", html))
 })
