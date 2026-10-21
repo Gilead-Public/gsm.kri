@@ -257,6 +257,13 @@ test.describe('full report', () => {
     expect(r.values).toEqual(['Y', 'N', '']);
   });
 
+  test('the overview names the consent withdrawn figure Confirmed IP non-starter with WoC (#332)', async ({ page }) => {
+    const headers = (await page.locator('#study-overview table th').allTextContents()).map((h) => h.trim());
+    const col = headers.indexOf('Confirmed IP non-starter with WoC');
+    expect(headers[col - 1]).toBe('Confirmed IP non-starter');
+    expect(headers).not.toContain('Confirmed with consent withdrawn');
+  });
+
   test('the listing shows Study Drug Completed per Protocol instead of the PTD flag (#332)', async ({ page }) => {
     const r = await page.evaluate(() => {
       const dt = jQuery('#ipc-listing table.dataTable').DataTable();

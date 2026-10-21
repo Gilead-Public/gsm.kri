@@ -8,7 +8,7 @@ test_that("overview figures come in report order over their denominators (#320, 
       "Potential IP non-starter - within window",
       "Potential IP non-starter - outside window",
       "Confirmed IP non-starter",
-      "Confirmed with consent withdrawn",
+      "Confirmed IP non-starter with WoC",
       "Treatment ongoing",
       "Treatment complete per protocol",
       "Premature treatment discontinuation",
@@ -28,7 +28,7 @@ test_that("consent withdrawn counts Confirmed non-starters only (#320)", {
   # P20 withdrew consent while dosed: flagged, not counted here.
   expect_equal(df$consent_withdrawn[df$subjid == "P20"], "Y")
   stats <- ipc_OverviewStats(df, TRUE)
-  expect_equal(stats$n[stats$label == "Confirmed with consent withdrawn"], 1)
+  expect_equal(stats$n[stats$label == "Confirmed IP non-starter with WoC"], 1)
 })
 
 test_that("without drv_drg_completion the four dosed status figures are NA (#332)", {
