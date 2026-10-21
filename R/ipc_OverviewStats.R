@@ -35,7 +35,7 @@ ipc_OverviewStats <- function(dfIPC, bHasPTD) {
       "Total enrolled",
       "Confirmed dosed",
       vNotDosed,
-      "Confirmed with consent withdrawn",
+      "Confirmed IP non-starter with WoC",
       vDosed
     ),
     n = c(
