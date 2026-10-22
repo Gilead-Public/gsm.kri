@@ -18,13 +18,13 @@ test_that("lSource statuses agree with kri0007-2 and kri0019 (#320)", {
   TestAtLogLevel()
   skip_if_not(
     all(
-      c("drv_kit_assigned", "drv_treatment_discontinuation_dt") %in%
+      c("drv_kit_assigned", "drv_drg_completion") %in%
         names(gsm.core::lSource$Raw_SUBJ)
     ),
-    "lSource predates the IPNS kit and PTD fields"
+    "lSource predates the IPNS kit field or drv_drg_completion"
   )
   skip_if_not(
-    "drv_treatment_discontinuation_dt" %in%
+    "drv_drg_completion" %in%
       names(
         gsm.mapping::CombineSpecs(workr::MakeWorkflowList(
           strNames = "SUBJ",
@@ -35,7 +35,7 @@ test_that("lSource statuses agree with kri0007-2 and kri0019 (#320)", {
           )
         ))$Raw_SUBJ
       ),
-    "installed gsm.mapping spec predates the PTD fields"
+    "installed gsm.mapping spec predates drv_drg_completion"
   )
   skip_if_not(
     file.exists(file.path(
