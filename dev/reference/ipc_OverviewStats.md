@@ -1,4 +1,4 @@
-# IP Monitoring overview figures
+# IP Compliance overview figures
 
 \`r lifecycle::badge("experimental")\`
 
@@ -9,14 +9,14 @@ statuses are shares of dosed participants.
 ## Usage
 
 ``` r
-ipm_OverviewStats(dfIPM, bHasPTD)
+ipc_OverviewStats(dfIPC, bHasPTD)
 ```
 
 ## Arguments
 
-- dfIPM:
+- dfIPC:
 
-  \`data.frame\` Output of \[ipm_ClassifyParticipants()\].
+  \`data.frame\` Output of \[ipc_ClassifyParticipants()\].
 
 - bHasPTD:
 

@@ -1,4 +1,4 @@
-# gsm.viz spec for the IP Monitoring status charts
+# gsm.viz spec for the IP Compliance status charts
 
 \`r lifecycle::badge("experimental")\`
 
@@ -8,7 +8,7 @@ charts zoom and pan.
 ## Usage
 
 ``` r
-ipm_StatusBarSpec(strLevel = c("study", "country", "site"))
+ipc_StatusBarSpec(strLevel = c("study", "country", "site"))
 ```
 
 ## Arguments

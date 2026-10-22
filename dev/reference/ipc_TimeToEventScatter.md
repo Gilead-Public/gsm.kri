@@ -1,4 +1,4 @@
-# IP Monitoring time-to-event scatter
+# IP Compliance time-to-event scatter
 
 \`r lifecycle::badge("experimental")\`
 
@@ -11,14 +11,14 @@ on render and redraws it on filter and legend changes.
 ## Usage
 
 ``` r
-ipm_TimeToEventScatter(dfIPM, nMaxDays, strId)
+ipc_TimeToEventScatter(dfIPC, nMaxDays, strId)
 ```
 
 ## Arguments
 
-- dfIPM:
+- dfIPC:
 
-  \`data.frame\` Output of \[ipm_ClassifyParticipants()\].
+  \`data.frame\` Output of \[ipc_ClassifyParticipants()\].
 
 - nMaxDays:
 

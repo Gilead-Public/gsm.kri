@@ -1,4 +1,4 @@
-# Discontinuation reason slices for the IP Monitoring reasons charts
+# Discontinuation reason slices for the IP Compliance reasons charts
 
 \`r lifecycle::badge("experimental")\`
 
@@ -11,14 +11,14 @@ participants in scope, which is the same for the All and Dosed filters.
 ## Usage
 
 ``` r
-ipm_ReasonRows(dfIPM, bHasPTD)
+ipc_ReasonRows(dfIPC, bHasPTD)
 ```
 
 ## Arguments
 
-- dfIPM:
+- dfIPC:
 
-  \`data.frame\` Output of \[ipm_ClassifyParticipants()\].
+  \`data.frame\` Output of \[ipc_ClassifyParticipants()\].
 
 - bHasPTD:
 

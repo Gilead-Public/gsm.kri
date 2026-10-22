@@ -1,4 +1,4 @@
-# Report_IPMonitoring function
+# Report_IPCompliance function
 
 \`r lifecycle::badge("experimental")\`
 
@@ -9,13 +9,13 @@ country and site level, with a participant listing.
 ## Usage
 
 ``` r
-Report_IPMonitoring(
+Report_IPCompliance(
   dfResults = NULL,
   lListings = NULL,
   dSnapshotDate = NULL,
   strOutputDir = getwd(),
   strOutputFile = NULL,
-  strInputPath = system.file("report", "Report_IPMonitoring.Rmd", package = "gsm.kri")
+  strInputPath = system.file("report", "Report_IPCompliance.Rmd", package = "gsm.kri")
 )
 ```
 
@@ -44,7 +44,7 @@ Report_IPMonitoring(
 
 - strOutputFile:
 
-  \`string\` Output filename. Default: \`Report_IPMonitoring.html\`.
+  \`string\` Output filename. Default: \`Report_IPCompliance.html\`.
 
 - strInputPath:
 

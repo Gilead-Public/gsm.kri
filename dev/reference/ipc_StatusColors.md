@@ -1,4 +1,4 @@
-# IP Monitoring status vocabulary
+# IP Compliance status vocabulary
 
 \`r lifecycle::badge("experimental")\`
 
@@ -10,7 +10,7 @@ gsm.mapping's IPNS mapping emits; the four dosed labels follow
 ## Usage
 
 ``` r
-ipm_StatusColors()
+ipc_StatusColors()
 ```
 
 ## Value
