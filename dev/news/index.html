@@ -28,7 +28,7 @@
     <li><a class="dropdown-item" href="../examples/Example_CountryReport.html">Country KRI Report</a></li>
     <li><a class="dropdown-item" href="../examples/Example_Eligibility.html">Eligibility Report</a></li>
     <li><a class="dropdown-item" href="../examples/Example_CrossStudySRS.html">Cross-Study KRI Report</a></li>
-    <li><a class="dropdown-item" href="../examples/Example_IPCompliance.html">IP Monitoring Report</a></li>
+    <li><a class="dropdown-item" href="../examples/Example_IPMonitoring.html">IP Monitoring Report</a></li>
     <li><a class="dropdown-item" href="../examples/Example_PrematureDeaths.html">Premature Deaths Report</a></li>
     <li><a class="dropdown-item" href="../examples/Cookbook_AdverseEventKRI.html">Cookbook - Adverse Event KRI Report</a></li>
     <li><a class="dropdown-item" href="../examples/Cookbook_AdverseEventWorkflow.html">Cookbook - Adverse Event Workflow Examples</a></li>
@@ -51,7 +51,7 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="development version" id="gsmkri-development-version">gsm.kri (development version)<a class="anchor" aria-label="anchor" href="#gsmkri-development-version"></a></h2>
-<ul><li>Add the IP monitoring report for IP non-starters and premature treatment discontinuations (<a href="https://github.com/Gilead-Public/gsm.kri/issues/320" class="external-link">#320</a>).</li>
+<ul><li>Add the IP monitoring report for IP non-starters and premature treatment discontinuations. Dosed participants are shown by study drug completion, including potential premature treatment discontinuations, and the participant listing shows study completion (<a href="https://github.com/Gilead-Public/gsm.kri/issues/320" class="external-link">#320</a>, <a href="https://github.com/Gilead-Public/gsm.kri/issues/332" class="external-link">#332</a>).</li>
 <li>Added the IP Non-Starters metric: <code>kri0019</code> (site) and <code>cou0019</code> (country) count participants who are Confirmed non-starters or Potential non-starters outside the window. One non-starter flags amber and two or more flag red (<a href="https://github.com/Gilead-Public/gsm.kri/issues/258" class="external-link">#258</a>, <a href="https://github.com/Gilead-Public/gsm.kri/issues/312" class="external-link">#312</a>).</li>
 <li>Added the Premature Treatment Discontinuation Rate metric: <code>kri0007-2</code> (site) and <code>cou0007-2</code> (country), that replaces <code>kri0007</code>/<code>cou0007</code> these stay available but inactive and no longer generate risk signals (<a href="https://github.com/Gilead-Public/gsm.kri/issues/301" class="external-link">#301</a>, <a href="https://github.com/Gilead-Public/gsm.kri/issues/331" class="external-link">#331</a>).</li>
 <li>The KRI report labels inactive metrics with an “Inactive” badge and lists them last (<a href="https://github.com/Gilead-Public/gsm.kri/issues/325" class="external-link">#325</a>).</li>

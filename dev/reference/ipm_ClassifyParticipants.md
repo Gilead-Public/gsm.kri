@@ -1,4 +1,4 @@
-# Classify enrolled participants for the IP Compliance report
+# Classify enrolled participants for the IP Monitoring report
 
 \`r lifecycle::badge("experimental")\`
 
@@ -9,7 +9,7 @@ frame. Data conflicts are reported as warnings naming the participants.
 ## Usage
 
 ``` r
-ipc_ClassifyParticipants(
+ipm_ClassifyParticipants(
   dfIPNS,
   dfSubj = NULL,
   dfStudComp = NULL,
@@ -25,9 +25,10 @@ ipc_ClassifyParticipants(
 
 - dfSubj:
 
-  \`data.frame\` \`Mapped_SUBJ\`, the source of the premature treatment
-  discontinuation fields. \`NULL\`, or a frame without
-  \`drv_treatment_discontinuation_dt\`, runs without them.
+  \`data.frame\` \`Mapped_SUBJ\`, the source of \`drv_drg_completion\`
+  and the treatment discontinuation date and reason. \`NULL\`, or a
+  frame without \`drv_drg_completion\`, leaves every dosed participant
+  Unrecognized.
 
 - dfStudComp:
 

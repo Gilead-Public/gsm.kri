@@ -1,4 +1,4 @@
-# Inline data block for the IP Compliance filter script
+# Inline data block for the IP Monitoring filter script
 
 \`r lifecycle::badge("experimental")\`
 
@@ -9,7 +9,7 @@ close the block.
 ## Usage
 
 ``` r
-ipc_DataScript(lData)
+ipm_DataScript(lData)
 ```
 
 ## Arguments

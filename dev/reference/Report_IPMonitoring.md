@@ -1,4 +1,4 @@
-# Report_IPCompliance function
+# Report_IPMonitoring function
 
 \`r lifecycle::badge("experimental")\`
 
@@ -9,13 +9,13 @@ country and site level, with a participant listing.
 ## Usage
 
 ``` r
-Report_IPCompliance(
+Report_IPMonitoring(
   dfResults = NULL,
   lListings = NULL,
   dSnapshotDate = NULL,
   strOutputDir = getwd(),
   strOutputFile = NULL,
-  strInputPath = system.file("report", "Report_IPCompliance.Rmd", package = "gsm.kri")
+  strInputPath = system.file("report", "Report_IPMonitoring.Rmd", package = "gsm.kri")
 )
 ```
 
@@ -29,9 +29,9 @@ Report_IPCompliance(
 - lListings:
 
   \`list\` with \`Mapped_IPNS\`, \`Mapped_SUBJ\` and
-  \`Mapped_STUDCOMP\`. Without \`drv_treatment_discontinuation_dt\` in
-  \`Mapped_SUBJ\` the report runs without premature treatment
-  discontinuation.
+  \`Mapped_STUDCOMP\`. Without \`drv_drg_completion\` in
+  \`Mapped_SUBJ\`, dosed participants show as Unrecognized status and
+  the treatment completion figures and reasons are not available.
 
 - dSnapshotDate:
 
@@ -44,7 +44,7 @@ Report_IPCompliance(
 
 - strOutputFile:
 
-  \`string\` Output filename. Default: \`Report_IPCompliance.html\`.
+  \`string\` Output filename. Default: \`Report_IPMonitoring.html\`.
 
 - strInputPath:
 
