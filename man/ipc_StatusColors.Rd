@@ -14,6 +14,6 @@ Named `character` vector of hex colours.
 
 Status labels in stack order (bottom to top) with their colours. The three
 not-dosed labels must equal the `ipns_status` values gsm.mapping's IPNS
-mapping emits.
+mapping emits; the four dosed labels follow `drv_drg_completion`.
 }
 \keyword{internal}

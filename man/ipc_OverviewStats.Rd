@@ -9,8 +9,8 @@ ipc_OverviewStats(dfIPC, bHasPTD)
 \arguments{
 \item{dfIPC}{`data.frame` Output of [ipc_ClassifyParticipants()].}
 
-\item{bHasPTD}{`logical` Whether premature treatment discontinuation data
-was delivered. When `FALSE`, that figure is `NA`.}
+\item{bHasPTD}{`logical` Whether `drv_drg_completion` was delivered. When
+`FALSE`, the four treatment completion figures are `NA`.}
 }
 \value{
 A `tibble` with `label`, `n`, `pct` (`NA` for a zero denominator)
@@ -19,8 +19,8 @@ A `tibble` with `label`, `n`, `pct` (`NA` for a zero denominator)
 \description{
 `r lifecycle::badge("experimental")`
 
-The nine study-wide overview figures in report order. Non-starter figures
-are shares of enrolled participants; Ongoing, Study complete and Premature
-treatment discontinuation are shares of dosed participants.
+The ten study-wide overview figures in report order. Non-starter figures
+are shares of enrolled participants; the four treatment completion statuses
+are shares of dosed participants.
 }
 \keyword{internal}

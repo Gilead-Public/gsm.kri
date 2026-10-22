@@ -1,13 +1,13 @@
 reason_slices <- function() ipc_ReasonRows(ipc_classified(), TRUE)
 counts_of <- function(slice) stats::setNames(slice$n, slice$reason)
 
-test_that("reasons split, trim and count each participant once per reason (#320)", {
+test_that("reasons split, trim and count each participant once per reason (#320, #332)", {
   r <- reason_slices()
   expect_equal(
     counts_of(r$study),
     c(
       "Adverse Event" = 2L,
-      "Not yet recorded" = 1L,
+      "Not yet recorded" = 2L,
       "Physician Decision" = 1L,
       "Withdrawal by Subject" = 1L
     )
@@ -26,8 +26,11 @@ test_that("reasons are ordered by frequency, ties alphabetical (#320)", {
   )
 })
 
-test_that("a reason without a discontinuation date is not counted (#320)", {
-  expect_false("Lack of Efficacy" %in% reason_slices()$order)
+test_that("reasons of potential premature treatment discontinuations are not counted (#332)", {
+  r <- reason_slices()
+  expect_false("Lack of Efficacy" %in% r$order)
+  # P27's Physician Decision is not added to P08's.
+  expect_equal(counts_of(r$study)[["Physician Decision"]], 1L)
 })
 
 test_that("every slice lists every reason, zeros included (#320)", {
@@ -46,9 +49,9 @@ test_that("every slice lists every reason, zeros included (#320)", {
   expect_equal(r$zero$pct, rep(0, 4))
 })
 
-test_that("pct is over the dosed participants in scope (#320)", {
+test_that("pct is over the dosed participants in scope (#320, #332)", {
   r <- reason_slices()
-  expect_equal(r$study$pct[r$study$reason == "Adverse Event"], 100 * 2 / 12)
+  expect_equal(r$study$pct[r$study$reason == "Adverse Event"], 100 * 2 / 17)
   expect_equal(r$country$Poland$pct[1], 100 * 1 / 2)
   # Unknown has no dosed participant: 0, not NaN.
   expect_equal(r$country$Unknown$pct, rep(0, 4))
@@ -66,9 +69,9 @@ test_that("without discontinuation data there are no reason slices (#320)", {
   expect_null(ipc_ReasonRows(ipc_classified(bPTD = FALSE), FALSE))
 })
 
-test_that("no discontinuations give an empty order (#320)", {
+test_that("no discontinuations give an empty order (#320, #332)", {
   df <- ipc_classified()
-  df$status[df$status == "Premature treatment discontinuation"] <- "Ongoing"
+  df$status[df$status == "Premature treatment discontinuation"] <- "Treatment ongoing"
   r <- ipc_ReasonRows(df, TRUE)
   expect_length(r$order, 0)
   expect_equal(nrow(r$study), 0)

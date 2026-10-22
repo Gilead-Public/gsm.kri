@@ -5,21 +5,23 @@
 #'
 #' Status labels in stack order (bottom to top) with their colours. The three
 #' not-dosed labels must equal the `ipns_status` values gsm.mapping's IPNS
-#' mapping emits.
+#' mapping emits; the four dosed labels follow `drv_drg_completion`.
 #'
 #' @return Named `character` vector of hex colours.
 #' @keywords internal
 #' @export
 ipc_StatusColors <- function() {
   c(
-    "Study complete" = "#1E7B3C",
     "Potential IP non-starter - within window" = "#EDA100",
     "Potential IP non-starter - outside window" = "#EB6834",
     "Confirmed IP non-starter" = "#C62F4B",
     "Premature treatment discontinuation" = "#111111",
-    # Below Ongoing so Ongoing stays on top; gsm.viz only draws it when present.
+    "Potential premature treatment discontinuation" = "#5F6B7A",
+    # Before the treatment statuses so they end the stack; gsm.viz only draws
+    # it when present.
     "Unrecognized status" = "#9AA4B2",
-    "Ongoing" = "#8CCB7E"
+    "Treatment ongoing" = "#8CCB7E",
+    "Treatment complete per protocol" = "#1E7B3C"
   )
 }
 
@@ -33,9 +35,10 @@ ipc_StatusColors <- function() {
 #' Data conflicts are reported as warnings naming the participants.
 #'
 #' @param dfIPNS `data.frame` `Mapped_IPNS`.
-#' @param dfSubj `data.frame` `Mapped_SUBJ`, the source of the premature
-#'   treatment discontinuation fields. `NULL`, or a frame without
-#'   `drv_treatment_discontinuation_dt`, runs without them.
+#' @param dfSubj `data.frame` `Mapped_SUBJ`, the source of
+#'   `drv_drg_completion` and the treatment discontinuation date and reason.
+#'   `NULL`, or a frame without `drv_drg_completion`, leaves every dosed
+#'   participant Unrecognized.
 #' @param dfStudComp `data.frame` `Mapped_STUDCOMP`, or `NULL`.
 #' @param dSnapshotDate `Date` "Today" for the day counts.
 #'
@@ -75,13 +78,13 @@ ipc_ClassifyParticipants <- function(
     )
   )
 
-  bHasPTD <- !is.null(dfSubj) &&
-    "drv_treatment_discontinuation_dt" %in% names(dfSubj)
+  bHasPTD <- !is.null(dfSubj) && "drv_drg_completion" %in% names(dfSubj)
   df <- ipc_Dedupe(dfIPNS, "Mapped_IPNS")
   vSubjCols <- c(
-    if (bHasPTD) {
+    if (!is.null(dfSubj)) {
       intersect(
         c(
+          "drv_drg_completion",
           "drv_treatment_discontinuation_dt",
           "drv_premature_discontinuation_reason"
         ),
@@ -108,17 +111,26 @@ ipc_ClassifyParticipants <- function(
   ord <- suppressWarnings(as.integer(df$ipns_status_ord))
   bKnownLabel <- df$ipns_status %in% vLabels
   dPTD <- ipc_AsDate(col("drv_treatment_discontinuation_dt"))
+  drg <- as.character(col("drv_drg_completion"))
+  bNullDrg <- is.na(drg) | drg == ""
+  vDosedStatus <- c(
+    N = "Premature treatment discontinuation",
+    "Potential No" = "Potential premature treatment discontinuation",
+    Y = "Treatment complete per protocol"
+  )
   status <- dplyr::case_when(
-    dosed %in% "Y" & !is.na(dPTD) ~ "Premature treatment discontinuation",
-    dosed %in% "Y" & df$complete %in% TRUE ~ "Study complete",
-    dosed %in% "Y" ~ "Ongoing",
+    dosed %in% "Y" & !bHasPTD ~ "Unrecognized status",
+    dosed %in% "Y" & bNullDrg ~ "Treatment ongoing",
+    dosed %in% "Y" & drg %in% names(vDosedStatus) ~
+      unname(vDosedStatus[drg]),
     dosed %in% "N" & ord %in% 1:3 & bKnownLabel ~ as.character(df$ipns_status),
     TRUE ~ "Unrecognized status"
   )
   dEnrollment <- ipc_AsDate(df$drv_enrollment_dt)
+  # Study completion no longer dates a dosed participant; without a
+  # discontinuation date the point sits on the diagonal.
   dEvent <- dplyr::case_when(
-    status == "Premature treatment discontinuation" ~ dPTD,
-    status == "Study complete" ~ df$complete_dt,
+    dosed %in% "Y" ~ dPTD,
     status == "Confirmed IP non-starter" ~ df$confirm_dt,
     TRUE ~ as.Date(NA)
   )
@@ -148,12 +160,22 @@ ipc_ClassifyParticipants <- function(
     "Not dosed with a treatment discontinuation date; the date is ignored for"
   )
   ipc_Warn(
+    dosed %in% "N" & !bNullDrg,
+    id,
+    "Not dosed with a drv_drg_completion value; the value is ignored for"
+  )
+  ipc_Warn(
+    dosed %in% "Y" & bHasPTD & !bNullDrg & !drg %in% names(vDosedStatus),
+    id,
+    "drv_drg_completion is not Y, N or Potential No, so the status is Unrecognized for"
+  )
+  ipc_Warn(
     dosed %in% "N" & ord %in% 1:3 & !bKnownLabel,
     id,
     "ipns_status is not a report status label, so the status is Unrecognized for"
   )
   ipc_Warn(
-    status %in% vLabels[c(1, 4, 5)] & is.na(dEvent),
+    status == "Confirmed IP non-starter" & is.na(dEvent),
     id,
     "No event date, so the time-to-event point sits on the diagonal for"
   )
@@ -168,7 +190,7 @@ ipc_ClassifyParticipants <- function(
     "Event date before enrollment or after the snapshot date for"
   )
 
-  bPTD <- status == "Premature treatment discontinuation"
+  bDiscontinued <- status %in% vDosedStatus[c("N", "Potential No")]
   tibble::tibble(
     subjid = as.character(df$subjid),
     studyid = as.character(col("studyid")),
@@ -176,7 +198,12 @@ ipc_ClassifyParticipants <- function(
     country = pd_CountryLabel(col("country")),
     dosed = dosed,
     status = factor(status, levels = vLabels),
-    status_raw = as.character(col("drv_ip_nonstarter_status")),
+    # The listing names the delivered value behind an Unrecognized status.
+    status_raw = ifelse(
+      dosed %in% "Y",
+      drg,
+      as.character(col("drv_ip_nonstarter_status"))
+    ),
     enrollment_dt = dEnrollment,
     first_dose_dt = ipc_AsDate(col("drv_ip_first_dose_dt")),
     event_dt = dEvent,
@@ -184,24 +211,25 @@ ipc_ClassifyParticipants <- function(
     days_to_event = dplyr::coalesce(day_count(dEvent), nDaysSinceEnrl),
     days_to_first_dose = day_count(ipc_AsDate(col("drv_ip_first_dose_dt"))),
     kit_assigned = as.character(col("drv_kit_assigned")),
+    study_complete = dplyr::coalesce(df$study_complete, ""),
     consent_withdrawn = ifelse(df$consent_withdrawn %in% TRUE, "Y", "N"),
-    ptd_flag = ifelse(bPTD, "Y", "N"),
+    drg_completion = ifelse(dosed %in% "Y" & !bNullDrg, drg, ""),
     ptd_reason = ifelse(
-      bPTD,
+      bDiscontinued,
       as.character(col("drv_premature_discontinuation_reason")),
       NA_character_
     )
   )
 }
 
-# One row per participant: several completion records are allowed, and the
-# earliest qualifying record dates the event.
+# One row per participant: several completion records are allowed, the
+# earliest qualifying record dates the event, and any Y answer completes the
+# study.
 ipc_StudCompSummary <- function(dfStudComp = NULL) {
   if (is.null(dfStudComp) || nrow(dfStudComp) == 0) {
     return(tibble::tibble(
       subjid = character(),
-      complete = logical(),
-      complete_dt = as.Date(character()),
+      study_complete = character(),
       confirm_dt = as.Date(character()),
       consent_withdrawn = logical()
     ))
@@ -217,8 +245,11 @@ ipc_StudCompSummary <- function(dfStudComp = NULL) {
   ) %>%
     dplyr::group_by(.data$subjid) %>%
     dplyr::summarise(
-      complete = any(.data$cy %in% "Y"),
-      complete_dt = first_date(.data$d[.data$cy %in% "Y"]),
+      study_complete = dplyr::case_when(
+        any(.data$cy %in% "Y") ~ "Y",
+        any(.data$cy %in% "N") ~ "N",
+        TRUE ~ ""
+      ),
       confirm_dt = first_date(.data$d[!is.na(.data$cy) & .data$cy != ""]),
       consent_withdrawn = any(.data$withdrew),
       .groups = "drop"

@@ -28,8 +28,7 @@ dSnapshotDate <- params$dSnapshotDate
 Mapped_SUBJ <- lListings$Mapped_SUBJ
 
 # One classified frame feeds every chart, the overview and the listing.
-bHasPTD <- !is.null(Mapped_SUBJ) &&
-  "drv_treatment_discontinuation_dt" %in% names(Mapped_SUBJ)
+bHasPTD <- !is.null(Mapped_SUBJ) && "drv_drg_completion" %in% names(Mapped_SUBJ)
 dfIPC <- ipc_ClassifyParticipants(
   dfIPNS = lListings$Mapped_IPNS,
   dfSubj = Mapped_SUBJ,
@@ -58,7 +57,7 @@ status_note <- function(level) {
 reasons_empty <- if (bHasPTD) {
   "\n> No premature treatment discontinuations recorded.\n"
 } else {
-  "\n> Premature treatment discontinuation data not available.\n"
+  "\n> Treatment completion data not available.\n"
 }
 reasons_note <- function(level) {
   htmltools::tags$p(
@@ -69,7 +68,7 @@ reasons_note <- function(level) {
   )
 }
 reasons_text <- "\n> Bars are % of dosed participants in scope; a participant counts once under each of their reasons. A discontinuation without a reason shows as **Not yet recorded**.\n"
-tte_text <- "\n> Points on the dashed diagonal have no event yet: potential IP non-starters and **Ongoing** participants. Points above it had their event: study completion (**Study complete**), treatment discontinuation (**Premature treatment discontinuation**) or study completion record (**Confirmed IP non-starter**). Squares are dosed participants, circles are not dosed. Click a legend entry to hide a status in every scatter; double-click to show only that status.\n"
+tte_text <- "\n> Points on the dashed diagonal have no event yet: potential IP non-starters and dosed participants without a treatment discontinuation date. Points above it had their event: a treatment discontinuation date for dosed participants, whatever their status, or a study completion record (**Confirmed IP non-starter**). Squares are dosed participants, circles are not dosed. Click a legend entry to hide a status in every scatter; double-click to show only that status.\n"
 ```
 
 # IP monitoring: IP Non-Starter & Premature Treatment Discontinuation
@@ -153,7 +152,7 @@ htmltools::tags$div(
 ```{r overview, echo=FALSE}
 overview_cell <- function(n, pct, base) {
   if (is.na(n)) {
-    return("Premature treatment discontinuation data not available")
+    return("Treatment completion data not available")
   }
   paste0(
     "<div style='font-size:1.1em'>", n, "</div>",
@@ -307,7 +306,7 @@ cat(tte_text)
 ## Participant listing
 
 ```{r listing, echo=FALSE, eval=has_participants}
-ipc_Listing(ipc_ListingData(dfIPC, bHasPTD))
+ipc_Listing(ipc_ListingData(dfIPC))
 ```
 
 ```{r listing-note, echo=FALSE, results='asis'}
@@ -315,9 +314,12 @@ cat(
   "\n",
   "> - Only one **Status** is assigned to each participant (enrolled only).\n",
   "> - **IP non-starter statuses** (potential within window, potential outside window, confirmed) = participant not dosed.\n",
-  "> - **Premature treatment discontinuation** = dosed participant with a recorded treatment discontinuation date; takes precedence over Study complete.\n",
-  "> - **Study complete** = study completion CRF is completed.\n",
-  "> - **Ongoing** = no other status criteria met.\n",
+  "> - **Premature treatment discontinuation** = dosed, did not complete study drug per protocol.\n",
+  "> - **Potential premature treatment discontinuation** = dosed, permanently withdrawn from study drug, with no completion outcome recorded yet.\n",
+  "> - **Treatment complete per protocol** = dosed, completed study drug per protocol.\n",
+  "> - **Treatment ongoing** = dosed, still on study drug.\n",
+  "> - **Study Drug Completed per Protocol** shows the delivered treatment completion outcome; **Drug discontinuation reason** is filled for both discontinuation statuses.\n",
+  "> - **Study complete** is the study completion CRF answer (`compyn`): Y, N, or blank when not yet answered. It does not set the status.\n",
   "> - **Consent withdrawn** is a separate flag, not a status: the study completion CRF reports withdrawal of consent (`compreas`).\n",
   sep = ""
 )

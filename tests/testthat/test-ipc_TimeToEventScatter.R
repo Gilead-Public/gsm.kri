@@ -17,12 +17,17 @@ test_that("one trace per status; the legend follows the stack order (#320)", {
   expect_equal(names[order(ranks)], names(ipc_StatusColors()))
 })
 
-test_that("not-dosed statuses draw over the dosed ones (#320)", {
+test_that("not-dosed statuses draw over the dosed ones (#320, #332)", {
   traces <- Filter(function(t) !is.null(t$name), ipc_scatter_data()$built$data)
   names <- vapply(traces, `[[`, "", "name")
   expect_lt(
     max(match(
-      c("Study complete", "Premature treatment discontinuation", "Ongoing"),
+      c(
+        "Treatment complete per protocol",
+        "Premature treatment discontinuation",
+        "Potential premature treatment discontinuation",
+        "Treatment ongoing"
+      ),
       names
     )),
     min(match(
@@ -32,35 +37,49 @@ test_that("not-dosed statuses draw over the dosed ones (#320)", {
   )
 })
 
-test_that("squares mark dosed participants, circles the rest (#320)", {
+test_that("squares mark dosed participants, circles the rest (#320, #332)", {
   traces <- Filter(function(t) !is.null(t$name), ipc_scatter_data()$built$data)
   by_name <- stats::setNames(traces, vapply(traces, `[[`, "", "name"))
-  expect_true(all(by_name[["Ongoing"]]$marker$symbol == "square"))
+  for (status in c(
+    "Treatment complete per protocol",
+    "Premature treatment discontinuation",
+    "Potential premature treatment discontinuation",
+    "Treatment ongoing"
+  )) {
+    symbols <- by_name[[status]]$marker$symbol
+    expect_gt(length(symbols), 0, label = status)
+    expect_true(all(symbols == "square"), label = status)
+  }
   expect_true(all(
     by_name[["Confirmed IP non-starter"]]$marker$symbol == "circle"
   ))
 })
 
-test_that("customdata carries subjid, invid, country and dosed per point (#320)", {
+test_that("customdata carries subjid, invid, country and dosed per point (#320, #332)", {
   traces <- Filter(function(t) !is.null(t$name), ipc_scatter_data()$built$data)
-  ongoing <- traces[[which(vapply(traces, `[[`, "", "name") == "Ongoing")]]
+  ongoing <- traces[[which(vapply(traces, `[[`, "", "name") == "Treatment ongoing")]]
   first <- ongoing$customdata[[1]]
   expect_equal(unlist(first), c("P01", "JP01", "Japan", "Y"))
 })
 
-test_that("participants without an event sit on the diagonal (#320)", {
+test_that("participants without an event sit on the diagonal (#320, #332)", {
   traces <- Filter(function(t) !is.null(t$name), ipc_scatter_data()$built$data)
-  ongoing <- traces[[which(vapply(traces, `[[`, "", "name") == "Ongoing")]]
-  expect_equal(unlist(ongoing$x), unlist(ongoing$y))
+  ongoing <- traces[[which(vapply(traces, `[[`, "", "name") == "Treatment ongoing")]]
+  ids <- vapply(ongoing$customdata, function(cd) cd[[1]], "")
+  x <- unlist(ongoing$x)
+  y <- unlist(ongoing$y)
+  # P28 has a discontinuation date, so it sits above the diagonal.
+  expect_equal(x[ids != "P28"], y[ids != "P28"])
+  expect_lt(x[ids == "P28"], y[ids == "P28"])
 })
 
-test_that("a participant without an enrollment date is left off (#320)", {
+test_that("a participant without an enrollment date is left off (#320, #332)", {
   traces <- Filter(function(t) !is.null(t$name), ipc_scatter_data()$built$data)
   ids <- unlist(lapply(traces, function(t) {
     vapply(t$customdata, function(cd) cd[[1]], "")
   }))
   expect_false("P23" %in% ids)
-  expect_length(ids, 23)
+  expect_length(ids, 28)
 })
 
 test_that("both axes share one range with a dashed diagonal (#320)", {
