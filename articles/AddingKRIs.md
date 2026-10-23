@@ -109,7 +109,7 @@ the new KRI. These files include:
   in data interpretation and calculation.
 - **Metric Workflow Definition:** Specify the functions and parameters
   required to calculate the metric. This typically follows the standard
-  [gsm.core](https://gilead-public.github.io/gsm.core) [analysis
+  [gsm.core](https://gilead-biostats.github.io/gsm.core) [analysis
   workflow](https://gilead-public.github.io/gsm.core/articles/DataAnalysis.html),
   ensuring consistency with existing metrics.
 
@@ -123,10 +123,10 @@ providing granularity in data analysis.
 #### Updating Core Analytical Functions
 
 The next step involves updating
-[gsm.core](https://gilead-public.github.io/gsm.core) analytics functions
-to ensure they can accurately compute the new KRI. This may include
-modifying existing logic, incorporating additional parameters, or
-adjusting calculations to reflect the new metric’s requirements. This
+[gsm.core](https://gilead-biostats.github.io/gsm.core) analytics
+functions to ensure they can accurately compute the new KRI. This may
+include modifying existing logic, incorporating additional parameters,
+or adjusting calculations to reflect the new metric’s requirements. This
 step may not be necessary for every new metric.
 
 #### Enhancing Visualization and Reporting Functionality
@@ -147,7 +147,7 @@ accuracy, and usability across the system.
 To ensure that the metric is behaving as expected for test data, a new
 test or multiple tests must be written and documented in the `{gsm.qc}`
 package. `{gsm.qc}` uses the
-[qcthat](https://gilead-public.github.io/qcthat/) framework, which is
+[qcthat](https://gilead-biostats.github.io/qcthat/) framework, which is
 detailed in the package documentation
 [here](https://gilead-public.github.io/qcthat/).
 

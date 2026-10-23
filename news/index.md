@@ -1,38 +1,5 @@
 # Changelog
 
-## gsm.kri (development version)
-
-- Add the IP monitoring report for IP non-starters and premature
-  treatment discontinuations. Dosed participants are shown by study drug
-  completion, including potential premature treatment discontinuations,
-  and the participant listing shows study completion
-  ([\#320](https://github.com/Gilead-Public/gsm.kri/issues/320),
-  [\#332](https://github.com/Gilead-Public/gsm.kri/issues/332)).
-- Added the IP Non-Starters metric: `kri0019` (site) and `cou0019`
-  (country) count participants who are Confirmed non-starters or
-  Potential non-starters outside the window. One non-starter flags amber
-  and two or more flag red
-  ([\#258](https://github.com/Gilead-Public/gsm.kri/issues/258),
-  [\#312](https://github.com/Gilead-Public/gsm.kri/issues/312)).
-- Added the Premature Treatment Discontinuation Rate metric: `kri0007-2`
-  (site) and `cou0007-2` (country), that replaces `kri0007`/`cou0007`
-  these stay available but inactive and no longer generate risk signals
-  ([\#301](https://github.com/Gilead-Public/gsm.kri/issues/301),
-  [\#331](https://github.com/Gilead-Public/gsm.kri/issues/331)).
-- The KRI report labels inactive metrics with an “Inactive” badge and
-  lists them last
-  ([\#325](https://github.com/Gilead-Public/gsm.kri/issues/325)).
-- New
-  [`Detect_ConsecutiveRepeats()`](https://gilead-public.github.io/gsm.kri/reference/Detect_ConsecutiveRepeats.md)
-  counts, per subject, rolling windows of consecutive identical
-  measurements, for use with
-  [`gsm.core::Input_Rate()`](https://gilead-biostats.github.io/gsm.core/reference/Input_Rate.html)
-  ([\#307](https://github.com/Gilead-Public/gsm.kri/issues/307)).
-- New repeat-measure vital-sign metrics `kri0020a`-`f` (site) and
-  `cou0020a`-`f` (country) for weight, heart rate, systolic/diastolic
-  BP, respiratory rate, and temperature
-  ([\#306](https://github.com/Gilead-Public/gsm.kri/issues/306)).
-
 ## gsm.kri v1.7.0
 
 This minor release moves every gsm.viz-backed chart onto gsm.vizr: the
@@ -62,10 +29,6 @@ Premature Deaths randomization-to-death scatters stay on Plotly
 
 **Relocations to gsm.vizr:**
 
-- Added `kri0019` (site) and `cou0019` (country), which report the rate
-  of IP non-starters (subjects Confirmed or Potential-outside-window
-  non-starters) per the upstream `drv_ip_nonstarter_status` derivation
-  ([\#258](https://github.com/Gilead-Public/gsm.kri/issues/258)).
 - The legacy widget wrappers (`Widget_BarChart`, `Widget_ScatterPlot`,
   `Widget_TimeSeries`, `Widget_GroupOverview`), their Shiny bindings,
   [`MakeChartConfig()`](https://gilead-public.github.io/gsm.vizr/reference/MakeChartConfig.html),
@@ -309,7 +272,7 @@ update default accrual thresholds
 ## gsm.kri 1.1.1
 
 This patch release updates the description file to incorporate min
-version for [gsm.core](https://gilead-public.github.io/gsm.core).
+version for [gsm.core](https://gilead-biostats.github.io/gsm.core).
 
 ## gsm.kri v1.1.0
 
