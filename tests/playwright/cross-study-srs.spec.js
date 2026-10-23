@@ -19,6 +19,78 @@ test.beforeEach(async ({ page }) => {
   await page.waitForSelector('.site-summary', { timeout: 20000 });
 });
 
+test('Weighting tab calculates metric contributions and total SRS', async ({ page }) => {
+  const weightingTab = page.getByRole('tab', { name: 'How SRS Weighting Works' });
+  const weightingPanel = page.getByRole('tabpanel', { name: 'How SRS Weighting Works' });
+
+  await expect(weightingPanel).toBeHidden();
+  await weightingTab.click();
+
+  await expect(weightingTab).toHaveAttribute('aria-selected', 'true');
+  await expect(weightingPanel).toBeVisible();
+  await expect(weightingPanel.getByRole('heading', { level: 3 })).toHaveText(
+    'Site Risk Score Overview'
+  );
+  const calculatorToggle = weightingPanel.locator(
+    '.srs-weighting-calculator-toggle'
+  );
+  await expect(calculatorToggle).toHaveText('Show example SRS calculator');
+  const totalSRS = weightingPanel.locator('.srs-weighting-total-score');
+  const exampleSubhead = weightingPanel.locator(
+    '.srs-weighting-example-subhead'
+  );
+
+  await expect(calculatorToggle).toHaveAttribute('aria-expanded', 'false');
+  await expect(totalSRS).toBeHidden();
+  await expect(exampleSubhead).toBeHidden();
+  await calculatorToggle.click();
+  await expect(calculatorToggle).toHaveText('Hide example SRS calculator');
+  await expect(calculatorToggle).toHaveAttribute('aria-expanded', 'true');
+  await expect(totalSRS).toBeVisible();
+  await expect(
+    exampleSubhead
+  ).toHaveText('Example SRS');
+  await expect(weightingPanel).toContainText('Adverse Event Rate');
+  await expect(weightingPanel).toContainText('Maximum contribution');
+  await expect(weightingPanel).toContainText('Share of total possible SRS');
+
+  const exampleBackgrounds = await weightingPanel.evaluate((panel) => {
+    const total = panel.querySelector('.srs-weighting-total-row th');
+    const exampleCells = panel.querySelectorAll(
+      'tbody .srs-weighting-example-cell'
+    );
+    return {
+      total: getComputedStyle(total).backgroundColor,
+      cells: Array.from(exampleCells, cell => getComputedStyle(cell).backgroundColor),
+    };
+  });
+  expect(exampleBackgrounds.cells.length).toBeGreaterThan(2);
+  expect(
+    exampleBackgrounds.cells.every(color => color === exampleBackgrounds.total)
+  ).toBe(true);
+  const adverseEventSelect = weightingPanel.getByLabel(
+    'Select flag for Adverse Event Rate'
+  );
+  const seriousAdverseEventSelect = weightingPanel.getByLabel(
+    'Select flag for Serious Adverse Event Rate'
+  );
+  const adverseEventScore = adverseEventSelect
+    .locator('xpath=ancestor::tr')
+    .locator('.srs-weighting-metric-score');
+  const seriousAdverseEventScore = seriousAdverseEventSelect
+    .locator('xpath=ancestor::tr')
+    .locator('.srs-weighting-metric-score');
+
+  await expect(totalSRS).toHaveText('0.0');
+  await adverseEventSelect.selectOption('-2');
+  await expect(adverseEventScore).toHaveText('32 points');
+  await expect(totalSRS).toHaveText('15.8');
+
+  await seriousAdverseEventSelect.selectOption('-2');
+  await expect(seriousAdverseEventScore).toHaveText('8 points');
+  await expect(totalSRS).toHaveText('19.8');
+});
+
 test('Sort by dropdown includes Enrollment Count options and reorders sites', async ({ page }) => {
   await page.selectOption('#sort-by', 'enrollment-desc');
   const order = await page.evaluate(() => {

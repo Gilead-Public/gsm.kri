@@ -38,8 +38,30 @@ function renderCrossStudyRiskScoreTable(el, input) {
     const minSRS = Math.floor(Math.min(...srsValues));
     const maxSRS = Math.ceil(Math.max(...srsValues));
 
-    // Create controls and table
-    let html = '<div class="cross-study-container">';
+    const tabIdPrefix = el.id || `cross-study-srs-${Date.now()}`;
+    const summaryTabId = `${tabIdPrefix}-summary-tab`;
+    const summaryPanelId = `${tabIdPrefix}-summary-panel`;
+    const weightingTabId = `${tabIdPrefix}-weighting-tab`;
+    const weightingPanelId = `${tabIdPrefix}-weighting-panel`;
+    const hasWeightingSummary = typeof input.strWeightingSummary === 'string' &&
+        input.strWeightingSummary.trim().length > 0;
+
+    // Create tabs, controls, and table
+    let html = `
+        <style>
+            .srs-tab-list { border-bottom: 1px solid #bbb; display: flex; gap: .25rem; margin-bottom: 1rem; }
+            .srs-tab { background: #eee; border: 1px solid #bbb; border-bottom: 0; border-radius: 4px 4px 0 0; color: #333; cursor: pointer; font-weight: bold; padding: .65rem 1rem; }
+            .srs-tab[aria-selected="true"] { background: #3c587f; color: white; }
+            .srs-tab:focus-visible { outline: 3px solid #fff; outline-offset: 1px; box-shadow: 0 0 0 4px #005fcc; }
+            .srs-tab-panel[hidden] { display: none; }
+        </style>
+        <div class="srs-widget-tabs">
+            <div class="srs-tab-list" role="tablist" aria-label="Cross-study Site Risk Score report">
+                <button class="srs-tab" id="${summaryTabId}" type="button" role="tab" aria-selected="true" aria-controls="${summaryPanelId}">SRS Summary</button>
+                ${hasWeightingSummary ? `<button class="srs-tab" id="${weightingTabId}" type="button" role="tab" aria-selected="false" aria-controls="${weightingPanelId}" tabindex="-1">How SRS Weighting Works</button>` : ''}
+            </div>
+            <div class="srs-tab-panel" id="${summaryPanelId}" role="tabpanel" aria-labelledby="${summaryTabId}">
+                <div class="cross-study-container">`;
     // gsmViz's groupOverview table attaches mouseover/mouseout handlers to every
     // detail row that set/clear an inline background-color for its own hover
     // effect (see addRowHighlighting.js), which would otherwise wipe out our
@@ -135,17 +157,24 @@ function renderCrossStudyRiskScoreTable(el, input) {
     });
     
     html += '</table>';
-    html += '</div>';
+    html += `
+            </div>
+            ${hasWeightingSummary ? `<div class="srs-tab-panel" id="${weightingPanelId}" role="tabpanel" aria-labelledby="${weightingTabId}" hidden>
+                ${input.strWeightingSummary}
+            </div>` : ''}
+        </div>`;
     
     // Set initial HTML
     el.innerHTML = html;
+    setupTabs(el);
+    setupSRSWeightingExamples(el);
     
     // Flag to track if we've set the unified header
     let headerSet = false;
     
     // Now render gsmViz tables for each site
     input.dfSummary.forEach((siteRow, siteIndex) => {
-        const siteTbody = document.getElementById(`site-tbody-${siteIndex}`);
+        const siteTbody = el.querySelector(`#site-tbody-${siteIndex}`);
         
         if (!siteTbody) return;
         
@@ -278,7 +307,7 @@ function renderCrossStudyRiskScoreTable(el, input) {
                 if (gsmVizTable) {
                     // Copy header to unified thead (only once)
                     if (!headerSet) {
-                        const unifiedThead = document.getElementById('unified-thead');
+                        const unifiedThead = el.querySelector('#unified-thead');
                         const gsmVizThead = gsmVizTable.querySelector('thead');
                         if (gsmVizThead) {
                             unifiedThead.innerHTML = gsmVizThead.innerHTML;
@@ -337,6 +366,37 @@ function renderCrossStudyRiskScoreTable(el, input) {
     
     // Set up filter event listeners
     setupFilters(el, input.dfSummary);
+}
+
+function setupTabs(el) {
+    const tabs = Array.from(el.querySelectorAll('.srs-tab[role="tab"]'));
+
+    function activateTab(tab) {
+        tabs.forEach(candidate => {
+            const selected = candidate === tab;
+            candidate.setAttribute('aria-selected', selected ? 'true' : 'false');
+            candidate.tabIndex = selected ? 0 : -1;
+            el.querySelector(`#${candidate.getAttribute('aria-controls')}`).hidden = !selected;
+        });
+        tab.focus();
+    }
+
+    tabs.forEach((tab, index) => {
+        tab.addEventListener('click', () => activateTab(tab));
+        tab.addEventListener('keydown', event => {
+            if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
+                return;
+            }
+
+            event.preventDefault();
+            let nextIndex = index;
+            if (event.key === 'ArrowLeft') nextIndex = (index - 1 + tabs.length) % tabs.length;
+            if (event.key === 'ArrowRight') nextIndex = (index + 1) % tabs.length;
+            if (event.key === 'Home') nextIndex = 0;
+            if (event.key === 'End') nextIndex = tabs.length - 1;
+            activateTab(tabs[nextIndex]);
+        });
+    });
 }
 
 function setupFilters(el, dfSummary) {
