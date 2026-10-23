@@ -1,4 +1,4 @@
-# Classify enrolled participants for the IP Compliance report
+# Classify enrolled participants for the IP Monitoring report
 
 \`r lifecycle::badge("experimental")\`
 
@@ -9,7 +9,7 @@ frame. Data conflicts are reported as warnings naming the participants.
 ## Usage
 
 ``` r
-ipc_ClassifyParticipants(
+ipm_ClassifyParticipants(
   dfIPNS,
   dfSubj = NULL,
   dfStudComp = NULL,

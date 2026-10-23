@@ -1,4 +1,4 @@
-# Participant listing rows for the IP Compliance report
+# Participant listing rows for the IP Monitoring report
 
 \`r lifecycle::badge("experimental")\`
 
@@ -8,14 +8,14 @@ One row per participant in status stack order, then participant ID. The
 ## Usage
 
 ``` r
-ipc_ListingData(dfIPC)
+ipm_ListingData(dfIPM)
 ```
 
 ## Arguments
 
-- dfIPC:
+- dfIPM:
 
-  \`data.frame\` Output of \[ipc_ClassifyParticipants()\].
+  \`data.frame\` Output of \[ipm_ClassifyParticipants()\].
 
 ## Value
 

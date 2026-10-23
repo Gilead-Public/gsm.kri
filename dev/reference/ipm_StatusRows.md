@@ -1,4 +1,4 @@
-# Long status rows for the IP Compliance status charts
+# Long status rows for the IP Monitoring status charts
 
 \`r lifecycle::badge("experimental")\`
 
@@ -10,14 +10,14 @@ rows. Participants whose dosed flag is unrecognised appear under
 ## Usage
 
 ``` r
-ipc_StatusRows(dfIPC, strLevel = c("study", "country", "site"))
+ipm_StatusRows(dfIPM, strLevel = c("study", "country", "site"))
 ```
 
 ## Arguments
 
-- dfIPC:
+- dfIPM:
 
-  \`data.frame\` Output of \[ipc_ClassifyParticipants()\].
+  \`data.frame\` Output of \[ipm_ClassifyParticipants()\].
 
 - strLevel:
 

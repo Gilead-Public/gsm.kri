@@ -1,4 +1,4 @@
-# gsm.viz spec for the IP Compliance reasons charts
+# gsm.viz spec for the IP Monitoring reasons charts
 
 \`r lifecycle::badge("experimental")\`
 
@@ -7,14 +7,14 @@ Horizontal bars of top. Labels and hover read "x.x
 ## Usage
 
 ``` r
-ipc_ReasonBarSpec(vReasonOrder)
+ipm_ReasonBarSpec(vReasonOrder)
 ```
 
 ## Arguments
 
 - vReasonOrder:
 
-  \`character\` Reasons in display order, from \[ipc_ReasonRows()\].
+  \`character\` Reasons in display order, from \[ipm_ReasonRows()\].
 
 ## Value
 

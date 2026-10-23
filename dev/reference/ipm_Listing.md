@@ -1,4 +1,4 @@
-# Participant listing table for the IP Compliance report
+# Participant listing table for the IP Monitoring report
 
 \`r lifecycle::badge("experimental")\`
 
@@ -9,14 +9,14 @@ The CSV holds every participant whatever the filters and search.
 ## Usage
 
 ``` r
-ipc_Listing(dfListing)
+ipm_Listing(dfListing)
 ```
 
 ## Arguments
 
 - dfListing:
 
-  \`data.frame\` Output of \[ipc_ListingData()\].
+  \`data.frame\` Output of \[ipm_ListingData()\].
 
 ## Value
 
