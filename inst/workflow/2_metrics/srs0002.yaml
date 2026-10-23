@@ -17,7 +17,8 @@ meta:
     Closed Action: 1
     Awaiting Triage: 1
     No Action: 0
-  MissingActionState: error
+  MissingActionState: include
+  ActionExtractionDate: null
 spec:
   Analysis_Summary:
     _all:
@@ -56,6 +57,7 @@ steps:
       dfActionLog: Reporting_ActionLog
       lActionFactors: ActionFactors
       strMissingState: MissingActionState
+      dActionExtractionDate: ActionExtractionDate
   - output: lAnalysis
     name: list
     params:

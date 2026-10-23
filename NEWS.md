@@ -5,8 +5,12 @@
   findings are included by default; no-action findings are excluded; missing
   nonzero action states fail unless an explicit fallback is configured. The
   full raw SRS denominator is retained. For each site and metric, the latest
-  ActionLog entry on or before the results snapshot (or
-  `dActionSnapshotDate`) is applied (#280).
+  signal snapshot on or before the results snapshot (or
+  `dActionSnapshotDate`) is applied within a complete frozen extraction.
+  `dActionExtractionDate` selects the extraction cutoff; later-extracted
+  decisions are not used by default. Multiple actions use the largest factor
+  and retain character identifiers and extraction provenance in the detail.
+  The workflow conservatively includes missing states (#280).
 - Added `MakeActionRiskScoreDetail()`, which returns the per-KRI contributions
   behind the action-weighted score, and a `dfRiskScoreDetail` argument to
   `Report_KRI()` that shows them in the site overview (#280).

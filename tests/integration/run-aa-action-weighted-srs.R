@@ -44,7 +44,10 @@ weights <- data.frame(
 )
 
 raw <- gsm.kri::CalculateRiskScore(results, weights)
-weighted <- gsm.kri::CalculateActionRiskScore(results, weights, action_log)
+weighted <- gsm.kri::CalculateActionRiskScore(
+  results, weights, action_log,
+  dActionExtractionDate = max(action_log$ExtractionDate)
+)
 comparison <- merge(
   raw[c("GroupID", "Metric", "Numerator", "Denominator")],
   weighted[c("GroupID", "Metric", "Numerator", "Denominator")],

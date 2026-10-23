@@ -10,7 +10,8 @@ test_that("srs0002 workflow consumes persisted KRI and ActionLog domains (#280)"
 
   expect_true(all(c("Analysis_Summary", "Reporting_ActionLog") %in%
     names(workflow$spec)))
-  expect_equal(workflow$meta$MissingActionState, "error")
+  expect_equal(workflow$meta$MissingActionState, "include")
+  expect_true("ActionExtractionDate" %in% names(workflow$meta))
   expect_equal(workflow$meta$ActionFactors$`Open Action`, 1)
   expect_equal(workflow$meta$ActionFactors$`Closed Action`, 1)
   expect_equal(workflow$meta$ActionFactors$`Awaiting Triage`, 1)
@@ -40,7 +41,7 @@ test_that("srs0002 workflow produces canonical action-weighted rows (#280)", {
     GroupID = results$GroupID,
     MetricID = results$MetricID,
     State = c("No Action", "Open Action"),
-    ExtractionDate = as.Date("2025-03-07"),
+    ExtractionDate = results$SnapshotDate,
     stringsAsFactors = FALSE
   )
   metrics <- data.frame(
@@ -74,4 +75,17 @@ test_that("srs0002 workflow produces canonical action-weighted rows (#280)", {
   expect_equal(output$Analysis_Summary$MetricID, "Analysis_srs0002")
   expect_equal(output$Analysis_Summary$Numerator, 8)
   expect_equal(output$Analysis_Summary$Denominator, 12)
+
+  workflow$meta$ActionExtractionDate <- "2025-03-07"
+  action_log$ExtractionDate <- as.Date("2025-03-07")
+  frozen <- workr::RunWorkflow(
+    workflow,
+    lData = list(Analysis_Summary = results, Reporting_ActionLog = action_log)
+  )
+  expect_equal(frozen$Analysis_Summary$Numerator, 8)
+  missing <- workr::RunWorkflow(
+    workflow,
+    lData = list(Analysis_Summary = results, Reporting_ActionLog = action_log[0, ])
+  )
+  expect_equal(missing$Analysis_Summary$Numerator, 12)
 })

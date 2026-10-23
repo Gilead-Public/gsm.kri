@@ -37,10 +37,132 @@ make_action_score_log <- function() {
       "No Action", "Open Action", "Closed Action",
       "Awaiting Triage", "No Action", "Open Action"
     ),
-    ExtractionDate = as.Date("2025-03-07"),
+    ExtractionDate = results$SnapshotDate,
     stringsAsFactors = FALSE
   )
 }
+
+test_that("multiple actions use the largest factor without duplicating a KRI (#280)", {
+  action_log <- make_action_score_log()
+  action_log$ExtractionDate <- make_action_score_results()$SnapshotDate
+  action_log$RiskSignalID <- paste0("RS-", seq_len(nrow(action_log)))
+  action_log$ActionID <- paste0("ACT-", seq_len(nrow(action_log)))
+  additional_action <- action_log[1, ]
+  additional_action$ActionID <- "ACT-additional"
+  additional_action$State <- "Open Action"
+  action_log <- rbind(action_log, additional_action)
+
+  detail <- MakeActionRiskScoreDetail(
+    make_action_score_results(), make_action_score_weights(), action_log
+  )
+  contribution <- detail[detail$GroupID == "1001" &
+    detail$MetricID == "Analysis_kri0001", ]
+
+  expect_equal(nrow(detail), 6)
+  expect_equal(contribution$ActionFactor, 1)
+  expect_equal(contribution$EffectiveWeight, 4)
+  expect_equal(contribution$ActionCount, 2L)
+  expect_match(contribution$ActionID, "ACT-1", fixed = TRUE)
+  expect_match(contribution$ActionID, "ACT-additional", fixed = TRUE)
+  expect_equal(contribution$RiskSignalID, "RS-1")
+  expect_equal(
+    detail,
+    MakeActionRiskScoreDetail(
+      make_action_score_results(), make_action_score_weights(),
+      action_log[nrow(action_log):1, ]
+    )
+  )
+  custom <- MakeActionRiskScoreDetail(
+    make_action_score_results(), make_action_score_weights(), action_log,
+    lActionFactors = c(
+      "No Action" = 0.2, "Open Action" = 0.6,
+      "Closed Action" = 0.8, "Awaiting Triage" = 1
+    )
+  )
+  expect_equal(custom$ActionFactor[1], 0.6)
+  duplicate <- rbind(action_log, action_log[1, ])
+  expect_error(
+    MakeActionRiskScoreDetail(
+      make_action_score_results(), make_action_score_weights(), duplicate
+    ),
+    "scoring key must be unique"
+  )
+})
+
+test_that("later extracted triage is not known at the data snapshot (#280)", {
+  action_log <- make_action_score_log()
+  action_log$ExtractionDate <- as.Date("2025-03-07")
+  detail <- MakeActionRiskScoreDetail(
+    make_action_score_results(), make_action_score_weights(), action_log,
+    strMissingState = "include"
+  )
+  expect_equal(detail$EffectiveWeight, detail$Weight)
+  expect_true(all(detail$ActionSource == "Missing"))
+
+  frozen <- MakeActionRiskScoreDetail(
+    make_action_score_results(), make_action_score_weights(), action_log,
+    dActionExtractionDate = as.Date("2025-03-07")
+  )
+  expect_equal(frozen$ActionExtractionDate, rep(as.Date("2025-03-07"), 6))
+  expect_equal(frozen$EffectiveWeight, c(0, 4, 8, 4, 0, 8))
+})
+
+test_that("the latest complete extraction is selected before signal matching (#280)", {
+  earlier <- make_action_score_log()
+  earlier$ExtractionDate <- as.Date("2025-02-27")
+  earlier$State <- "Open Action"
+  earlier$SnapshotDate <- as.Date("2025-01-31")
+  later <- make_action_score_log()
+  later$ExtractionDate <- as.Date("2025-02-28")
+  later <- later[-1, ]
+  detail <- MakeActionRiskScoreDetail(
+    make_action_score_results(), make_action_score_weights(),
+    rbind(earlier, later), strMissingState = "include"
+  )
+  expect_equal(detail$ActionSource[1], "Missing")
+  expect_true(is.na(detail$ActionExtractionDate[1]))
+  expect_equal(detail$EffectiveWeight[1], 4)
+})
+
+test_that("extraction cutoffs require one non-missing Date (#280)", {
+  for (invalid in list("not-a-date", "2025-02-30", "2025-02-28-extra", as.Date(NA), as.Date(character()),
+    as.Date(c("2025-02-27", "2025-02-28")))) {
+    expect_error(
+      MakeActionRiskScoreDetail(
+        make_action_score_results(), make_action_score_weights(),
+        make_action_score_log(), dActionExtractionDate = invalid
+      ),
+      "dActionExtractionDate"
+    )
+  }
+})
+
+test_that("bundled frozen core extractions score without historical leakage (#280)", {
+  weights <- MakeWeights(gsm.core::reportingMetrics)
+  snapshots <- sort(unique(gsm.core::reportingResults$SnapshotDate))
+  for (index in seq_along(snapshots)) {
+    snapshot <- snapshots[index]
+    results <- gsm.core::reportingResults
+    results <- results[results$SnapshotDate == snapshot &
+      results$GroupLevel == "Site" & grepl("^Analysis_kri", results$MetricID) &
+      results$MetricID %in% weights$MetricID, ]
+    results <- results[paste(results$MetricID, results$Flag) %in%
+      paste(weights$MetricID, weights$Flag), ]
+    archive <- gsm.core::reportingActionLog
+    detail <- MakeActionRiskScoreDetail(results, weights, archive, strMissingState = "include")
+    frozen <- archive[archive$ExtractionDate <= snapshot, ]
+    expect_equal(
+      detail,
+      MakeActionRiskScoreDetail(results, weights, frozen, strMissingState = "include")
+    )
+    expect_equal(nrow(detail), nrow(results))
+    expect_true(any(detail$ActionCount > 1, na.rm = TRUE))
+    score <- CalculateActionRiskScore(results, weights, archive, strMissingState = "include")
+    raw <- CalculateRiskScore(results, weights)
+    expect_equal(score$Denominator, raw$Denominator)
+    expect_true(all(score$Numerator <= raw$Numerator))
+  }
+})
 
 test_that("CalculateActionRiskScore filters numerator weights by action state (#280)", {
   result <- CalculateActionRiskScore(
@@ -177,7 +299,8 @@ test_that("MakeActionRiskScoreDetail explains every weighted contribution (#280)
   expect_named(detail, c(
     "StudyID", "SnapshotDate", "GroupLevel", "GroupID", "MetricID", "Flag",
     "Weight", "WeightMax", "ActionState", "ActionSnapshotDate", "ActionSource",
-    "ActionFactor", "EffectiveWeight"
+    "ActionFactor", "EffectiveWeight", "ActionExtractionDate",
+    "RiskSignalID", "ActionID", "ActionCount"
   ))
   expect_equal(nrow(detail), nrow(make_action_score_results()))
 

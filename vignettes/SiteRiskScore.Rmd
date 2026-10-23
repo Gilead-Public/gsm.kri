@@ -205,29 +205,40 @@ action_weighted_score <- CalculateActionRiskScore(
 
 ### Which ActionLog entry is used
 
-`Reporting_ActionLog` is a frozen extract taken when a snapshot is generated,
-so it only contains decisions made up to that point. It keeps a history: the
-same site and metric can have entries at several `SnapshotDate`s.
+Grail's ActionLog is a frozen source-system read. Its `SnapshotDate` identifies
+the originating signal, not when its current state became known. Several
+signal snapshots in one extraction are not a state-change history.
 
-- For each site and metric, the latest entry on or before the results
-  `SnapshotDate` is used. `dActionSnapshotDate` sets an earlier "as of" date;
-  it cannot be later than the results snapshot.
-- Entries are matched to KRI results on
-  `StudyID + GroupLevel + GroupID + MetricID`, and
-  `StudyID + SnapshotDate + GroupLevel + GroupID + MetricID` must be unique
-  across the extract.
-- Scoring an earlier snapshot therefore uses only what was known at that point,
-  and entries dated after the results snapshot are ignored.
+1. Select the latest complete `ExtractionDate` on or before the results
+   snapshot. `dActionExtractionDate` can explicitly select the later freeze
+   associated with a scoring run. Persist that extraction to replay the run;
+   do not reconstruct earlier decisions from a later source-system read.
+2. Within that extraction, select the latest signal snapshot for each
+   `StudyID + GroupLevel + GroupID + MetricID`. `dActionSnapshotDate` can
+   impose an earlier signal-snapshot cutoff, but does not time-travel states.
+3. Keep every signal and action at that snapshot and use their largest
+   configured factor. For example, `No Action` plus `Open Action` counts in
+   full with the default factors. Each KRI still contributes only once.
 
-Only the state of that one entry is used; earlier entries for the same signal
-do not affect the score.
+Do not fill gaps in the selected extraction with records from older reads.
+`RiskSignalID` and `ActionID` are character identifiers; multiple action rows
+are valid, while repeated row identities within an extraction are rejected.
+For a legacy input without identifiers, the five-column result key must remain
+unique within each extraction.
+
+Use the compatible `State` field: grail derives it from `ActionState` when an
+action exists, otherwise from `RiskSignalState`. Using `ActionState` alone
+would discard unactioned triage decisions. Action lifecycle dates cannot
+reconstruct arbitrary historical state transitions.
 
 ### Missing action states
 
 A KRI with a nonzero weight and no matching ActionLog entry is an error by
 default (`strMissingState = "error"`). Choose `"include"` to count its full
 weight until it is triaged, or `"exclude"` to drop it. Zero-weight KRIs never
-need an ActionLog entry.
+need an ActionLog entry. The workflow defaults to `"include"` because new or
+deliberately suppressed signals may have no source-system record; the function
+keeps its explicit `"error"` default for callers needing strict completeness.
 
 ### Workflow
 
@@ -235,6 +246,9 @@ The `srs0002.yaml` workflow reads the persisted `Analysis_Summary` and
 `Reporting_ActionLog` domains, which keeps ADO credentials and extraction timing
 outside `{gsm.kri}`, and returns `Analysis_srs0002` alongside `srs0001`. The
 original `srs0001` remains unchanged as the comparison and rollback baseline.
+`meta.ActionExtractionDate` is optional and defaults to the results snapshot;
+set it to a `Date` or an ISO `YYYY-MM-DD` string when a persisted scoring run
+used a later frozen extraction.
 
 ### Reporting
 
@@ -244,7 +258,8 @@ existing **Risk Score** (`Analysis_srs0001`) column.
 
 `MakeActionRiskScoreDetail()` returns the per-KRI rows behind the score: each
 KRI's weight, the ActionLog state and date applied, and the resulting effective
-weight. `CalculateActionRiskScore()` summarizes these same rows, so the two
+weight. It also retains `ActionExtractionDate`, sorted signal and action
+identifiers, and `ActionCount` for audit. `CalculateActionRiskScore()` summarizes these same rows, so the two
 always agree. Passing them to `Report_KRI(dfRiskScoreDetail = ...)` adds:
 
 - a small "▼N" marker on each Adjusted Risk Score that is lower than the Risk

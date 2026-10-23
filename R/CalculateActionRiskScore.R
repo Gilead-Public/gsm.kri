@@ -14,8 +14,10 @@
 #' @param dfActionLog ActionLog rows with the five-column result key, `State`,
 #'   and `ExtractionDate`, for the same `StudyID` as `dfResults`. It may hold
 #'   several entries per group and metric at different `SnapshotDate`s; for
-#'   each group and metric the latest entry on or before `dActionSnapshotDate`
-#'   is used. The five-column key must be unique.
+#'   each group and metric the latest signal snapshot on or before
+#'   `dActionSnapshotDate` is used within the selected frozen extraction.
+#'   Multiple actions and signals at that snapshot are reduced using the
+#'   largest configured factor. Identifiers must distinguish those rows.
 #' @param lActionFactors Named numeric state-factor mapping. Defaults to include
 #'   open, closed, and awaiting-triage findings and exclude no-action findings.
 #' @param strMissingState Policy for a missing action state on a nonzero KRI
@@ -24,6 +26,13 @@
 #' @param dActionSnapshotDate `Date` "As of" date for ActionLog entries. `NULL`
 #'   (default) uses the `dfResults` `SnapshotDate`. Must not be later than the
 #'   `dfResults` `SnapshotDate`.
+#' @param dActionExtractionDate `Date` or ISO `YYYY-MM-DD` cutoff for frozen
+#'   ActionLog extractions.
+#'   `NULL` uses the results snapshot date. The latest complete extraction on
+#'   or before this cutoff is selected, without filling gaps from older
+#'   extractions. Set an explicit date when replaying a scoring run whose
+#'   ActionLog was frozen after the data snapshot. Signal snapshot dates do
+#'   not establish when action states became known.
 #'
 #' @return A canonical risk score data frame with the same output schema as
 #'   [CalculateRiskScore()].
@@ -40,7 +49,8 @@ CalculateActionRiskScore <- function(
   ),
   strMissingState = c("error", "include", "exclude"),
   strMetricID = "Analysis_srs0002",
-  dActionSnapshotDate = NULL
+  dActionSnapshotDate = NULL,
+  dActionExtractionDate = NULL
 ) {
   dfDetail <- MakeActionRiskScoreDetail(
     dfResults = dfResults,
@@ -49,7 +59,8 @@ CalculateActionRiskScore <- function(
     lActionFactors = lActionFactors,
     strMissingState = strMissingState,
     strMetricID = strMetricID,
-    dActionSnapshotDate = dActionSnapshotDate
+    dActionSnapshotDate = dActionSnapshotDate,
+    dActionExtractionDate = dActionExtractionDate
   )
 
   SummarizeRiskScore(dfDetail, "EffectiveWeight", strMetricID)
@@ -68,7 +79,9 @@ CalculateActionRiskScore <- function(
 #'   `GroupID`, `MetricID`, `Flag`, `Weight`, `WeightMax`, `ActionState`,
 #'   `ActionSnapshotDate` (the `SnapshotDate` of the ActionLog entry applied),
 #'   `ActionSource` (`"ActionLog"`, `"Missing"`, or `"Zero weight"`),
-#'   `ActionFactor`, and `EffectiveWeight`.
+#'   `ActionFactor`, `EffectiveWeight`, `ActionExtractionDate`, `RiskSignalID`,
+#'   `ActionID`, and `ActionCount`. States and identifiers from multiple rows
+#'   are sorted and comma-separated; `ActionCount` counts distinct actions.
 #' @export
 MakeActionRiskScoreDetail <- function(
   dfResults,
@@ -82,7 +95,8 @@ MakeActionRiskScoreDetail <- function(
   ),
   strMissingState = c("error", "include", "exclude"),
   strMetricID = "Analysis_srs0002",
-  dActionSnapshotDate = NULL
+  dActionSnapshotDate = NULL,
+  dActionExtractionDate = NULL
 ) {
   strMissingState <- match.arg(strMissingState)
   result_context <- .validate_single_study_snapshot(dfResults, "dfResults")
@@ -104,6 +118,20 @@ MakeActionRiskScoreDetail <- function(
       (!inherits(dActionSnapshotDate, "Date") ||
         length(dActionSnapshotDate) != 1L || is.na(dActionSnapshotDate))) {
     stop("dActionSnapshotDate must be NULL or a single non-missing Date.", call. = FALSE)
+  }
+  if (!is.null(dActionExtractionDate) &&
+      is.character(dActionExtractionDate) && length(dActionExtractionDate) == 1L &&
+      !is.na(dActionExtractionDate)) {
+    parsed_date <- as.Date(dActionExtractionDate, format = "%Y-%m-%d")
+    if (!is.na(parsed_date) &&
+        identical(format(parsed_date, "%Y-%m-%d"), dActionExtractionDate)) {
+      dActionExtractionDate <- parsed_date
+    }
+  }
+  if (!is.null(dActionExtractionDate) &&
+      (!inherits(dActionExtractionDate, "Date") ||
+        length(dActionExtractionDate) != 1L || is.na(dActionExtractionDate))) {
+    stop("dActionExtractionDate must be NULL or a single non-missing Date.", call. = FALSE)
   }
   action_study <- unique(dfActionLog$StudyID[!is.na(dfActionLog$StudyID)])
   if (nrow(dfActionLog) > 0L &&
@@ -132,7 +160,11 @@ MakeActionRiskScoreDetail <- function(
       any(dfActionLog$ExtractionDate < dfActionLog$SnapshotDate)) {
     stop("dfActionLog ExtractionDate must not predate SnapshotDate.", call. = FALSE)
   }
-  if (any(duplicated(dfActionLog[, .risk_score_action_key]))) {
+  identity_columns <- c(
+    .risk_score_action_key, "ExtractionDate",
+    intersect(c("RiskSignalID", "ActionID"), names(dfActionLog))
+  )
+  if (any(duplicated(dfActionLog[, identity_columns]))) {
     stop("The ActionLog scoring key must be unique before scoring.", call. = FALSE)
   }
 
@@ -147,14 +179,25 @@ MakeActionRiskScoreDetail <- function(
       call. = FALSE
     )
   }
-  # The ActionLog keeps a history of entries per signal; the latest entry on
-  # or before the as-of date is the state known when the snapshot was scored.
+  extraction_cutoff <- if (is.null(dActionExtractionDate)) {
+    result_context$SnapshotDate
+  } else {
+    dActionExtractionDate
+  }
   dfActionCurrent <- dfActionLog[
-    dfActionLog$SnapshotDate <= as_of, ,
-    drop = FALSE
+    dfActionLog$ExtractionDate <= extraction_cutoff, , drop = FALSE
+  ]
+  if (nrow(dfActionCurrent) > 0L) {
+    dfActionCurrent <- dfActionCurrent[
+      dfActionCurrent$ExtractionDate == max(dfActionCurrent$ExtractionDate), ,
+      drop = FALSE
+    ]
+  }
+  dfActionCurrent <- dfActionCurrent[
+    dfActionCurrent$SnapshotDate <= as_of, , drop = FALSE
   ] %>%
     dplyr::group_by(dplyr::across(dplyr::all_of(.risk_score_action_join_key))) %>%
-    dplyr::slice_max(.data$SnapshotDate, n = 1L, with_ties = FALSE) %>%
+    dplyr::slice_max(.data$SnapshotDate, n = 1L, with_ties = TRUE) %>%
     dplyr::ungroup()
 
   action_factors <- .normalize_action_factors(lActionFactors)
@@ -167,17 +210,33 @@ MakeActionRiskScoreDetail <- function(
       call. = FALSE
     )
   }
+  for (column in c("RiskSignalID", "ActionID")) {
+    if (!column %in% names(dfActionCurrent)) {
+      dfActionCurrent[[column]] <- rep(NA_character_, nrow(dfActionCurrent))
+    }
+  }
+  dfActionCurrent$ActionFactor <- unname(action_factors[dfActionCurrent$State])
+  dfActionCurrent$ActionFactor[is.na(dfActionCurrent$ActionFactor)] <-
+    if (strMissingState == "exclude") 0 else 1
+  dfActionCurrent <- dfActionCurrent %>%
+    dplyr::group_by(dplyr::across(dplyr::all_of(.risk_score_action_join_key))) %>%
+    dplyr::summarize(
+      ActionState = .collapse_action_values(.data$State),
+      ActionSnapshotDate = .data$SnapshotDate[1L],
+      ActionExtractionDate = .data$ExtractionDate[1L],
+      RiskSignalID = .collapse_action_values(.data$RiskSignalID),
+      ActionCount = dplyr::n_distinct(.data$ActionID, na.rm = TRUE),
+      ActionID = .collapse_action_values(.data$ActionID),
+      ActionFactor = max(c(0, .data$ActionFactor)),
+      ActionStateMissing = anyNA(.data$State),
+      .groups = "drop"
+    )
 
   dfWeighted <- JoinRiskScoreWeights(dfResults, dfWeights, strMetricID)
   rows_before_join <- nrow(dfWeighted)
   dfEffective <- dfWeighted %>%
     dplyr::left_join(
-      dfActionCurrent %>%
-        dplyr::select(
-          dplyr::all_of(.risk_score_action_join_key),
-          ActionState = "State",
-          ActionSnapshotDate = "SnapshotDate"
-        ),
+      dfActionCurrent,
       by = .risk_score_action_join_key
     )
   if (nrow(dfEffective) != rows_before_join) {
@@ -187,7 +246,9 @@ MakeActionRiskScoreDetail <- function(
     ) # nocov end
   }
 
-  needs_state <- dfEffective$Weight != 0 & is.na(dfEffective$ActionState)
+  needs_state <- dfEffective$Weight != 0 &
+    (is.na(dfEffective$ActionState) |
+      dplyr::coalesce(dfEffective$ActionStateMissing, FALSE))
   if (strMissingState == "error" && any(needs_state)) {
     stop(
       "ActionLog state is missing for one or more nonzero KRI weights.",
@@ -195,10 +256,9 @@ MakeActionRiskScoreDetail <- function(
     )
   }
 
-  configured_factor <- unname(action_factors[dfEffective$ActionState])
   dfEffective$ActionFactor <- dplyr::case_when(
     dfEffective$Weight == 0 ~ 0,
-    !is.na(dfEffective$ActionState) ~ configured_factor,
+    !is.na(dfEffective$ActionFactor) ~ dfEffective$ActionFactor,
     strMissingState == "include" ~ 1,
     strMissingState == "exclude" ~ 0
   )
@@ -214,6 +274,12 @@ MakeActionRiskScoreDetail <- function(
     dplyr::select(
       "StudyID", "SnapshotDate", "GroupLevel", "GroupID", "MetricID",
       "Flag", "Weight", "WeightMax", "ActionState", "ActionSnapshotDate",
-      "ActionSource", "ActionFactor", "EffectiveWeight"
+      "ActionSource", "ActionFactor", "EffectiveWeight", "ActionExtractionDate",
+      "RiskSignalID", "ActionID", "ActionCount"
     )
+}
+
+.collapse_action_values <- function(values) {
+  values <- sort(unique(as.character(values[!is.na(values)])))
+  if (length(values) == 0L) NA_character_ else paste(values, collapse = ", ")
 }

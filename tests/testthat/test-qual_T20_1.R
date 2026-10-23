@@ -47,7 +47,10 @@ test_that("Qual: action-weighted SRS matches independent AA evidence math (#280)
   ))
   expected_score <- expected_numerator / expected_denominator * 100
 
-  actual <- CalculateActionRiskScore(results, weights, action_log)
+  actual <- CalculateActionRiskScore(
+    results, weights, action_log,
+    dActionExtractionDate = as.Date("2025-03-07")
+  )
   raw <- CalculateRiskScore(results, weights)
 
   expect_equal(expected_numerator, 6)
