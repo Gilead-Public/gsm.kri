@@ -53,9 +53,10 @@ test('gsmViz loads exactly once, resolved from gsm.vizr, with main.css present (
   await page.goto(fileUrl);
   await page.waitForSelector('#pd-study-buckets canvas', { timeout: 20000 });
 
-  const indexJs = requests.filter((u) => /\/gsmViz-[\d.]+\/index\.js$/.test(u));
+  // Versions may carry a development suffix (e.g. 2.5.0-615).
+  const indexJs = requests.filter((u) => /\/gsmViz-[\d.]+(-\d+)?\/index\.js$/.test(u));
   expect(indexJs).toHaveLength(1);
-  const mainCss = requests.filter((u) => /\/gsmViz-[\d.]+\/main\.css$/.test(u));
+  const mainCss = requests.filter((u) => /\/gsmViz-[\d.]+(-\d+)?\/main\.css$/.test(u));
   expect(mainCss).toHaveLength(1);
   // No leftover copy of the deleted package-local widget bindings loads
   // alongside it (the thing that would make "exactly one" not enough).
