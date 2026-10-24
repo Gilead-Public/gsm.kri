@@ -1,0 +1,70 @@
+# Classify participants and vitals for the Repeat Measurements report
+
+\`r lifecycle::badge("experimental")\`
+
+Windows every vital of every enrolled participant once, with the same
+logic as the \`kri0020\` / \`cou0020\` metrics, so every section of the
+report reads one frame. Summing \`Numerator\` and \`Denominator\` by
+site or country reproduces the metrics.
+
+A participant's flag for a KRI vital uses one of two rules: \*
+\`"rate"\` (default): \`Numerator / Denominator\` against the vital's
+site metric thresholds (\`kri0020a\`–\`f\` \`Threshold\` in
+\`dfMetrics\`, else 20% / 30%): Amber at or above the first, Red at or
+above the second. \* \`"count"\`: Amber at 1 repeat window, Red at 2 or
+more.
+
+Participants with no evaluable window (\`Denominator\` 0) are \`Not
+evaluable\`. Height, BSA and any other numeric \`Mapped_VS\` column are
+windowed the same way and flagged \`No KRI\`.
+
+## Usage
+
+``` r
+rm_Classify(
+  lListings,
+  dfMetrics = NULL,
+  nWindowLength = NULL,
+  strFlagRule = c("rate", "count")
+)
+```
+
+## Arguments
+
+- lListings:
+
+  \`list\` with \`Mapped_SUBJ\` (enrolled participants with \`subjid\`,
+  \`invid\` and \`country\`) and \`Mapped_VS\`.
+
+- dfMetrics:
+
+  \`data.frame\` Reporting metrics; the \`kri0020\*\` rows supply the
+  window length and thresholds. Optional.
+
+- nWindowLength:
+
+  \`numeric\` Window length when \`dfMetrics\` has none. Default
+  \`NULL\`, meaning 3. When \`dfMetrics\` has a window length, it wins
+  and a different \`nWindowLength\` raises a warning.
+
+- strFlagRule:
+
+  \`character\` \`"rate"\` or \`"count"\`.
+
+## Value
+
+A \`list\`: \* \`participants\`: one row per participant and vital with
+\`studyid\`, \`country\`, \`invid\`, \`subjid\`, \`vital\`, \`metric\`,
+\`n_records\` (non-missing measurements), \`Numerator\`,
+\`Denominator\`, \`rate\` and \`flag\` (a factor with the levels of
+\[rm_FlagColors()\]). \* \`measurements\`: one row per non-missing
+measurement with \`studyid\`, \`country\`, \`invid\`, \`subjid\`,
+\`record\`, \`visit\`, \`vs_dt\`, \`vital\`, \`value\`, \`seq\`,
+\`in_repeat_window\` and \`window_start\` (see
+\[Mark_ConsecutiveRepeats()\]). \* \`records\`: the enrolled
+participants' \`Mapped_VS\` rows, with \`country\` and \`invid\` from
+\`Mapped_SUBJ\` and a \`record\` key that \`measurements\` refers to. \*
+\`vitals\`: the rows of \[rm_Vitals()\] in the report, plus any other
+numeric \`Mapped_VS\` column. \* \`meta\`: \`window_length\`,
+\`window_source\` (\`"metrics"\`, \`"argument"\` or \`"default"\`),
+\`rule\` and \`thresholds\` (per KRI vital).
