@@ -47,83 +47,24 @@ Detect_ConsecutiveRepeats <- function(
   strMeasureVal = NULL,
   nWindowLength = 3
 ) {
-  if (!is.data.frame(df)) {
-    cli::cli_abort("{.arg df} must be a data frame.")
-  }
-  if (
-    !is.numeric(nWindowLength) ||
-      length(nWindowLength) != 1 ||
-      !is.finite(nWindowLength) ||
-      nWindowLength < 2 ||
-      nWindowLength != round(nWindowLength)
-  ) {
-    cli::cli_abort(
-      "{.arg nWindowLength} must be a single whole number >= 2, not {.val {nWindowLength}}."
-    )
-  }
-  if (!is.null(strMeasureCol) && is.null(strMeasureVal)) {
-    cli::cli_abort(
-      "{.arg strMeasureVal} is required when {.arg strMeasureCol} is supplied."
-    )
-  }
-  # Validate each argument before c(), which would coerce numerics to strings
-  # and silently drop NULLs.
-  lScalarCols <- list(
+  lMarked <- .MarkRepeats(
+    df = df,
     strValueCol = strValueCol,
     strSubjectCol = strSubjectCol,
-    strDateCol = strDateCol
+    strDateCol = strDateCol,
+    strOrderCol = strOrderCol,
+    strMeasureCol = strMeasureCol,
+    strMeasureVal = strMeasureVal,
+    nWindowLength = nWindowLength
   )
-  if (!is.null(strMeasureCol)) {
-    lScalarCols$strMeasureCol <- strMeasureCol
-  }
-  for (strArg in names(lScalarCols)) {
-    x <- lScalarCols[[strArg]]
-    if (!is.character(x) || length(x) != 1 || is.na(x)) {
-      cli::cli_abort(
-        "{.arg {strArg}} must be a single non-missing character string."
-      )
-    }
-  }
-  if (
-    !is.null(strOrderCol) &&
-      (!is.character(strOrderCol) || !length(strOrderCol) || anyNA(strOrderCol))
-  ) {
-    cli::cli_abort(
-      "{.arg strOrderCol} must be a character vector without missing values."
-    )
-  }
-  lCols <- c(strValueCol, strSubjectCol, strDateCol, strOrderCol, strMeasureCol)
-  strMissing <- setdiff(lCols, names(df))
-  if (length(strMissing)) {
-    cli::cli_abort("Column{?s} not found in {.arg df}: {.val {strMissing}}.")
-  }
-
-  if (!is.null(strMeasureCol)) {
-    df <- df[df[[strMeasureCol]] %in% strMeasureVal, , drop = FALSE]
-  }
-
-  # Subjects whose values are all missing still get a 0/0 row.
-  vSubjects <- unique(df[[strSubjectCol]])
-  df <- df[!is.na(df[[strValueCol]]), , drop = FALSE]
-  # arrange() is stable and sorts in the C locale, so full ties keep input order.
-  df <- dplyr::arrange(
-    df,
-    dplyr::pick(dplyr::all_of(c(strSubjectCol, strDateCol, strOrderCol)))
-  )
-
-  lBySubject <- split(
-    df[[strValueCol]],
-    factor(df[[strSubjectCol]], levels = vSubjects)
-  )
+  vSubjects <- lMarked$vSubjects
+  fSubject <- factor(lMarked$df[[strSubjectCol]], levels = vSubjects)
   nNumerator <- vapply(
-    lBySubject,
-    function(x) {
-      nRuns <- rle(x)$lengths
-      sum(pmax(0, nRuns - nWindowLength + 1))
-    },
+    split(lMarked$df$window_start, fSubject),
+    function(x) as.numeric(sum(x)),
     numeric(1)
   )
-  nDenominator <- pmax(0, lengths(lBySubject) - nWindowLength + 1)
+  nDenominator <- pmax(0, tabulate(fSubject, length(vSubjects)) - nWindowLength + 1)
 
   dfOut <- data.frame(
     SubjectID = vSubjects,

@@ -1,0 +1,401 @@
+---
+# pagetitle sets only the browser tab; the visible title is the H1 below, which
+# also renders in the knit_child pkgdown embed.
+pagetitle: "Repeat Measurements"
+output:
+  html_document:
+    mathjax: null
+    md_extensions: "-tex_math_dollars"
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    css: styles.css
+params:
+  dfResults: NA
+  dfMetrics: NA
+  lListings: NA
+  dSnapshotDate: NA
+  nWindowLength: NA
+  strFlagRule: "rate"
+  bExport: TRUE
+---
+
+```{r setup, include=FALSE}
+library(gsm.kri)
+
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+
+# Unset YAML params arrive as NA.
+param <- function(x) {
+  if (is.null(x) || (is.atomic(x) && length(x) == 1 && is.na(x))) NULL else x
+}
+dfResults <- param(params$dfResults)
+dfMetrics <- param(params$dfMetrics)
+lListings <- params$lListings
+dSnapshotDate <- param(params$dSnapshotDate)
+bExport <- isTRUE(params$bExport)
+
+# One classification feeds every section.
+lClass <- rm_Classify(
+  lListings,
+  dfMetrics = dfMetrics,
+  nWindowLength = param(params$nWindowLength),
+  strFlagRule = param(params$strFlagRule) %||% "rate"
+)
+dfVitals <- rm_Vitals()
+dfVitals <- dfVitals[!is.na(dfVitals$metric), ]
+nW <- lClass$meta$window_length
+has_participants <- nrow(lClass$participants) > 0
+has_vs <- has_participants && nrow(lClass$measurements) > 0
+has_evaluable <- any(lClass$participants$Denominator > 0 & !is.na(lClass$participants$metric))
+in_cmp <- lClass$meta$window_source == "metrics"
+dfRecon <- rm_Reconcile(lClass$participants, dfResults)
+
+dist_rows <- lapply(
+  c(study = "study", country = "country", site = "site"),
+  function(level) rm_DistributionRows(lClass$participants, level)
+)
+dist_order <- function(level, vital = NULL) {
+  df <- dist_rows[[level]]
+  if (!is.null(vital)) df <- df[df$vital == vital, ]
+  unique(df$GroupID)
+}
+tiles <- rm_ParticipantTiles(lClass)
+listing <- rm_VitalsListing(
+  rm_VitalRows(lClass),
+  rm_RecordRows(lClass),
+  lClass$vitals,
+  bExport = bExport
+)
+
+pct <- function(x) paste0(format(100 * x), "%")
+rule_text <- if (lClass$meta$rule == "rate") {
+  th <- lClass$meta$thresholds[[1]]
+  sprintf("rate (Amber \u2265 %s, Red \u2265 %s of a participant's windows)", pct(th[1]), pct(th[2]))
+} else {
+  "count (Amber: 1 repeat window, Red: 2 or more)"
+}
+```
+
+# Repeat Measurements
+
+```{r subtitle, echo=FALSE, results='asis'}
+cat(sprintf(
+  "**Study:** %s  \n*%sWindow length W = %s*\n\n",
+  paste(unique(lListings$Mapped_SUBJ$studyid), collapse = ", "),
+  if (is.null(dSnapshotDate)) "" else paste0("Snapshot date: ", format(dSnapshotDate), " \u00b7 "),
+  nW
+))
+```
+
+```{r how-to-read, echo=FALSE, results='asis'}
+cat(sprintf('
+<details class="rm-how">
+<summary>How to read this report</summary>
+<ul>
+<li>A <strong>window</strong> is %1$s consecutive measurements of one vital for one participant, in visit order (missing values skipped). A window <strong>repeats</strong> when all %1$s values are identical. Each participant and vital has <strong>N</strong> repeating windows of <strong>D</strong> windows; the KRIs <code>kri0020a</code>&ndash;<code>f</code> sum N and D by site.</li>
+<li>Participants are <strong>evaluable</strong> for a vital once they have %1$s measurements (D &gt; 0). Flag rule: %2$s.</li>
+<li>Pick a vital group in the bar below to focus every section. Click a country or site bar, or a participant in the Participant Listing, to filter; remove a filter with its &times;.</li>
+<li>In the Participant Listing, click a vital header to see the measurements in order; repeat-window values are dark red. In the Vitals listing, click a row to see all of that participant&rsquo;s records.</li>
+</ul>
+</details>
+', nW, rule_text))
+```
+
+```{r css, echo=FALSE, results='asis'}
+# Inline and literal hex: the pkgdown embed loads neither styles.css nor its
+# var(--...) tokens.
+cat('
+<style>
+.rm-filter-strip { position: sticky; top: 48px; z-index: 1029; display: flex; align-items: center; flex-wrap: wrap; gap: 10px; background-color: #f1f7fe; border-bottom: 1px solid #cfe3fb; padding: 8px 14px; margin: 0 0 16px; }
+.rm-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #5b7193; }
+.rm-seg { display: inline-flex; border: 1px solid #3C587F; border-radius: 16px; overflow: hidden; }
+.rm-seg button { border: none; background-color: #ffffff; color: #3C587F; font-size: 13px; padding: 3px 12px; cursor: pointer; }
+.rm-seg button + button { border-left: 1px solid #3C587F; }
+.rm-seg button[aria-pressed="true"] { background-color: #3C587F; color: #ffffff; }
+.rm-seg button:focus-visible, .rm-chip button:focus-visible { outline: 2px solid #3C587F; outline-offset: 2px; }
+.rm-chip { display: inline-flex; align-items: center; gap: 6px; background-color: #ffffff; border: 1px solid #3C587F; border-radius: 16px; padding: 3px 6px 3px 12px; font-size: 13px; color: #3C587F; }
+.rm-chip-value { font-weight: 600; }
+.rm-chip button { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; padding: 0; border: none; border-radius: 50%; background-color: transparent; color: #3C587F; font-size: 13px; line-height: 1; cursor: pointer; }
+.rm-chip button:hover { background-color: #3C587F; color: #ffffff; }
+.rm-note { color: #8A5A00; background-color: #FFF6E0; padding: 6px 10px; border-radius: 4px; }
+.rm-how { margin: 0 0 12px; }
+.rm-how summary { cursor: pointer; color: #3C587F; font-weight: 600; }
+.rm-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin: 8px 0; font-size: 13px; }
+.rm-controls label { font-weight: normal; margin: 0; }
+.rm-btn { border: 1px solid #3C587F; background: #ffffff; color: #3C587F; border-radius: 4px; padding: 2px 10px; font-size: 13px; cursor: pointer; }
+.rm-btn:hover { background: #3C587F; color: #ffffff; }
+#rm-overview table { width: auto; }
+#rm-overview td, #rm-overview th { text-align: right; padding: 4px 10px; vertical-align: middle; }
+#rm-overview .v { font-size: 1.1em; }
+#rm-overview .b { color: #666666; font-size: smaller; white-space: nowrap; }
+.rm-recon { font-size: 13px; color: #57606a; margin: 6px 0; }
+.rm-recon .ok { color: #1a7f37; }
+.rm-recon .bad { color: #cf222e; }
+.rm-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 12px; }
+.rm-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; border: 1px solid #8c959f; vertical-align: -1px; }
+.rm-vals b { display: inline-block; min-width: 26px; margin-right: 2px; padding: 0 3px; font-weight: normal; text-align: center; border-radius: 3px; background: #f0f2f5; }
+.rm-vals b.rw { background: #B5462F; color: #ffffff; }
+.rm-compact .rm-vals b { min-width: 0; width: 9px; height: 13px; padding: 0; font-size: 0; vertical-align: middle; background: #d0d7de; }
+.rm-compact .rm-vals b.rw { background: #B5462F; }
+#rm-records td.rw { background: #B5462F; color: #ffffff; }
+#rm-vitals tbody tr { cursor: pointer; }
+.rm-crumb { font-size: 14px; margin: 6px 0; }
+/* Clears the navbar and the sticky strip when a contents link jumps to a section. */
+.section.level2, .section.level3 { scroll-margin-top: 100px; }
+#rm-overview, #rm-vitals, #rm-records { overflow-x: auto; }
+</style>
+')
+```
+
+```{r filter-strip, echo=FALSE}
+# htmltools, not raw HTML, so pandoc does not wrap the controls in a <p>.
+chip <- function(key, label) {
+  htmltools::tags$span(
+    id = paste0("rm-chip-", key),
+    class = "rm-chip",
+    style = "display:none;",
+    htmltools::tags$span(label, ": ", htmltools::tags$span(class = "rm-chip-value")),
+    htmltools::tags$button(
+      type = "button",
+      `data-rm-clear` = key,
+      `aria-label` = paste("Clear", tolower(label), "filter"),
+      htmltools::HTML("&times;")
+    )
+  )
+}
+vGroups <- c("All", sort(unique(dfVitals$group)))
+htmltools::tags$div(
+  id = "rm-filter-strip",
+  class = "rm-filter-strip",
+  htmltools::tags$span(class = "rm-eyebrow", "Vitals"),
+  htmltools::tags$span(
+    class = "rm-seg",
+    role = "group",
+    `aria-label` = "Vital group",
+    lapply(vGroups, function(g) {
+      htmltools::tags$button(
+        id = paste0("rm-group-", g),
+        type = "button",
+        `data-rm-group` = g,
+        `aria-pressed` = if (g == "All") "true" else "false",
+        g
+      )
+    })
+  ),
+  chip("country", "Country"),
+  chip("site", "Site"),
+  chip("subj", "Participant")
+)
+```
+
+```{r degraded, echo=FALSE, results='asis'}
+if (!has_participants) {
+  cat("\n> **No enrolled participants.** Every section is empty for this snapshot.\n")
+} else if (!has_vs) {
+  cat("\n> **No vital signs recorded.** `Mapped_VS` has no measurements for the enrolled participants, so no participant is evaluable.\n")
+} else if (!has_evaluable) {
+  cat(sprintf("\n> **No evaluable participants.** No participant has %s measurements of a KRI vital yet.\n", nW))
+}
+if (!in_cmp) {
+  cat(sprintf(
+    "\n> The repeat-measure KRIs (`kri0020a`&ndash;`f`) are not in this study's metrics. The report uses W = %s and the default thresholds.\n",
+    nW
+  ))
+}
+```
+
+## Study overview
+
+<div id="rm-overview"></div>
+
+```{r reconcile, echo=FALSE, results='asis'}
+if (is.null(dfRecon)) {
+  cat("<p class=\"rm-recon\">No <code>kri0020</code> results to reconcile with.</p>\n")
+} else {
+  cat(
+    "<p class=\"rm-recon\">Reconciliation with the KRI (all enrolled participants, latest snapshot): ",
+    paste(vapply(seq_len(nrow(dfRecon)), function(i) {
+      r <- dfRecon[i, ]
+      short <- rm_Vitals()$short[match(r$vital, rm_Vitals()$vital)]
+      if (r$match) {
+        sprintf("%s %s/%s <span class=\"ok\">= %s &#10003;</span>", short, r$Numerator, r$Denominator, r$metric)
+      } else {
+        sprintf(
+          "%s %s/%s <span class=\"bad\">&ne; %s (%s/%s) &#10007;</span>",
+          short, r$Numerator, r$Denominator, r$metric, r$kri_Numerator, r$kri_Denominator
+        )
+      }
+    }, character(1)), collapse = " &middot; "),
+    "</p>\n",
+    sep = ""
+  )
+}
+cat(sprintf(
+  "<p class=\"rm-recon\">W = %s (%s) &middot; Flag rule: %s.</p>\n",
+  nW,
+  switch(lClass$meta$window_source, metrics = "from the kri0020 metrics", argument = "report argument", default = "default"),
+  rule_text
+))
+```
+
+## Participant distribution {.tabset .tabset-pills}
+
+```{r dist-note, echo=FALSE, results='asis'}
+cat("\n> Evaluable participants by flag, as % of the evaluable participants in each group, sorted by % flagged. Click a country or site bar to filter. Site labels are coloured by the site's KRI flag when the KRI results are available.\n")
+```
+
+### Study
+```{r dist-study, echo=FALSE, eval=has_participants}
+gsm.vizr::bars(
+  data = dist_rows$study,
+  spec = rm_DistributionSpec("study", dist_order("study"), "Evaluable participants by flag and vital"),
+  metadata = list(chartId = "rm-study", level = "study"),
+  height = 320,
+  minHeight = 320
+)
+```
+
+### Country
+```{r dist-country, echo=FALSE, eval=has_participants}
+htmltools::div(
+  class = "rm-grid",
+  lapply(seq_len(nrow(dfVitals)), function(i) {
+    v <- dfVitals$vital[i]
+    htmltools::div(
+      `data-rm-vital` = v,
+      gsm.vizr::bars(
+        data = dist_rows$country[dist_rows$country$vital == v, ],
+        spec = rm_DistributionSpec("country", dist_order("country", v), paste0(dfVitals$label[i], " (", dfVitals$metric[i], ")")),
+        metadata = list(chartId = paste0("rm-country-", v), level = "country", vital = v),
+        height = 320,
+        minHeight = 320
+      )
+    )
+  })
+)
+```
+
+### Site
+```{r dist-site, echo=FALSE, eval=has_participants}
+htmltools::div(
+  lapply(seq_len(nrow(dfVitals)), function(i) {
+    v <- dfVitals$vital[i]
+    htmltools::div(
+      `data-rm-vital` = v,
+      gsm.vizr::bars(
+        data = dist_rows$site[dist_rows$site$vital == v, ],
+        spec = rm_DistributionSpec("site", dist_order("site", v), paste0(dfVitals$label[i], " (", dfVitals$metric[i], ")")),
+        metadata = list(chartId = paste0("rm-site-", v), level = "site", vital = v),
+        height = 360,
+        minHeight = 360
+      )
+    )
+  })
+)
+```
+
+## Participant Listing
+
+```{r tiles-controls, echo=FALSE, eval=has_participants}
+htmltools::div(
+  class = "rm-controls",
+  htmltools::tags$span(
+    class = "rm-seg",
+    role = "group",
+    `aria-label` = "Cell label",
+    lapply(list(c("both", "Both"), c("rate", "Rate"), c("nd", "N/D")), function(x) {
+      htmltools::tags$button(
+        id = paste0("rm-label-", x[1]),
+        type = "button",
+        `data-rm-label` = x[1],
+        `aria-pressed` = if (x[1] == "both") "true" else "false",
+        x[2]
+      )
+    })
+  ),
+  htmltools::tags$label(
+    "Sort ",
+    htmltools::tags$select(
+      id = "rm-tiles-sort",
+      htmltools::tags$option(value = "worst", "Worst flag"),
+      htmltools::tags$option(value = "subjid", "Participant"),
+      htmltools::tags$option(value = "invid", "Site"),
+      lapply(seq_len(nrow(dfVitals)), function(i) {
+        htmltools::tags$option(value = paste0("rate:", dfVitals$vital[i]), paste(dfVitals$label[i], "rate"))
+      })
+    )
+  ),
+  htmltools::tags$input(id = "rm-tiles-search", type = "search", placeholder = "Search participant, site, country"),
+  if (bExport) htmltools::tags$button(id = "rm-tiles-csv", type = "button", class = "rm-btn", "Download CSV")
+)
+```
+
+```{r tiles, echo=FALSE, eval=has_participants}
+gsm.vizr::tiles(
+  data = tiles$tiles,
+  spec = rm_ParticipantTilesSpec(tiles$detail),
+  metadata = list(chartId = "rm-tiles")
+)
+```
+
+```{r tiles-note, echo=FALSE, results='asis'}
+cat("\n> One row per participant and one tile per KRI vital, coloured by the participant's flag: N/D is repeating windows of all windows, NE is not evaluable. Click a participant to filter the report to them; click again to clear. Click a vital header to show its measurements in order.\n")
+```
+
+## Vitals listing
+
+```{r vitals-controls, echo=FALSE, eval=has_participants}
+htmltools::div(
+  id = "rm-vitals-view",
+  htmltools::div(
+    class = "rm-controls",
+    htmltools::tags$label(htmltools::tags$input(id = "rm-show-values", type = "checkbox", checked = NA), " Show values"),
+    htmltools::tags$label(htmltools::tags$input(id = "rm-only-repeat", type = "checkbox", checked = NA), " Only rows with a repeat window"),
+    htmltools::tags$button(id = "rm-all-records", type = "button", class = "rm-btn", "All records in scope")
+  ),
+  htmltools::div(id = "rm-vitals-wrap", listing$vitals)
+)
+```
+
+```{r records, echo=FALSE, eval=has_participants}
+# Rendered visible: DT does not draw a table inside a hidden container.
+# rmFilters.js hides this view on load.
+htmltools::div(
+  id = "rm-records-view",
+  htmltools::div(
+    class = "rm-controls",
+    htmltools::tags$button(id = "rm-back", type = "button", class = "rm-btn", htmltools::HTML("&larr; Back to vitals")),
+    htmltools::tags$span(id = "rm-crumb", class = "rm-crumb")
+  ),
+  listing$records
+)
+```
+
+```{r vitals-note, echo=FALSE, results='asis'}
+cat(
+  "\n",
+  "> - One row per participant and vital, for every vital in the vital signs data. Height and BSA have no KRI.\n",
+  "> - **Measurements in order** are the values the windows run over; dark red values are in a repeat window. Untick **Show values** for a compact view.\n",
+  "> - Click a row for all of that participant's records, every vital, repeat-window values in dark red.\n",
+  sep = ""
+)
+```
+
+```{r rm-data, echo=FALSE, eval=has_participants}
+ipm_DataScript(
+  list(
+    overview = rm_OverviewRows(lClass$participants),
+    distribution = dist_rows,
+    siteFlags = rm_SiteFlags(dfResults),
+    vitals = lClass$vitals,
+    groups = dfVitals[c("vital", "group")],
+    export = bExport
+  ),
+  strId = "rm-data"
+)
+```
+
+```{js, file=system.file("report", "lib", "rmFilters.js", package = "gsm.kri"), echo=FALSE}
+```

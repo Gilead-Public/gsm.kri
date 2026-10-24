@@ -1,5 +1,6 @@
 # gsm.kri (development version)
 
+- Add the Repeat Measurements report for the repeat-measure vital sign KRIs (`kri0020a`-`f`). It shows a study overview that reconciles with the KRIs, flag distributions by study, country and site, a Participant Listing of per-vital flags, and a vitals listing that highlights repeated values and drills into the visit records. `Report_RepeatMeasurements()` renders it, and the `report_repeatmeasurements` module runs it in a workflow. Requires the `tiles()` widget from gsm.vizr (#340, #342-#348).
 - Add the IP monitoring report for IP non-starters and premature treatment discontinuations. Dosed participants are shown by study drug completion, including potential premature treatment discontinuations, and the participant listing shows study completion (#320, #332).
 - Added the IP Non-Starters metric: `kri0019` (site) and `cou0019` (country) count
   participants who are Confirmed non-starters or Potential non-starters outside the

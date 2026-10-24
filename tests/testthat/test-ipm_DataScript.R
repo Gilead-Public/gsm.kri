@@ -9,3 +9,9 @@ test_that("the data block escapes < and round-trips (#320)", {
   json <- sub("^<script[^>]*>(.*)</script>$", "\\1", html)
   expect_equal(jsonlite::fromJSON(json)$status$study$GroupID, "</script><b>")
 })
+
+test_that("the data block id can be set so other reports reuse it (#344)", {
+  html <- as.character(ipm_DataScript(list(a = 1), strId = "rm-data"))
+  expect_match(html, 'id="rm-data"', fixed = TRUE)
+  expect_false(grepl("ipc-data", html, fixed = TRUE))
+})

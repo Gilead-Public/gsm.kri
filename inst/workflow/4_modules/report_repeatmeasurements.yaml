@@ -1,0 +1,35 @@
+meta:
+  Type: Report
+  ID: report_repeatmeasurements
+  Output: html
+  Name: "Repeat Measurements"
+  Description: Participants with identical consecutive vital sign measurements (kri0020a-f), by study, country and site, with a participant listing and a vital signs listing
+  Active: true
+spec:
+  Mapped_VS:
+    _all:
+      required: true
+  Mapped_SUBJ:
+    _all:
+      required: true
+  Reporting_Results:
+    _all:
+      required: true
+  Reporting_Metrics:
+    _all:
+      required: true
+steps:
+  - output: lListings
+    name: list
+    params:
+      Mapped_VS: Mapped_VS
+      Mapped_SUBJ: Mapped_SUBJ
+  - output: strOutputDir
+    name: getwd
+  - output: lReport
+    name: gsm.kri::Report_RepeatMeasurements
+    params:
+      dfResults: Reporting_Results
+      dfMetrics: Reporting_Metrics
+      lListings: lListings
+      strOutputDir: strOutputDir
