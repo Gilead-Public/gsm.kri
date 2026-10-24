@@ -54,8 +54,8 @@ rm_FlagColors <- function() {
 #'
 #' A participant's flag for a KRI vital uses one of two rules:
 #' * `"rate"` (default): `Numerator / Denominator` against the vital's site
-#'   metric thresholds (`kri0020a`–`f` `Threshold` in `dfMetrics`, else 20% /
-#'   30%): Amber at or above the first, Red at or above the second.
+#'   metric thresholds (`kri0020a`–`f` `Threshold` in `dfMetrics`, else 20\% /
+#'   30\%): Amber at or above the first, Red at or above the second.
 #' * `"count"`: Amber at 1 repeat window, Red at 2 or more.
 #'
 #' Participants with no evaluable window (`Denominator` 0) are
@@ -77,9 +77,12 @@ rm_FlagColors <- function() {
 #'     (non-missing measurements), `Numerator`, `Denominator`, `rate` and
 #'     `flag` (a factor with the levels of [rm_FlagColors()]).
 #'   * `measurements`: one row per non-missing measurement with `studyid`,
-#'     `country`, `invid`, `subjid`, `visit`, `vs_dt`, `vital`, `value`,
-#'     `seq`, `in_repeat_window` and `window_start` (see
+#'     `country`, `invid`, `subjid`, `record`, `visit`, `vs_dt`, `vital`,
+#'     `value`, `seq`, `in_repeat_window` and `window_start` (see
 #'     [Mark_ConsecutiveRepeats()]).
+#'   * `records`: the enrolled participants' `Mapped_VS` rows, with `country`
+#'     and `invid` from `Mapped_SUBJ` and a `record` key that `measurements`
+#'     refers to.
 #'   * `vitals`: the rows of [rm_Vitals()] in the report, plus any other
 #'     numeric `Mapped_VS` column.
 #'   * `meta`: `window_length`, `window_source` (`"metrics"`, `"argument"` or
@@ -140,6 +143,7 @@ rm_Classify <- function(
   if (!is.null(dfVS) && nrow(dfVS) > 0) {
     dfVS <- dfVS[dfVS$subjid %in% dfSubj$subjid, setdiff(names(dfVS), c("studyid", "invid", "country")), drop = FALSE]
     dfVS <- dplyr::left_join(dfVS, dfSubj, by = "subjid")
+    dfVS$record <- seq_len(nrow(dfVS))
   }
   strOrderCol <- if ("visit" %in% names(dfVS)) "visit"
   dfMeasurements <- dplyr::bind_rows(lapply(
@@ -156,6 +160,7 @@ rm_Classify <- function(
         country = dfMarked$country,
         invid = dfMarked$invid,
         subjid = dfMarked$subjid,
+        record = dfMarked$record,
         visit = if (is.null(strOrderCol)) NA_character_ else as.character(dfMarked$visit),
         vs_dt = dfMarked$vs_dt,
         vital = rep(strVital, nrow(dfMarked)),
@@ -169,7 +174,7 @@ rm_Classify <- function(
   if (nrow(dfMeasurements) == 0) {
     dfMeasurements <- tibble::tibble(
       studyid = character(), country = character(), invid = character(),
-      subjid = character(), visit = character(), vs_dt = as.Date(character()),
+      subjid = character(), record = integer(), visit = character(), vs_dt = as.Date(character()),
       vital = character(), value = numeric(), seq = integer(),
       in_repeat_window = logical(), window_start = logical()
     )
@@ -226,6 +231,7 @@ rm_Classify <- function(
   list(
     participants = tibble::as_tibble(dfParticipants),
     measurements = dfMeasurements,
+    records = if (is.null(dfVS)) NULL else tibble::as_tibble(dfVS),
     vitals = dfVitals,
     meta = c(lWindow, list(rule = strFlagRule, thresholds = lThresholds))
   )

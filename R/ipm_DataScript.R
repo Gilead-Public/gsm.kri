@@ -8,11 +8,13 @@
 #' block.
 #'
 #' @param lData `list` Status rows and reason slices.
+#' @param strId `character` Element id of the script tag.
 #'
-#' @return An `htmltools` `<script type="application/json" id="ipc-data">` tag.
+#' @return An `htmltools` `<script type="application/json">` tag with id
+#'   `strId`.
 #' @keywords internal
 #' @export
-ipm_DataScript <- function(lData) {
+ipm_DataScript <- function(lData, strId = "ipc-data") {
   json <- jsonlite::toJSON(
     lData,
     dataframe = "rows",
@@ -22,7 +24,7 @@ ipm_DataScript <- function(lData) {
   )
   htmltools::tags$script(
     type = "application/json",
-    id = "ipc-data",
+    id = strId,
     htmltools::HTML(gsub("<", "\\\\u003c", json))
   )
 }
