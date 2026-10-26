@@ -73,7 +73,10 @@ child_env <- list2env(
       lListings = lListings,
       dSnapshotDate = dSnapshotDate,
       nWindowLength = NULL,
-      strFlagRule = "rate",
+      strFlagRule = "count",
+      vFlagThresholds = NULL,
+      nMinWindows = 1,
+      strBPMode = "separate",
       bExport = TRUE
     )
   ),
