@@ -2,7 +2,7 @@
 
 \`r lifecycle::badge("experimental")\`
 
-One tile per participant and KRI vital, with the three tile labels the
+One tile per participant and vital, with the three tile labels the
 report switches between. \[Widget_RepeatMeasurementsTiles()\] draws
 them.
 

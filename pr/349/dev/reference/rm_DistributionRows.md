@@ -2,13 +2,17 @@
 
 \`r lifecycle::badge("experimental")\`
 
-Evaluable participants per group, KRI vital and flag. Study rows have
-one bar per vital; country and site rows have one chart per vital.
+Evaluable participants per group, vital and flag. Study rows have one
+bar per vital; country and site rows have one chart per vital.
 
 ## Usage
 
 ``` r
-rm_DistributionRows(dfParticipants, strLevel = c("study", "country", "site"))
+rm_DistributionRows(
+  dfParticipants,
+  strLevel = c("study", "country", "site"),
+  dfVitals = rm_Vitals()
+)
 ```
 
 ## Arguments
@@ -20,6 +24,11 @@ rm_DistributionRows(dfParticipants, strLevel = c("study", "country", "site"))
 - strLevel:
 
   \`character\` \`"study"\`, \`"country"\` or \`"site"\`.
+
+- dfVitals:
+
+  \`data.frame\` \`vitals\` from \[rm_Classify()\]: the vital order and
+  the study bar labels. Default \[rm_Vitals()\].
 
 ## Value
 
