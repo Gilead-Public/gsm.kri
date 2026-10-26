@@ -5,7 +5,9 @@
 The vitals listing (§4): one row per participant and vital, for every
 vital in \`Mapped_VS\`, with the measurements in order. \`values\` and
 \`in_repeat_window\` are space-separated and aligned: \`"72 72 72 80"\`
-and \`"1 1 1 0"\`.
+and \`"1 1 1 0"\`; \`visits\` is aligned and \`\|\`-separated: the
+measurement's position, visit and date, such as \`"#1 · V1 ·
+2024-01-01"\`.
 
 ## Usage
 
@@ -23,6 +25,6 @@ rm_VitalRows(lClass)
 
 A \`tibble\` in display order (worst flag, then most repeat windows)
 with \`country\`, \`invid\`, \`subjid\`, \`label\`, \`metric\`,
-\`flag\`, \`measured\`, \`Numerator\`, \`Denominator\`, \`rate\`,
-\`values\`, \`in_repeat_window\`, and the hidden \`vital\` and
-\`has_repeat\` columns.
+\`n_unique\` (distinct values), \`flag\`, \`measured\`, \`Numerator\`,
+\`Denominator\`, \`rate\`, \`values\`, \`in_repeat_window\`, \`visits\`,
+and the hidden \`vital\` and \`has_repeat\` columns.

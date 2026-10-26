@@ -4,26 +4,30 @@ Windows every vital of every enrolled participant once, with the same
 logic as the `kri0020` / `cou0020` metrics, so every section of the report
 reads one frame. Summing `Numerator` and `Denominator` by site or country
 reproduces the metrics.
-A participant's flag for a KRI vital uses one of two rules:
-* `&quot;rate&quot;` (default): `Numerator / Denominator` against the vital's site
-  metric thresholds (`kri0020a`–`f` `Threshold` in `dfMetrics`, else 20% /
-  30%): Amber at or above the first, Red at or above the second.
-* `&quot;count&quot;`: Amber at 1 repeat window, Red at 2 or more.
-Participants with no evaluable window (`Denominator` 0) are
-`Not evaluable`. Height, BSA and any other numeric `Mapped_VS` column are
-windowed the same way and flagged `No KRI`."><meta property="og:description" content="`r lifecycle::badge(&quot;experimental&quot;)`
+A participant's flag for a flagged vital uses one of two rules:
+* `&quot;count&quot;` (default): repeating windows `Numerator` against
+  `vFlagThresholds` (default Amber at 2, Red at 3 or more).
+* `&quot;rate&quot;`: `Numerator / Denominator` against `vFlagThresholds` (default
+  the `kri0020` `Threshold` in `dfMetrics`, else 20% / 30%).
+Amber is at or above the first threshold, Red at or above the second.
+Participants with fewer than `nMinWindows` windows are `Not evaluable`.
+Height, BSA and any other numeric `Mapped_VS` column are windowed the same
+way and flagged `No KRI`. With `sysbp` and `diabp`, paired blood pressure
+(`bp`, see [rm_Vitals()]) is added."><meta property="og:description" content="`r lifecycle::badge(&quot;experimental&quot;)`
 Windows every vital of every enrolled participant once, with the same
 logic as the `kri0020` / `cou0020` metrics, so every section of the report
 reads one frame. Summing `Numerator` and `Denominator` by site or country
 reproduces the metrics.
-A participant's flag for a KRI vital uses one of two rules:
-* `&quot;rate&quot;` (default): `Numerator / Denominator` against the vital's site
-  metric thresholds (`kri0020a`–`f` `Threshold` in `dfMetrics`, else 20% /
-  30%): Amber at or above the first, Red at or above the second.
-* `&quot;count&quot;`: Amber at 1 repeat window, Red at 2 or more.
-Participants with no evaluable window (`Denominator` 0) are
-`Not evaluable`. Height, BSA and any other numeric `Mapped_VS` column are
-windowed the same way and flagged `No KRI`."><meta name="robots" content="noindex"></head><body>
+A participant's flag for a flagged vital uses one of two rules:
+* `&quot;count&quot;` (default): repeating windows `Numerator` against
+  `vFlagThresholds` (default Amber at 2, Red at 3 or more).
+* `&quot;rate&quot;`: `Numerator / Denominator` against `vFlagThresholds` (default
+  the `kri0020` `Threshold` in `dfMetrics`, else 20% / 30%).
+Amber is at or above the first threshold, Red at or above the second.
+Participants with fewer than `nMinWindows` windows are `Not evaluable`.
+Height, BSA and any other numeric `Mapped_VS` column are windowed the same
+way and flagged `No KRI`. With `sysbp` and `diabp`, paired blood pressure
+(`bp`, see [rm_Vitals()]) is added."><meta name="robots" content="noindex"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -81,14 +85,16 @@ windowed the same way and flagged `No KRI`."><meta name="robots" content="noinde
 logic as the `kri0020` / `cou0020` metrics, so every section of the report
 reads one frame. Summing `Numerator` and `Denominator` by site or country
 reproduces the metrics.</p>
-<p>A participant's flag for a KRI vital uses one of two rules:
-* `"rate"` (default): `Numerator / Denominator` against the vital's site
-  metric thresholds (`kri0020a`–`f` `Threshold` in `dfMetrics`, else 20% /
-  30%): Amber at or above the first, Red at or above the second.
-* `"count"`: Amber at 1 repeat window, Red at 2 or more.</p>
-<p>Participants with no evaluable window (`Denominator` 0) are
-`Not evaluable`. Height, BSA and any other numeric `Mapped_VS` column are
-windowed the same way and flagged `No KRI`.</p>
+<p>A participant's flag for a flagged vital uses one of two rules:
+* `"count"` (default): repeating windows `Numerator` against
+  `vFlagThresholds` (default Amber at 2, Red at 3 or more).
+* `"rate"`: `Numerator / Denominator` against `vFlagThresholds` (default
+  the `kri0020` `Threshold` in `dfMetrics`, else 20% / 30%).</p>
+<p>Amber is at or above the first threshold, Red at or above the second.
+Participants with fewer than `nMinWindows` windows are `Not evaluable`.
+Height, BSA and any other numeric `Mapped_VS` column are windowed the same
+way and flagged `No KRI`. With `sysbp` and `diabp`, paired blood pressure
+(`bp`, see [rm_Vitals()]) is added.</p>
     </div>
 
     <div class="section level2">
@@ -97,7 +103,9 @@ windowed the same way and flagged `No KRI`.</p>
 <span>  <span class="va">lListings</span>,</span>
 <span>  dfMetrics <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  nWindowLength <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  strFlagRule <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"rate"</span>, <span class="st">"count"</span><span class="op">)</span></span>
+<span>  strFlagRule <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"count"</span>, <span class="st">"rate"</span><span class="op">)</span>,</span>
+<span>  vFlagThresholds <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  nMinWindows <span class="op">=</span> <span class="fl">1</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -112,7 +120,7 @@ windowed the same way and flagged `No KRI`.</p>
 
 <dt id="arg-dfmetrics">dfMetrics<a class="anchor" aria-label="anchor" href="#arg-dfmetrics"></a></dt>
 <dd><p>`data.frame` Reporting metrics; the `kri0020*` rows supply
-the window length and thresholds. Optional.</p></dd>
+the window length and the rate thresholds. Optional.</p></dd>
 
 
 <dt id="arg-nwindowlength">nWindowLength<a class="anchor" aria-label="anchor" href="#arg-nwindowlength"></a></dt>
@@ -122,7 +130,18 @@ and a different `nWindowLength` raises a warning.</p></dd>
 
 
 <dt id="arg-strflagrule">strFlagRule<a class="anchor" aria-label="anchor" href="#arg-strflagrule"></a></dt>
-<dd><p>`character` `"rate"` or `"count"`.</p></dd>
+<dd><p>`character` `"count"` or `"rate"`.</p></dd>
+
+
+<dt id="arg-vflagthresholds">vFlagThresholds<a class="anchor" aria-label="anchor" href="#arg-vflagthresholds"></a></dt>
+<dd><p>`numeric` Amber and Red thresholds: repeating
+windows for `"count"`, a proportion of windows for `"rate"`. Default
+`NULL`: see Details.</p></dd>
+
+
+<dt id="arg-nminwindows">nMinWindows<a class="anchor" aria-label="anchor" href="#arg-nminwindows"></a></dt>
+<dd><p>`numeric` Windows a participant needs for a flag.
+Default 1.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -134,7 +153,8 @@ and a different `nWindowLength` raises a warning.</p></dd>
     `flag` (a factor with the levels of [rm_FlagColors()]).
   * `measurements`: one row per non-missing measurement with `studyid`,
     `country`, `invid`, `subjid`, `record`, `visit`, `vs_dt`, `vital`,
-    `value`, `seq`, `in_repeat_window` and `window_start` (see
+    `value` (`NA` for paired BP), `value_text` (the displayed value),
+    `seq`, `in_repeat_window` and `window_start` (see
     [Mark_ConsecutiveRepeats()]).
   * `records`: the enrolled participants' `Mapped_VS` rows, with `country`
     and `invid` from `Mapped_SUBJ` and a `record` key that `measurements`
@@ -142,7 +162,7 @@ and a different `nWindowLength` raises a warning.</p></dd>
   * `vitals`: the rows of [rm_Vitals()] in the report, plus any other
     numeric `Mapped_VS` column.
   * `meta`: `window_length`, `window_source` (`"metrics"`, `"argument"` or
-    `"default"`), `rule` and `thresholds` (per KRI vital).</p>
+    `"default"`), `rule`, `thresholds` (Amber, Red) and `min_windows`.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

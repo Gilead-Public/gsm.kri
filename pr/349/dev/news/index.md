@@ -7,10 +7,14 @@
   the KRIs, flag distributions by study, country and site, a Participant
   Listing of per-vital flags, a vitals listing that highlights repeated
   values, and a Long / Wide data table of every value. Clicking a
-  participant, tile or row filters the whole report.
+  participant, tile or row filters the whole report. A Settings panel
+  shows blood pressure as separate, paired (combined) or both, and sets
+  the participant flag rule: repeating windows (default Amber 2, Red 3)
+  or % of windows, with a minimum number of windows.
   [`Report_RepeatMeasurements()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_RepeatMeasurements.md)
-  renders it, and the `report_repeatmeasurements` module runs it in a
-  workflow
+  renders it, with `strFlagRule`, `vFlagThresholds`, `nMinWindows` and
+  `strBPMode` setting the starting settings, and the
+  `report_repeatmeasurements` module runs it in a workflow
   ([\#340](https://github.com/Gilead-Public/gsm.kri/issues/340),
   [\#342](https://github.com/Gilead-Public/gsm.kri/issues/342)-#348).
 - Add the IP monitoring report for IP non-starters and premature

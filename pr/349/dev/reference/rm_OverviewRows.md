@@ -2,10 +2,11 @@
 
 \`r lifecycle::badge("experimental")\`
 
-Participant counts per KRI vital for the whole study, each country and
-each site, so the report's filter script only picks rows. A participant
-is evaluable for a vital with at least one window (\`Denominator \>
-0\`).
+Participant counts per flagged vital for the whole study, each country
+and each site. A participant is evaluable for a vital when their flag is
+Red, Amber or Green (enough windows for the flag rule). The report's
+filter script computes the same counts in the browser so that they
+follow the reviewer's flag settings.
 
 ## Usage
 

@@ -61,8 +61,10 @@ function renderRepeatMeasurementsTiles(el, input) {
     return c + (flag === 'Green' ? '33' : 'cc');
   }
 
+  // The report's minimum-windows setting can make a participant with windows
+  // not evaluable, so the flag decides.
   function evaluable(t) {
-    return t.Denominator > 0;
+    return t.flag !== 'Not evaluable';
   }
 
   function cellLabel(t) {
@@ -79,9 +81,9 @@ function renderRepeatMeasurementsTiles(el, input) {
   }
 
   function tileTitle(p, c, t) {
-    var detail = evaluable(t)
+    var detail = t.Denominator > 0
       ? t.Numerator + ' of ' + t.Denominator + ' windows repeat (' + Math.round((100 * t.Numerator) / t.Denominator) + '%)'
-      : 'not evaluable';
+      : 'no windows';
     return p.subjid + ' \u00b7 ' + c.label + ': ' + t.flag + ' \u00b7 ' + detail + '. ' + action(p.subjid);
   }
 
