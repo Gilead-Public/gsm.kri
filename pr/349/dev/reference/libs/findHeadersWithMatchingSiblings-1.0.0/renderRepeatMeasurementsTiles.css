@@ -1,0 +1,18 @@
+.rm-tiles-scroll { max-height: 560px; overflow: auto; border: 1px solid #d0d7de; border-radius: 4px; }
+.rm-tiles table { border-collapse: separate; border-spacing: 2px; font-size: 12px; margin: 0; }
+.rm-tiles thead th { position: sticky; top: 0; z-index: 1; background-color: #ffffff; color: #3C587F; font-weight: 600; text-align: center; padding: 4px 6px; white-space: nowrap; }
+.rm-tiles thead th.rm-tiles-lab { left: 0; z-index: 2; text-align: left; }
+.rm-tiles-mode { display: block; font-size: 10px; font-weight: normal; color: #6e7781; }
+.rm-tiles tbody th.rm-tiles-lab { position: sticky; left: 0; background-color: #ffffff; text-align: left; font-weight: normal; white-space: nowrap; padding: 3px 8px; cursor: pointer; }
+.rm-tiles tbody th.rm-tiles-lab:hover { text-decoration: underline; }
+.rm-tiles-site { color: #6e7781; font-size: 11px; }
+.rm-tiles td.rm-tiles-c { min-width: 72px; padding: 3px 6px; border-radius: 3px; text-align: center; white-space: nowrap; color: #1f2328; cursor: pointer; }
+.rm-tiles td.rm-tiles-c[data-flag="Not evaluable"] { background-color: #f6f8fa; color: #8c959f; }
+.rm-tiles-rt { margin-left: 5px; font-size: 10px; opacity: 0.75; }
+.rm-tiles tr.rm-tiles-sel th.rm-tiles-lab { background-color: #dbe9f9; font-weight: 700; }
+.rm-tiles tr.rm-tiles-sel td.rm-tiles-c { box-shadow: inset 0 0 0 2px #3C587F; }
+.rm-tiles [role="button"]:focus-visible { outline: 2px solid #3C587F; outline-offset: 1px; }
+.rm-tiles-pager { display: flex; align-items: center; gap: 10px; margin-top: 6px; font-size: 12px; color: #57606a; }
+.rm-tiles-pager button { border: 1px solid #3C587F; border-radius: 4px; background-color: #ffffff; color: #3C587F; font-size: 12px; padding: 1px 8px; cursor: pointer; }
+.rm-tiles-pager button:disabled { opacity: 0.4; cursor: default; }
+.rm-tiles-empty { padding: 12px; color: #57606a; }

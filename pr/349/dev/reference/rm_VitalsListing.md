@@ -1,18 +1,21 @@
-# Vitals listing tables for the Repeat Measurements report
+# Vitals listing table for the Repeat Measurements report
 
 \`r lifecycle::badge("experimental")\`
 
-Two \`DT\` tables. \`rm-vitals\` (level 1) draws the measurements in
-order with repeat-window values highlighted; the report's filter script
-toggles the numbers and filters the named \`vital\`, \`country\`,
-\`invid\`, \`subjid\` and \`has_repeat\` columns. \`rm-records\` (level
-2) highlights each record's repeat-window cells. The CSV of each holds
-the rows the filters show.
+The \`rm-vitals\` \`DT\` table (§4): one row per participant and vital
+with the vital name (metric ID on hover, \`\*\` for a vital with no
+KRI), a single "Flag and rate" column (measured, N and D on hover; sorts
+by flag, then rate) and the measurements in order with repeat-window
+values highlighted. The report's filter script toggles the numbers,
+filters the named \`vital\`, \`country\`, \`invid\`, \`subjid\` and
+\`has_repeat\` columns, and turns a row click into the participant
+filter. The CSV holds the rows the filters show with every column,
+including the metric, flag, measured, N, D and rate.
 
 ## Usage
 
 ``` r
-rm_VitalsListing(dfVitalRows, dfRecordRows, dfVitals, bExport = TRUE)
+rm_VitalsListing(dfVitalRows, nWindowLength = NULL, bExport = TRUE)
 ```
 
 ## Arguments
@@ -21,18 +24,14 @@ rm_VitalsListing(dfVitalRows, dfRecordRows, dfVitals, bExport = TRUE)
 
   \`data.frame\` Output of \[rm_VitalRows()\].
 
-- dfRecordRows:
+- nWindowLength:
 
-  \`data.frame\` Output of \[rm_RecordRows()\].
-
-- dfVitals:
-
-  \`data.frame\` \`vitals\` from \[rm_Classify()\].
+  \`numeric\` Window length, shown in the measurements header. Optional.
 
 - bExport:
 
-  \`logical\` Show the CSV buttons.
+  \`logical\` Show the CSV button.
 
 ## Value
 
-A named \`list\` of two \`DT\` htmlwidgets, \`vitals\` and \`records\`.
+A \`DT\` htmlwidget.

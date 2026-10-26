@@ -53,6 +53,7 @@
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/Widget_CrossStudyRiskScore.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/Widget_FlagOverTime-shiny.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/Widget_FlagOverTime.html</loc></url>
+<url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/Widget_RepeatMeasurementsTiles.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/add_Groups_metadata.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/cols_label_month.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/gsm.kri-package.html</loc></url>
@@ -95,14 +96,14 @@
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/pipe.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/reexports.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/rm_Classify.html</loc></url>
+<url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/rm_DataTable.html</loc></url>
+<url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/rm_DataTableData.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/rm_DistributionRows.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/rm_DistributionSpec.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/rm_FlagColors.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/rm_OverviewRows.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/rm_ParticipantTiles.html</loc></url>
-<url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/rm_ParticipantTilesSpec.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/rm_Reconcile.html</loc></url>
-<url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/rm_RecordRows.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/rm_SiteFlags.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/rm_VitalRows.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/rm_Vitals.html</loc></url>

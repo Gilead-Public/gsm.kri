@@ -5,11 +5,12 @@
 - Add the Repeat Measurements report for the repeat-measure vital sign
   KRIs (`kri0020a`-`f`). It shows a study overview that reconciles with
   the KRIs, flag distributions by study, country and site, a Participant
-  Listing of per-vital flags, and a vitals listing that highlights
-  repeated values and drills into the visit records.
+  Listing of per-vital flags, a vitals listing that highlights repeated
+  values, and a Long / Wide data table of every value. Clicking a
+  participant, tile or row filters the whole report.
   [`Report_RepeatMeasurements()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_RepeatMeasurements.md)
   renders it, and the `report_repeatmeasurements` module runs it in a
-  workflow. Requires the `tiles()` widget from gsm.vizr
+  workflow
   ([\#340](https://github.com/Gilead-Public/gsm.kri/issues/340),
   [\#342](https://github.com/Gilead-Public/gsm.kri/issues/342)-#348).
 - Add the IP monitoring report for IP non-starters and premature
