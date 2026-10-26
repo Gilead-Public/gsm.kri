@@ -1,20 +1,17 @@
 test_that("distribution rows count evaluable participants by flag and reconcile with the overview (#345)", {
-  dfParticipants <- rm_Classify(rm_Fixture(), strFlagRule = "rate")$participants
-  dfOverview <- rm_OverviewRows(dfParticipants)
+  lClass <- rm_Classify(rm_Fixture(), strFlagRule = "rate")
+  dfParticipants <- lClass$participants
+  dfOverview <- rm_OverviewRows(lClass)
   for (strLevel in c("study", "country", "site")) {
-    df <- rm_DistributionRows(dfParticipants, strLevel)
+    df <- rm_DistributionRows(dfParticipants, strLevel, lClass$vitals)
     expect_true(all(df$Flag %in% c("Red", "Amber", "Green")), label = strLevel)
     expect_true(all(df$Level == strLevel))
-    dfO <- dfOverview[dfOverview$Level == strLevel, ]
-    for (strVital in unique(dfO$vital)) {
-      expect_equal(
-        sum(df$n[df$vital == strVital]),
-        sum(dfO$evaluable[dfO$vital == strVital]),
-        label = paste(strLevel, strVital)
-      )
+    for (strVital in dfOverview$vital) {
+      dfO <- dfOverview[dfOverview$vital == strVital, ]
+      expect_equal(sum(df$n[df$vital == strVital]), dfO$evaluable, label = paste(strLevel, strVital))
       expect_equal(
         sum(df$n[df$vital == strVital & df$Flag != "Green"]),
-        sum(dfO$amber[dfO$vital == strVital] + dfO$red[dfO$vital == strVital]),
+        dfO$amber + dfO$red,
         label = paste(strLevel, strVital)
       )
     }
@@ -24,7 +21,8 @@ test_that("distribution rows count evaluable participants by flag and reconcile 
 test_that("study bars are labelled by vital and site bars carry their country, sorted by % flagged (#345)", {
   dfParticipants <- rm_Classify(rm_Fixture(), strFlagRule = "rate")$participants
   dfStudy <- rm_DistributionRows(dfParticipants, "study")
-  expect_equal(unique(dfStudy$GroupID), c("WT", "HR"))
+  # Height has no KRI but is flagged: D repeats 1 of 1 window.
+  expect_equal(unique(dfStudy$GroupID), c("WT", "HR", "Ht"))
   expect_true(all(is.na(dfStudy$OuterGroupID)))
 
   dfSite <- rm_DistributionRows(dfParticipants, "site")

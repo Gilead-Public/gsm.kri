@@ -4,12 +4,19 @@
 \alias{rm_DistributionRows}
 \title{Participant distribution rows for the Repeat Measurements report}
 \usage{
-rm_DistributionRows(dfParticipants, strLevel = c("study", "country", "site"))
+rm_DistributionRows(
+  dfParticipants,
+  strLevel = c("study", "country", "site"),
+  dfVitals = rm_Vitals()
+)
 }
 \arguments{
 \item{dfParticipants}{`data.frame` `participants` from [rm_Classify()].}
 
 \item{strLevel}{`character` `"study"`, `"country"` or `"site"`.}
+
+\item{dfVitals}{`data.frame` `vitals` from [rm_Classify()]: the vital
+order and the study bar labels. Default [rm_Vitals()].}
 }
 \value{
 A `tibble` with `vital`, `GroupID` (the vital's short label for
@@ -20,7 +27,7 @@ A `tibble` with `vital`, `GroupID` (the vital's short label for
 \description{
 `r lifecycle::badge("experimental")`
 
-Evaluable participants per group, KRI vital and flag. Study rows have one
+Evaluable participants per group, vital and flag. Study rows have one
 bar per vital; country and site rows have one chart per vital.
 }
 \keyword{internal}

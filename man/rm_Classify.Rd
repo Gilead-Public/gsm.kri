@@ -60,7 +60,7 @@ logic as the `kri0020` / `cou0020` metrics, so every section of the report
 reads one frame. Summing `Numerator` and `Denominator` by site or country
 reproduces the metrics.
 
-A participant's flag for a flagged vital uses one of two rules:
+A participant's flag for a vital uses one of two rules:
 * `"count"` (default): repeating windows `Numerator` against
   `vFlagThresholds` (default Amber at 2, Red at 3 or more).
 * `"rate"`: `Numerator / Denominator` against `vFlagThresholds` (default
@@ -68,8 +68,8 @@ A participant's flag for a flagged vital uses one of two rules:
 
 Amber is at or above the first threshold, Red at or above the second.
 Participants with fewer than `nMinWindows` windows are `Not evaluable`.
-Height, BSA and any other numeric `Mapped_VS` column are windowed the same
-way and flagged `No KRI`. With `sysbp` and `diabp`, paired blood pressure
-(`bp`, see [rm_Vitals()]) is added.
+Height, BSA and any other numeric `Mapped_VS` column are windowed and
+flagged the same way, although they have no KRI. With `sysbp` and
+`diabp`, paired blood pressure (`bp`, see [rm_Vitals()]) is added.
 }
 \keyword{internal}

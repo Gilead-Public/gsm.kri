@@ -4,17 +4,16 @@
 #' `r lifecycle::badge("experimental")`
 #'
 #' The six vitals scored by `kri0020a`–`f` / `cou0020a`–`f`, paired blood
-#' pressure, then height and BSA, which are listed without a flag.
+#' pressure, then height and BSA. Every vital is flagged the same way; only
+#' the six have a KRI.
 #'
 #' Paired blood pressure (`bp`) is report-only: one value per visit record
 #' with both systolic and diastolic BP, so a window repeats only when both
-#' repeat over the same visits. It is flagged like the KRI vitals but has no
-#' metric and does not reconcile with `kri0020c` / `kri0020d`.
+#' repeat over the same visits. It has no metric and does not reconcile with
+#' `kri0020c` / `kri0020d`.
 #'
-#' @return A `tibble` with `vital` (the `Mapped_VS` column), `label`, `short`,
-#'   `group` (the report's vital filter; `NA` when not flagged), `metric`
-#'   (the site workflow ID; `NA` without a KRI) and `flagged` (participants
-#'   get a flag).
+#' @return A `tibble` with `vital` (the `Mapped_VS` column), `label`, `short`
+#'   and `metric` (the site workflow ID; `NA` without a KRI).
 #' @keywords internal
 #' @export
 rm_Vitals <- function() {
@@ -25,9 +24,7 @@ rm_Vitals <- function() {
       "Respiratory rate", "Temperature", "Height", "BSA"
     ),
     short = c("WT", "HR", "SBP", "DBP", "BP", "RR", "Temp", "Ht", "BSA"),
-    group = c("Weight", "HR", "BP", "BP", "BP", "RR", "Temp", NA, NA),
-    metric = c(paste0("kri0020", letters[1:4]), NA, paste0("kri0020", letters[5:6]), NA, NA),
-    flagged = c(rep(TRUE, 7), FALSE, FALSE)
+    metric = c(paste0("kri0020", letters[1:4]), NA, paste0("kri0020", letters[5:6]), NA, NA)
   )
 }
 
@@ -44,8 +41,7 @@ rm_FlagColors <- function() {
     Red = "#FF5859",
     Amber = "#FEAA02",
     Green = "#3DAF06",
-    "Not evaluable" = "#CACACA",
-    "No KRI" = "#FFFFFF"
+    "Not evaluable" = "#CACACA"
   )
 }
 
@@ -59,7 +55,7 @@ rm_FlagColors <- function() {
 #' reads one frame. Summing `Numerator` and `Denominator` by site or country
 #' reproduces the metrics.
 #'
-#' A participant's flag for a flagged vital uses one of two rules:
+#' A participant's flag for a vital uses one of two rules:
 #' * `"count"` (default): repeating windows `Numerator` against
 #'   `vFlagThresholds` (default Amber at 2, Red at 3 or more).
 #' * `"rate"`: `Numerator / Denominator` against `vFlagThresholds` (default
@@ -67,9 +63,9 @@ rm_FlagColors <- function() {
 #'
 #' Amber is at or above the first threshold, Red at or above the second.
 #' Participants with fewer than `nMinWindows` windows are `Not evaluable`.
-#' Height, BSA and any other numeric `Mapped_VS` column are windowed the same
-#' way and flagged `No KRI`. With `sysbp` and `diabp`, paired blood pressure
-#' (`bp`, see [rm_Vitals()]) is added.
+#' Height, BSA and any other numeric `Mapped_VS` column are windowed and
+#' flagged the same way, although they have no KRI. With `sysbp` and
+#' `diabp`, paired blood pressure (`bp`, see [rm_Vitals()]) is added.
 #'
 #' @param lListings `list` with `Mapped_SUBJ` (enrolled participants with
 #'   `subjid`, `invid` and `country`) and `Mapped_VS`.
@@ -152,7 +148,7 @@ rm_Classify <- function(
   }
   dfVitals <- dplyr::bind_rows(
     dfVitals[!is.na(dfVitals$metric) | dfVitals$vital %in% names(dfVS), ],
-    tibble::tibble(vital = vExtra, label = vExtra, short = vExtra, flagged = rep(FALSE, length(vExtra)))
+    tibble::tibble(vital = vExtra, label = vExtra, short = vExtra)
   )
 
   lWindow <- rm_WindowLength(dfMetrics, nWindowLength)
@@ -233,7 +229,6 @@ rm_Classify <- function(
 
   vScore <- if (strFlagRule == "count") dfParticipants$Numerator else dfParticipants$rate
   flag <- dplyr::case_when(
-    !dfVitals$flagged[match(dfParticipants$vital, dfVitals$vital)] ~ "No KRI",
     dfParticipants$Denominator < nMinWindows ~ "Not evaluable",
     vScore >= vThresholds[2] ~ "Red",
     vScore >= vThresholds[1] ~ "Amber",

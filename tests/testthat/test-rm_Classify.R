@@ -90,8 +90,7 @@ test_that("paired BP repeats only when systolic and diastolic BP both repeat (#3
   dfM <- lClass$measurements[lClass$measurements$vital == "bp", ]
   expect_equal(dfM$value_text[dfM$subjid == "A"], c("120/80", "120/80", "120/80", "120/81", "120/81"))
   expect_true(all(is.na(dfM$value)))
-  dfV <- lClass$vitals
-  expect_equal(dfV$vital[dfV$flagged], c("weight", "pulse", "sysbp", "diabp", "bp", "resp", "temp"))
+  expect_equal(lClass$vitals$vital, c("weight", "pulse", "sysbp", "diabp", "bp", "resp", "temp"))
 
   # Without both readings there is no paired BP.
   lClass <- rm_Classify(rm_listings(rm_vs(list(A = c(120, 120, 120)), "sysbp")))
@@ -133,7 +132,7 @@ test_that("window length comes from the metrics and warns on a mismatch (#343)",
   expect_equal(lClass$meta$window_length, 3)
 })
 
-test_that("vitals without a KRI are windowed but not flagged (#343)", {
+test_that("vitals without a KRI are windowed and flagged with the participant rule (#343)", {
   dfVS <- rm_vs(list(A = c(170, 170, 170)), "height")
   dfVS$weight <- c(1, 2, 3)
   dfVS$bsa <- c(2, 2, 2)
@@ -142,7 +141,9 @@ test_that("vitals without a KRI are windowed but not flagged (#343)", {
   vKRI <- rm_Vitals()$vital[!is.na(rm_Vitals()$metric)]
   expect_equal(df$vital, c(vKRI, "height", "bsa"))
   df <- df[df$vital %in% c("weight", "height", "bsa"), ]
-  expect_equal(as.character(df$flag), c("Green", "No KRI", "No KRI"))
+  # Count rule: Amber at 2 repeating windows; weight never repeats.
+  expect_equal(as.character(df$flag), c("Green", "Green", "Green"))
+  expect_false("No KRI" %in% names(rm_FlagColors()))
   expect_equal(df$Numerator, c(0, 1, 1))
   expect_equal(df$metric, c("kri0020a", NA, NA))
   expect_true(all(lClass$measurements$in_repeat_window[lClass$measurements$vital == "height"]))

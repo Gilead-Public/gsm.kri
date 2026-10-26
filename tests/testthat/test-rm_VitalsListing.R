@@ -3,10 +3,10 @@ test_that("vital rows cover every vital for every participant, flagged rows firs
   df <- rm_VitalRows(lClass)
   # Five participants x (six KRI vitals + height).
   expect_equal(nrow(df), 35)
-  expect_equal(df$subjid[1:3], c("A", "B", "D"))
-  expect_equal(df$flag[1:3], c("Red", "Red", "Amber"))
+  expect_equal(df$subjid[1:4], c("A", "B", "D", "D"))
+  expect_equal(df$flag[1:4], c("Red", "Red", "Red", "Amber"))
   h <- df[df$subjid == "D" & df$vital == "height", ]
-  expect_equal(c(h$metric, h$flag, h$has_repeat), c("", "No KRI", "Y"))
+  expect_equal(c(h$metric, h$flag, h$has_repeat), c("", "Red", "Y"))
   expect_true(is.na(df$rate[df$subjid == "E" & df$vital == "weight"]))
   expect_equal(df$rate[df$subjid == "D" & df$vital == "weight"], 0.25)
 })

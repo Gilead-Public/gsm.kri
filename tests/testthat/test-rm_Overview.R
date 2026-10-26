@@ -1,16 +1,60 @@
-test_that("overview counts enrolled, evaluable and flagged participants by study, country and site (#344)", {
-  df <- rm_OverviewRows(rm_Classify(rm_Fixture(), strFlagRule = "rate")$participants)
-  row <- function(strLevel, strID, strVital) {
-    as.list(df[df$Level == strLevel & df$GroupID == strID & df$vital == strVital, c("enrolled", "evaluable", "amber", "red")])
-  }
-  expect_setequal(unique(df$Level), c("study", "country", "site"))
-  # Six KRI vitals at each of 1 study, 2 countries and 3 sites; height has no KRI.
-  expect_equal(nrow(df), 6 * (1 + 2 + 3))
-  expect_false("height" %in% df$vital)
-  expect_equal(row("study", "STUDY1", "weight"), list(enrolled = 5L, evaluable = 3L, amber = 1L, red = 1L))
-  expect_equal(row("study", "STUDY1", "pulse"), list(enrolled = 5L, evaluable = 2L, amber = 0L, red = 1L))
-  expect_equal(row("country", "JP", "weight"), list(enrolled = 2L, evaluable = 1L, amber = 1L, red = 0L))
-  expect_equal(row("site", "S2", "weight"), list(enrolled = 1L, evaluable = 0L, amber = 0L, red = 0L))
+test_that("study overview has one row per vital with site and participant counts for the whole study (#344)", {
+  lClass <- rm_Classify(rm_Fixture(), strFlagRule = "rate")
+  df <- rm_OverviewRows(lClass, rm_SiteFlagRows(lClass, rm_FixtureResults()))
+  row <- function(strVital, vCols) as.list(df[df$vital == strVital, vCols])
+  vP <- c("enrolled", "evaluable", "amber", "red")
+  vS <- c("site_source", "sites", "sites_evaluated", "site_amber", "site_red")
+  # Every vital in the data, KRI or not.
+  expect_equal(df$vital, c("weight", "pulse", "sysbp", "diabp", "resp", "temp", "height"))
+  expect_equal(df$metric[df$vital == "height"], NA_character_)
+  expect_equal(row("weight", vP), list(enrolled = 5L, evaluable = 3L, amber = 1L, red = 1L))
+  expect_equal(row("pulse", vP), list(enrolled = 5L, evaluable = 2L, amber = 0L, red = 1L))
+  expect_equal(row("height", vP), list(enrolled = 5L, evaluable = 1L, amber = 0L, red = 1L))
+  # Weight takes the latest KRI flags: S1 Red, S2 Green, S3 Amber.
+  expect_equal(
+    row("weight", vS),
+    list(site_source = "KRI", sites = 3L, sites_evaluated = 3L, site_amber = 1L, site_red = 1L)
+  )
+  # Height has no KRI and no site reaches the accrual threshold of 3 windows.
+  expect_equal(
+    row("height", vS),
+    list(site_source = "report", sites = 3L, sites_evaluated = 0L, site_amber = 0L, site_red = 0L)
+  )
+})
+
+test_that("site flags come from the KRI where it has results and from the site rule otherwise (#344, #345)", {
+  lClass <- rm_Classify(rm_Fixture())
+  # Without results every vital uses the rule: S1 weight 2/4 = 50%, S3 1/4 = 25%,
+  # S1 HR 1/3 = 33%; S2 and the other vitals are below the accrual of 3 windows.
+  df <- rm_SiteFlagRows(lClass)
+  expect_true(all(df$source == "report"))
+  expect_equal(df$flag[df$vital == "weight"], c(2L, NA, 1L))
+  expect_equal(df$flag[df$vital == "pulse"], c(2L, NA, NA))
+  expect_equal(df$Denominator[df$vital == "weight"], c(4, 0, 4))
+  expect_equal(unique(df$country[df$invid == "S3"]), "JP")
+
+  # KRI flags are absolute; a site without a result is not evaluated.
+  dfResults <- rm_FixtureResults()
+  dfResults <- dfResults[!(dfResults$MetricID == "Analysis_kri0020a" & dfResults$GroupID == "S2"), ]
+  df <- rm_SiteFlagRows(lClass, dfResults)
+  expect_equal(df$flag[df$vital == "weight"], c(2L, NA, 1L))
+  expect_equal(unique(df$source[df$vital == "weight"]), "KRI")
+  expect_equal(unique(df$source[df$vital == "sysbp"]), "report")
+
+  # A lower accrual threshold from the metrics lets S3 height (1/1) be evaluated.
+  dfMetrics <- data.frame(ID = "kri0020a", Threshold = "0.2,0.3", AccrualThreshold = 1)
+  df <- rm_SiteFlagRows(lClass, dfMetrics = dfMetrics)
+  expect_equal(df$flag[df$vital == "height"], c(NA, NA, 2L))
+})
+
+test_that("the site rule reads the kri0020 thresholds and accrual from the metrics (#344)", {
+  expect_equal(rm_SiteRule(), list(thresholds = c(0.2, 0.3), accrual = 3))
+  dfMetrics <- data.frame(
+    ID = c("kri0020a", "kri0001"),
+    Threshold = c("0.1,0.4", "1,2"),
+    AccrualThreshold = c(5, 30)
+  )
+  expect_equal(rm_SiteRule(dfMetrics), list(thresholds = c(0.1, 0.4), accrual = 5))
 })
 
 test_that("reconciliation sums participant N and D and compares them with the latest kri0020 results (#344)", {

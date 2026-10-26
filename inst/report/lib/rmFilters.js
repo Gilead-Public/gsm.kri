@@ -8,7 +8,8 @@
   var RAG = ['Red', 'Amber', 'Green'];
   var SEVERITY = { Red: 3, Amber: 2, Green: 1, 'Not evaluable': 0 };
   var state = {
-    group: 'All',
+    // Vitals the reviewer unticked; new options start ticked.
+    hidden: {},
     country: null,
     site: null,
     subj: null,
@@ -29,6 +30,8 @@
   // { rule, thresholds: { count: [amber, red], rate: [amber, red] }, minWindows, bp }
   var settings = null;
   var defaults = null;
+  // vital -> { source: 'KRI' | 'report', flags: { invid: 0 | 1 | 2 | null } }
+  var siteMap = null;
 
   function rmData() {
     if (!data) {
@@ -71,25 +74,36 @@
     return true;
   }
 
-  // Vitals the vital group and BP view show, in report order. Height, BSA and
-  // other unflagged vitals have no group, so they show only under All.
-  function shownVitals(flaggedOnly) {
+  // Vitals the BP view shows, in report order: the Vitals options and the
+  // Study overview rows.
+  function bpVitals() {
     return rmData().vitals.filter(function (v) {
-      if (flaggedOnly && !v.flagged) return false;
-      if (!bpShown(v.vital)) return false;
-      return state.group === 'All' || (v.flagged && v.group === state.group);
+      return bpShown(v.vital);
     });
   }
 
-  // Flagged vitals in the selected group and BP view.
-  function groupVitals() {
-    return shownVitals(true);
+  // Vitals the BP view and the Vitals selection show.
+  function shownVitals() {
+    return bpVitals().filter(function (v) {
+      return !state.hidden[v.vital];
+    });
   }
 
-  function inGroup(vital) {
-    return groupVitals().some(function (v) {
+  function isShown(vital) {
+    return shownVitals().some(function (v) {
       return v.vital === vital;
     });
+  }
+
+  function sites() {
+    if (!siteMap) {
+      siteMap = {};
+      (rmData().sites || []).forEach(function (r) {
+        var m = siteMap[r.vital] || (siteMap[r.vital] = { source: r.source, flags: {} });
+        m.flags[r.invid] = r.flag;
+      });
+    }
+    return siteMap;
   }
 
   function inScope(row) {
@@ -120,13 +134,9 @@
     var api = dtApi('rm-vitals');
     if (!api) return;
     var ci = colIndex(api);
-    var flagged = {};
-    rmData().vitals.forEach(function (v) {
-      flagged[v.vital] = v.flagged;
-    });
     api.rows().every(function () {
       var d = this.data();
-      if (flagged[d[ci.vital]]) d[ci.flag] = flagOf(d[ci.Numerator], d[ci.Denominator]);
+      d[ci.flag] = flagOf(d[ci.Numerator], d[ci.Denominator]);
     });
     api.rows().invalidate('data');
     if (reorder === false) return;
@@ -224,10 +234,10 @@
   }
 
   // ---- §1 overview --------------------------------------------------------
+  // The whole study whatever the filters; it follows only the settings.
   function overviewCounts() {
     var counts = {};
     (allTiles || []).forEach(function (t) {
-      if (!inScope(t)) return;
       var c = counts[t.vital] || (counts[t.vital] = { evaluable: 0, amber: 0, red: 0 });
       if (RAG.indexOf(t.flag) >= 0) c.evaluable++;
       if (t.flag === 'Amber') c.amber++;
@@ -236,46 +246,88 @@
     return counts;
   }
 
-  function pct(n, d) {
-    return d ? Math.round((100 * n) / d) + '%' : '\u2013';
+  function siteRuleText() {
+    var r = rmData().siteRule || { thresholds: [0.2, 0.3], accrual: 3 };
+    return '% of the site\u2019s windows that repeat (summed over its participants), Amber \u2265 ' + fmt(100 * r.thresholds[0]) +
+      '%, Red \u2265 ' + fmt(100 * r.thresholds[1]) + '%; sites need ' + r.accrual + ' window' + (r.accrual === 1 ? '' : 's') + ' for a flag';
   }
 
-  // One row per vital keeps the table narrow enough for every vital group.
+  // Filled circles are KRI flags; empty circles are flags the report calculates.
+  function dots(amber, red, filled, title) {
+    var dot = function (color, n) {
+      return '<span class="rm-fl"><span class="rm-dot' + (filled ? '' : ' rm-o') + '" style="background:' + color + ';border-color:' + color + '"></span>' + n.toLocaleString() + '</span>';
+    };
+    return '<span title="' + esc(title) + '">' + dot(FLAG_COLORS[1], amber) + dot(FLAG_COLORS[2], red) + '</span>';
+  }
+
+  function info(text) {
+    return '<i class="rm-info" tabindex="0" role="img" aria-label="' + esc(text) + '" title="' + esc(text) + '">i</i>';
+  }
+
   function renderOverview() {
     var el = byId('rm-overview');
     if (!el) return;
     var counts = overviewCounts();
-    var scope = state.subj
-      ? 'Participant ' + state.subj
-      : state.site
-        ? 'Site ' + state.site
-        : state.country
-          ? state.country
-          : 'Study';
-    var enrolled = (rmData().participants || []).filter(inScope).length;
-    var h =
-      '<p><strong>' + esc(scope) + ':</strong> ' + enrolled + ' enrolled participant' + (enrolled === 1 ? '' : 's') + '</p>' +
-      '<table class="table table-condensed"><thead><tr><th style="text-align:left">Vital</th><th style="text-align:left">KRI</th>' +
-      '<th>Evaluable</th><th>% of enrolled</th><th>Flagged</th><th>% of evaluable</th><th>Amber</th><th>Red</th></tr></thead><tbody>';
-    groupVitals().forEach(function (v) {
-      var r = counts[v.vital] || { evaluable: 0, amber: 0, red: 0 };
-      var fl = r.amber + r.red;
-      h +=
-        '<tr data-rm-overview="' + esc(v.vital) + '"><td style="text-align:left">' + esc(v.label) + '</td>' +
-        '<td style="text-align:left">' + (v.metric ? '<code>' + esc(v.metric) + '</code>' : '<span class="rm-nk">none (paired SBP and DBP)</span>') + '</td>' +
-        '<td class="v">' + r.evaluable + '</td><td class="b">' + pct(r.evaluable, enrolled) + '</td>' +
-        '<td class="v">' + fl + '</td><td class="b">' + pct(fl, r.evaluable) + '</td>' +
-        '<td><span class="rm-dot" style="background:#FEAA02"></span>' + r.amber + '</td>' +
-        '<td><span class="rm-dot" style="background:#FF5859"></span>' + r.red + '</td></tr>';
+    var participants = rmData().participants || [];
+    var enrolled = participants.length;
+    var siteIds = {};
+    participants.forEach(function (p) {
+      siteIds[p.invid] = true;
     });
-    el.innerHTML = h + '</tbody></table>';
+    var nSites = Object.keys(siteIds).length;
+    var h =
+      '<table class="table table-condensed"><thead>' +
+      '<tr><th rowspan="2" class="rm-l">Measure</th>' +
+      '<th colspan="2" class="rm-grp rm-sep">Sites' + info(
+        'Site flag: ' + siteRuleText() + '. N: sites evaluated / sites with enrolled participants. ' +
+        'Filled circles: the KRI site flags (kri0020a\u2013f, latest snapshot). ' +
+        'Empty circles: calculated in the report with the same rule, for measures without KRI results.'
+      ) + '</th>' +
+      '<th colspan="2" class="rm-grp rm-sep">Participants' + info(
+        'Participant flag: ' + ruleText() + '. N: evaluable / enrolled participants. ' +
+        'Empty circles: calculated in the report; change the rule under Settings.'
+      ) + '</th></tr>' +
+      '<tr><th class="rm-sep">N</th><th>Flags</th><th class="rm-sep">N</th><th>Flags</th></tr></thead><tbody>';
+    bpVitals().forEach(function (v) {
+      var r = counts[v.vital] || { evaluable: 0, amber: 0, red: 0 };
+      var s = sites()[v.vital] || { source: 'report', flags: {} };
+      var evaluated = 0;
+      var amber = 0;
+      var red = 0;
+      Object.keys(s.flags).forEach(function (id) {
+        var f = s.flags[id];
+        if (f === null || f === undefined) return;
+        evaluated++;
+        if (f === 1) amber++;
+        if (f === 2) red++;
+      });
+      var kri = s.source === 'KRI';
+      h +=
+        '<tr data-rm-overview="' + esc(v.vital) + '"><td class="rm-l">' + esc(v.label) +
+        (v.metric ? '<span class="rm-kri" title="' + esc(v.metric) + '">KRI</span>' : '') + '</td>' +
+        '<td class="rm-sep" data-rm-col="sites" title="' + evaluated + ' of ' + nSites + ' sites evaluated">' + evaluated + ' / ' + nSites + '</td>' +
+        '<td data-rm-col="site-flags" data-rm-source="' + s.source + '">' + dots(amber, red, kri, kri
+          ? 'Amber / Red sites from ' + v.metric
+          : 'Amber / Red sites calculated in the report') + '</td>' +
+        '<td class="rm-sep" data-rm-col="participants" title="' + r.evaluable + ' of ' + enrolled + ' participants evaluable (' + pct(r.evaluable, enrolled) + ')">' +
+        r.evaluable.toLocaleString() + ' / ' + enrolled.toLocaleString() + '</td>' +
+        '<td data-rm-col="participant-flags">' + dots(r.amber, r.red, false, 'Amber / Red participants (' + pct(r.amber + r.red, r.evaluable) + ' of evaluable)') + '</td></tr>';
+    });
+    el.innerHTML = h + '</tbody></table>' +
+      '<p class="rm-legend">The whole study: the filters do not change this table. ' +
+      '<span class="rm-dot" style="background:#8c959f;border-color:#8c959f"></span>KRI flag \u00b7 ' +
+      '<span class="rm-dot rm-o" style="border-color:#8c959f"></span>calculated in the report. Hover <i class="rm-info" aria-hidden="true">i</i> for the flag rules.</p>';
+  }
+
+  function pct(n, d) {
+    return d ? Math.round((100 * n) / d) + '%' : '\u2013';
   }
 
   // ---- §2 distribution ----------------------------------------------------
   // Mirrors rm_DistributionRows(): evaluable participants by flag per group,
   // groups sorted by % flagged, then evaluable participants, then name.
   function distRows(level, vital) {
-    var vitals = (vital ? [vital] : groupVitals().map(function (v) {
+    var vitals = (vital ? [vital] : shownVitals().map(function (v) {
       return v.vital;
     }));
     var short = {};
@@ -325,10 +377,11 @@
     c.helpers.updateData(c, d.rows, Object.assign({}, spec, { scales: Object.assign({}, spec.scales, { x: x }) }));
   }
 
-  // Site tick labels take the colour of the site's KRI flag for that vital.
+  // Site tick labels take the colour of the site's flag for that vital.
   function colorSiteTicks(c, vital) {
-    var flags = (rmData().siteFlags || {})[vital];
+    var flags = (sites()[vital] || {}).flags;
     if (!flags) return;
+    keepTickColors(c, vital);
     var opts = c.config.options;
     var axis = opts.indexAxis === 'y' ? 'y' : 'x';
     if (!opts.scales || !opts.scales[axis]) return;
@@ -343,11 +396,25 @@
     c.update('none');
   }
 
+  // gsm.viz's position and category toggles call helpers.updateSpec, which
+  // rebuilds options.scales and drops the tick colours; re-apply them after.
+  function keepTickColors(c, vital) {
+    if (c._rmTicks || !c.helpers || !c.helpers.updateSpec) return;
+    c._rmTicks = true;
+    var updateSpec = c.helpers.updateSpec;
+    c.helpers = Object.assign({}, c.helpers, {
+      updateSpec: function (chart, spec) {
+        var out = updateSpec.apply(this, arguments);
+        colorSiteTicks(chart, vital);
+        return out;
+      }
+    });
+  }
+
   function syncBars() {
     var study = chart('rm-study');
     if (study) updateBars(study, distRows('study'));
     rmData().vitals.forEach(function (v) {
-      if (!v.flagged) return;
       ['country', 'site'].forEach(function (level) {
         var c = chart('rm-' + level + '-' + v.vital);
         if (!c) return;
@@ -362,7 +429,7 @@
       });
     });
     document.querySelectorAll('[data-rm-vital]').forEach(function (div) {
-      div.style.display = inGroup(div.getAttribute('data-rm-vital')) ? '' : 'none';
+      div.style.display = isShown(div.getAttribute('data-rm-vital')) ? '' : 'none';
     });
   }
 
@@ -370,7 +437,7 @@
   function tileRows() {
     var q = state.search.trim().toUpperCase();
     var rows = allTiles.filter(function (t) {
-      if (!inGroup(t.vital) || !inScope(t)) return false;
+      if (!isShown(t.vital) || !inScope(t)) return false;
       return !q || (t.subjid + ' ' + t.invid + ' ' + t.country).toUpperCase().indexOf(q) >= 0;
     });
     // Rows render in first-appearance order, so sorting participants sorts the grid.
@@ -486,12 +553,12 @@
 
   // ---- §5 data table -------------------------------------------------------
   function vitalKeys() {
-    return shownVitals(false).map(function (v) {
+    return shownVitals().map(function (v) {
       return jQuery.fn.dataTable.util.escapeRegex(v.vital);
     });
   }
 
-  // Every vital row the group and BP view show; matches nothing when none do.
+  // Every vital row the Vitals selection and BP view show; matches nothing when none do.
   function vitalRegex() {
     var keys = vitalKeys();
     return keys.length ? '^(' + keys.join('|') + ')$' : '^\\b$';
@@ -541,7 +608,7 @@
       rmData().vitals.forEach(function (v) {
         shown[v.vital] = false;
       });
-      shownVitals(false).forEach(function (v) {
+      shownVitals().forEach(function (v) {
         shown[v.vital] = true;
       });
       wide.columns().every(function () {
@@ -594,12 +661,47 @@
     el.innerHTML = '<b>' + n.toLocaleString() + '</b> / ' + all.length.toLocaleString() + ' participants selected';
   }
 
+  // The Vitals menu offers the vitals the BP view shows.
+  function syncVitalMenu() {
+    var opts = bpVitals();
+    var keys = opts.map(function (v) {
+      return v.vital;
+    });
+    document.querySelectorAll('[data-rm-vital-opt]').forEach(function (l) {
+      var k = l.getAttribute('data-rm-vital-opt');
+      l.style.display = keys.indexOf(k) >= 0 ? '' : 'none';
+      l.querySelector('input').checked = !state.hidden[k];
+    });
+    var shown = shownVitals();
+    var all = byId('rm-vital-all');
+    if (all) {
+      all.checked = shown.length === opts.length;
+      all.indeterminate = shown.length > 0 && shown.length < opts.length;
+    }
+    var summary = byId('rm-vital-summary');
+    if (summary) {
+      summary.textContent = shown.length === opts.length
+        ? 'All'
+        : !shown.length
+          ? 'None'
+          : shown.length <= 3
+            ? shown.map(function (v) { return v.short; }).join(', ')
+            : shown.length + ' of ' + opts.length;
+    }
+  }
+
+  function setVitalMenu(open) {
+    var menu = byId('rm-vital-menu');
+    var btn = byId('rm-vital-btn');
+    if (!menu || !btn) return;
+    menu.hidden = !open;
+    btn.setAttribute('aria-expanded', String(open));
+  }
+
   function rmSync() {
     if (!rmData()) return;
     initSettings();
-    document.querySelectorAll('[data-rm-group]').forEach(function (b) {
-      b.setAttribute('aria-pressed', String(b.getAttribute('data-rm-group') === state.group));
-    });
+    syncVitalMenu();
     setChip('country', state.country);
     setChip('site', state.site);
     setChip('subj', state.subj);
@@ -632,11 +734,14 @@
 
   document.addEventListener('click', function (e) {
     var t = e.target;
-    var group = t.closest('[data-rm-group]');
     var clear = t.closest('[data-rm-clear]');
     var label = t.closest('[data-rm-label]');
-    if (group) {
-      state.group = group.getAttribute('data-rm-group');
+    if (!t.closest('.rm-ms')) setVitalMenu(false);
+    if (t.closest('#rm-vital-btn')) {
+      setVitalMenu(byId('rm-vital-menu').hidden);
+      return;
+    } else if (t.closest('#rm-vital-menu')) {
+      return;
     } else if (clear) {
       var key = clear.getAttribute('data-rm-clear');
       // Clearing a level also clears the levels inside it.
@@ -647,7 +752,7 @@
       setLabel(label.getAttribute('data-rm-label'));
       return;
     } else if (t.closest('#rm-reset')) {
-      state.group = 'All';
+      state.hidden = {};
       state.country = null;
       state.site = null;
       setSubj(null);
@@ -704,6 +809,22 @@
 
   document.addEventListener('change', function (e) {
     var id = e.target.id;
+    if (id === 'rm-vital-all') {
+      state.hidden = {};
+      if (!e.target.checked) {
+        bpVitals().forEach(function (v) {
+          state.hidden[v.vital] = true;
+        });
+      }
+      rmSync();
+      return;
+    }
+    if (e.target.hasAttribute('data-rm-vital-cb')) {
+      if (e.target.checked) delete state.hidden[e.target.value];
+      else state.hidden[e.target.value] = true;
+      rmSync();
+      return;
+    }
     if (id === 'rm-th-amber' || id === 'rm-th-red' || id === 'rm-min-windows') {
       readThresholds();
       return;
@@ -720,6 +841,12 @@
       return;
     } else return;
     syncListing();
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape' || !byId('rm-vital-menu') || byId('rm-vital-menu').hidden) return;
+    setVitalMenu(false);
+    byId('rm-vital-btn').focus();
   });
 
   document.addEventListener('input', function (e) {

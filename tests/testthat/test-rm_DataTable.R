@@ -98,3 +98,39 @@ test_that("data table builds Long and Wide tables with CSV only when export is e
   expect_length(lOff$long$x$options$buttons, 0)
   expect_length(lOff$wide$x$options$buttons, 0)
 })
+
+test_that("data table headers fit without horizontal scrolling and the CSVs keep every column (#346)", {
+  skip_if_not_installed("DT")
+  lClass <- rm_Classify(rm_Fixture())
+  dfLong <- rm_DataTableData(lClass)
+  dfWide <- rm_DataTableWide(lClass)
+  lDT <- rm_DataTable(dfLong, dfWide, lClass$vitals)
+  defs <- function(w) w$x$options$columnDefs
+  hidden <- function(w) {
+    unlist(lapply(Filter(function(d) isFALSE(d$visible), defs(w)), `[[`, "targets"))
+  }
+  idx <- function(df, col) match(col, names(df)) - 1L
+
+  # Wide: abbreviated vital headers with the name and metric on hover.
+  strHead <- as.character(lDT$wide$x$container)
+  expect_match(strHead, '<th title="Weight (kri0020a)">WT</th>', fixed = TRUE)
+  expect_match(strHead, '<th title="Height (no KRI)">Ht</th>', fixed = TRUE)
+  # Country moves to a tooltip on the site; Performed greys the row instead.
+  expect_true(all(idx(dfWide, c("country", "performed")) %in% hidden(lDT$wide)))
+  vRender <- unlist(lapply(defs(lDT$wide), function(d) as.character(d$render)))
+  expect_true(any(grepl("title=", vRender, fixed = TRUE)))
+  expect_match(as.character(lDT$wide$x$options$createdRow), "rm-np", fixed = TRUE)
+  lCSV <- lDT$wide$x$options$buttons[[1]]$exportOptions
+  expect_match(as.character(lCSV$columns), sprintf("always = [%d,%d]", idx(dfWide, "country"), idx(dfWide, "performed")), fixed = TRUE)
+  expect_match(as.character(lCSV$format$header), '"6":"Weight"', fixed = TRUE)
+
+  # Long: the metric is a KRI badge on the vital and the CSV still has it.
+  expect_true(idx(dfLong, "metric") %in% hidden(lDT$long))
+  vRender <- unlist(lapply(defs(lDT$long), function(d) as.character(d$render)))
+  expect_true(any(grepl("rm-kri", vRender, fixed = TRUE)))
+  expect_match(as.character(lDT$long$x$container), ">Repeat<", fixed = TRUE)
+  lCSV <- lDT$long$x$options$buttons[[1]]$exportOptions
+  expect_true(idx(dfLong, "metric") %in% unlist(lCSV$columns))
+  expect_false(any(idx(dfLong, c("vital", "has_repeat")) %in% unlist(lCSV$columns)))
+  expect_match(as.character(lCSV$format$header), "In repeat window", fixed = TRUE)
+})

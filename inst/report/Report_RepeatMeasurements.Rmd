@@ -48,8 +48,8 @@ lClass <- rm_Classify(
   vFlagThresholds = param(params$vFlagThresholds),
   nMinWindows = param(params$nMinWindows, 1)
 )
-# Flagged vitals: the six KRI vitals and, with SBP and DBP, paired BP.
-dfVitals <- lClass$vitals[lClass$vitals$flagged, ]
+# Every vital: the six KRI vitals, paired BP, height, BSA and any other.
+dfVitals <- lClass$vitals
 nW <- lClass$meta$window_length
 has_participants <- nrow(lClass$participants) > 0
 has_vs <- has_participants && nrow(lClass$measurements) > 0
@@ -67,10 +67,12 @@ lSettings <- list(
 )
 in_cmp <- lClass$meta$window_source == "metrics"
 dfRecon <- rm_Reconcile(lClass$participants, dfResults)
+dfSites <- rm_SiteFlagRows(lClass, dfResults, dfMetrics)
+lSiteRule <- rm_SiteRule(dfMetrics)
 
 dist_rows <- lapply(
   c(study = "study", country = "country", site = "site"),
-  function(level) rm_DistributionRows(lClass$participants, level)
+  function(level) rm_DistributionRows(lClass$participants, level, dfVitals)
 )
 dist_title <- function(i) {
   paste0(dfVitals$label[i], " (", dplyr::coalesce(dfVitals$metric[i], "no KRI"), ")")
@@ -122,7 +124,7 @@ cat(sprintf('
 <li>A <strong>window</strong> is %1$s consecutive measurements of one vital for one participant, in visit order (missing values skipped). A window <strong>repeats</strong> when all %1$s values are identical. Each participant and vital has <strong>N</strong> repeating windows of <strong>D</strong> windows; the KRIs <code>kri0020a</code>&ndash;<code>f</code> sum N and D by site.</li>
 <li>Participants are <strong>evaluable</strong> for a vital once they have enough windows. Flag rule: %2$s. Change the rule, thresholds and minimum windows under <strong>Settings</strong> in the bar below; every section follows.</li>
 <li><strong>Blood pressure</strong> (Settings): <em>Separate</em> shows systolic and diastolic BP (the KRIs); <em>Combined</em> shows paired BP, where a window repeats only when both readings repeat over the same visits (no KRI); <em>Both</em> shows all three.</li>
-<li>Pick a vital group in the bar below to focus every section. Click a country or site bar to filter; remove a filter with its &times; or all of them with <strong>Reset filters</strong>.</li>
+<li>Pick vitals under <strong>Vitals</strong> in the bar below to focus every section except the Study overview, which always covers the whole study. Click a country or site bar to filter; remove a filter with its &times; or all of them with <strong>Reset filters</strong>.</li>
 <li>The last three sections drill down from one row per participant (Participant Listing) to one per participant and vital (Vitals listing) to one per value or visit record (Data table). Click a participant, tile or row in any of them to filter the whole report to that participant; click it again to clear.</li>
 </ul>
 </details>
@@ -153,10 +155,25 @@ cat('
 .rm-controls label { font-weight: normal; margin: 0; }
 .rm-btn { border: 1px solid #3C587F; background: #ffffff; color: #3C587F; border-radius: 4px; padding: 2px 10px; font-size: 13px; cursor: pointer; }
 .rm-btn:hover { background: #3C587F; color: #ffffff; }
-#rm-overview table { width: auto; }
-#rm-overview td, #rm-overview th { text-align: right; padding: 4px 10px; vertical-align: middle; }
-#rm-overview .v { font-size: 1.1em; }
-#rm-overview .b { color: #666666; font-size: smaller; white-space: nowrap; }
+#rm-overview table { width: auto; margin-bottom: 6px; }
+#rm-overview td, #rm-overview th { text-align: right; padding: 4px 12px; vertical-align: middle; white-space: nowrap; }
+#rm-overview th.rm-grp { text-align: center; border-bottom: 1px solid #d0d7de; }
+#rm-overview th.rm-l, #rm-overview td.rm-l { text-align: left; }
+#rm-overview .rm-sep { border-left: 1px solid #d0d7de; }
+#rm-overview .b { color: #666666; font-size: smaller; }
+.rm-fl { display: inline-block; min-width: 3em; text-align: left; }
+.rm-info { display: inline-block; width: 15px; height: 15px; margin-left: 4px; border-radius: 50%; border: 1px solid #3C587F; color: #3C587F; font-size: 10px; font-weight: 700; line-height: 13px; text-align: center; font-style: normal; cursor: help; vertical-align: 1px; }
+.rm-kri { display: inline-block; margin-left: 4px; padding: 0 4px; border-radius: 3px; background-color: #3C587F; color: #ffffff; font-size: 9px; font-weight: 700; letter-spacing: 0.04em; line-height: 14px; vertical-align: 1px; cursor: help; }
+.rm-dot.rm-o { background-color: transparent !important; border-width: 2px; }
+.rm-ms { position: relative; display: inline-block; }
+.rm-ms-btn { border: 1px solid #3C587F; background: #ffffff; color: #3C587F; border-radius: 16px; padding: 3px 12px; font-size: 13px; cursor: pointer; }
+.rm-ms-btn[aria-expanded="true"] { background: #3C587F; color: #ffffff; }
+.rm-ms-menu { position: absolute; top: calc(100% + 4px); left: 0; z-index: 1031; min-width: 230px; max-height: 360px; overflow-y: auto; background: #ffffff; border: 1px solid #3C587F; border-radius: 6px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); padding: 6px 0; }
+.rm-ms-menu[hidden] { display: none; }
+.rm-ms-menu label { display: flex; align-items: center; gap: 6px; margin: 0; padding: 3px 12px; font-size: 13px; font-weight: normal; white-space: nowrap; cursor: pointer; }
+.rm-ms-menu label:hover { background: #f1f7fe; }
+.rm-ms-menu .rm-ms-all { border-bottom: 1px solid #cfe3fb; font-weight: 600; margin-bottom: 4px; padding-bottom: 6px; }
+#rm-dt-wide tr.rm-np td { color: #8c959f; font-style: italic; }
 .rm-recon { font-size: 13px; color: #57606a; margin: 6px 0; }
 .rm-recon .ok { color: #1a7f37; }
 .rm-recon .bad { color: #cf222e; }
@@ -251,32 +268,55 @@ chip <- function(key, label) {
     )
   )
 }
-vGroups <- c("All", sort(unique(dfVitals$group)))
+kri_badge <- function(strMetric) {
+  if (!is.na(strMetric)) htmltools::tags$span(class = "rm-kri", title = strMetric, "KRI")
+}
+# rmFilters.js hides the BP options the Blood pressure setting does not show.
+vital_select <- htmltools::tags$span(
+  class = "rm-ms",
+  htmltools::tags$button(
+    id = "rm-vital-btn",
+    type = "button",
+    class = "rm-ms-btn",
+    `aria-haspopup` = "true",
+    `aria-expanded` = "false",
+    `aria-controls` = "rm-vital-menu",
+    htmltools::tags$span(id = "rm-vital-summary", "All"),
+    htmltools::HTML(" &#9662;")
+  ),
+  htmltools::tags$div(
+    id = "rm-vital-menu",
+    class = "rm-ms-menu",
+    role = "group",
+    `aria-label` = "Vitals",
+    hidden = NA,
+    htmltools::tags$label(
+      class = "rm-ms-all",
+      htmltools::tags$input(id = "rm-vital-all", type = "checkbox", checked = NA),
+      " All vitals"
+    ),
+    lapply(seq_len(nrow(dfVitals)), function(i) {
+      htmltools::tags$label(
+        `data-rm-vital-opt` = dfVitals$vital[i],
+        htmltools::tags$input(type = "checkbox", value = dfVitals$vital[i], `data-rm-vital-cb` = NA, checked = NA),
+        " ", dfVitals$label[i], " ",
+        kri_badge(dfVitals$metric[i])
+      )
+    })
+  )
+)
 htmltools::tags$div(
   id = "rm-filter-strip",
   class = "rm-filter-strip",
   htmltools::tags$span(class = "rm-eyebrow", "Vitals"),
-  htmltools::tags$span(
-    class = "rm-seg",
-    role = "group",
-    `aria-label` = "Vital group",
-    lapply(vGroups, function(g) {
-      htmltools::tags$button(
-        id = paste0("rm-group-", g),
-        type = "button",
-        `data-rm-group` = g,
-        `aria-pressed` = if (g == "All") "true" else "false",
-        g
-      )
-    })
-  ),
+  vital_select,
   chip("country", "Country"),
   chip("site", "Site"),
   chip("subj", "Participant"),
   htmltools::tags$span(id = "rm-count", class = "rm-count", title = "Filters apply to every section."),
   htmltools::tags$span(
     class = "rm-strip-btns",
-    htmltools::tags$button(id = "rm-reset", type = "button", class = "rm-btn", title = "Clear the vital group, country, site and participant filters", "Reset filters"),
+    htmltools::tags$button(id = "rm-reset", type = "button", class = "rm-btn", title = "Clear the vitals, country, site and participant filters", "Reset filters"),
     htmltools::tags$button(id = "rm-settings-toggle", type = "button", class = "rm-btn", `aria-expanded` = "false", `aria-controls` = "rm-settings", "Settings"),
     htmltools::tags$button(id = "rm-toc-toggle", type = "button", class = "rm-btn", `aria-pressed` = "false", style = "display:none;", "Hide contents")
   ),
@@ -337,7 +377,7 @@ cat(sprintf(
 ## Participant distribution {.tabset .tabset-pills}
 
 ```{r dist-note, echo=FALSE, results='asis'}
-cat("\n> Evaluable participants by flag, as % of the evaluable participants in each group, sorted by % flagged. Click a country or site bar to filter. Site labels are coloured by the site's KRI flag when the KRI results are available.\n")
+cat("\n> Evaluable participants by flag, as % of the evaluable participants in each group, sorted by % flagged. Click a country or site bar to filter. Site labels are coloured by the site's flag for the vital: the KRI flag when the KRI results are available, otherwise the flag the report calculates with the KRI's site rule.\n")
 ```
 
 ### Study
@@ -431,7 +471,7 @@ Widget_RepeatMeasurementsTiles(tiles, strId = "rm-tiles")
 ```
 
 ```{r tiles-note, echo=FALSE, results='asis'}
-cat("\n> One row per participant and one tile per KRI vital, coloured by the participant's flag: N/D is repeating windows of all windows, NE is not evaluable. Click a participant or tile to filter the report; click again to clear.\n")
+cat("\n> One row per participant and one tile per vital, coloured by the participant's flag: N/D is repeating windows of all windows, NE is not evaluable. Click a participant or tile to filter the report; click again to clear.\n")
 ```
 
 ## Vitals listing
@@ -451,7 +491,7 @@ htmltools::div(
 ```{r vitals-note, echo=FALSE, results='asis'}
 cat(
   "\n",
-  "> - One row per participant and vital, for every vital in the vital signs data. Height and BSA have no KRI.\n",
+  "> - One row per participant and vital, for every vital in the vital signs data. Height, BSA and paired BP have no KRI; the report flags them with the same rule.\n",
   "> - Hover a vital for its metric ID (* = not a KRI) and the flag and rate for measured, N and D. Sort the flag column for worst first.\n",
   "> - **Measures** are the distinct values of all non-missing values; few distinct values among many suggest copied measurements.\n",
   "> - **Measurements in order** are the values the windows run over; dark red blocks or values are in a repeat window. Hover one for its position, visit and date. Tick **Show values** to show the numbers.\n",
@@ -492,7 +532,7 @@ htmltools::tagList(
 ```{r data-note, echo=FALSE, results='asis'}
 cat(
   "\n",
-  "> - **Wide** (default): one row per participant and visit record, one column per vital, as in the vital signs data. **Long:** one row per participant, vital and non-missing value, in measurement order (# is the position).\n",
+  "> - **Wide** (default): one row per participant and visit record, one column per vital, as in the vital signs data. Hover a vital header for its name and KRI, and a site for its country; grey rows were not performed. **Long:** one row per participant, vital and non-missing value, in measurement order (# is the position).\n",
   "> - Dark red values are in a repeat window. Click a row to filter the report to that participant; click again to clear.\n",
   sep = ""
 )
@@ -501,7 +541,8 @@ cat(
 ```{r rm-data, echo=FALSE, eval=has_participants}
 ipm_DataScript(
   list(
-    siteFlags = rm_SiteFlags(dfResults),
+    sites = dfSites[c("vital", "invid", "flag", "source")],
+    siteRule = list(thresholds = lSiteRule$thresholds, accrual = jsonlite::unbox(lSiteRule$accrual)),
     vitals = lClass$vitals,
     participants = unique(lClass$participants[c("subjid", "invid", "country")]),
     # Unboxed so the scalars arrive as JSON scalars, not length-1 arrays.

@@ -3,11 +3,13 @@
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' Evaluable participants per group, KRI vital and flag. Study rows have one
+#' Evaluable participants per group, vital and flag. Study rows have one
 #' bar per vital; country and site rows have one chart per vital.
 #'
 #' @param dfParticipants `data.frame` `participants` from [rm_Classify()].
 #' @param strLevel `character` `"study"`, `"country"` or `"site"`.
+#' @param dfVitals `data.frame` `vitals` from [rm_Classify()]: the vital
+#'   order and the study bar labels. Default [rm_Vitals()].
 #'
 #' @return A `tibble` with `vital`, `GroupID` (the vital's short label for
 #'   study rows), `OuterGroupID` (country for site rows, else `NA`), `Flag`,
@@ -15,15 +17,18 @@
 #'   the lowest \% flagged. Only non-zero cells.
 #' @keywords internal
 #' @export
-rm_DistributionRows <- function(dfParticipants, strLevel = c("study", "country", "site")) {
+rm_DistributionRows <- function(
+  dfParticipants,
+  strLevel = c("study", "country", "site"),
+  dfVitals = rm_Vitals()
+) {
   strLevel <- match.arg(strLevel)
-  dfVitals <- rm_Vitals()
   df <- dfParticipants[dfParticipants$flag %in% c("Red", "Amber", "Green"), ]
   df <- tibble::tibble(
     vital = df$vital,
     GroupID = switch(
       strLevel,
-      study = dfVitals$short[match(df$vital, dfVitals$vital)],
+      study = dplyr::coalesce(dfVitals$short[match(df$vital, dfVitals$vital)], df$vital),
       country = as.character(df$country),
       site = as.character(df$invid)
     ),

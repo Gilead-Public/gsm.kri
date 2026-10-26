@@ -20,7 +20,7 @@
 #' @export
 rm_VitalRows <- function(lClass) {
   dfVitals <- lClass$vitals
-  vSeverity <- c(Red = 4, Amber = 3, Green = 2, `No KRI` = 1, `Not evaluable` = 0)
+  vSeverity <- c(Red = 3, Amber = 2, Green = 1, `Not evaluable` = 0)
   dfValues <- lClass$measurements %>%
     dplyr::arrange(.data$subjid, .data$vital, .data$seq) %>%
     dplyr::group_by(.data$subjid, .data$vital) %>%
@@ -162,7 +162,7 @@ rm_VitalsListing <- function(dfVitalRows, nWindowLength = NULL, bExport = TRUE) 
               "function (data, type, row) {
                 var rate = row[%1$d];
                 if (type === 'sort' || type === 'type') {
-                  var sev = { 'Red': 4, 'Amber': 3, 'Green': 2, 'No KRI': 1, 'Not evaluable': 0 }[data] || 0;
+                  var sev = { 'Red': 3, 'Amber': 2, 'Green': 1, 'Not evaluable': 0 }[data] || 0;
                   return sev * 1000 + (rate === null ? -1 : rate * 100);
                 }
                 if (type !== 'display') return data;
@@ -215,19 +215,28 @@ rm_VitalsListing <- function(dfVitalRows, nWindowLength = NULL, bExport = TRUE) 
 
 # DT CSV button exporting the rows the filters show; `columns` is a DT
 # column selector.
-rm_CsvButton <- function(bExport, strFile, columns = ":visible") {
+# lHeaders: CSV headers by 0-based column index where the CSV should not use
+# the displayed header, such as an abbreviation.
+rm_CsvButton <- function(bExport, strFile, columns = ":visible", lHeaders = NULL) {
   if (!isTRUE(bExport)) {
     return(list())
+  }
+  lOptions <- list(
+    columns = columns,
+    orthogonal = "export",
+    modifier = list(search = "applied")
+  )
+  if (length(lHeaders)) {
+    lOptions$format <- list(header = DT::JS(sprintf(
+      "function (data, idx) { var h = %s; return h[idx] !== undefined ? h[idx] : data; }",
+      jsonlite::toJSON(lHeaders, auto_unbox = TRUE)
+    )))
   }
   list(list(
     extend = "csv",
     text = "Download CSV",
     filename = strFile,
-    exportOptions = list(
-      columns = columns,
-      orthogonal = "export",
-      modifier = list(search = "applied")
-    )
+    exportOptions = lOptions
   ))
 }
 

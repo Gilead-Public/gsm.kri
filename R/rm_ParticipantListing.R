@@ -3,7 +3,7 @@
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' One tile per participant and KRI vital, with the three tile labels the
+#' One tile per participant and vital, with the three tile labels the
 #' report switches between. [Widget_RepeatMeasurementsTiles()] draws them.
 #'
 #' @param lClass `list` Output of [rm_Classify()].
@@ -15,9 +15,9 @@
 #' @keywords internal
 #' @export
 rm_ParticipantTiles <- function(lClass) {
-  dfVitals <- rm_Vitals()
+  dfVitals <- lClass$vitals
   vSeverity <- c(Red = 3L, Amber = 2L, Green = 1L, `Not evaluable` = 0L)
-  df <- lClass$participants[lClass$participants$flag != "No KRI", ]
+  df <- lClass$participants
   strRate <- ifelse(
     df$Denominator > 0,
     paste0(round(100 * df$Numerator / df$Denominator), "%"),

@@ -20,16 +20,21 @@ test_that("Report_RepeatMeasurements renders the filter strip and study overview
   for (id in c("rm-filter-strip", "rm-chip-country", "rm-chip-site", "rm-chip-subj", "rm-count", "rm-overview", "rm-data")) {
     expect_match(html, paste0('id="', id, '"'), fixed = TRUE)
   }
-  for (g in c("All", "Weight", "HR", "BP", "RR", "Temp")) {
-    expect_match(html, paste0('data-rm-group="', g, '"'), fixed = TRUE)
+  # The Vitals filter is a multi-select of every vital, KRI or not.
+  for (id in c("rm-vital-btn", "rm-vital-summary", "rm-vital-menu", "rm-vital-all")) {
+    expect_match(html, paste0('id="', id, '"'), fixed = TRUE)
   }
+  for (v in c("weight", "pulse", "sysbp", "diabp", "resp", "temp", "height")) {
+    expect_match(html, paste0('type="checkbox" value="', v, '" data-rm-vital-cb checked'), fixed = TRUE)
+  }
+  expect_false(grepl("data-rm-group=", html, fixed = TRUE))
   expect_match(html, "WT 3/8 <span class=\"ok\">= kri0020a", fixed = TRUE)
   expect_match(html, "HR 1/3 <span class=\"ok\">= kri0020b", fixed = TRUE)
   expect_match(html, "W = 3 (from the kri0020 metrics)", fixed = TRUE)
   expect_false(grepl("not in this study's metrics", html, fixed = TRUE))
 
   data <- rm_DataBlock(html)
-  expect_setequal(names(data), c("siteFlags", "vitals", "participants", "settings", "export"))
+  expect_setequal(names(data), c("sites", "siteRule", "vitals", "participants", "settings", "export"))
   expect_equal(data$participants$subjid, c("A", "B", "C", "D", "E"))
   expect_equal(data$participants$invid, c("S1", "S1", "S2", "S3", "S3"))
   expect_true(data$export)
@@ -75,7 +80,8 @@ test_that("flag and blood pressure arguments reach the report settings and paire
   expect_equal(data$settings$thresholds$count, c(2, 3))
   expect_equal(data$settings$minWindows, 2)
   expect_equal(data$settings$bp, "both")
-  expect_equal(data$vitals$vital[data$vitals$flagged], c("weight", "pulse", "sysbp", "diabp", "bp", "resp", "temp"))
+  expect_equal(data$vitals$vital, c("weight", "pulse", "sysbp", "diabp", "bp", "resp", "temp", "height"))
+  expect_false(any(c("flagged", "group") %in% names(data$vitals)))
   expect_true(is.na(data$vitals$metric[data$vitals$vital == "bp"]))
   expect_match(gsub("\\s+", " ", html), "% of windows that repeat, Amber \u2265 10%, Red \u2265 50%; participants need 2 windows for a flag", fixed = TRUE)
   expect_match(html, 'data-rm-vital="bp"', fixed = TRUE)
@@ -93,7 +99,7 @@ test_that("the report shows each vital's flag distribution by study, country and
     function(x) x$metadata$chartId,
     character(1)
   )
-  vVitals <- c("weight", "pulse", "sysbp", "diabp", "resp", "temp")
+  vVitals <- c("weight", "pulse", "sysbp", "diabp", "resp", "temp", "height")
   expect_true(all(
     c("rm-study", paste0("rm-country-", vVitals), paste0("rm-site-", vVitals)) %in% vChartIDs
   ))
@@ -101,7 +107,17 @@ test_that("the report shows each vital's flag distribution by study, country and
     expect_match(html, paste0('data-rm-vital="', strVital, '"'), fixed = TRUE)
   }
   data <- rm_DataBlock(html)
-  expect_equal(data$siteFlags$weight, list(S1 = -2L, S2 = 0L, S3 = 1L))
+  # Site flags: the latest KRI flag for weight and HR, the report's own
+  # calculation (here below accrual) for the other vitals.
+  dfW <- data$sites[data$sites$vital == "weight", ]
+  expect_equal(dfW$invid, c("S1", "S2", "S3"))
+  expect_equal(dfW$flag, c(2L, 0L, 1L))
+  expect_equal(unique(dfW$source), "KRI")
+  dfH <- data$sites[data$sites$vital == "height", ]
+  expect_equal(unique(dfH$source), "report")
+  expect_true(all(is.na(dfH$flag)))
+  expect_equal(data$siteRule$thresholds, c(0.2, 0.3))
+  expect_equal(data$siteRule$accrual, 3)
   # rmFilters.js builds the bars from the tiles, so every tile carries N, D
   # and its site and country.
   x <- rm_WidgetPayloads(html)[["rm-tiles"]]
