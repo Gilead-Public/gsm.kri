@@ -17,7 +17,7 @@
 rm_ParticipantTiles <- function(lClass) {
   dfVitals <- rm_Vitals()
   vSeverity <- c(Red = 3L, Amber = 2L, Green = 1L, `Not evaluable` = 0L)
-  df <- lClass$participants[!is.na(lClass$participants$metric), ]
+  df <- lClass$participants[lClass$participants$flag != "No KRI", ]
   strRate <- ifelse(
     df$Denominator > 0,
     paste0(round(100 * df$Numerator / df$Denominator), "%"),

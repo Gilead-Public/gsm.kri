@@ -5,39 +5,97 @@ test_that("rate rule flags participants at the 20% and 30% boundaries (#343)", {
     A = c(1, 1, 1, 1, 3, 4, 5, 6, 7, 8, 9, 10),
     R = c(1, 1, 1, 1, 1, 4, 5, 6, 7, 8, 9, 10)
   )
-  lClass <- rm_Classify(rm_listings(rm_vs(lValues)), rm_metrics())
+  lClass <- rm_Classify(rm_listings(rm_vs(lValues)), rm_metrics(), strFlagRule = "rate")
   df <- lClass$participants[lClass$participants$vital == "weight", ]
+  expect_equal(lClass$meta$thresholds, c(0.2, 0.3))
   expect_equal(df$Numerator, c(1, 2, 3))
   expect_equal(df$Denominator, c(10, 10, 10))
   expect_equal(as.character(df$flag), c("Green", "Amber", "Red"))
   expect_equal(df$rate, c(0.1, 0.2, 0.3))
 })
 
-test_that("count rule flags 1 window Amber and 2 windows Red (#343)", {
+test_that("the default count rule flags 2 repeating windows Amber and 3 Red (#343)", {
+  # 1, 2 and 3 repeating windows, whatever the share of windows.
   lValues <- list(
-    G = c(1, 2, 3, 4),
-    A = c(1, 1, 1, 2),
-    R = c(1, 1, 1, 1)
+    G = c(1, 1, 1, 2, 3, 4, 5, 6, 7, 8),
+    A = c(1, 1, 1, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20),
+    R = c(1, 1, 1, 1, 1)
   )
-  lClass <- rm_Classify(
-    rm_listings(rm_vs(lValues)),
-    strFlagRule = "count"
-  )
+  lClass <- rm_Classify(rm_listings(rm_vs(lValues)), rm_metrics())
   expect_equal(flag_of(lClass, "G"), "Green")
   expect_equal(flag_of(lClass, "A"), "Amber")
   expect_equal(flag_of(lClass, "R"), "Red")
   expect_equal(lClass$meta$rule, "count")
+  expect_equal(lClass$meta$thresholds, c(2, 3))
+  expect_equal(lClass$meta$min_windows, 1)
+
+  lClass <- rm_Classify(rm_listings(rm_vs(lValues)), vFlagThresholds = c(1, 2))
+  expect_equal(c(flag_of(lClass, "G"), flag_of(lClass, "A"), flag_of(lClass, "R")), c("Amber", "Red", "Red"))
 })
 
-test_that("thresholds come from each vital's site metric (#343)", {
+test_that("rate thresholds come from the kri0020 metrics, or the argument (#343)", {
   lValues <- list(A = c(1, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
   lClass <- rm_Classify(
     rm_listings(rm_vs(lValues)),
-    rm_metrics(strThreshold = "0.05,0.5")
+    rm_metrics(strThreshold = "0.05,0.5"),
+    strFlagRule = "rate"
   )
   expect_equal(flag_of(lClass, "A"), "Amber")
-  expect_equal(lClass$meta$thresholds$weight, c(0.05, 0.5))
-  expect_equal(lClass$meta$thresholds$pulse, c(0.2, 0.3))
+  expect_equal(lClass$meta$thresholds, c(0.05, 0.5))
+
+  lClass <- rm_Classify(rm_listings(rm_vs(lValues)), strFlagRule = "rate")
+  expect_equal(lClass$meta$thresholds, c(0.2, 0.3))
+  expect_equal(flag_of(lClass, "A"), "Green")
+
+  lClass <- rm_Classify(rm_listings(rm_vs(lValues)), strFlagRule = "rate", vFlagThresholds = c(0, 0.1))
+  expect_equal(flag_of(lClass, "A"), "Red")
+
+  dfMetrics <- rm_metrics()
+  dfMetrics$Threshold <- c("0.1,0.2", "0.2,0.3")
+  dfMetrics$ID <- c("kri0020a", "kri0020b")
+  expect_warning(rm_FlagThresholds("rate", dfMetrics = dfMetrics), "different thresholds")
+})
+
+test_that("participants with fewer windows than the minimum are Not evaluable (#343)", {
+  lValues <- list(A = c(1, 1, 1), B = c(1, 1, 1, 1, 1))
+  lClass <- rm_Classify(rm_listings(rm_vs(lValues)), vFlagThresholds = c(1, 2), nMinWindows = 3)
+  expect_equal(flag_of(lClass, "A"), "Not evaluable")
+  expect_equal(flag_of(lClass, "B"), "Red")
+  expect_equal(lClass$meta$min_windows, 3)
+})
+
+test_that("invalid flag settings are rejected (#343)", {
+  dfL <- rm_listings(rm_vs(list(A = 1)))
+  expect_error(rm_Classify(dfL, strFlagRule = "share"))
+  expect_error(rm_Classify(dfL, vFlagThresholds = c(3, 2)), "Amber <= Red")
+  expect_error(rm_Classify(dfL, vFlagThresholds = 2), "two non-negative")
+  expect_error(rm_Classify(dfL, vFlagThresholds = c(-1, 2)), "two non-negative")
+  expect_error(rm_Classify(dfL, nMinWindows = 0), "nMinWindows")
+  expect_error(rm_Classify(dfL, nMinWindows = 1.5), "nMinWindows")
+})
+
+test_that("paired BP repeats only when systolic and diastolic BP both repeat (#343)", {
+  dfVS <- rm_vs(list(A = c(120, 120, 120, 120, 120), B = c(110, 110, 110, NA, 110)), "sysbp")
+  dfVS$diabp <- c(80, 80, 80, 81, 81, 70, 70, 70, 70, 70)
+  lClass <- rm_Classify(rm_listings(dfVS))
+  df <- lClass$participants[lClass$participants$vital %in% c("sysbp", "diabp", "bp"), ]
+  # A: SBP repeats in 3 windows, DBP and the pair in 1. B: the missing SBP
+  # leaves 4 paired records, and the pair repeats in both windows.
+  expect_equal(df$Numerator[df$subjid == "A"], c(3, 1, 1))
+  expect_equal(df$Numerator[df$subjid == "B"], c(2, 3, 2))
+  expect_equal(df$Denominator[df$subjid == "B"], c(2, 3, 2))
+  expect_true(all(is.na(df$metric[df$vital == "bp"])))
+  expect_equal(flag_of(lClass, "A", "bp"), "Green")
+  expect_equal(flag_of(lClass, "B", "bp"), "Amber")
+  dfM <- lClass$measurements[lClass$measurements$vital == "bp", ]
+  expect_equal(dfM$value_text[dfM$subjid == "A"], c("120/80", "120/80", "120/80", "120/81", "120/81"))
+  expect_true(all(is.na(dfM$value)))
+  dfV <- lClass$vitals
+  expect_equal(dfV$vital[dfV$flagged], c("weight", "pulse", "sysbp", "diabp", "bp", "resp", "temp"))
+
+  # Without both readings there is no paired BP.
+  lClass <- rm_Classify(rm_listings(rm_vs(list(A = c(120, 120, 120)), "sysbp")))
+  expect_false("bp" %in% lClass$participants$vital)
 })
 
 test_that("participants with D = 0 or no vitals are Not evaluable (#343)", {
@@ -81,7 +139,8 @@ test_that("vitals without a KRI are windowed but not flagged (#343)", {
   dfVS$bsa <- c(2, 2, 2)
   lClass <- rm_Classify(rm_listings(dfVS))
   df <- lClass$participants
-  expect_equal(df$vital, c(rm_Vitals()$vital[1:6], "height", "bsa"))
+  vKRI <- rm_Vitals()$vital[!is.na(rm_Vitals()$metric)]
+  expect_equal(df$vital, c(vKRI, "height", "bsa"))
   df <- df[df$vital %in% c("weight", "height", "bsa"), ]
   expect_equal(as.character(df$flag), c("Green", "No KRI", "No KRI"))
   expect_equal(df$Numerator, c(0, 1, 1))
@@ -106,7 +165,7 @@ test_that("an empty or missing Mapped_VS leaves every participant Not evaluable 
     lClass <- rm_Classify(list(Mapped_VS = dfVS, Mapped_SUBJ = dfSubj))
     expect_equal(nrow(lClass$measurements), 0)
     expect_true(all(lClass$participants$flag == "Not evaluable"))
-    expect_setequal(unique(lClass$participants$vital), rm_Vitals()$vital[1:6])
+    expect_setequal(unique(lClass$participants$vital), rm_Vitals()$vital[!is.na(rm_Vitals()$metric)])
   }
 })
 
@@ -147,10 +206,12 @@ test_that("Qual: participant N, D and flags match an independent derivation (#34
   dfVS <- mapped_data$Mapped_VS
   dfSubj <- mapped_data$Mapped_SUBJ
   lClass <- rm_Classify(list(Mapped_VS = dfVS, Mapped_SUBJ = dfSubj))
+  lRate <- rm_Classify(list(Mapped_VS = dfVS, Mapped_SUBJ = dfSubj), strFlagRule = "rate", nMinWindows = 2)
 
   # Pairwise definition of a repeat window, independent of run lengths.
   dfVS <- dfVS[dfVS$subjid %in% dfSubj$subjid, ]
-  for (strVital in c("weight", "pulse", "sysbp", "diabp", "resp", "temp")) {
+  dfVS$bp <- ifelse(is.na(dfVS$sysbp) | is.na(dfVS$diabp), NA, paste(dfVS$sysbp, dfVS$diabp))
+  for (strVital in c("weight", "pulse", "sysbp", "diabp", "bp", "resp", "temp")) {
     df <- dfVS[!is.na(dfVS[[strVital]]), ]
     df <- df[order(df$subjid, df$vs_dt, df$visit, method = "radix"), ]
     lSubj <- split(df[[strVital]], factor(df$subjid, levels = dfSubj$subjid))
@@ -161,6 +222,9 @@ test_that("Qual: participant N, D and flags match an independent derivation (#34
     vD <- vapply(lSubj, function(x) max(0, length(x) - 2), numeric(1))
     vRate <- vN / vD
     vFlag <- ifelse(vD == 0, "Not evaluable",
+      ifelse(vN >= 3, "Red", ifelse(vN >= 2, "Amber", "Green"))
+    )
+    vRateFlag <- ifelse(vD < 2, "Not evaluable",
       ifelse(vRate >= 0.3, "Red", ifelse(vRate >= 0.2, "Amber", "Green"))
     )
     dfActual <- lClass$participants[lClass$participants$vital == strVital, ]
@@ -168,6 +232,10 @@ test_that("Qual: participant N, D and flags match an independent derivation (#34
     expect_equal(dfActual$Numerator, unname(vN), label = strVital)
     expect_equal(dfActual$Denominator, unname(vD), label = strVital)
     expect_equal(as.character(dfActual$flag), unname(vFlag), label = strVital)
+    dfRate <- lRate$participants[lRate$participants$vital == strVital, ]
+    dfRate <- dfRate[match(names(lSubj), dfRate$subjid), ]
+    expect_equal(as.character(dfRate$flag), unname(vRateFlag), label = strVital)
   }
   expect_true(any(lClass$participants$flag == "Red"))
+  expect_true(any(lRate$participants$flag == "Red"))
 })

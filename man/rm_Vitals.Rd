@@ -8,13 +8,19 @@ rm_Vitals()
 }
 \value{
 A `tibble` with `vital` (the `Mapped_VS` column), `label`, `short`,
-  `group` (the report's vital filter; `NA` without a KRI) and `metric`
-  (the site workflow ID; `NA` without a KRI).
+  `group` (the report's vital filter; `NA` when not flagged), `metric`
+  (the site workflow ID; `NA` without a KRI) and `flagged` (participants
+  get a flag).
 }
 \description{
 `r lifecycle::badge("experimental")`
 
-The six vitals scored by `kri0020a`–`f` / `cou0020a`–`f`, then height and
-BSA, which are listed without a flag.
+The six vitals scored by `kri0020a`–`f` / `cou0020a`–`f`, paired blood
+pressure, then height and BSA, which are listed without a flag.
+
+Paired blood pressure (`bp`) is report-only: one value per visit record
+with both systolic and diastolic BP, so a window repeats only when both
+repeat over the same visits. It is flagged like the KRI vitals but has no
+metric and does not reconcile with `kri0020c` / `kri0020d`.
 }
 \keyword{internal}

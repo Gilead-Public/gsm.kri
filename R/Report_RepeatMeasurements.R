@@ -5,8 +5,12 @@
 #'
 #' Generates the Repeat Measurements report for the repeat-measure KRIs
 #' (`kri0020a`–`f`, `cou0020a`–`f`): consecutive identical vital sign values
-#' at study, country, site and participant level, with a participant listing
-#' and a vitals listing.
+#' at study, country, site and participant level, with a participant listing,
+#' a vitals listing and a data table.
+#'
+#' The flag rule, thresholds, minimum windows and blood pressure view set the
+#' report's starting settings; reviewers can change them in the report's
+#' Settings panel, which recomputes every participant flag in the browser.
 #'
 #' @param dfResults `data.frame` Reporting results. With `kri0020` results the
 #'   report reconciles with the KRI and colours sites by their KRI flag.
@@ -17,7 +21,15 @@
 #'   `dfResults$SnapshotDate`, if any.
 #' @param nWindowLength `integer` Window length when `dfMetrics` has none.
 #'   See [rm_Classify()].
-#' @param strFlagRule `character` `"rate"` or `"count"`. See [rm_Classify()].
+#' @param strFlagRule `character` Participant flag rule, `"count"` (default)
+#'   or `"rate"`. See [rm_Classify()].
+#' @param vFlagThresholds `numeric` Amber and Red thresholds for
+#'   `strFlagRule`. Default `NULL`: 2 and 3 repeating windows, or the
+#'   `kri0020` rate thresholds. See [rm_Classify()].
+#' @param nMinWindows `numeric` Windows a participant needs for a flag.
+#'   Default 1.
+#' @param strBPMode `character` Blood pressure view: `"separate"` (default,
+#'   systolic and diastolic BP), `"combined"` (paired BP only) or `"both"`.
 #' @param bExport `logical` Show the CSV download buttons. Default: `TRUE`.
 #' @param strOutputDir `string` Output directory. Default: working directory.
 #' @param strOutputFile `string` Output filename. Default:
@@ -46,7 +58,10 @@ Report_RepeatMeasurements <- function(
   lListings = NULL,
   dSnapshotDate = NULL,
   nWindowLength = NULL,
-  strFlagRule = c("rate", "count"),
+  strFlagRule = c("count", "rate"),
+  vFlagThresholds = NULL,
+  nMinWindows = 1,
+  strBPMode = c("separate", "combined", "both"),
   bExport = TRUE,
   strOutputDir = getwd(),
   strOutputFile = NULL,
@@ -60,6 +75,7 @@ Report_RepeatMeasurements <- function(
   rlang::check_installed("knitr", reason = "to run `Report_RepeatMeasurements()`")
   rlang::check_installed("DT", reason = "to run `Report_RepeatMeasurements()`")
   strFlagRule <- match.arg(strFlagRule)
+  strBPMode <- match.arg(strBPMode)
   gsm.core::stop_if(
     cnd = !is.list(lListings) || !is.data.frame(lListings$Mapped_SUBJ),
     message = "lListings must be a list with a Mapped_SUBJ data.frame"
@@ -83,6 +99,9 @@ Report_RepeatMeasurements <- function(
       dSnapshotDate = dSnapshotDate,
       nWindowLength = nWindowLength,
       strFlagRule = strFlagRule,
+      vFlagThresholds = vFlagThresholds,
+      nMinWindows = nMinWindows,
+      strBPMode = strBPMode,
       bExport = bExport
     )
   )

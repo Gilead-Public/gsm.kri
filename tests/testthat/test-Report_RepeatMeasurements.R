@@ -29,12 +29,61 @@ test_that("Report_RepeatMeasurements renders the filter strip and study overview
   expect_false(grepl("not in this study's metrics", html, fixed = TRUE))
 
   data <- rm_DataBlock(html)
-  expect_setequal(names(data), c("overview", "distribution", "siteFlags", "vitals", "groups", "participants", "export"))
+  expect_setequal(names(data), c("siteFlags", "vitals", "participants", "settings", "export"))
   expect_equal(data$participants$subjid, c("A", "B", "C", "D", "E"))
   expect_equal(data$participants$invid, c("S1", "S1", "S2", "S3", "S3"))
-  study <- data$overview[data$overview$Level == "study" & data$overview$vital == "weight", ]
-  expect_equal(c(study$enrolled, study$evaluable, study$amber, study$red), c(5, 3, 1, 1))
   expect_true(data$export)
+})
+
+test_that("the strip has reset, settings and contents buttons, and settings default to 2 / 3 repeating windows (#344)", {
+  html <- rm_default_html()
+  for (id in c("rm-reset", "rm-settings-toggle", "rm-toc-toggle", "rm-settings", "rm-th-amber", "rm-th-red", "rm-min-windows", "rm-settings-defaults")) {
+    expect_match(html, paste0('id="', id, '"'), fixed = TRUE)
+  }
+  expect_match(html, '<div id="rm-settings" class="rm-settings" hidden>', fixed = TRUE)
+  for (v in c("separate", "combined", "both")) {
+    expect_match(html, paste0('data-rm-set="bp" value="', v, '"'), fixed = TRUE)
+  }
+  expect_match(html, 'data-rm-set="bp" value="separate" aria-pressed="true"', fixed = TRUE)
+  expect_match(html, 'data-rm-set="rule" value="count" aria-pressed="true"', fixed = TRUE)
+  expect_match(gsub("\\s+", " ", html), "repeating windows, Amber \u2265 2, Red \u2265 3; participants need 1 window for a flag", fixed = TRUE)
+  settings <- rm_DataBlock(html)$settings
+  expect_equal(settings$rule, "count")
+  expect_equal(settings$thresholds$count, c(2, 3))
+  expect_equal(settings$thresholds$rate, c(0.2, 0.3))
+  expect_equal(settings$minWindows, 1)
+  expect_equal(settings$bp, "separate")
+  # Values are hidden by default.
+  expect_false(grepl('id="rm-show-values" checked', html, fixed = TRUE))
+})
+
+test_that("flag and blood pressure arguments reach the report settings and paired BP is listed (#343, #344)", {
+  f <- rm_Fixture()
+  f$Mapped_VS$sysbp <- 120
+  f$Mapped_VS$diabp <- 80
+  html <- render_rm(
+    f,
+    dfMetrics = rm_FixtureMetrics(),
+    strFlagRule = "rate",
+    vFlagThresholds = c(0.1, 0.5),
+    nMinWindows = 2,
+    strBPMode = "both"
+  )
+  data <- rm_DataBlock(html)
+  expect_equal(data$settings$rule, "rate")
+  expect_equal(data$settings$thresholds$rate, c(0.1, 0.5))
+  expect_equal(data$settings$thresholds$count, c(2, 3))
+  expect_equal(data$settings$minWindows, 2)
+  expect_equal(data$settings$bp, "both")
+  expect_equal(data$vitals$vital[data$vitals$flagged], c("weight", "pulse", "sysbp", "diabp", "bp", "resp", "temp"))
+  expect_true(is.na(data$vitals$metric[data$vitals$vital == "bp"]))
+  expect_match(gsub("\\s+", " ", html), "% of windows that repeat, Amber \u2265 10%, Red \u2265 50%; participants need 2 windows for a flag", fixed = TRUE)
+  expect_match(html, 'data-rm-vital="bp"', fixed = TRUE)
+  x <- rm_WidgetPayloads(html)[["rm-tiles"]]
+  expect_true("bp" %in% vapply(x$tiles, `[[`, character(1), "vital"))
+  expect_true(any(grepl("120/80", unlist(rm_WidgetPayloads(html)[["rm-dt-wide"]]$data), fixed = TRUE)))
+
+  expect_error(Report_RepeatMeasurements(lListings = f, strBPMode = "paired"), "should be one of")
 })
 
 test_that("the report shows each vital's flag distribution by study, country and site (#345)", {
@@ -53,8 +102,10 @@ test_that("the report shows each vital's flag distribution by study, country and
   }
   data <- rm_DataBlock(html)
   expect_equal(data$siteFlags$weight, list(S1 = -2L, S2 = 0L, S3 = 1L))
-  site <- data$distribution$site
-  expect_equal(sum(site$n[site$vital == "weight"]), 3)
+  # rmFilters.js builds the bars from the tiles, so every tile carries N, D
+  # and its site and country.
+  x <- rm_WidgetPayloads(html)[["rm-tiles"]]
+  expect_true(all(c("country", "invid", "Numerator", "Denominator", "flag") %in% names(x$tiles[[1]])))
 })
 
 test_that("the participant listing is the in-repo tiles widget with label, sort, search and download controls (#347)", {

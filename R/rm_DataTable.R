@@ -45,7 +45,7 @@ rm_DataTableData <- function(lClass) {
     seq = as.integer(dfM$seq),
     visit = as.character(dfM$visit),
     vs_dt = dfM$vs_dt,
-    value = dfM$value,
+    value = dfM$value_text,
     in_repeat_window = ifelse(dfM$in_repeat_window, "Yes", "No"),
     vital = dfM$vital,
     has_repeat = ifelse(
@@ -98,7 +98,8 @@ rm_DataTableWide <- function(lClass) {
       vs_dt = if ("vs_dt" %in% names(dfRecords)) dfRecords$vs_dt else as.Date(NA),
       performed = rm_Performed(dfRecords$vsperf_std)
     ),
-    lapply(dfRecords[vVitals], as.numeric),
+    # Paired BP stays text ("120/80").
+    lapply(dfRecords[vVitals], function(x) if (is.character(x)) x else as.numeric(x)),
     lRepeat,
     list(repeat_vitals = dplyr::coalesce(unname(vRepeat[dfRecords$subjid]), ""))
   ))
@@ -236,7 +237,7 @@ rm_DataTable <- function(dfLong, dfWide, dfVitals, bExport = TRUE) {
 rm_ParticipantOrder <- function(lClass) {
   vSeverity <- c(Red = 4, Amber = 3, Green = 2, `No KRI` = 1, `Not evaluable` = 0)
   df <- lClass$participants %>%
-    dplyr::filter(!is.na(.data$metric)) %>%
+    dplyr::filter(.data$flag != "No KRI") %>%
     dplyr::mutate(severity = unname(vSeverity[as.character(.data$flag)])) %>%
     dplyr::group_by(.data$subjid) %>%
     dplyr::summarise(

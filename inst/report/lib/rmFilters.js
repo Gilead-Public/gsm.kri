@@ -1,9 +1,12 @@
-// Repeat Measurements report filters. R precomputes the overview, chart slices
-// and listing rows into the #rm-data JSON block and the widgets; this script
-// keeps the reviewer's selection and hands each widget the matching rows.
+// Repeat Measurements report filters and settings. R classifies every
+// participant and vital into the widgets and the #rm-data JSON block; this
+// script keeps the reviewer's selection and settings, recomputes participant
+// flags from N and D when the flag settings change, and hands each widget the
+// matching rows.
 (function () {
-  var LEVELS = ['study', 'country', 'site'];
   var FLAG_COLORS = { 0: '#3DAF06', 1: '#FEAA02', 2: '#FF5859' };
+  var RAG = ['Red', 'Amber', 'Green'];
+  var SEVERITY = { Red: 3, Amber: 2, Green: 1, 'Not evaluable': 0 };
   var state = {
     group: 'All',
     country: null,
@@ -12,7 +15,8 @@
     label: 'both',
     sort: 'worst',
     search: '',
-    showValues: true,
+    // Values are hidden by default; the compact blocks keep the pattern.
+    showValues: false,
     onlyRepeat: true,
     // Data table shape and its "only ... with a repeat window" toggle.
     shape: 'wide',
@@ -22,6 +26,9 @@
   };
   var data = null;
   var allTiles = null;
+  // { rule, thresholds: { count: [amber, red], rate: [amber, red] }, minWindows, bp }
+  var settings = null;
+  var defaults = null;
 
   function rmData() {
     if (!data) {
@@ -46,11 +53,37 @@
     });
   }
 
-  // KRI vitals in the selected group, in report order.
-  function groupVitals() {
+  function clone(x) {
+    return JSON.parse(JSON.stringify(x));
+  }
+
+  function initSettings() {
+    if (settings || !rmData() || !rmData().settings) return;
+    defaults = clone(rmData().settings);
+    settings = clone(defaults);
+  }
+
+  // The BP view swaps systolic and diastolic BP for paired BP, or shows all three.
+  function bpShown(vital) {
+    var bp = settings ? settings.bp : 'separate';
+    if (vital === 'bp') return bp !== 'separate';
+    if (vital === 'sysbp' || vital === 'diabp') return bp !== 'combined';
+    return true;
+  }
+
+  // Vitals the vital group and BP view show, in report order. Height, BSA and
+  // other unflagged vitals have no group, so they show only under All.
+  function shownVitals(flaggedOnly) {
     return rmData().vitals.filter(function (v) {
-      return v.metric && (state.group === 'All' || v.group === state.group);
+      if (flaggedOnly && !v.flagged) return false;
+      if (!bpShown(v.vital)) return false;
+      return state.group === 'All' || (v.flagged && v.group === state.group);
     });
+  }
+
+  // Flagged vitals in the selected group and BP view.
+  function groupVitals() {
+    return shownVitals(true);
   }
 
   function inGroup(vital) {
@@ -66,30 +99,141 @@
     return true;
   }
 
-  // ---- §1 overview --------------------------------------------------------
-  function overviewRows() {
-    var d = rmData();
-    if (state.subj) {
-      // One participant: counts come straight from their tiles.
-      return (allTiles || [])
-        .filter(function (t) {
-          return t.subjid === state.subj;
-        })
-        .map(function (t) {
-          return {
-            vital: t.vital,
-            enrolled: 1,
-            evaluable: t.Denominator > 0 ? 1 : 0,
-            amber: t.flag === 'Amber' ? 1 : 0,
-            red: t.flag === 'Red' ? 1 : 0
-          };
-        });
-    }
-    var level = state.site ? 'site' : state.country ? 'country' : 'study';
-    var id = state.site || state.country;
-    return d.overview.filter(function (r) {
-      return r.Level === level && (level === 'study' || r.GroupID === id);
+  // ---- flags ---------------------------------------------------------------
+  // Mirrors rm_Classify(): too few windows is Not evaluable; otherwise the
+  // count or rate is compared with the Amber and Red thresholds.
+  function flagOf(n, d) {
+    if (!d || d < settings.minWindows) return 'Not evaluable';
+    var x = settings.rule === 'rate' ? n / d : n;
+    var th = settings.thresholds[settings.rule];
+    if (x >= th[1]) return 'Red';
+    if (x >= th[0]) return 'Amber';
+    return 'Green';
+  }
+
+  // reorder: false on load, where R already sorted the listing worst first.
+  function applyFlags(reorder) {
+    (allTiles || []).forEach(function (t) {
+      t.flag = flagOf(t.Numerator, t.Denominator);
+      t.severity = SEVERITY[t.flag];
     });
+    var api = dtApi('rm-vitals');
+    if (!api) return;
+    var ci = colIndex(api);
+    var flagged = {};
+    rmData().vitals.forEach(function (v) {
+      flagged[v.vital] = v.flagged;
+    });
+    api.rows().every(function () {
+      var d = this.data();
+      if (flagged[d[ci.vital]]) d[ci.flag] = flagOf(d[ci.Numerator], d[ci.Denominator]);
+    });
+    api.rows().invalidate('data');
+    if (reorder === false) return;
+    // Keep worst first unless the reviewer sorted by another column.
+    var order = api.order();
+    if (!order.length || order[0][0] === ci.flag) api.order([[ci.flag, 'desc']]);
+  }
+
+  // ---- settings ------------------------------------------------------------
+  function isRate() {
+    return settings.rule === 'rate';
+  }
+
+  // Rate thresholds are fractions in #rm-data and percentages in the inputs.
+  function syncSettings() {
+    document.querySelectorAll('[data-rm-set]').forEach(function (b) {
+      var key = b.getAttribute('data-rm-set');
+      b.setAttribute('aria-pressed', String(settings[key] === b.value));
+    });
+    var th = settings.thresholds[settings.rule];
+    var scale = isRate() ? 100 : 1;
+    var inputs = { 'rm-th-amber': th[0] * scale, 'rm-th-red': th[1] * scale, 'rm-min-windows': settings.minWindows };
+    Object.keys(inputs).forEach(function (id) {
+      var el = byId(id);
+      if (el && document.activeElement !== el) el.value = fmt(inputs[id]);
+    });
+    document.querySelectorAll('[data-rm-unit]').forEach(function (el) {
+      var id = el.getAttribute('data-rm-unit');
+      el.textContent = id === 'rm-min-windows' ? '' : isRate() ? '%' : 'windows';
+    });
+    document.querySelectorAll('.rm-rule-text').forEach(function (el) {
+      el.textContent = ruleText();
+    });
+  }
+
+  function settingsMsg(text) {
+    var el = byId('rm-settings-msg');
+    if (el) el.textContent = text || '';
+  }
+
+  // Applies the inputs when they are valid; otherwise explains and keeps the
+  // last valid settings.
+  function readThresholds() {
+    var amber = parseFloat((byId('rm-th-amber') || {}).value);
+    var red = parseFloat((byId('rm-th-red') || {}).value);
+    var min = Number((byId('rm-min-windows') || {}).value);
+    if (!isFinite(amber) || !isFinite(red) || amber < 0 || red < 0) {
+      return settingsMsg('Enter Amber and Red thresholds of 0 or more.');
+    }
+    if (amber > red) return settingsMsg('Amber must not be above Red.');
+    if (!(min >= 1) || Math.floor(min) !== min) return settingsMsg('Minimum windows must be a whole number of 1 or more.');
+    var scale = isRate() ? 100 : 1;
+    settingsMsg('');
+    settings.thresholds[settings.rule] = [amber / scale, red / scale];
+    settings.minWindows = min;
+    settingsChanged(true);
+  }
+
+  function settingsChanged(flags) {
+    if (flags) applyFlags();
+    syncSettings();
+    rmSync();
+  }
+
+  // Hides the floating table of contents so the sections use the full width.
+  function setToc(hidden) {
+    var toc = byId('TOC');
+    var btn = byId('rm-toc-toggle');
+    if (!toc || !btn) return;
+    var col = toc.parentElement;
+    if (col) col.style.display = hidden ? 'none' : '';
+    document.body.classList.toggle('rm-toc-hidden', hidden);
+    btn.setAttribute('aria-pressed', String(hidden));
+    btn.textContent = hidden ? 'Show contents' : 'Hide contents';
+    window.dispatchEvent(new Event('resize'));
+    ['rm-vitals', 'rm-dt-long', 'rm-dt-wide'].forEach(function (id) {
+      var api = dtApi(id);
+      if (api) api.columns.adjust();
+    });
+  }
+
+  function fmt(x) {
+    return String(Math.round(x * 1e6) / 1e6);
+  }
+
+  function ruleText() {
+    var th = settings.thresholds[settings.rule];
+    var m = settings.minWindows;
+    return (
+      (settings.rule === 'rate'
+        ? '% of windows that repeat, Amber \u2265 ' + fmt(100 * th[0]) + '%, Red \u2265 ' + fmt(100 * th[1]) + '%'
+        : 'repeating windows, Amber \u2265 ' + fmt(th[0]) + ', Red \u2265 ' + fmt(th[1])) +
+      '; participants need ' + m + ' window' + (m === 1 ? '' : 's') + ' for a flag'
+    );
+  }
+
+  // ---- §1 overview --------------------------------------------------------
+  function overviewCounts() {
+    var counts = {};
+    (allTiles || []).forEach(function (t) {
+      if (!inScope(t)) return;
+      var c = counts[t.vital] || (counts[t.vital] = { evaluable: 0, amber: 0, red: 0 });
+      if (RAG.indexOf(t.flag) >= 0) c.evaluable++;
+      if (t.flag === 'Amber') c.amber++;
+      if (t.flag === 'Red') c.red++;
+    });
+    return counts;
   }
 
   function pct(n, d) {
@@ -100,7 +244,7 @@
   function renderOverview() {
     var el = byId('rm-overview');
     if (!el) return;
-    var rows = overviewRows();
+    var counts = overviewCounts();
     var scope = state.subj
       ? 'Participant ' + state.subj
       : state.site
@@ -108,19 +252,17 @@
         : state.country
           ? state.country
           : 'Study';
-    var enrolled = rows.length ? rows[0].enrolled : 0;
+    var enrolled = (rmData().participants || []).filter(inScope).length;
     var h =
       '<p><strong>' + esc(scope) + ':</strong> ' + enrolled + ' enrolled participant' + (enrolled === 1 ? '' : 's') + '</p>' +
       '<table class="table table-condensed"><thead><tr><th style="text-align:left">Vital</th><th style="text-align:left">KRI</th>' +
       '<th>Evaluable</th><th>% of enrolled</th><th>Flagged</th><th>% of evaluable</th><th>Amber</th><th>Red</th></tr></thead><tbody>';
     groupVitals().forEach(function (v) {
-      var r = rows.filter(function (x) {
-        return x.vital === v.vital;
-      })[0] || { evaluable: 0, amber: 0, red: 0 };
+      var r = counts[v.vital] || { evaluable: 0, amber: 0, red: 0 };
       var fl = r.amber + r.red;
       h +=
         '<tr data-rm-overview="' + esc(v.vital) + '"><td style="text-align:left">' + esc(v.label) + '</td>' +
-        '<td style="text-align:left"><code>' + esc(v.metric) + '</code></td>' +
+        '<td style="text-align:left">' + (v.metric ? '<code>' + esc(v.metric) + '</code>' : '<span class="rm-nk">none (paired SBP and DBP)</span>') + '</td>' +
         '<td class="v">' + r.evaluable + '</td><td class="b">' + pct(r.evaluable, enrolled) + '</td>' +
         '<td class="v">' + fl + '</td><td class="b">' + pct(fl, r.evaluable) + '</td>' +
         '<td><span class="rm-dot" style="background:#FEAA02"></span>' + r.amber + '</td>' +
@@ -130,12 +272,57 @@
   }
 
   // ---- §2 distribution ----------------------------------------------------
+  // Mirrors rm_DistributionRows(): evaluable participants by flag per group,
+  // groups sorted by % flagged, then evaluable participants, then name.
   function distRows(level, vital) {
-    return (rmData().distribution[level] || []).filter(function (r) {
-      if (vital ? r.vital !== vital : !inGroup(r.vital)) return false;
-      // The site charts narrow to the selected country; the others keep every bar.
-      return level !== 'site' || !state.country || r.OuterGroupID === state.country;
+    var vitals = (vital ? [vital] : groupVitals().map(function (v) {
+      return v.vital;
+    }));
+    var short = {};
+    rmData().vitals.forEach(function (v) {
+      short[v.vital] = v.short;
     });
+    var groups = {};
+    var list = [];
+    (allTiles || []).forEach(function (t) {
+      if (vitals.indexOf(t.vital) < 0 || RAG.indexOf(t.flag) < 0) return;
+      // The site charts narrow to the selected country; the others keep every bar.
+      if (level === 'site' && state.country && t.country !== state.country) return;
+      var id = level === 'study' ? short[t.vital] : level === 'country' ? t.country : t.invid;
+      var key = t.vital + '\u0000' + id;
+      var g = groups[key];
+      if (!g) {
+        g = groups[key] = { vital: t.vital, GroupID: id, OuterGroupID: level === 'site' ? t.country : null, n: { Red: 0, Amber: 0, Green: 0 }, ev: 0 };
+        list.push(g);
+      }
+      g.n[t.flag]++;
+      g.ev++;
+    });
+    list.sort(function (a, b) {
+      var va = vitals.indexOf(a.vital);
+      var vb = vitals.indexOf(b.vital);
+      if (va !== vb) return va - vb;
+      var pa = (a.n.Red + a.n.Amber) / a.ev;
+      var pb = (b.n.Red + b.n.Amber) / b.ev;
+      if (pa !== pb) return pb - pa;
+      if (a.ev !== b.ev) return b.ev - a.ev;
+      return a.GroupID < b.GroupID ? -1 : a.GroupID > b.GroupID ? 1 : 0;
+    });
+    var rows = [];
+    var order = [];
+    list.forEach(function (g) {
+      if (order.indexOf(g.GroupID) < 0) order.push(g.GroupID);
+      RAG.forEach(function (f) {
+        if (g.n[f]) rows.push({ vital: g.vital, GroupID: g.GroupID, OuterGroupID: g.OuterGroupID, Flag: f, n: g.n[f], Level: level });
+      });
+    });
+    return { rows: rows, order: order };
+  }
+
+  function updateBars(c, d) {
+    var spec = c.data._spec_;
+    var x = Object.assign({}, (spec.scales || {}).x, { order: d.order });
+    c.helpers.updateData(c, d.rows, Object.assign({}, spec, { scales: Object.assign({}, spec.scales, { x: x }) }));
   }
 
   // Site tick labels take the colour of the site's KRI flag for that vital.
@@ -158,13 +345,13 @@
 
   function syncBars() {
     var study = chart('rm-study');
-    if (study) study.helpers.updateData(study, distRows('study'), study.data._spec_);
+    if (study) updateBars(study, distRows('study'));
     rmData().vitals.forEach(function (v) {
-      if (!v.metric) return;
+      if (!v.flagged) return;
       ['country', 'site'].forEach(function (level) {
         var c = chart('rm-' + level + '-' + v.vital);
         if (!c) return;
-        c.helpers.updateData(c, distRows(level, v.vital), c.data._spec_);
+        updateBars(c, distRows(level, v.vital));
         var selected = level === 'country' ? state.country : state.site;
         if (selected && c.data.labels.indexOf(selected) >= 0) {
           c.helpers.selectCategory(c, selected);
@@ -186,13 +373,15 @@
       if (!inGroup(t.vital) || !inScope(t)) return false;
       return !q || (t.subjid + ' ' + t.invid + ' ' + t.country).toUpperCase().indexOf(q) >= 0;
     });
-    if (state.sort === 'worst') return rows;
     // Rows render in first-appearance order, so sorting participants sorts the grid.
     var key = {};
     var rateVital = state.sort.indexOf('rate:') === 0 ? state.sort.slice(5) : null;
     rows.forEach(function (t, i) {
-      if (!(t.subjid in key)) key[t.subjid] = { i: i, rate: -1 };
-      if (rateVital && t.vital === rateVital && t.rate !== null) key[t.subjid].rate = t.rate;
+      var k = key[t.subjid] || (key[t.subjid] = { i: i, rate: -1, worst: -1, most: -1 });
+      if (rateVital && t.vital === rateVital && t.rate !== null) k.rate = t.rate;
+      // Worst flag over the vitals shown, as the flags may have changed.
+      k.worst = Math.max(k.worst, t.severity);
+      k.most = Math.max(k.most, t.Numerator);
     });
     var first = {};
     rows.forEach(function (t) {
@@ -203,6 +392,9 @@
       var y = first[b.subjid];
       if (a.subjid === b.subjid) return key[a.subjid].i - key[b.subjid].i;
       if (rateVital) return key[b.subjid].rate - key[a.subjid].rate || key[a.subjid].i - key[b.subjid].i;
+      if (state.sort === 'worst') {
+        return key[b.subjid].worst - key[a.subjid].worst || key[b.subjid].most - key[a.subjid].most || (a.subjid < b.subjid ? -1 : 1);
+      }
       if (state.sort === 'invid' && x.invid !== y.invid) return x.invid < y.invid ? -1 : 1;
       return a.subjid < b.subjid ? -1 : 1;
     }
@@ -283,11 +475,7 @@
 
     var vitals = dtApi('rm-vitals');
     if (vitals) {
-      // Height and BSA have no group, so they show only under All.
-      var keys = state.group === 'All' ? [] : groupVitals().map(function (v) {
-        return jQuery.fn.dataTable.util.escapeRegex(v.vital);
-      });
-      vitals.column('vital:name').search(keys.length ? '^(' + keys.join('|') + ')$' : '', true, false);
+      vitals.column('vital:name').search(vitalRegex(), true, false);
       vitals.column('has_repeat:name').search(state.onlyRepeat ? '^Y$' : '', true, false);
       vitals.column('country:name').search(exact(state.country), true, false);
       vitals.column('invid:name').search(exact(state.site), true, false);
@@ -298,9 +486,23 @@
 
   // ---- §5 data table -------------------------------------------------------
   function vitalKeys() {
-    return groupVitals().map(function (v) {
+    return shownVitals(false).map(function (v) {
       return jQuery.fn.dataTable.util.escapeRegex(v.vital);
     });
+  }
+
+  // Every vital row the group and BP view show; matches nothing when none do.
+  function vitalRegex() {
+    var keys = vitalKeys();
+    return keys.length ? '^(' + keys.join('|') + ')$' : '^\\b$';
+  }
+
+  function colIndex(api) {
+    var ci = {};
+    api.settings()[0].aoColumns.forEach(function (c, i) {
+      if (c.name) ci[c.name] = i;
+    });
+    return ci;
   }
 
   function syncDataTable() {
@@ -318,8 +520,7 @@
         ? 'Only participants with a repeat window'
         : 'Only vitals with a repeat window';
     }
-    // Height and BSA have no group, so they show only under All.
-    var keys = state.group === 'All' ? [] : vitalKeys();
+    var keys = vitalKeys();
     var scope = function (api) {
       api.column('country:name').search(exact(state.country), true, false);
       api.column('invid:name').search(exact(state.site), true, false);
@@ -328,7 +529,7 @@
 
     var long = dtApi('rm-dt-long');
     if (long) {
-      long.column('vital:name').search(keys.length ? '^(' + keys.join('|') + ')$' : '', true, false);
+      long.column('vital:name').search(vitalRegex(), true, false);
       long.column('has_repeat:name').search(state.dtOnly ? '^Y$' : '', true, false);
       scope(long);
       long.draw();
@@ -338,14 +539,17 @@
     if (wide) {
       var shown = {};
       rmData().vitals.forEach(function (v) {
-        shown[v.vital] = state.group === 'All' || (v.metric && v.group === state.group);
+        shown[v.vital] = false;
+      });
+      shownVitals(false).forEach(function (v) {
+        shown[v.vital] = true;
       });
       wide.columns().every(function () {
         var name = this.settings()[0].aoColumns[this.index()].name;
         if (name in shown && this.visible() !== shown[name]) this.visible(shown[name], false);
       });
       var onlyRe = '';
-      if (state.dtOnly) onlyRe = keys.length ? '(^| )(' + keys.join('|') + ')( |$)' : '\\S';
+      if (state.dtOnly) onlyRe = keys.length ? '(^| )(' + keys.join('|') + ')( |$)' : '^\\b$';
       wide.column('repeat_vitals:name').search(onlyRe, true, false);
       scope(wide);
       wide.columns.adjust().draw();
@@ -392,6 +596,7 @@
 
   function rmSync() {
     if (!rmData()) return;
+    initSettings();
     document.querySelectorAll('[data-rm-group]').forEach(function (b) {
       b.setAttribute('aria-pressed', String(b.getAttribute('data-rm-group') === state.group));
     });
@@ -402,6 +607,12 @@
     if (!allTiles) {
       var c = chart('rm-tiles');
       if (c) allTiles = c.data.slice();
+    }
+    if (settings && !settings._applied) {
+      // R used the same settings, so this only keeps the two in step.
+      settings._applied = true;
+      applyFlags(false);
+      syncSettings();
     }
     renderOverview();
     syncBars();
@@ -435,6 +646,36 @@
     } else if (label) {
       setLabel(label.getAttribute('data-rm-label'));
       return;
+    } else if (t.closest('#rm-reset')) {
+      state.group = 'All';
+      state.country = null;
+      state.site = null;
+      setSubj(null);
+    } else if (t.closest('#rm-settings-toggle')) {
+      var panel = byId('rm-settings');
+      var btn = t.closest('#rm-settings-toggle');
+      var open = panel && panel.hidden;
+      if (panel) panel.hidden = !open;
+      btn.setAttribute('aria-expanded', String(!!open));
+      return;
+    } else if (t.closest('#rm-toc-toggle')) {
+      setToc(!document.body.classList.contains('rm-toc-hidden'));
+      return;
+    } else if (t.closest('[data-rm-set]')) {
+      var set = t.closest('[data-rm-set]');
+      var k = set.getAttribute('data-rm-set');
+      if (settings[k] === set.value) return;
+      settings[k] = set.value;
+      settingsMsg('');
+      settingsChanged(k === 'rule');
+      return;
+    } else if (t.closest('#rm-settings-defaults')) {
+      var keep = settings._applied;
+      settings = clone(defaults);
+      settings._applied = keep;
+      settingsMsg('');
+      settingsChanged(true);
+      return;
     } else if (t.closest('#rm-tiles-csv')) {
       downloadTiles();
       return;
@@ -463,6 +704,10 @@
 
   document.addEventListener('change', function (e) {
     var id = e.target.id;
+    if (id === 'rm-th-amber' || id === 'rm-th-red' || id === 'rm-min-windows') {
+      readThresholds();
+      return;
+    }
     if (id === 'rm-show-values') state.showValues = e.target.checked;
     else if (id === 'rm-only-repeat') state.onlyRepeat = e.target.checked;
     else if (id === 'rm-dt-only') {
@@ -512,5 +757,9 @@
     rmSync();
   });
 
-  window.addEventListener('load', rmSync);
+  window.addEventListener('load', function () {
+    var toc = byId('rm-toc-toggle');
+    if (toc && byId('TOC')) toc.style.display = '';
+    rmSync();
+  });
 })();

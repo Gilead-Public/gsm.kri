@@ -3,9 +3,11 @@
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' Participant counts per KRI vital for the whole study, each country and each
-#' site, so the report's filter script only picks rows. A participant is
-#' evaluable for a vital with at least one window (`Denominator > 0`).
+#' Participant counts per flagged vital for the whole study, each country and
+#' each site. A participant is evaluable for a vital when their flag is Red,
+#' Amber or Green (enough windows for the flag rule). The report's filter
+#' script computes the same counts in the browser so that they follow the
+#' reviewer's flag settings.
 #'
 #' @param dfParticipants `data.frame` `participants` from [rm_Classify()].
 #'
@@ -14,7 +16,7 @@
 #' @keywords internal
 #' @export
 rm_OverviewRows <- function(dfParticipants) {
-  df <- dfParticipants[!is.na(dfParticipants$metric), ]
+  df <- dfParticipants[dfParticipants$flag != "No KRI", ]
   dplyr::bind_rows(lapply(
     c(study = "studyid", country = "country", site = "invid"),
     function(strCol) {
@@ -23,7 +25,7 @@ rm_OverviewRows <- function(dfParticipants) {
         dplyr::group_by(.data$GroupID, .data$vital) %>%
         dplyr::summarise(
           enrolled = dplyr::n_distinct(.data$subjid),
-          evaluable = sum(.data$Denominator > 0),
+          evaluable = sum(.data$flag %in% c("Red", "Amber", "Green")),
           amber = sum(.data$flag == "Amber"),
           red = sum(.data$flag == "Red"),
           .groups = "drop"

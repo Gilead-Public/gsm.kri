@@ -10,7 +10,10 @@ Report_RepeatMeasurements(
   lListings = NULL,
   dSnapshotDate = NULL,
   nWindowLength = NULL,
-  strFlagRule = c("rate", "count"),
+  strFlagRule = c("count", "rate"),
+  vFlagThresholds = NULL,
+  nMinWindows = 1,
+  strBPMode = c("separate", "combined", "both"),
   bExport = TRUE,
   strOutputDir = getwd(),
   strOutputFile = NULL,
@@ -33,7 +36,18 @@ thresholds come from the `kri0020` rows when present.}
 \item{nWindowLength}{`integer` Window length when `dfMetrics` has none.
 See [rm_Classify()].}
 
-\item{strFlagRule}{`character` `"rate"` or `"count"`. See [rm_Classify()].}
+\item{strFlagRule}{`character` Participant flag rule, `"count"` (default)
+or `"rate"`. See [rm_Classify()].}
+
+\item{vFlagThresholds}{`numeric` Amber and Red thresholds for
+`strFlagRule`. Default `NULL`: 2 and 3 repeating windows, or the
+`kri0020` rate thresholds. See [rm_Classify()].}
+
+\item{nMinWindows}{`numeric` Windows a participant needs for a flag.
+Default 1.}
+
+\item{strBPMode}{`character` Blood pressure view: `"separate"` (default,
+systolic and diastolic BP), `"combined"` (paired BP only) or `"both"`.}
 
 \item{bExport}{`logical` Show the CSV download buttons. Default: `TRUE`.}
 
@@ -52,8 +66,12 @@ File path of the saved report HTML, returned invisibly.
 
 Generates the Repeat Measurements report for the repeat-measure KRIs
 (`kri0020a`–`f`, `cou0020a`–`f`): consecutive identical vital sign values
-at study, country, site and participant level, with a participant listing
-and a vitals listing.
+at study, country, site and participant level, with a participant listing,
+a vitals listing and a data table.
+
+The flag rule, thresholds, minimum windows and blood pressure view set the
+report's starting settings; reviewers can change them in the report's
+Settings panel, which recomputes every participant flag in the browser.
 }
 \examples{
 \dontrun{

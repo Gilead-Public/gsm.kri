@@ -1,5 +1,5 @@
 test_that("overview counts enrolled, evaluable and flagged participants by study, country and site (#344)", {
-  df <- rm_OverviewRows(rm_Classify(rm_Fixture())$participants)
+  df <- rm_OverviewRows(rm_Classify(rm_Fixture(), strFlagRule = "rate")$participants)
   row <- function(strLevel, strID, strVital) {
     as.list(df[df$Level == strLevel & df$GroupID == strID & df$vital == strVital, c("enrolled", "evaluable", "amber", "red")])
   }
@@ -14,7 +14,7 @@ test_that("overview counts enrolled, evaluable and flagged participants by study
 })
 
 test_that("reconciliation sums participant N and D and compares them with the latest kri0020 results (#344)", {
-  dfParticipants <- rm_Classify(rm_Fixture())$participants
+  dfParticipants <- rm_Classify(rm_Fixture(), strFlagRule = "rate")$participants
   df <- rm_Reconcile(dfParticipants, rm_FixtureResults())
   expect_equal(df$vital, c("weight", "pulse"))
   expect_equal(df$Numerator, c(3, 1))
@@ -29,7 +29,7 @@ test_that("reconciliation sums participant N and D and compares them with the la
 })
 
 test_that("reconciliation is skipped without kri0020 results (#344)", {
-  dfParticipants <- rm_Classify(rm_Fixture())$participants
+  dfParticipants <- rm_Classify(rm_Fixture(), strFlagRule = "rate")$participants
   expect_null(rm_Reconcile(dfParticipants, NULL))
   expect_null(rm_Reconcile(dfParticipants, data.frame(SnapshotDate = Sys.Date())))
   dfOther <- rm_FixtureResults()

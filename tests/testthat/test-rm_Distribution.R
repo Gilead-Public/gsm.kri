@@ -1,5 +1,5 @@
 test_that("distribution rows count evaluable participants by flag and reconcile with the overview (#345)", {
-  dfParticipants <- rm_Classify(rm_Fixture())$participants
+  dfParticipants <- rm_Classify(rm_Fixture(), strFlagRule = "rate")$participants
   dfOverview <- rm_OverviewRows(dfParticipants)
   for (strLevel in c("study", "country", "site")) {
     df <- rm_DistributionRows(dfParticipants, strLevel)
@@ -22,7 +22,7 @@ test_that("distribution rows count evaluable participants by flag and reconcile 
 })
 
 test_that("study bars are labelled by vital and site bars carry their country, sorted by % flagged (#345)", {
-  dfParticipants <- rm_Classify(rm_Fixture())$participants
+  dfParticipants <- rm_Classify(rm_Fixture(), strFlagRule = "rate")$participants
   dfStudy <- rm_DistributionRows(dfParticipants, "study")
   expect_equal(unique(dfStudy$GroupID), c("WT", "HR"))
   expect_true(all(is.na(dfStudy$OuterGroupID)))

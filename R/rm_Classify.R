@@ -3,24 +3,31 @@
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' The six vitals scored by `kri0020a`–`f` / `cou0020a`–`f`, then height and
-#' BSA, which are listed without a flag.
+#' The six vitals scored by `kri0020a`–`f` / `cou0020a`–`f`, paired blood
+#' pressure, then height and BSA, which are listed without a flag.
+#'
+#' Paired blood pressure (`bp`) is report-only: one value per visit record
+#' with both systolic and diastolic BP, so a window repeats only when both
+#' repeat over the same visits. It is flagged like the KRI vitals but has no
+#' metric and does not reconcile with `kri0020c` / `kri0020d`.
 #'
 #' @return A `tibble` with `vital` (the `Mapped_VS` column), `label`, `short`,
-#'   `group` (the report's vital filter; `NA` without a KRI) and `metric`
-#'   (the site workflow ID; `NA` without a KRI).
+#'   `group` (the report's vital filter; `NA` when not flagged), `metric`
+#'   (the site workflow ID; `NA` without a KRI) and `flagged` (participants
+#'   get a flag).
 #' @keywords internal
 #' @export
 rm_Vitals <- function() {
   tibble::tibble(
-    vital = c("weight", "pulse", "sysbp", "diabp", "resp", "temp", "height", "bsa"),
+    vital = c("weight", "pulse", "sysbp", "diabp", "bp", "resp", "temp", "height", "bsa"),
     label = c(
-      "Weight", "Heart rate", "Systolic BP", "Diastolic BP",
+      "Weight", "Heart rate", "Systolic BP", "Diastolic BP", "Blood pressure (SBP/DBP)",
       "Respiratory rate", "Temperature", "Height", "BSA"
     ),
-    short = c("WT", "HR", "SBP", "DBP", "RR", "Temp", "Ht", "BSA"),
-    group = c("Weight", "HR", "BP", "BP", "RR", "Temp", NA, NA),
-    metric = c(paste0("kri0020", letters[1:6]), NA, NA)
+    short = c("WT", "HR", "SBP", "DBP", "BP", "RR", "Temp", "Ht", "BSA"),
+    group = c("Weight", "HR", "BP", "BP", "BP", "RR", "Temp", NA, NA),
+    metric = c(paste0("kri0020", letters[1:4]), NA, paste0("kri0020", letters[5:6]), NA, NA),
+    flagged = c(rep(TRUE, 7), FALSE, FALSE)
   )
 }
 
@@ -52,24 +59,31 @@ rm_FlagColors <- function() {
 #' reads one frame. Summing `Numerator` and `Denominator` by site or country
 #' reproduces the metrics.
 #'
-#' A participant's flag for a KRI vital uses one of two rules:
-#' * `"rate"` (default): `Numerator / Denominator` against the vital's site
-#'   metric thresholds (`kri0020a`–`f` `Threshold` in `dfMetrics`, else 20\% /
-#'   30\%): Amber at or above the first, Red at or above the second.
-#' * `"count"`: Amber at 1 repeat window, Red at 2 or more.
+#' A participant's flag for a flagged vital uses one of two rules:
+#' * `"count"` (default): repeating windows `Numerator` against
+#'   `vFlagThresholds` (default Amber at 2, Red at 3 or more).
+#' * `"rate"`: `Numerator / Denominator` against `vFlagThresholds` (default
+#'   the `kri0020` `Threshold` in `dfMetrics`, else 20\% / 30\%).
 #'
-#' Participants with no evaluable window (`Denominator` 0) are
-#' `Not evaluable`. Height, BSA and any other numeric `Mapped_VS` column are
-#' windowed the same way and flagged `No KRI`.
+#' Amber is at or above the first threshold, Red at or above the second.
+#' Participants with fewer than `nMinWindows` windows are `Not evaluable`.
+#' Height, BSA and any other numeric `Mapped_VS` column are windowed the same
+#' way and flagged `No KRI`. With `sysbp` and `diabp`, paired blood pressure
+#' (`bp`, see [rm_Vitals()]) is added.
 #'
 #' @param lListings `list` with `Mapped_SUBJ` (enrolled participants with
 #'   `subjid`, `invid` and `country`) and `Mapped_VS`.
 #' @param dfMetrics `data.frame` Reporting metrics; the `kri0020*` rows supply
-#'   the window length and thresholds. Optional.
+#'   the window length and the rate thresholds. Optional.
 #' @param nWindowLength `numeric` Window length when `dfMetrics` has none.
 #'   Default `NULL`, meaning 3. When `dfMetrics` has a window length, it wins
 #'   and a different `nWindowLength` raises a warning.
-#' @param strFlagRule `character` `"rate"` or `"count"`.
+#' @param strFlagRule `character` `"count"` or `"rate"`.
+#' @param vFlagThresholds `numeric` Amber and Red thresholds: repeating
+#'   windows for `"count"`, a proportion of windows for `"rate"`. Default
+#'   `NULL`: see Details.
+#' @param nMinWindows `numeric` Windows a participant needs for a flag.
+#'   Default 1.
 #'
 #' @return A `list`:
 #'   * `participants`: one row per participant and vital with `studyid`,
@@ -78,7 +92,8 @@ rm_FlagColors <- function() {
 #'     `flag` (a factor with the levels of [rm_FlagColors()]).
 #'   * `measurements`: one row per non-missing measurement with `studyid`,
 #'     `country`, `invid`, `subjid`, `record`, `visit`, `vs_dt`, `vital`,
-#'     `value`, `seq`, `in_repeat_window` and `window_start` (see
+#'     `value` (`NA` for paired BP), `value_text` (the displayed value),
+#'     `seq`, `in_repeat_window` and `window_start` (see
 #'     [Mark_ConsecutiveRepeats()]).
 #'   * `records`: the enrolled participants' `Mapped_VS` rows, with `country`
 #'     and `invid` from `Mapped_SUBJ` and a `record` key that `measurements`
@@ -86,16 +101,24 @@ rm_FlagColors <- function() {
 #'   * `vitals`: the rows of [rm_Vitals()] in the report, plus any other
 #'     numeric `Mapped_VS` column.
 #'   * `meta`: `window_length`, `window_source` (`"metrics"`, `"argument"` or
-#'     `"default"`), `rule` and `thresholds` (per KRI vital).
+#'     `"default"`), `rule`, `thresholds` (Amber, Red) and `min_windows`.
 #' @keywords internal
 #' @export
 rm_Classify <- function(
   lListings,
   dfMetrics = NULL,
   nWindowLength = NULL,
-  strFlagRule = c("rate", "count")
+  strFlagRule = c("count", "rate"),
+  vFlagThresholds = NULL,
+  nMinWindows = 1
 ) {
   strFlagRule <- match.arg(strFlagRule)
+  vThresholds <- rm_FlagThresholds(strFlagRule, vFlagThresholds, dfMetrics)
+  gsm.core::stop_if(
+    cnd = !is.numeric(nMinWindows) || length(nMinWindows) != 1 || !is.finite(nMinWindows) ||
+      nMinWindows < 1 || nMinWindows != round(nMinWindows),
+    message = "nMinWindows must be a single whole number >= 1"
+  )
   dfSubj <- lListings$Mapped_SUBJ
   vMissing <- setdiff(c("subjid", "invid", "country"), names(dfSubj))
   gsm.core::stop_if(
@@ -118,26 +141,22 @@ rm_Classify <- function(
   } else {
     setdiff(names(dfVS)[vapply(dfVS, is.numeric, logical(1))], c(dfVitals$vital, vIDCols))
   }
+  # Paired BP: one value per record with both readings, so a run breaks when
+  # either changes.
+  if (!is.null(dfVS) && all(c("sysbp", "diabp") %in% names(dfVS))) {
+    dfVS$bp <- ifelse(
+      is.na(dfVS$sysbp) | is.na(dfVS$diabp),
+      NA_character_,
+      paste0(dfVS$sysbp, "/", dfVS$diabp)
+    )
+  }
   dfVitals <- dplyr::bind_rows(
     dfVitals[!is.na(dfVitals$metric) | dfVitals$vital %in% names(dfVS), ],
-    tibble::tibble(vital = vExtra, label = vExtra, short = vExtra)
+    tibble::tibble(vital = vExtra, label = vExtra, short = vExtra, flagged = rep(FALSE, length(vExtra)))
   )
 
   lWindow <- rm_WindowLength(dfMetrics, nWindowLength)
   nW <- lWindow$window_length
-  lThresholds <- stats::setNames(
-    lapply(dfVitals$metric[!is.na(dfVitals$metric)], function(id) {
-      strThreshold <- if (!is.null(dfMetrics$Threshold)) {
-        dfMetrics$Threshold[dfMetrics$ID %in% id]
-      }
-      if (length(strThreshold) && !is.na(strThreshold[1])) {
-        as.numeric(strsplit(strThreshold[1], ",")[[1]])
-      } else {
-        c(0.2, 0.3)
-      }
-    }),
-    dfVitals$vital[!is.na(dfVitals$metric)]
-  )
 
   # Mapped_SUBJ is the source of truth for site and country.
   if (!is.null(dfVS) && nrow(dfVS) > 0) {
@@ -155,6 +174,7 @@ rm_Classify <- function(
         strOrderCol = strOrderCol,
         nWindowLength = nW
       )
+      x <- dfMarked[[strVital]]
       tibble::tibble(
         studyid = dfMarked$studyid,
         country = dfMarked$country,
@@ -164,7 +184,8 @@ rm_Classify <- function(
         visit = if (is.null(strOrderCol)) NA_character_ else as.character(dfMarked$visit),
         vs_dt = dfMarked$vs_dt,
         vital = rep(strVital, nrow(dfMarked)),
-        value = as.numeric(dfMarked[[strVital]]),
+        value = if (is.character(x)) rep(NA_real_, length(x)) else as.numeric(x),
+        value_text = if (is.character(x)) x else format_value(as.numeric(x)),
         seq = dfMarked$seq,
         in_repeat_window = dfMarked$in_repeat_window,
         window_start = dfMarked$window_start
@@ -175,7 +196,7 @@ rm_Classify <- function(
     dfMeasurements <- tibble::tibble(
       studyid = character(), country = character(), invid = character(),
       subjid = character(), record = integer(), visit = character(), vs_dt = as.Date(character()),
-      vital = character(), value = numeric(), seq = integer(),
+      vital = character(), value = numeric(), value_text = character(), seq = integer(),
       in_repeat_window = logical(), window_start = logical()
     )
   }
@@ -210,15 +231,12 @@ rm_Classify <- function(
     match(dfParticipants$vital, dfVitals$vital)
   ), ]
 
-  vLow <- vapply(dfParticipants$vital, function(v) c(lThresholds[[v]], NA)[1], numeric(1))
-  vHigh <- vapply(dfParticipants$vital, function(v) c(lThresholds[[v]], NA, NA)[2], numeric(1))
-  bRed <- if (strFlagRule == "count") dfParticipants$Numerator >= 2 else dfParticipants$rate >= vHigh
-  bAmber <- if (strFlagRule == "count") dfParticipants$Numerator >= 1 else dfParticipants$rate >= vLow
+  vScore <- if (strFlagRule == "count") dfParticipants$Numerator else dfParticipants$rate
   flag <- dplyr::case_when(
-    is.na(dfParticipants$metric) ~ "No KRI",
-    dfParticipants$Denominator == 0 ~ "Not evaluable",
-    bRed ~ "Red",
-    bAmber ~ "Amber",
+    !dfVitals$flagged[match(dfParticipants$vital, dfVitals$vital)] ~ "No KRI",
+    dfParticipants$Denominator < nMinWindows ~ "Not evaluable",
+    vScore >= vThresholds[2] ~ "Red",
+    vScore >= vThresholds[1] ~ "Amber",
     TRUE ~ "Green"
   )
   dfParticipants$flag <- factor(flag, levels = names(rm_FlagColors()))
@@ -233,8 +251,51 @@ rm_Classify <- function(
     measurements = dfMeasurements,
     records = if (is.null(dfVS)) NULL else tibble::as_tibble(dfVS),
     vitals = dfVitals,
-    meta = c(lWindow, list(rule = strFlagRule, thresholds = lThresholds))
+    meta = c(lWindow, list(rule = strFlagRule, thresholds = vThresholds, min_windows = nMinWindows))
   )
+}
+
+#' Repeat Measurements participant flag thresholds
+#'
+#' Amber and Red thresholds for a participant flag rule. Count thresholds
+#' default to 2 and 3 repeating windows. Rate thresholds default to the
+#' `kri0020` metric thresholds so that the participant flag matches the site
+#' KRI, or 0.2 and 0.3 without them.
+#'
+#' @param strFlagRule `character` `"count"` (repeating windows) or `"rate"`
+#'   (share of windows that repeat).
+#' @param vFlagThresholds `numeric` Amber then Red threshold, or `NULL` for
+#'   the defaults. Rates are fractions.
+#' @param dfMetrics `data.frame` Metric metadata with `ID` and `Threshold`.
+#'
+#' @return A `numeric` vector: Amber, then Red.
+#'
+#' @keywords internal
+#' @export
+rm_FlagThresholds <- function(strFlagRule = c("count", "rate"), vFlagThresholds = NULL, dfMetrics = NULL) {
+  strFlagRule <- match.arg(strFlagRule)
+  if (is.null(vFlagThresholds)) {
+    if (strFlagRule == "count") {
+      return(c(2, 3))
+    }
+    vMetric <- if (!is.null(dfMetrics$Threshold) && !is.null(dfMetrics$ID)) {
+      unique(stats::na.omit(as.character(dfMetrics$Threshold[grepl("^kri0020", dfMetrics$ID)])))
+    }
+    if (!length(vMetric)) {
+      return(c(0.2, 0.3))
+    }
+    if (length(vMetric) > 1) {
+      cli::cli_warn("The kri0020 metrics use different thresholds; the report uses {vMetric[1]}.")
+    }
+    vFlagThresholds <- as.numeric(strsplit(vMetric[1], ",")[[1]])
+  }
+  gsm.core::stop_if(
+    cnd = !is.numeric(vFlagThresholds) || length(vFlagThresholds) != 2 ||
+      any(!is.finite(vFlagThresholds)) || any(vFlagThresholds < 0) ||
+      vFlagThresholds[1] > vFlagThresholds[2],
+    message = "vFlagThresholds must be two non-negative numbers, Amber then Red, with Amber <= Red"
+  )
+  as.numeric(vFlagThresholds)
 }
 
 # D4: the metric's window length wins so the report reconciles with the KRI.

@@ -38,7 +38,9 @@ flag_of <- function(lClass, id, strVital = "weight") {
   as.character(df$flag[df$subjid == id & df$vital == strVital])
 }
 
-# Five participants over two countries and three sites, at W = 3:
+# Five participants over two countries and three sites, at W = 3, with flags
+# under the rate rule (under the default count rule only A's weight is flagged,
+# Amber):
 # weight: A 2/2 Red, B 0/2 Green, C 0/0 Not evaluable, D 1/4 Amber, E no VS.
 # pulse: A 0/1 Green, B 1/2 Red. height (no KRI): D 1/1.
 rm_Fixture <- function() {

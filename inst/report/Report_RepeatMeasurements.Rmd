@@ -17,7 +17,10 @@ params:
   lListings: NA
   dSnapshotDate: NA
   nWindowLength: NA
-  strFlagRule: "rate"
+  strFlagRule: "count"
+  vFlagThresholds: NA
+  nMinWindows: 1
+  strBPMode: "separate"
   bExport: TRUE
 ---
 
@@ -27,8 +30,8 @@ library(gsm.kri)
 knitr::opts_chunk$set(warning = FALSE, message = FALSE)
 
 # Unset YAML params arrive as NA.
-param <- function(x) {
-  if (is.null(x) || (is.atomic(x) && length(x) == 1 && is.na(x))) NULL else x
+param <- function(x, default = NULL) {
+  if (is.null(x) || (is.atomic(x) && length(x) == 1 && is.na(x))) default else x
 }
 dfResults <- param(params$dfResults)
 dfMetrics <- param(params$dfMetrics)
@@ -41,14 +44,27 @@ lClass <- rm_Classify(
   lListings,
   dfMetrics = dfMetrics,
   nWindowLength = param(params$nWindowLength),
-  strFlagRule = param(params$strFlagRule) %||% "rate"
+  strFlagRule = param(params$strFlagRule, "count"),
+  vFlagThresholds = param(params$vFlagThresholds),
+  nMinWindows = param(params$nMinWindows, 1)
 )
-dfVitals <- rm_Vitals()
-dfVitals <- dfVitals[!is.na(dfVitals$metric), ]
+# Flagged vitals: the six KRI vitals and, with SBP and DBP, paired BP.
+dfVitals <- lClass$vitals[lClass$vitals$flagged, ]
 nW <- lClass$meta$window_length
 has_participants <- nrow(lClass$participants) > 0
 has_vs <- has_participants && nrow(lClass$measurements) > 0
-has_evaluable <- any(lClass$participants$Denominator > 0 & !is.na(lClass$participants$metric))
+has_evaluable <- any(lClass$participants$flag %in% c("Red", "Amber", "Green"))
+
+# The Settings panel starts from these; the other rule keeps its defaults.
+lSettings <- list(
+  rule = lClass$meta$rule,
+  thresholds = list(
+    count = if (lClass$meta$rule == "count") lClass$meta$thresholds else rm_FlagThresholds("count"),
+    rate = if (lClass$meta$rule == "rate") lClass$meta$thresholds else rm_FlagThresholds("rate", dfMetrics = dfMetrics)
+  ),
+  minWindows = lClass$meta$min_windows,
+  bp = param(params$strBPMode, "separate")
+)
 in_cmp <- lClass$meta$window_source == "metrics"
 dfRecon <- rm_Reconcile(lClass$participants, dfResults)
 
@@ -56,6 +72,9 @@ dist_rows <- lapply(
   c(study = "study", country = "country", site = "site"),
   function(level) rm_DistributionRows(lClass$participants, level)
 )
+dist_title <- function(i) {
+  paste0(dfVitals$label[i], " (", dplyr::coalesce(dfVitals$metric[i], "no KRI"), ")")
+}
 dist_order <- function(level, vital = NULL) {
   df <- dist_rows[[level]]
   if (!is.null(vital)) df <- df[df$vital == vital, ]
@@ -70,13 +89,18 @@ data_table <- rm_DataTable(
   bExport = bExport
 )
 
-pct <- function(x) paste0(format(100 * x), "%")
-rule_text <- if (lClass$meta$rule == "rate") {
-  th <- lClass$meta$thresholds[[1]]
-  sprintf("rate (Amber \u2265 %s, Red \u2265 %s of a participant's windows)", pct(th[1]), pct(th[2]))
-} else {
-  "count (Amber: 1 repeat window, Red: 2 or more)"
-}
+# rmFilters.js rewrites .rm-rule-text when the reviewer changes the settings.
+th <- lClass$meta$thresholds
+rule_text <- sprintf(
+  "<span class=\"rm-rule-text\">%s; participants need %s window%s for a flag</span>",
+  if (lClass$meta$rule == "rate") {
+    sprintf("%% of windows that repeat, Amber \u2265 %s%%, Red \u2265 %s%%", format(100 * th[1]), format(100 * th[2]))
+  } else {
+    sprintf("repeating windows, Amber \u2265 %s, Red \u2265 %s", format(th[1]), format(th[2]))
+  },
+  lClass$meta$min_windows,
+  if (lClass$meta$min_windows == 1) "" else "s"
+)
 ```
 
 # Repeat Measurements
@@ -96,8 +120,9 @@ cat(sprintf('
 <summary>How to read this report</summary>
 <ul>
 <li>A <strong>window</strong> is %1$s consecutive measurements of one vital for one participant, in visit order (missing values skipped). A window <strong>repeats</strong> when all %1$s values are identical. Each participant and vital has <strong>N</strong> repeating windows of <strong>D</strong> windows; the KRIs <code>kri0020a</code>&ndash;<code>f</code> sum N and D by site.</li>
-<li>Participants are <strong>evaluable</strong> for a vital once they have %1$s measurements (D &gt; 0). Flag rule: %2$s.</li>
-<li>Pick a vital group in the bar below to focus every section. Click a country or site bar to filter; remove a filter with its &times;.</li>
+<li>Participants are <strong>evaluable</strong> for a vital once they have enough windows. Flag rule: %2$s. Change the rule, thresholds and minimum windows under <strong>Settings</strong> in the bar below; every section follows.</li>
+<li><strong>Blood pressure</strong> (Settings): <em>Separate</em> shows systolic and diastolic BP (the KRIs); <em>Combined</em> shows paired BP, where a window repeats only when both readings repeat over the same visits (no KRI); <em>Both</em> shows all three.</li>
+<li>Pick a vital group in the bar below to focus every section. Click a country or site bar to filter; remove a filter with its &times; or all of them with <strong>Reset filters</strong>.</li>
 <li>The last three sections drill down from one row per participant (Participant Listing) to one per participant and vital (Vitals listing) to one per value or visit record (Data table). Click a participant, tile or row in any of them to filter the whole report to that participant; click it again to clear.</li>
 </ul>
 </details>
@@ -147,6 +172,16 @@ cat('
 .rm-rw, #rm-dt-wide td.rm-rw { color: #B5462F; font-weight: 700; }
 .rm-legend { font-size: 13px; color: #57606a; margin: 4px 0 8px; }
 .rm-legend .rm-vals b { min-width: 0; }
+.rm-strip-btns { display: inline-flex; gap: 6px; }
+.rm-btn[aria-expanded="true"] { background: #3C587F; color: #ffffff; }
+.rm-settings { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px; border-top: 1px solid #cfe3fb; padding-top: 8px; font-size: 13px; }
+.rm-settings[hidden] { display: none; }
+.rm-settings label { font-weight: normal; margin: 0; }
+.rm-settings input[type=number] { width: 4.5em; margin-left: 4px; }
+.rm-set { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.rm-settings-msg { color: #cf222e; }
+.rm-unit { color: #57606a; }
+body.rm-toc-hidden .toc-content { width: 100%; }
 /* Clears the navbar and the sticky strip when a contents link jumps to a section. */
 .section.level2, .section.level3 { scroll-margin-top: 100px; }
 #rm-overview, #rm-vitals, #rm-dt-long, #rm-dt-wide { overflow-x: auto; }
@@ -156,6 +191,52 @@ cat('
 
 ```{r filter-strip, echo=FALSE}
 # htmltools, not raw HTML, so pandoc does not wrap the controls in a <p>.
+seg <- function(label, attr, values, selected) {
+  htmltools::tags$span(
+    class = "rm-seg",
+    role = "group",
+    `aria-label` = label,
+    lapply(names(values), function(v) {
+      htmltools::tags$button(
+        type = "button",
+        `data-rm-set` = attr,
+        value = v,
+        `aria-pressed` = if (identical(v, selected)) "true" else "false",
+        values[[v]]
+      )
+    })
+  )
+}
+num <- function(id, label, min, step) {
+  htmltools::tags$label(
+    label,
+    htmltools::tags$input(id = id, type = "number", min = min, step = step),
+    htmltools::tags$span(class = "rm-unit", `data-rm-unit` = id)
+  )
+}
+# Filled by rmFilters.js from the settings in #rm-data.
+rm_SettingsPanel <- function() {
+  htmltools::tags$div(
+    id = "rm-settings",
+    class = "rm-settings",
+    hidden = NA,
+    htmltools::tags$span(
+      class = "rm-set",
+      htmltools::tags$span(class = "rm-eyebrow", "Blood pressure"),
+      seg("Blood pressure", "bp", c(separate = "Separate", combined = "Combined", both = "Both"), lSettings$bp)
+    ),
+    htmltools::tags$span(
+      class = "rm-set",
+      htmltools::tags$span(class = "rm-eyebrow", "Participant flag"),
+      seg("Flag rule", "rule", c(count = "# windows", rate = "% of windows"), lSettings$rule),
+      num("rm-th-amber", "Amber \u2265", 0, "any"),
+      num("rm-th-red", "Red \u2265", 0, "any"),
+      num("rm-min-windows", "Minimum windows", 1, 1),
+      htmltools::tags$span(id = "rm-settings-msg", class = "rm-settings-msg", role = "status")
+    ),
+    htmltools::tags$button(id = "rm-settings-defaults", type = "button", class = "rm-btn", "Restore defaults")
+  )
+}
 chip <- function(key, label) {
   htmltools::tags$span(
     id = paste0("rm-chip-", key),
@@ -192,7 +273,14 @@ htmltools::tags$div(
   chip("country", "Country"),
   chip("site", "Site"),
   chip("subj", "Participant"),
-  htmltools::tags$span(id = "rm-count", class = "rm-count", title = "Filters apply to every section.")
+  htmltools::tags$span(id = "rm-count", class = "rm-count", title = "Filters apply to every section."),
+  htmltools::tags$span(
+    class = "rm-strip-btns",
+    htmltools::tags$button(id = "rm-reset", type = "button", class = "rm-btn", title = "Clear the vital group, country, site and participant filters", "Reset filters"),
+    htmltools::tags$button(id = "rm-settings-toggle", type = "button", class = "rm-btn", `aria-expanded` = "false", `aria-controls` = "rm-settings", "Settings"),
+    htmltools::tags$button(id = "rm-toc-toggle", type = "button", class = "rm-btn", `aria-pressed` = "false", style = "display:none;", "Hide contents")
+  ),
+  rm_SettingsPanel()
 )
 ```
 
@@ -273,7 +361,7 @@ htmltools::div(
       `data-rm-vital` = v,
       gsm.vizr::bars(
         data = dist_rows$country[dist_rows$country$vital == v, ],
-        spec = rm_DistributionSpec("country", dist_order("country", v), paste0(dfVitals$label[i], " (", dfVitals$metric[i], ")")),
+        spec = rm_DistributionSpec("country", dist_order("country", v), dist_title(i)),
         metadata = list(chartId = paste0("rm-country-", v), level = "country", vital = v),
         height = 320,
         minHeight = 320
@@ -292,7 +380,7 @@ htmltools::div(
       `data-rm-vital` = v,
       gsm.vizr::bars(
         data = dist_rows$site[dist_rows$site$vital == v, ],
-        spec = rm_DistributionSpec("site", dist_order("site", v), paste0(dfVitals$label[i], " (", dfVitals$metric[i], ")")),
+        spec = rm_DistributionSpec("site", dist_order("site", v), dist_title(i)),
         metadata = list(chartId = paste0("rm-site-", v), level = "site", vital = v),
         height = 360,
         minHeight = 360
@@ -353,7 +441,7 @@ htmltools::div(
   id = "rm-vitals-view",
   htmltools::div(
     class = "rm-controls",
-    htmltools::tags$label(htmltools::tags$input(id = "rm-show-values", type = "checkbox", checked = NA), " Show values"),
+    htmltools::tags$label(htmltools::tags$input(id = "rm-show-values", type = "checkbox"), " Show values"),
     htmltools::tags$label(htmltools::tags$input(id = "rm-only-repeat", type = "checkbox", checked = NA), " Only rows with a repeat window")
   ),
   htmltools::div(id = "rm-vitals-wrap", listing)
@@ -365,7 +453,8 @@ cat(
   "\n",
   "> - One row per participant and vital, for every vital in the vital signs data. Height and BSA have no KRI.\n",
   "> - Hover a vital for its metric ID (* = not a KRI) and the flag and rate for measured, N and D. Sort the flag column for worst first.\n",
-  "> - **Measurements in order** are the values the windows run over; dark red values are in a repeat window. Untick **Show values** for a compact view.\n",
+  "> - **Measures** are the distinct values of all non-missing values; few distinct values among many suggest copied measurements.\n",
+  "> - **Measurements in order** are the values the windows run over; dark red blocks or values are in a repeat window. Hover one for its position, visit and date. Tick **Show values** to show the numbers.\n",
   "> - Click a row to filter the report to that participant; click again to clear.\n",
   sep = ""
 )
@@ -412,12 +501,16 @@ cat(
 ```{r rm-data, echo=FALSE, eval=has_participants}
 ipm_DataScript(
   list(
-    overview = rm_OverviewRows(lClass$participants),
-    distribution = dist_rows,
     siteFlags = rm_SiteFlags(dfResults),
     vitals = lClass$vitals,
-    groups = dfVitals[c("vital", "group")],
     participants = unique(lClass$participants[c("subjid", "invid", "country")]),
+    # Unboxed so the scalars arrive as JSON scalars, not length-1 arrays.
+    settings = list(
+      rule = jsonlite::unbox(lSettings$rule),
+      thresholds = lSettings$thresholds,
+      minWindows = jsonlite::unbox(lSettings$minWindows),
+      bp = jsonlite::unbox(lSettings$bp)
+    ),
     export = bExport
   ),
   strId = "rm-data"

@@ -11,7 +11,7 @@ test_that("long data table has one row per non-missing value, in participant lis
   expect_equal(unique(df$subjid), c("A", "B", "D", "C"))
   d <- df[df$subjid == "D" & df$vital == "weight", ]
   expect_equal(d$seq, 1:6)
-  expect_equal(d$value, c(90, 90, 90, 91, 92, 93))
+  expect_equal(d$value, c("90", "90", "90", "91", "92", "93"))
   expect_equal(d$in_repeat_window, c("Yes", "Yes", "Yes", "No", "No", "No"))
   expect_equal(unique(d$metric), "kri0020a")
   expect_equal(unique(df$metric[df$vital == "height"]), "")
@@ -30,7 +30,7 @@ test_that("long data table repeat-window values match Mark_ConsecutiveRepeats (#
     d <- df[df$vital == strVital, ]
     d <- d[order(d$subjid, d$seq), ]
     expect_equal(d$in_repeat_window == "Yes", dfMarked$in_repeat_window, label = strVital)
-    expect_equal(d$value, as.numeric(dfMarked[[strVital]]), label = strVital)
+    expect_equal(as.numeric(d$value), as.numeric(dfMarked[[strVital]]), label = strVital)
   }
 })
 
