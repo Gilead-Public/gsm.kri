@@ -45,6 +45,7 @@ export(Widget_FlagOverTime)
 export(Widget_FlagOverTimeOutput)
 export(Widget_GroupOverview)
 export(Widget_GroupOverviewOutput)
+export(Widget_RepeatMeasurementsTiles)
 export(Widget_ScatterPlot)
 export(Widget_ScatterPlotOutput)
 export(Widget_TimeSeries)
@@ -89,14 +90,15 @@ export(renderWidget_GroupOverview)
 export(renderWidget_ScatterPlot)
 export(renderWidget_TimeSeries)
 export(rm_Classify)
+export(rm_DataTable)
+export(rm_DataTableData)
+export(rm_DataTableWide)
 export(rm_DistributionRows)
 export(rm_DistributionSpec)
 export(rm_FlagColors)
 export(rm_OverviewRows)
 export(rm_ParticipantTiles)
-export(rm_ParticipantTilesSpec)
 export(rm_Reconcile)
-export(rm_RecordRows)
 export(rm_SiteFlags)
 export(rm_VitalRows)
 export(rm_Vitals)
@@ -107,65 +109,47 @@ import(gsm.core)
 import(gt)
 import(purrr)
 import(tidyr)
-importFrom(DT,
-  datatable,
-  formatStyle,
-  styleInterval
-)
-importFrom(cli,
-  pluralize,
-  qty
-)
+importFrom(DT,datatable)
+importFrom(DT,formatStyle)
+importFrom(DT,styleInterval)
+importFrom(cli,pluralize)
+importFrom(cli,qty)
 importFrom(glue,glue)
-importFrom(gsm.vizr,
-  MakeChartConfig,
-  Widget_BarChart,
-  Widget_BarChartOutput,
-  Widget_GroupOverview,
-  Widget_GroupOverviewOutput,
-  Widget_ScatterPlot,
-  Widget_ScatterPlotOutput,
-  Widget_TimeSeries,
-  Widget_TimeSeriesOutput,
-  renderWidget_BarChart,
-  renderWidget_GroupOverview,
-  renderWidget_ScatterPlot,
-  renderWidget_TimeSeries
-)
-importFrom(htmltools,
-  HTML,
-  h1,
-  h2,
-  h3,
-  h4,
-  p,
-  strong,
-  tagList,
-  tags
-)
-importFrom(htmlwidgets,
-  createWidget,
-  prependContent,
-  shinyRenderWidget,
-  shinyWidgetOutput
-)
-importFrom(jsonlite,
-  fromJSON,
-  toJSON
-)
+importFrom(gsm.vizr,MakeChartConfig)
+importFrom(gsm.vizr,Widget_BarChart)
+importFrom(gsm.vizr,Widget_BarChartOutput)
+importFrom(gsm.vizr,Widget_GroupOverview)
+importFrom(gsm.vizr,Widget_GroupOverviewOutput)
+importFrom(gsm.vizr,Widget_ScatterPlot)
+importFrom(gsm.vizr,Widget_ScatterPlotOutput)
+importFrom(gsm.vizr,Widget_TimeSeries)
+importFrom(gsm.vizr,Widget_TimeSeriesOutput)
+importFrom(gsm.vizr,renderWidget_BarChart)
+importFrom(gsm.vizr,renderWidget_GroupOverview)
+importFrom(gsm.vizr,renderWidget_ScatterPlot)
+importFrom(gsm.vizr,renderWidget_TimeSeries)
+importFrom(htmltools,HTML)
+importFrom(htmltools,h1)
+importFrom(htmltools,h2)
+importFrom(htmltools,h3)
+importFrom(htmltools,h4)
+importFrom(htmltools,p)
+importFrom(htmltools,strong)
+importFrom(htmltools,tagList)
+importFrom(htmltools,tags)
+importFrom(htmlwidgets,createWidget)
+importFrom(htmlwidgets,prependContent)
+importFrom(htmlwidgets,shinyRenderWidget)
+importFrom(htmlwidgets,shinyWidgetOutput)
+importFrom(jsonlite,fromJSON)
+importFrom(jsonlite,toJSON)
 importFrom(lifecycle,deprecated)
 importFrom(magrittr,"%>%")
-importFrom(rlang,
-  "%||%",
-  .data,
-  check_installed
-)
-importFrom(stats,
-  reorder,
-  setNames
-)
-importFrom(tibble,
-  enframe,
-  tibble
-)
+importFrom(rlang,"%||%")
+importFrom(rlang,.data)
+importFrom(rlang,check_installed)
+importFrom(stats,reorder)
+importFrom(stats,setNames)
+importFrom(tibble,enframe)
+importFrom(tibble,tibble)
 importFrom(workr,ListWorkflows)

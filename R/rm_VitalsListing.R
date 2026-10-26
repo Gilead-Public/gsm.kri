@@ -3,7 +3,7 @@
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' Level 1 of the vitals listing: one row per participant and vital, for
+#' The vitals listing (§4): one row per participant and vital, for
 #' every vital in `Mapped_VS`, with the measurements in order. `values` and
 #' `in_repeat_window` are space-separated and aligned: `"72 72 72 80"` and
 #' `"1 1 1 0"`.
@@ -55,142 +55,100 @@ rm_VitalRows <- function(lClass) {
     dplyr::select(-"severity")
 }
 
-#' Record rows for the Repeat Measurements report
+#' Vitals listing table for the Repeat Measurements report
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' Level 2 of the vitals listing: the enrolled participants' `Mapped_VS`
-#' records with every vital. `repeat_vitals` lists the vitals whose value is
-#' in a repeat window on that record.
-#'
-#' @param lClass `list` Output of [rm_Classify()].
-#'
-#' @return A `tibble` with `country`, `invid`, `subjid`, `visit`, `vs_dt`, `vsperf_std`,
-#'   one column per vital, and the hidden `repeat_vitals` column, ordered by
-#'   participant and measurement order.
-#' @keywords internal
-#' @export
-rm_RecordRows <- function(lClass) {
-  dfRecords <- lClass$records
-  vVitals <- lClass$vitals$vital
-  if (is.null(dfRecords) || nrow(dfRecords) == 0) {
-    return(tibble::tibble(
-      country = character(), invid = character(), subjid = character(),
-      visit = character(), vs_dt = as.Date(character()), repeat_vitals = character()
-    ))
-  }
-  dfRepeat <- lClass$measurements[lClass$measurements$in_repeat_window, ] %>%
-    dplyr::arrange(match(.data$vital, vVitals)) %>%
-    dplyr::group_by(.data$record) %>%
-    dplyr::summarise(repeat_vitals = paste(.data$vital, collapse = " "), .groups = "drop")
-  dfRecords$repeat_vitals <- dplyr::coalesce(
-    dfRepeat$repeat_vitals[match(dfRecords$record, dfRepeat$record)],
-    ""
-  )
-  vOrder <- intersect(c("vs_dt", "visit"), names(dfRecords))
-  dfRecords <- dfRecords[do.call(order, c(
-    list(dfRecords$subjid),
-    unname(as.list(dfRecords[vOrder])),
-    list(method = "radix")
-  )), ]
-  vCols <- c(
-    intersect(c("country", "invid", "subjid", "visit", "vs_dt", "vsperf_std"), names(dfRecords)),
-    intersect(vVitals, names(dfRecords)),
-    "repeat_vitals"
-  )
-  dfRecords <- dfRecords[vCols]
-  dfRecords$country <- as.character(dfRecords$country)
-  dfRecords$invid <- as.character(dfRecords$invid)
-  tibble::as_tibble(dfRecords)
-}
-
-#' Vitals listing tables for the Repeat Measurements report
-#'
-#' @description
-#' `r lifecycle::badge("experimental")`
-#'
-#' Two `DT` tables. `rm-vitals` (level 1) draws the measurements in order
-#' with repeat-window values highlighted; the report's filter script toggles
-#' the numbers and filters the named `vital`, `country`, `invid`, `subjid`
-#' and `has_repeat` columns. `rm-records` (level 2) highlights each record's
-#' repeat-window cells. The CSV of each holds the rows the filters show.
+#' The `rm-vitals` `DT` table (§4): one row per participant and vital with the
+#' vital name (metric ID on hover, `*` for a vital with no KRI), a single
+#' "Flag and rate" column (measured, N and D on hover; sorts by flag, then
+#' rate) and the measurements in order with repeat-window values highlighted.
+#' The report's filter script toggles the numbers, filters the named `vital`,
+#' `country`, `invid`, `subjid` and `has_repeat` columns, and turns a row
+#' click into the participant filter. The CSV holds the rows the filters show
+#' with every column, including the metric, flag, measured, N, D and rate.
 #'
 #' @param dfVitalRows `data.frame` Output of [rm_VitalRows()].
-#' @param dfRecordRows `data.frame` Output of [rm_RecordRows()].
-#' @param dfVitals `data.frame` `vitals` from [rm_Classify()].
-#' @param bExport `logical` Show the CSV buttons.
+#' @param nWindowLength `numeric` Window length, shown in the measurements
+#'   header. Optional.
+#' @param bExport `logical` Show the CSV button.
 #'
-#' @return A named `list` of two `DT` htmlwidgets, `vitals` and `records`.
+#' @return A `DT` htmlwidget.
 #' @keywords internal
 #' @export
-rm_VitalsListing <- function(dfVitalRows, dfRecordRows, dfVitals, bExport = TRUE) {
-  idx <- function(df, col) which(names(df) == col) - 1L
-  csv <- function(strFile) {
-    if (!isTRUE(bExport)) {
-      return(list())
-    }
-    list(list(
-      extend = "csv",
-      text = "Download CSV",
-      filename = strFile,
-      exportOptions = list(
-        columns = ":visible, .rm-export",
-        orthogonal = "export",
-        modifier = list(search = "applied")
-      )
-    ))
-  }
-  dom <- if (isTRUE(bExport)) "Bfrtip" else "frtip"
-  named <- function(df, cols, ...) {
-    lapply(cols, function(col) list(targets = idx(df, col), name = col, ...))
-  }
-
-  vLabels1 <- c(
+rm_VitalsListing <- function(dfVitalRows, nWindowLength = NULL, bExport = TRUE) {
+  idx <- function(col) match(col, names(dfVitalRows)) - 1L
+  vLabels <- c(
     country = "Country", invid = "Site", subjid = "Participant", label = "Vital",
-    metric = "Metric", flag = "Flag", measured = "Measured", Numerator = "N",
-    Denominator = "D", rate = "Rate",
-    values = "Measurements in order", in_repeat_window = "In repeat window",
+    metric = "Metric", flag = "Flag \u00b7 rate", measured = "Measured", Numerator = "Numerator",
+    Denominator = "Denominator", rate = "Rate",
+    values = if (is.null(nWindowLength)) {
+      "Measurements in order"
+    } else {
+      paste0("Measurements in order (W = ", nWindowLength, ")")
+    },
+    in_repeat_window = "In repeat window",
     vital = "vital", has_repeat = "has_repeat"
   )
-  vitals <- DT::datatable(
+  DT::datatable(
     dfVitalRows,
     elementId = "rm-vitals",
     rownames = FALSE,
-    colnames = unname(vLabels1[names(dfVitalRows)]),
+    colnames = unname(vLabels[names(dfVitalRows)]),
     extensions = "Buttons",
     selection = "none",
     class = "compact hover rm-show-values",
     options = list(
-      dom = dom,
+      dom = if (isTRUE(bExport)) "Bfrtip" else "frtip",
       pageLength = 25,
       order = list(),
-      buttons = csv("repeat-measurements-vitals"),
+      buttons = rm_CsvButton(bExport, "repeat-measurements-vitals", ":visible, .rm-export"),
+      createdRow = DT::JS(
+        "function (row) { row.title = 'Click to filter the report to this participant; click again to clear'; }"
+      ),
       columnDefs = c(
-        named(dfVitalRows, c("country", "invid", "subjid", "label")),
+        lapply(c("country", "invid", "subjid"), function(col) list(targets = idx(col), name = col)),
         list(
           list(
-            targets = idx(dfVitalRows, "flag"),
+            targets = idx("label"),
+            name = "label",
             render = DT::JS(sprintf(
-              "function (data, type) {
-                if (type !== 'display' || !data) return data;
-                var c = %s[data] || '#FFFFFF';
-                return '<span style=\"white-space:nowrap\"><span class=\"rm-dot\" style=\"background:' + c + '\"></span>' + data + '</span>';
+              "function (data, type, row) {
+                if (type !== 'display') return data;
+                var m = row[%d];
+                return '<span title=\"' + (m || 'Not a KRI') + '\">' + data + (m ? '' : '<span class=\"rm-nk\"> *</span>') + '</span>';
               }",
-              jsonlite::toJSON(as.list(rm_FlagColors()), auto_unbox = TRUE)
+              idx("metric")
             ))
           ),
           list(
-            targets = idx(dfVitalRows, "rate"),
-            render = DT::JS(
-              "function (data, type) {
-                if (type !== 'display' || data === null) return data;
-                return (100 * data).toFixed(0) + '%';
-              }"
-            )
+            targets = idx("flag"),
+            orderSequence = list("desc", "asc"),
+            render = DT::JS(sprintf(
+              "function (data, type, row) {
+                var rate = row[%1$d];
+                if (type === 'sort' || type === 'type') {
+                  var sev = { 'Red': 4, 'Amber': 3, 'Green': 2, 'No KRI': 1, 'Not evaluable': 0 }[data] || 0;
+                  return sev * 1000 + (rate === null ? -1 : rate * 100);
+                }
+                if (type !== 'display') return data;
+                var c = %2$s[data] || '#FFFFFF';
+                var pct = rate === null ? '\u2013' : (100 * rate).toFixed(0) + '%%';
+                var tip = (row[%3$d] || 'Not a KRI') + ' \u00b7 ' + data + ' \u00b7 measured ' + row[%4$d] +
+                  ' \u00b7 N ' + row[%5$d] + ' of D ' + row[%6$d] + ' windows repeat';
+                return '<span class=\"rm-fr\" title=\"' + tip + '\"><span class=\"rm-dot\" style=\"background:' + c + '\"></span>' + pct + '</span>';
+              }",
+              idx("rate"),
+              jsonlite::toJSON(as.list(rm_FlagColors()), auto_unbox = TRUE),
+              idx("metric"),
+              idx("measured"),
+              idx("Numerator"),
+              idx("Denominator")
+            ))
           ),
           list(
-            targets = idx(dfVitalRows, "values"),
+            targets = idx("values"),
             orderable = FALSE,
             render = DT::JS(sprintf(
               "function (data, type, row) {
@@ -200,65 +158,37 @@ rm_VitalsListing <- function(dfVitalRows, dfRecordRows, dfVitals, bExport = TRUE
                   return '<b' + (mask[i] === '1' ? ' class=\"rw\" title=\"In a repeat window\"' : '') + '>' + v + '</b>';
                 }).join('') + '</span>';
               }",
-              idx(dfVitalRows, "in_repeat_window")
+              idx("in_repeat_window")
             ))
           ),
           list(
-            targets = idx(dfVitalRows, "in_repeat_window"),
+            targets = idx(c("metric", "measured", "Numerator", "Denominator", "rate", "in_repeat_window")),
             visible = FALSE,
             className = "rm-export"
           )
         ),
-        named(dfVitalRows, c("vital", "has_repeat"), visible = FALSE)
+        lapply(c("vital", "has_repeat"), function(col) list(targets = idx(col), name = col, visible = FALSE))
       )
     )
   )
+}
 
-  vVitalCols <- intersect(dfVitals$vital, names(dfRecordRows))
-  vLabels2 <- c(
-    country = "Country", invid = "Site", subjid = "Participant", visit = "Visit",
-    vs_dt = "Date", vsperf_std = "Performed",
-    stats::setNames(dfVitals$label, dfVitals$vital),
-    repeat_vitals = "Vitals in repeat window"
-  )
-  records <- DT::datatable(
-    dfRecordRows,
-    elementId = "rm-records",
-    rownames = FALSE,
-    colnames = unname(vLabels2[names(dfRecordRows)]),
-    extensions = "Buttons",
-    selection = "none",
-    class = "compact nowrap",
-    options = list(
-      dom = dom,
-      pageLength = 25,
-      order = list(),
-      buttons = csv("repeat-measurements-records"),
-      createdRow = DT::JS(sprintf(
-        "function (row, data) {
-          var cols = %s, rw = String(data[%d] || '').split(' ');
-          rw.forEach(function (k) {
-            if (cols[k] !== undefined) row.cells[cols[k]].classList.add('rw');
-          });
-        }",
-        jsonlite::toJSON(
-          as.list(stats::setNames(vapply(vVitalCols, idx, integer(1), df = dfRecordRows), vVitalCols)),
-          auto_unbox = TRUE
-        ),
-        idx(dfRecordRows, "repeat_vitals")
-      )),
-      columnDefs = c(
-        named(dfRecordRows, intersect(c("country", "invid", "subjid"), names(dfRecordRows))),
-        list(list(
-          targets = idx(dfRecordRows, "repeat_vitals"),
-          name = "repeat_vitals",
-          visible = FALSE,
-          className = "rm-export"
-        ))
-      )
+# DT CSV button exporting the rows the filters show; `columns` is a DT
+# column selector.
+rm_CsvButton <- function(bExport, strFile, columns = ":visible") {
+  if (!isTRUE(bExport)) {
+    return(list())
+  }
+  list(list(
+    extend = "csv",
+    text = "Download CSV",
+    filename = strFile,
+    exportOptions = list(
+      columns = columns,
+      orthogonal = "export",
+      modifier = list(search = "applied")
     )
-  )
-  list(vitals = vitals, records = records)
+  ))
 }
 
 format_value <- function(x) {

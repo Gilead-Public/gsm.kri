@@ -10,17 +10,15 @@ rm_ParticipantTiles(lClass)
 \item{lClass}{`list` Output of [rm_Classify()].}
 }
 \value{
-A `list` with `tiles` (`subjid`, `invid`, `country`, `vital`,
-  `column`, `flag`, `severity`, `Numerator`, `Denominator`, `rate`, `n`,
-  `label_rate`, `label_nd`, `label_both`), sorted by the participant's
-  worst flag, then participant; and `detail` (`subjid`, `column`, `seq`,
-  `value`, `in_repeat_window` ("Yes"/"No"), `visit`).
+A `tibble` with `subjid`, `invid`, `country`, `vital`, `column`,
+  `flag`, `severity`, `Numerator`, `Denominator`, `rate`, `n`,
+  `label_rate`, `label_nd` and `label_both`, sorted by the participant's
+  worst flag, then most repeating windows, then participant.
 }
 \description{
 `r lifecycle::badge("experimental")`
 
-One tile per participant and KRI vital, with the three cell labels the
-report switches between, and one detail row per measurement for the
-expanded columns.
+One tile per participant and KRI vital, with the three tile labels the
+report switches between. [Widget_RepeatMeasurementsTiles()] draws them.
 }
 \keyword{internal}

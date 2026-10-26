@@ -18,7 +18,7 @@ A `tibble` in display order (worst flag, then most repeat
 \description{
 `r lifecycle::badge("experimental")`
 
-Level 1 of the vitals listing: one row per participant and vital, for
+The vitals listing (§4): one row per participant and vital, for
 every vital in `Mapped_VS`, with the measurements in order. `values` and
 `in_repeat_window` are space-separated and aligned: `"72 72 72 80"` and
 `"1 1 1 0"`.

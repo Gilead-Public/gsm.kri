@@ -28,37 +28,33 @@ test_that("measurements in order and their repeat-window mask match Mark_Consecu
   }
 })
 
-test_that("record rows hold every visit with the vitals in a repeat window (#346)", {
-  lClass <- rm_Classify(rm_Fixture())
-  df <- rm_RecordRows(lClass)
-  expect_equal(nrow(df), nrow(rm_Fixture()$Mapped_VS))
-  expect_equal(
-    names(df),
-    c("country", "invid", "subjid", "visit", "vs_dt", "vsperf_std", "weight", "pulse", "height", "repeat_vitals")
-  )
-  d <- df[df$subjid == "D", ]
-  expect_equal(d$repeat_vitals, c("weight height", "weight height", "weight height", "", "", ""))
-  b <- df[df$subjid == "B", ]
-  expect_equal(b$repeat_vitals, c("pulse", "pulse", "pulse", ""))
-  lEmpty <- rm_Classify(rm_listings(NULL, rm_Fixture()$Mapped_SUBJ))
-  expect_equal(nrow(rm_RecordRows(lEmpty)), 0)
-})
-
-test_that("vitals listing builds both tables with CSV download only when export is enabled (#346)", {
+test_that("vitals listing is one compact level with flag and rate in one column and CSV only when export is enabled (#346)", {
   skip_if_not_installed("DT")
   lClass <- rm_Classify(rm_Fixture())
-  lDT <- rm_VitalsListing(rm_VitalRows(lClass), rm_RecordRows(lClass), lClass$vitals)
-  expect_equal(lDT$vitals$elementId, "rm-vitals")
-  expect_equal(lDT$records$elementId, "rm-records")
-  opts <- lDT$vitals$x$options
+  dfRows <- rm_VitalRows(lClass)
+  w <- rm_VitalsListing(dfRows, nWindowLength = 3)
+  expect_s3_class(w, "datatables")
+  expect_equal(w$elementId, "rm-vitals")
+  opts <- w$x$options
   expect_equal(opts$dom, "Bfrtip")
   expect_equal(opts$buttons[[1]]$extend, "csv")
+  expect_equal(opts$buttons[[1]]$exportOptions$columns, ":visible, .rm-export")
   vNames <- unlist(lapply(opts$columnDefs, `[[`, "name"))
-  expect_true(all(c("country", "invid", "subjid", "vital", "has_repeat") %in% vNames))
-  expect_equal(lDT$records$x$options$buttons[[1]]$extend, "csv")
+  expect_true(all(c("country", "invid", "subjid", "label", "vital", "has_repeat") %in% vNames))
+  # Visible: country, site, participant, vital, flag \u00b7 rate, measurements.
+  vHidden <- unlist(lapply(Filter(function(d) isFALSE(d$visible), opts$columnDefs), `[[`, "targets"))
+  vShown <- setdiff(seq_along(dfRows) - 1L, vHidden)
+  expect_equal(names(dfRows)[vShown + 1L], c("country", "invid", "subjid", "label", "flag", "values"))
+  # Metric, measured, N, D and rate stay in the CSV.
+  vExport <- unlist(lapply(Filter(function(d) identical(d$className, "rm-export"), opts$columnDefs), `[[`, "targets"))
+  expect_setequal(
+    names(dfRows)[vExport + 1L],
+    c("metric", "measured", "Numerator", "Denominator", "rate", "in_repeat_window")
+  )
+  expect_match(w$x$container, "Measurements in order \\(W = 3\\)")
+  expect_match(w$x$container, "Flag \u00b7 rate")
 
-  lOff <- rm_VitalsListing(rm_VitalRows(lClass), rm_RecordRows(lClass), lClass$vitals, bExport = FALSE)
-  expect_equal(lOff$vitals$x$options$dom, "frtip")
-  expect_length(lOff$vitals$x$options$buttons, 0)
-  expect_length(lOff$records$x$options$buttons, 0)
+  wOff <- rm_VitalsListing(dfRows, bExport = FALSE)
+  expect_equal(wOff$x$options$dom, "frtip")
+  expect_length(wOff$x$options$buttons, 0)
 })

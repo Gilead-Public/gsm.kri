@@ -14,10 +14,11 @@
     search: '',
     showValues: true,
     onlyRepeat: true,
+    // Data table shape and its "only ... with a repeat window" toggle.
+    shape: 'wide',
+    dtOnly: true,
     // Listing settings to restore when the participant filter is cleared.
-    prev: null,
-    // null: vital rows; { subjid, vital }: one participant's records; { all: true }: records in scope.
-    drill: null
+    prev: null
   };
   var data = null;
   var allTiles = null;
@@ -293,28 +294,64 @@
       vitals.column('subjid:name').search(exact(state.subj), true, false);
       vitals.draw();
     }
+  }
 
-    var records = dtApi('rm-records');
-    var drill = state.drill;
-    if (records && drill) {
-      var subj = drill.subjid || state.subj;
-      records.column('country:name').search(subj ? '' : exact(state.country), true, false);
-      records.column('invid:name').search(subj ? '' : exact(state.site), true, false);
-      records.column('subjid:name').search(exact(subj), true, false);
-      records.draw();
-      var crumb = byId('rm-crumb');
-      if (crumb) {
-        crumb.innerHTML = drill.subjid
-          ? '<strong>' + esc(drill.subjid) + '</strong>: all records, every vital' +
-            (drill.label ? ' (opened from ' + esc(drill.label) + ')' : '')
-          : '<strong>All records in scope</strong>: every participant matching the report filters';
-      }
+  // ---- §5 data table -------------------------------------------------------
+  function vitalKeys() {
+    return groupVitals().map(function (v) {
+      return jQuery.fn.dataTable.util.escapeRegex(v.vital);
+    });
+  }
+
+  function syncDataTable() {
+    document.querySelectorAll('[data-rm-shape]').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b.getAttribute('data-rm-shape') === state.shape));
+    });
+    document.querySelectorAll('[data-rm-shape-view]').forEach(function (div) {
+      div.style.display = div.getAttribute('data-rm-shape-view') === state.shape ? '' : 'none';
+    });
+    var only = byId('rm-dt-only');
+    if (only) only.checked = state.dtOnly;
+    var onlyLabel = byId('rm-dt-only-label');
+    if (onlyLabel) {
+      onlyLabel.textContent = state.shape === 'wide'
+        ? 'Only participants with a repeat window'
+        : 'Only vitals with a repeat window';
     }
-    var vView = byId('rm-vitals-view');
-    var rView = byId('rm-records-view');
-    if (vView) vView.style.display = drill ? 'none' : '';
-    if (rView) rView.style.display = drill ? '' : 'none';
-    if (drill && records) records.columns.adjust();
+    // Height and BSA have no group, so they show only under All.
+    var keys = state.group === 'All' ? [] : vitalKeys();
+    var scope = function (api) {
+      api.column('country:name').search(exact(state.country), true, false);
+      api.column('invid:name').search(exact(state.site), true, false);
+      api.column('subjid:name').search(exact(state.subj), true, false);
+    };
+
+    var long = dtApi('rm-dt-long');
+    if (long) {
+      long.column('vital:name').search(keys.length ? '^(' + keys.join('|') + ')$' : '', true, false);
+      long.column('has_repeat:name').search(state.dtOnly ? '^Y$' : '', true, false);
+      scope(long);
+      long.draw();
+    }
+
+    var wide = dtApi('rm-dt-wide');
+    if (wide) {
+      var shown = {};
+      rmData().vitals.forEach(function (v) {
+        shown[v.vital] = state.group === 'All' || (v.metric && v.group === state.group);
+      });
+      wide.columns().every(function () {
+        var name = this.settings()[0].aoColumns[this.index()].name;
+        if (name in shown && this.visible() !== shown[name]) this.visible(shown[name], false);
+      });
+      var onlyRe = '';
+      if (state.dtOnly) onlyRe = keys.length ? '(^| )(' + keys.join('|') + ')( |$)' : '\\S';
+      wide.column('repeat_vitals:name').search(onlyRe, true, false);
+      scope(wide);
+      wide.columns.adjust().draw();
+    }
+    var shownApi = state.shape === 'wide' ? wide : long;
+    if (shownApi) shownApi.columns.adjust();
   }
 
   // ---- shared --------------------------------------------------------------
@@ -328,18 +365,29 @@
   // Selecting a participant shows all of their vital rows in the compact
   // view; clearing it restores the reviewer's previous listing settings.
   function setSubj(id) {
-    if (id && !state.subj) state.prev = { showValues: state.showValues, onlyRepeat: state.onlyRepeat };
+    if (id && !state.subj) {
+      state.prev = { showValues: state.showValues, onlyRepeat: state.onlyRepeat, dtOnly: state.dtOnly };
+    }
     if (!id && state.subj && state.prev) {
       state.showValues = state.prev.showValues;
       state.onlyRepeat = state.prev.onlyRepeat;
+      state.dtOnly = state.prev.dtOnly;
       state.prev = null;
     }
     if (id) {
       state.showValues = false;
       state.onlyRepeat = false;
+      state.dtOnly = false;
     }
     state.subj = id;
-    state.drill = null;
+  }
+
+  function renderCount() {
+    var el = byId('rm-count');
+    var all = rmData().participants || [];
+    if (!el) return;
+    var n = all.filter(inScope).length;
+    el.innerHTML = '<b>' + n.toLocaleString() + '</b> / ' + all.length.toLocaleString() + ' participants selected';
   }
 
   function rmSync() {
@@ -350,6 +398,7 @@
     setChip('country', state.country);
     setChip('site', state.site);
     setChip('subj', state.subj);
+    renderCount();
     if (!allTiles) {
       var c = chart('rm-tiles');
       if (c) allTiles = c.data.slice();
@@ -358,6 +407,7 @@
     syncBars();
     syncTiles();
     syncListing();
+    syncDataTable();
   }
 
   function pickParticipant(subjid) {
@@ -388,28 +438,24 @@
     } else if (t.closest('#rm-tiles-csv')) {
       downloadTiles();
       return;
-    } else if (t.closest('#rm-all-records')) {
-      state.drill = { all: true };
-      syncListing();
-      return;
-    } else if (t.closest('#rm-back')) {
-      state.drill = null;
-      syncListing();
+    } else if (t.closest('[data-rm-shape]')) {
+      state.shape = t.closest('[data-rm-shape]').getAttribute('data-rm-shape');
+      syncDataTable();
       return;
     } else {
-      var tr = t.closest('#rm-vitals tbody tr');
-      var api = tr && dtApi('rm-vitals');
+      // A §4 or §5 row click toggles the participant filter.
+      var tr = t.closest('#rm-vitals tbody tr, #rm-dt-long tbody tr, #rm-dt-wide tbody tr');
+      var host = tr && tr.closest('.datatables');
+      var api = host && dtApi(host.id);
       var row = api && api.row(tr).data();
       if (!row) return;
       var cols = api.settings()[0].aoColumns;
-      var get = function (name) {
-        for (var i = 0; i < cols.length; i++) if (cols[i].name === name) return row[i];
-        return null;
-      };
-      state.drill = { subjid: get('subjid'), label: get('label') };
-      syncListing();
-      var view = byId('rm-records-view');
-      if (view) view.scrollIntoView({ block: 'start' });
+      for (var i = 0; i < cols.length; i++) {
+        if (cols[i].name === 'subjid') {
+          pickParticipant(row[i]);
+          return;
+        }
+      }
       return;
     }
     rmSync();
@@ -419,7 +465,11 @@
     var id = e.target.id;
     if (id === 'rm-show-values') state.showValues = e.target.checked;
     else if (id === 'rm-only-repeat') state.onlyRepeat = e.target.checked;
-    else if (id === 'rm-tiles-sort') {
+    else if (id === 'rm-dt-only') {
+      state.dtOnly = e.target.checked;
+      syncDataTable();
+      return;
+    } else if (id === 'rm-tiles-sort') {
       state.sort = e.target.value;
       syncTiles();
       return;
@@ -433,17 +483,16 @@
     syncTiles();
   });
 
-  // gsm.vizr dispatches gsm-viz-select from bars (bar clicks) and tiles (cell
-  // and row-header clicks).
+  // The Participant Listing widget dispatches rm-tiles-select on a label or
+  // tile click (or Enter / Space).
+  document.addEventListener('rm-tiles-select', function (e) {
+    pickParticipant((e.detail || {}).subjid);
+  });
+
+  // gsm.vizr dispatches gsm-viz-select from the bar charts.
   document.addEventListener('gsm-viz-select', function (e) {
     var d = e.detail || {};
     var id = d.chartId || '';
-    if (id === 'rm-tiles') {
-      if (d.type === 'rowclick') pickParticipant(d.y);
-      // Detail cells carry seq; only compact cells select the participant.
-      else if (d.type === 'click' && d.datum && d.datum.seq === undefined) pickParticipant(d.datum.subjid);
-      return;
-    }
     var row = d.datum || {};
     if (d.type !== 'click' || !row.GroupID) return;
     if (id.indexOf('rm-country-') === 0) {

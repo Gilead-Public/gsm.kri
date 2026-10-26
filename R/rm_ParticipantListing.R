@@ -3,17 +3,15 @@
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' One tile per participant and KRI vital, with the three cell labels the
-#' report switches between, and one detail row per measurement for the
-#' expanded columns.
+#' One tile per participant and KRI vital, with the three tile labels the
+#' report switches between. [Widget_RepeatMeasurementsTiles()] draws them.
 #'
 #' @param lClass `list` Output of [rm_Classify()].
 #'
-#' @return A `list` with `tiles` (`subjid`, `invid`, `country`, `vital`,
-#'   `column`, `flag`, `severity`, `Numerator`, `Denominator`, `rate`, `n`,
-#'   `label_rate`, `label_nd`, `label_both`), sorted by the participant's
-#'   worst flag, then participant; and `detail` (`subjid`, `column`, `seq`,
-#'   `value`, `in_repeat_window` ("Yes"/"No"), `visit`).
+#' @return A `tibble` with `subjid`, `invid`, `country`, `vital`, `column`,
+#'   `flag`, `severity`, `Numerator`, `Denominator`, `rate`, `n`,
+#'   `label_rate`, `label_nd` and `label_both`, sorted by the participant's
+#'   worst flag, then most repeating windows, then participant.
 #' @keywords internal
 #' @export
 rm_ParticipantTiles <- function(lClass) {
@@ -58,61 +56,4 @@ rm_ParticipantTiles <- function(lClass) {
       match(.data$vital, dfVitals$vital)
     ) %>%
     dplyr::select(-"worst", -"most")
-
-  dfM <- lClass$measurements[lClass$measurements$vital %in% dfTiles$vital, ]
-  dfDetail <- tibble::tibble(
-    subjid = dfM$subjid,
-    column = dfVitals$short[match(dfM$vital, dfVitals$vital)],
-    seq = as.integer(dfM$seq),
-    value = dfM$value,
-    in_repeat_window = ifelse(dfM$in_repeat_window, "Yes", "No"),
-    visit = if (is.null(dfM$visit)) NA_character_ else as.character(dfM$visit)
-  )
-  list(tiles = dfTiles, detail = dfDetail)
-}
-
-#' gsm.viz tiles spec for the Repeat Measurements Participant Listing
-#'
-#' @description
-#' `r lifecycle::badge("experimental")`
-#'
-#' Fill is the participant's flag for the vital; clicking a vital header
-#' expands it into one column per measurement, repeat-window values
-#' highlighted.
-#'
-#' @param dfDetail `data.frame` `detail` from [rm_ParticipantTiles()].
-#' @param strLabel `character` Initial cell label: `"both"`, `"rate"` or
-#'   `"nd"`.
-#'
-#' @return A named `list` for [gsm.vizr::tiles()].
-#' @keywords internal
-#' @export
-rm_ParticipantTilesSpec <- function(dfDetail, strLabel = c("both", "rate", "nd")) {
-  strLabel <- match.arg(strLabel)
-  vColors <- rm_FlagColors()
-  list(
-    mapping = list(x = "column", y = "subjid", fill = "flag", label = paste0("label_", strLabel)),
-    scales = list(
-      x = list(label = "Vital (click to show measurements)"),
-      y = list(label = "Participant"),
-      fill = list(
-        colors = as.list(vColors[c("Red", "Amber", "Green", "Not evaluable")]),
-        label = "Flag"
-      )
-    ),
-    expand = list(
-      data = dfDetail,
-      mapping = list(x = "seq", fill = "in_repeat_window", label = "value"),
-      scales = list(fill = list(
-        colors = list(Yes = "#B5462F", No = "#E8E8E8"),
-        label = "In repeat window"
-      )),
-      tooltip = list(format = "{subjid} \u00b7 {column} #{seq} ({visit}): {value}")
-    ),
-    tooltip = list(
-      format = "{subjid} \u00b7 site {invid} \u00b7 {column}: {flag} \u00b7 {Numerator} of {Denominator} windows repeat"
-    ),
-    rows = list(pageSize = 50L),
-    theme = list(cellWidth = 72L, rowHeaderWidth = 110L, maxHeight = "560px")
-  )
 }

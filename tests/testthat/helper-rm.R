@@ -116,11 +116,15 @@ rm_DataBlock <- function(html) {
   ))
 }
 
-# gsm.vizr serializes each widget into a JSON <script data-for=...> block.
+# htmlwidgets serializes each widget into a JSON <script data-for=...> block;
+# the payloads are named by element id.
 rm_WidgetPayloads <- function(html) {
-  payloads <- stringr::str_match_all(
+  m <- stringr::str_match_all(
     html,
-    '<script type="application/json" data-for="[^"]*">(.*?)</script>'
-  )[[1]][, 2]
-  lapply(payloads, function(p) jsonlite::fromJSON(p, simplifyVector = FALSE)$x)
+    '<script type="application/json" data-for="([^"]*)">(.*?)</script>'
+  )[[1]]
+  stats::setNames(
+    lapply(m[, 3], function(p) jsonlite::fromJSON(p, simplifyVector = FALSE)$x),
+    m[, 2]
+  )
 }

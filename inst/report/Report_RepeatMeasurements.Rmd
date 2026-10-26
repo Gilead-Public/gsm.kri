@@ -62,9 +62,10 @@ dist_order <- function(level, vital = NULL) {
   unique(df$GroupID)
 }
 tiles <- rm_ParticipantTiles(lClass)
-listing <- rm_VitalsListing(
-  rm_VitalRows(lClass),
-  rm_RecordRows(lClass),
+listing <- rm_VitalsListing(rm_VitalRows(lClass), nWindowLength = nW, bExport = bExport)
+data_table <- rm_DataTable(
+  rm_DataTableData(lClass),
+  rm_DataTableWide(lClass),
   lClass$vitals,
   bExport = bExport
 )
@@ -96,8 +97,8 @@ cat(sprintf('
 <ul>
 <li>A <strong>window</strong> is %1$s consecutive measurements of one vital for one participant, in visit order (missing values skipped). A window <strong>repeats</strong> when all %1$s values are identical. Each participant and vital has <strong>N</strong> repeating windows of <strong>D</strong> windows; the KRIs <code>kri0020a</code>&ndash;<code>f</code> sum N and D by site.</li>
 <li>Participants are <strong>evaluable</strong> for a vital once they have %1$s measurements (D &gt; 0). Flag rule: %2$s.</li>
-<li>Pick a vital group in the bar below to focus every section. Click a country or site bar, or a participant in the Participant Listing, to filter; remove a filter with its &times;.</li>
-<li>In the Participant Listing, click a vital header to see the measurements in order; repeat-window values are dark red. In the Vitals listing, click a row to see all of that participant&rsquo;s records.</li>
+<li>Pick a vital group in the bar below to focus every section. Click a country or site bar to filter; remove a filter with its &times;.</li>
+<li>The last three sections drill down from one row per participant (Participant Listing) to one per participant and vital (Vitals listing) to one per value or visit record (Data table). Click a participant, tile or row in any of them to filter the whole report to that participant; click it again to clear.</li>
 </ul>
 </details>
 ', nW, rule_text))
@@ -117,6 +118,7 @@ cat('
 .rm-seg button:focus-visible, .rm-chip button:focus-visible { outline: 2px solid #3C587F; outline-offset: 2px; }
 .rm-chip { display: inline-flex; align-items: center; gap: 6px; background-color: #ffffff; border: 1px solid #3C587F; border-radius: 16px; padding: 3px 6px 3px 12px; font-size: 13px; color: #3C587F; }
 .rm-chip-value { font-weight: 600; }
+.rm-count { font-size: 13px; color: #3C587F; margin-left: auto; }
 .rm-chip button { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; padding: 0; border: none; border-radius: 50%; background-color: transparent; color: #3C587F; font-size: 13px; line-height: 1; cursor: pointer; }
 .rm-chip button:hover { background-color: #3C587F; color: #ffffff; }
 .rm-note { color: #8A5A00; background-color: #FFF6E0; padding: 6px 10px; border-radius: 4px; }
@@ -139,12 +141,15 @@ cat('
 .rm-vals b.rw { background: #B5462F; color: #ffffff; }
 .rm-compact .rm-vals b { min-width: 0; width: 9px; height: 13px; padding: 0; font-size: 0; vertical-align: middle; background: #d0d7de; }
 .rm-compact .rm-vals b.rw { background: #B5462F; }
-#rm-records td.rw { background: #B5462F; color: #ffffff; }
-#rm-vitals tbody tr { cursor: pointer; }
-.rm-crumb { font-size: 14px; margin: 6px 0; }
+#rm-vitals tbody tr, #rm-dt-long tbody tr, #rm-dt-wide tbody tr { cursor: pointer; }
+.rm-fr { white-space: nowrap; }
+.rm-nk { color: #8c959f; }
+.rm-rw, #rm-dt-wide td.rm-rw { color: #B5462F; font-weight: 700; }
+.rm-legend { font-size: 13px; color: #57606a; margin: 4px 0 8px; }
+.rm-legend .rm-vals b { min-width: 0; }
 /* Clears the navbar and the sticky strip when a contents link jumps to a section. */
 .section.level2, .section.level3 { scroll-margin-top: 100px; }
-#rm-overview, #rm-vitals, #rm-records { overflow-x: auto; }
+#rm-overview, #rm-vitals, #rm-dt-long, #rm-dt-wide { overflow-x: auto; }
 </style>
 ')
 ```
@@ -186,7 +191,8 @@ htmltools::tags$div(
   ),
   chip("country", "Country"),
   chip("site", "Site"),
-  chip("subj", "Participant")
+  chip("subj", "Participant"),
+  htmltools::tags$span(id = "rm-count", class = "rm-count", title = "Filters apply to every section.")
 )
 ```
 
@@ -333,15 +339,11 @@ htmltools::div(
 ```
 
 ```{r tiles, echo=FALSE, eval=has_participants}
-gsm.vizr::tiles(
-  data = tiles$tiles,
-  spec = rm_ParticipantTilesSpec(tiles$detail),
-  metadata = list(chartId = "rm-tiles")
-)
+Widget_RepeatMeasurementsTiles(tiles, strId = "rm-tiles")
 ```
 
 ```{r tiles-note, echo=FALSE, results='asis'}
-cat("\n> One row per participant and one tile per KRI vital, coloured by the participant's flag: N/D is repeating windows of all windows, NE is not evaluable. Click a participant to filter the report to them; click again to clear. Click a vital header to show its measurements in order.\n")
+cat("\n> One row per participant and one tile per KRI vital, coloured by the participant's flag: N/D is repeating windows of all windows, NE is not evaluable. Click a participant or tile to filter the report; click again to clear.\n")
 ```
 
 ## Vitals listing
@@ -352,24 +354,9 @@ htmltools::div(
   htmltools::div(
     class = "rm-controls",
     htmltools::tags$label(htmltools::tags$input(id = "rm-show-values", type = "checkbox", checked = NA), " Show values"),
-    htmltools::tags$label(htmltools::tags$input(id = "rm-only-repeat", type = "checkbox", checked = NA), " Only rows with a repeat window"),
-    htmltools::tags$button(id = "rm-all-records", type = "button", class = "rm-btn", "All records in scope")
+    htmltools::tags$label(htmltools::tags$input(id = "rm-only-repeat", type = "checkbox", checked = NA), " Only rows with a repeat window")
   ),
-  htmltools::div(id = "rm-vitals-wrap", listing$vitals)
-)
-```
-
-```{r records, echo=FALSE, eval=has_participants}
-# Rendered visible: DT does not draw a table inside a hidden container.
-# rmFilters.js hides this view on load.
-htmltools::div(
-  id = "rm-records-view",
-  htmltools::div(
-    class = "rm-controls",
-    htmltools::tags$button(id = "rm-back", type = "button", class = "rm-btn", htmltools::HTML("&larr; Back to vitals")),
-    htmltools::tags$span(id = "rm-crumb", class = "rm-crumb")
-  ),
-  listing$records
+  htmltools::div(id = "rm-vitals-wrap", listing)
 )
 ```
 
@@ -377,8 +364,47 @@ htmltools::div(
 cat(
   "\n",
   "> - One row per participant and vital, for every vital in the vital signs data. Height and BSA have no KRI.\n",
+  "> - Hover a vital for its metric ID (* = not a KRI) and the flag and rate for measured, N and D. Sort the flag column for worst first.\n",
   "> - **Measurements in order** are the values the windows run over; dark red values are in a repeat window. Untick **Show values** for a compact view.\n",
-  "> - Click a row for all of that participant's records, every vital, repeat-window values in dark red.\n",
+  "> - Click a row to filter the report to that participant; click again to clear.\n",
+  sep = ""
+)
+```
+
+## Data table
+
+```{r data-controls, echo=FALSE, eval=has_participants}
+htmltools::div(
+  class = "rm-controls",
+  htmltools::tags$span(
+    class = "rm-seg",
+    role = "group",
+    `aria-label` = "Table shape",
+    htmltools::tags$button(id = "rm-shape-long", type = "button", `data-rm-shape` = "long", `aria-pressed` = "false", "Long"),
+    htmltools::tags$button(id = "rm-shape-wide", type = "button", `data-rm-shape` = "wide", `aria-pressed` = "true", "Wide")
+  ),
+  htmltools::tags$label(
+    htmltools::tags$input(id = "rm-dt-only", type = "checkbox", checked = NA),
+    " ",
+    htmltools::tags$span(id = "rm-dt-only-label", "Only participants with a repeat window")
+  )
+)
+```
+
+```{r data-table, echo=FALSE, eval=has_participants}
+# Both shapes render visible: DT does not draw a table inside a hidden
+# container. rmFilters.js shows the selected shape on load.
+htmltools::tagList(
+  htmltools::div(id = "rm-dt-wide-view", `data-rm-shape-view` = "wide", data_table$wide),
+  htmltools::div(id = "rm-dt-long-view", `data-rm-shape-view` = "long", data_table$long)
+)
+```
+
+```{r data-note, echo=FALSE, results='asis'}
+cat(
+  "\n",
+  "> - **Wide** (default): one row per participant and visit record, one column per vital, as in the vital signs data. **Long:** one row per participant, vital and non-missing value, in measurement order (# is the position).\n",
+  "> - Dark red values are in a repeat window. Click a row to filter the report to that participant; click again to clear.\n",
   sep = ""
 )
 ```
@@ -391,6 +417,7 @@ ipm_DataScript(
     siteFlags = rm_SiteFlags(dfResults),
     vitals = lClass$vitals,
     groups = dfVitals[c("vital", "group")],
+    participants = unique(lClass$participants[c("subjid", "invid", "country")]),
     export = bExport
   ),
   strId = "rm-data"
