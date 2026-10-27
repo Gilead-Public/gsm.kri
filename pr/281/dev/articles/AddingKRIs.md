@@ -147,7 +147,7 @@ accuracy, and usability across the system.
 To ensure that the metric is behaving as expected for test data, a new
 test or multiple tests must be written and documented in the `{gsm.qc}`
 package. `{gsm.qc}` uses the
-[qcthat](https://gilead-biostats.github.io/qcthat/) framework, which is
+[qcthat](https://gilead-public.github.io/qcthat/) framework, which is
 detailed in the package documentation
 [here](https://gilead-public.github.io/qcthat/).
 

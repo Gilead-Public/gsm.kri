@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">gsm.kri</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">1.7.0</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">1.7.0.9001</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -46,6 +46,7 @@
 <li><a class="dropdown-item" href="../examples/Example_SiteReport.html">Site KRI Report</a></li>
     <li><a class="dropdown-item" href="../examples/Example_Eligibility.html">Eligibility Report</a></li>
     <li><a class="dropdown-item" href="../examples/Example_CrossStudySRS.html">Cross-Study KRI Report</a></li>
+    <li><a class="dropdown-item" href="../examples/Example_IPMonitoring.html">IP Monitoring Report</a></li>
     <li><a class="dropdown-item" href="../examples/Example_PrematureDeaths.html">Premature Deaths Report</a></li>
     <li><a class="dropdown-item" href="../examples/Cookbook_AdverseEventKRI.html">Cookbook - Adverse Event KRI Report</a></li>
     <li><a class="dropdown-item" href="../examples/Cookbook_AdverseEventWorkflow.html">Cookbook - Adverse Event Workflow Examples</a></li>
@@ -510,25 +511,36 @@ changed with <code>lActionFactors</code>, or
 <div class="section level4">
 <h4 id="which-actionlog-entry-is-used">Which ActionLog entry is used<a class="anchor" aria-label="anchor" href="#which-actionlog-entry-is-used"></a>
 </h4>
-<p><code>Reporting_ActionLog</code> is a frozen extract taken when a
-snapshot is generated, so it only contains decisions made up to that
-point. It keeps a history: the same site and metric can have entries at
-several <code>SnapshotDate</code>s.</p>
-<ul>
-<li>For each site and metric, the latest entry on or before the results
-<code>SnapshotDate</code> is used. <code>dActionSnapshotDate</code> sets
-an earlier “as of” date; it cannot be later than the results
-snapshot.</li>
-<li>Entries are matched to KRI results on
-<code>StudyID + GroupLevel + GroupID + MetricID</code>, and
-<code>StudyID + SnapshotDate + GroupLevel + GroupID + MetricID</code>
-must be unique across the extract.</li>
-<li>Scoring an earlier snapshot therefore uses only what was known at
-that point, and entries dated after the results snapshot are
-ignored.</li>
-</ul>
-<p>Only the state of that one entry is used; earlier entries for the
-same signal do not affect the score.</p>
+<p>Grail’s ActionLog is a frozen source-system read. Its
+<code>SnapshotDate</code> identifies the originating signal, not when
+its current state became known. Several signal snapshots in one
+extraction are not a state-change history.</p>
+<ol style="list-style-type: decimal">
+<li>Select the latest complete <code>ExtractionDate</code> on or before
+the results snapshot. <code>dActionExtractionDate</code> can explicitly
+select the later freeze associated with a scoring run. Persist that
+extraction to replay the run; do not reconstruct earlier decisions from
+a later source-system read.</li>
+<li>Within that extraction, select the latest signal snapshot for each
+<code>StudyID + GroupLevel + GroupID + MetricID</code>.
+<code>dActionSnapshotDate</code> can impose an earlier signal-snapshot
+cutoff, but does not time-travel states.</li>
+<li>Keep every signal and action at that snapshot and use their largest
+configured factor. For example, <code>No Action</code> plus
+<code>Open Action</code> counts in full with the default factors. Each
+KRI still contributes only once.</li>
+</ol>
+<p>Do not fill gaps in the selected extraction with records from older
+reads. <code>RiskSignalID</code> and <code>ActionID</code> are character
+identifiers; multiple action rows are valid, while repeated row
+identities within an extraction are rejected. For a legacy input without
+identifiers, the five-column result key must remain unique within each
+extraction.</p>
+<p>Use the compatible <code>State</code> field: grail derives it from
+<code>ActionState</code> when an action exists, otherwise from
+<code>RiskSignalState</code>. Using <code>ActionState</code> alone would
+discard unactioned triage decisions. Action lifecycle dates cannot
+reconstruct arbitrary historical state transitions.</p>
 </div>
 <div class="section level4">
 <h4 id="missing-action-states">Missing action states<a class="anchor" aria-label="anchor" href="#missing-action-states"></a>
@@ -537,7 +549,10 @@ same signal do not affect the score.</p>
 error by default (<code>strMissingState = "error"</code>). Choose
 <code>"include"</code> to count its full weight until it is triaged, or
 <code>"exclude"</code> to drop it. Zero-weight KRIs never need an
-ActionLog entry.</p>
+ActionLog entry. The workflow defaults to <code>"include"</code> because
+new or deliberately suppressed signals may have no source-system record;
+the function keeps its explicit <code>"error"</code> default for callers
+needing strict completeness.</p>
 </div>
 <div class="section level4">
 <h4 id="workflow">Workflow<a class="anchor" aria-label="anchor" href="#workflow"></a>
@@ -547,7 +562,11 @@ ActionLog entry.</p>
 domains, which keeps ADO credentials and extraction timing outside
 <a href="https://github.com/Gilead-Public/gsm.kri" class="external-link">gsm.kri</a>, and returns <code>Analysis_srs0002</code>
 alongside <code>srs0001</code>. The original <code>srs0001</code>
-remains unchanged as the comparison and rollback baseline.</p>
+remains unchanged as the comparison and rollback baseline.
+<code>meta.ActionExtractionDate</code> is optional and defaults to the
+results snapshot; set it to a <code>Date</code> or an ISO
+<code>YYYY-MM-DD</code> string when a persisted scoring run used a later
+frozen extraction.</p>
 </div>
 <div class="section level4">
 <h4 id="reporting">Reporting<a class="anchor" aria-label="anchor" href="#reporting"></a>
@@ -559,7 +578,9 @@ existing <strong>Risk Score</strong> (<code>Analysis_srs0001</code>)
 column.</p>
 <p><code><a href="../reference/MakeActionRiskScoreDetail.html">MakeActionRiskScoreDetail()</a></code> returns the per-KRI rows
 behind the score: each KRI’s weight, the ActionLog state and date
-applied, and the resulting effective weight.
+applied, and the resulting effective weight. It also retains
+<code>ActionExtractionDate</code>, sorted signal and action identifiers,
+and <code>ActionCount</code> for audit.
 <code><a href="../reference/CalculateActionRiskScore.html">CalculateActionRiskScore()</a></code> summarizes these same rows, so
 the two always agree. Passing them to
 <code>Report_KRI(dfRiskScoreDetail = ...)</code> adds:</p>

@@ -42,49 +42,63 @@ parameters.
 
 ``` r
 head(gsm.core::reportingGroups)
-#>          GroupID          Param            Value GroupLevel
-#> 1 AA-AA-000-0000        studyid   AA-AA-000-0000      Study
-#> 2 AA-AA-000-0000       nickname           OAK-38      Study
-#> 3 AA-AA-000-0000 protocol_title Protocol Title P      Study
-#> 4 AA-AA-000-0000         status           Active      Study
-#> 5 AA-AA-000-0000  num_plan_site              150      Study
-#> 6 AA-AA-000-0000  num_plan_subj             1000      Study
+#>   GroupID                 Param          Value GroupLevel
+#> 1   0X002                  City Newtown Square       Site
+#> 2   0X002               Country             US       Site
+#> 3   0X002 InvestigatorFirstName           Fred       Site
+#> 4   0X002  InvestigatorLastName          Smith       Site
+#> 5   0X002                 invid          0X002       Site
+#> 6   0X002      ParticipantCount              1       Site
 MakeParamLabels(head(gsm.core::reportingGroups))
-#>          GroupID          Param            Value GroupLevel          Label
-#> 1 AA-AA-000-0000        studyid   AA-AA-000-0000      Study        Studyid
-#> 2 AA-AA-000-0000       nickname           OAK-38      Study       Nickname
-#> 3 AA-AA-000-0000 protocol_title Protocol Title P      Study Protocol Title
-#> 4 AA-AA-000-0000         status           Active      Study         Status
-#> 5 AA-AA-000-0000  num_plan_site              150      Study  Num Plan Site
-#> 6 AA-AA-000-0000  num_plan_subj             1000      Study  Num Plan Subj
+#>   GroupID                 Param          Value GroupLevel
+#> 1   0X002                  City Newtown Square       Site
+#> 2   0X002               Country             US       Site
+#> 3   0X002 InvestigatorFirstName           Fred       Site
+#> 4   0X002  InvestigatorLastName          Smith       Site
+#> 5   0X002                 invid          0X002       Site
+#> 6   0X002      ParticipantCount              1       Site
+#>                     Label
+#> 1                    City
+#> 2                 Country
+#> 3 Investigator First Name
+#> 4  Investigator Last Name
+#> 5                   Invid
+#> 6       Participant Count
 MakeParamLabels(
   head(gsm.core::reportingGroups),
   list(ParticipantCount = "Number of Participants")
 )
-#>          GroupID          Param            Value GroupLevel          Label
-#> 1 AA-AA-000-0000        studyid   AA-AA-000-0000      Study        Studyid
-#> 2 AA-AA-000-0000       nickname           OAK-38      Study       Nickname
-#> 3 AA-AA-000-0000 protocol_title Protocol Title P      Study Protocol Title
-#> 4 AA-AA-000-0000         status           Active      Study         Status
-#> 5 AA-AA-000-0000  num_plan_site              150      Study  Num Plan Site
-#> 6 AA-AA-000-0000  num_plan_subj             1000      Study  Num Plan Subj
+#>   GroupID                 Param          Value GroupLevel
+#> 1   0X002                  City Newtown Square       Site
+#> 2   0X002               Country             US       Site
+#> 3   0X002 InvestigatorFirstName           Fred       Site
+#> 4   0X002  InvestigatorLastName          Smith       Site
+#> 5   0X002                 invid          0X002       Site
+#> 6   0X002      ParticipantCount              1       Site
+#>                     Label
+#> 1                    City
+#> 2                 Country
+#> 3 Investigator First Name
+#> 4  Investigator Last Name
+#> 5                   Invid
+#> 6  Number of Participants
 MakeParamLabelsList(head(gsm.core::reportingGroups$Param))
-#> $studyid
-#> [1] "Studyid"
+#> $City
+#> [1] "City"
 #> 
-#> $nickname
-#> [1] "Nickname"
+#> $Country
+#> [1] "Country"
 #> 
-#> $protocol_title
-#> [1] "Protocol Title"
+#> $InvestigatorFirstName
+#> [1] "Investigator First Name"
 #> 
-#> $status
-#> [1] "Status"
+#> $InvestigatorLastName
+#> [1] "Investigator Last Name"
 #> 
-#> $num_plan_site
-#> [1] "Num Plan Site"
+#> $invid
+#> [1] "Invid"
 #> 
-#> $num_plan_subj
-#> [1] "Num Plan Subj"
+#> $ParticipantCount
+#> [1] "Participant Count"
 #> 
 ```

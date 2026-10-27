@@ -6,6 +6,8 @@
   : Calculate an action-status-weighted Site Risk Score
 - [`CalculateRiskScore()`](https://gilead-public.github.io/gsm.kri/dev/reference/CalculateRiskScore.md)
   : Calculate Risk Score
+- [`Detect_ConsecutiveRepeats()`](https://gilead-public.github.io/gsm.kri/dev/reference/Detect_ConsecutiveRepeats.md)
+  : Detect consecutive repeated measurements
 - [`FilterAnalysis()`](https://gilead-public.github.io/gsm.kri/dev/reference/FilterAnalysis.md)
   : Filter Analysis Outputs
 - [`FilterByFlags()`](https://gilead-public.github.io/gsm.kri/dev/reference/FilterByFlags.md)
@@ -35,6 +37,8 @@
   : Summarize flags by SnapshotDate
 - [`Report_FormatFlag()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_FormatFlag.md)
   : KRI Directionality Logo.
+- [`Report_IPMonitoring()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_IPMonitoring.md)
+  : Report_IPMonitoring function
 - [`Report_KRI()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_KRI.md)
   : Report_KRI function
 - [`Report_MetricCharts()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_MetricCharts.md)

@@ -16,7 +16,8 @@ MakeActionRiskScoreDetail(
     `No Action` = 0),
   strMissingState = c("error", "include", "exclude"),
   strMetricID = "Analysis_srs0002",
-  dActionSnapshotDate = NULL
+  dActionSnapshotDate = NULL,
+  dActionExtractionDate = NULL
 )
 ```
 
@@ -38,9 +39,11 @@ MakeActionRiskScoreDetail(
   ActionLog rows with the five-column result key, \`State\`, and
   \`ExtractionDate\`, for the same \`StudyID\` as \`dfResults\`. It may
   hold several entries per group and metric at different
-  \`SnapshotDate\`s; for each group and metric the latest entry on or
-  before \`dActionSnapshotDate\` is used. The five-column key must be
-  unique.
+  \`SnapshotDate\`s; for each group and metric the latest signal
+  snapshot on or before \`dActionSnapshotDate\` is used within the
+  selected frozen extraction. Multiple actions and signals at that
+  snapshot are reduced using the largest configured factor. Identifiers
+  must distinguish those rows.
 
 - lActionFactors:
 
@@ -62,6 +65,16 @@ MakeActionRiskScoreDetail(
   the \`dfResults\` \`SnapshotDate\`. Must not be later than the
   \`dfResults\` \`SnapshotDate\`.
 
+- dActionExtractionDate:
+
+  \`Date\` or ISO \`YYYY-MM-DD\` cutoff for frozen ActionLog
+  extractions. \`NULL\` uses the results snapshot date. The latest
+  complete extraction on or before this cutoff is selected, without
+  filling gaps from older extractions. Set an explicit date when
+  replaying a scoring run whose ActionLog was frozen after the data
+  snapshot. Signal snapshot dates do not establish when action states
+  became known.
+
 ## Value
 
 A data frame with one row per \`GroupLevel\`, \`GroupID\`, and
@@ -69,5 +82,8 @@ A data frame with one row per \`GroupLevel\`, \`GroupID\`, and
 \`GroupID\`, \`MetricID\`, \`Flag\`, \`Weight\`, \`WeightMax\`,
 \`ActionState\`, \`ActionSnapshotDate\` (the \`SnapshotDate\` of the
 ActionLog entry applied), \`ActionSource\` (\`"ActionLog"\`,
-\`"Missing"\`, or \`"Zero weight"\`), \`ActionFactor\`, and
-\`EffectiveWeight\`.
+\`"Missing"\`, or \`"Zero weight"\`), \`ActionFactor\`,
+\`EffectiveWeight\`, \`ActionExtractionDate\`, \`RiskSignalID\`,
+\`ActionID\`, and \`ActionCount\`. States and identifiers from multiple
+rows are sorted and comma-separated; \`ActionCount\` counts distinct
+actions.
