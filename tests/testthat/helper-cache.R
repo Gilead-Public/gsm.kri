@@ -75,8 +75,16 @@ get_cached_mapped_data <- function(lData, mappings_wf, force_refresh = FALSE, ca
 
   source_mtime <- get_workflow_mtime(workflow_paths)
 
+  # mtimes alone miss upstream data changes (e.g. a new gsm.core::lSource), so
+  # also key the cache on the inputs themselves.
+  input_hash <- rlang::hash(list(lData, mappings_wf))
+  hash_cache <- file.path(cache_dir, "mapped_data_hash.rds")
+  bHashChanged <- !file.exists(hash_cache) ||
+    !identical(readRDS(hash_cache), input_hash)
+
   # Check if cache is outdated or force refresh is requested
   if (force_refresh ||
+    bHashChanged ||
     is_cache_outdated(mapped_data_cache, source_mtime) ||
     is_cache_outdated(mappings_wf_cache, source_mtime)) {
     # Generate fresh mapped data
@@ -85,6 +93,7 @@ get_cached_mapped_data <- function(lData, mappings_wf, force_refresh = FALSE, ca
     # Save to cache
     saveRDS(mapped_data, mapped_data_cache)
     saveRDS(mappings_wf, mappings_wf_cache)
+    saveRDS(input_hash, hash_cache)
 
     return(mapped_data)
   } else {
@@ -128,7 +137,7 @@ clear_cache <- function(cache_dir = NULL) {
   if (is.null(cache_dir)) {
     cache_dir <- get_cache_dir()
   }
-  cache_files <- list.files(cache_dir, pattern = "(mapped_data|mappings_wf|mapping_output)\\.rds$", full.names = TRUE)
+  cache_files <- list.files(cache_dir, pattern = "(mapped_data|mapped_data_hash|mappings_wf|mapping_output)\\.rds$", full.names = TRUE)
   if (length(cache_files) > 0) {
     file.remove(cache_files)
   }

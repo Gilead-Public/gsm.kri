@@ -1,66 +1,70 @@
-test_that("Qual: action-weighted SRS matches independent AA evidence math (#280)", {
-  metric_ids <- sprintf("Analysis_kri%04d", 1:10)
-  results <- data.frame(
-    StudyID = "AA-AA-000-0000",
-    SnapshotDate = as.Date("2025-02-28"),
-    GroupLevel = "Site",
-    GroupID = "1001",
-    MetricID = metric_ids,
-    Flag = 1,
-    stringsAsFactors = FALSE
+independent_repeats <- function(dfVS, strCol, nWindow = 3) {
+  dfVS <- dfVS[!is.na(dfVS[[strCol]]), ]
+  dfVS <- dfVS[order(dfVS$subjid, dfVS$vs_dt, dfVS$visit), ]
+  lSubj <- split(dfVS[[strCol]], dfVS$subjid)
+  data.frame(
+    subjid = names(lSubj),
+    Numerator = vapply(lSubj, function(values) {
+      count <- length(values)
+      if (count < nWindow) return(0)
+      sum(vapply(seq_len(count - nWindow + 1), function(index) {
+        all(values[index:(index + nWindow - 1)] == values[index])
+      }, logical(1)))
+    }, numeric(1)),
+    Denominator = vapply(lSubj, function(values) max(0, length(values) - nWindow + 1), numeric(1))
   )
-  weights <- data.frame(
-    MetricID = metric_ids,
-    Flag = 1,
-    Weight = 2,
-    WeightMax = 2,
-    stringsAsFactors = FALSE
+}
+
+independent_flags <- function(dfSubj, strGroupCol, vThreshold = c(0.2, 0.3), nAccrual = 3) {
+  dfGroup <- stats::aggregate(
+    cbind(Numerator, Denominator) ~ GroupID,
+    data = transform(dfSubj, GroupID = dfSubj[[strGroupCol]]),
+    FUN = sum
   )
-  states <- c(
-    rep("No Action", 7),
-    rep("Open Action", 2),
-    "Closed Action"
+  dfGroup$Metric <- dfGroup$Numerator / dfGroup$Denominator
+  dfGroup$Flag <- ifelse(
+    dfGroup$Metric >= vThreshold[2], 2,
+    ifelse(dfGroup$Metric >= vThreshold[1], 1, 0)
   )
-  action_log <- data.frame(
-    StudyID = results$StudyID,
-    SnapshotDate = results$SnapshotDate,
-    GroupLevel = results$GroupLevel,
-    GroupID = results$GroupID,
-    MetricID = results$MetricID,
-    State = states,
-    ExtractionDate = as.Date("2025-03-07"),
-    stringsAsFactors = FALSE
+  dfGroup$Flag[dfGroup$Denominator < nAccrual] <- NA
+  dfGroup
+}
+
+test_that("Qual: kri0020a-f/cou0020a-f match an independent derivation on lSource (#306)", {
+  TestAtLogLevel()
+  vCols <- c(a = "weight", b = "pulse", c = "sysbp", d = "diabp", e = "resp", f = "temp")
+
+  dfVS <- mapped_data$Mapped_VS
+  dfSUBJ <- mapped_data$Mapped_SUBJ
+  # A vacuous comparison would pass trivially.
+  expect_gt(nrow(dfVS), 0)
+
+  lResults <- workr::RunWorkflows(
+    kri_workflow(c(paste0("kri0020", names(vCols)), paste0("cou0020", names(vCols)))),
+    mapped_data
   )
 
-  # Independent expected calculation: the AA scenario has seven findings
-  # judged No Action and three action-worthy findings (two open, one closed).
-  expected_factor <- ifelse(
-    action_log$State %in% c("Open Action", "Closed Action"),
-    1,
-    0
-  )
-  expected_numerator <- sum(weights$Weight * expected_factor)
-  expected_denominator <- sum(tapply(
-    weights$WeightMax,
-    weights$MetricID,
-    unique
-  ))
-  expected_score <- expected_numerator / expected_denominator * 100
+  for (strSuffix in names(vCols)) {
+    strCol <- vCols[[strSuffix]]
+    dfSubj <- merge(
+      dfSUBJ[c("subjid", "invid", "country")],
+      independent_repeats(dfVS, strCol),
+      by = "subjid"
+    )
+    expect_gt(sum(dfSubj$Numerator), 0, label = paste(strCol, "numerator"))
 
-  actual <- CalculateActionRiskScore(
-    results, weights, action_log,
-    dActionExtractionDate = as.Date("2025-03-07")
-  )
-  raw <- CalculateRiskScore(results, weights)
+    for (strLevel in c("Site", "Country")) {
+      strID <- paste0(if (strLevel == "Site") "kri" else "cou", "0020", strSuffix)
+      dfExpected <- independent_flags(
+        dfSubj,
+        if (strLevel == "Site") "invid" else "country"
+      )
+      dfActual <- lResults[[paste0("Analysis_", strID)]]$Analysis_Summary
+      dfActual <- dfActual[match(dfExpected$GroupID, dfActual$GroupID), ]
 
-  expect_equal(expected_numerator, 6)
-  expect_equal(expected_denominator, 20)
-  expect_equal(expected_score, 30)
-  expect_equal(actual$Numerator, expected_numerator)
-  expect_equal(actual$Denominator, expected_denominator)
-  expect_equal(actual$Metric, expected_score)
-  expect_equal(actual$Score, expected_score)
-  expect_equal(raw$Numerator, 20)
-  expect_equal(raw$Metric, 100)
-  expect_equal(actual$Denominator, raw$Denominator)
+      expect_equal(dfActual$Numerator, dfExpected$Numerator, label = strID)
+      expect_equal(dfActual$Denominator, dfExpected$Denominator, label = strID)
+      expect_equal(as.numeric(dfActual$Flag), dfExpected$Flag, label = strID)
+    }
+  }
 })

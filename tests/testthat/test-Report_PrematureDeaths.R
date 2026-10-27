@@ -50,28 +50,28 @@ lListings <- list(
   )
 )
 
-test_that("Report_PrematureDeaths renders to a file {#223}", {
+test_that("Report_PrematureDeaths renders to a file (#223)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
-  out <- Report_PrematureDeaths(
+  out <- quiet_render(Report_PrematureDeaths(
     dfResults = dfResults,
     dfMetrics = dfMetrics,
     dfGroups = dfGroups,
     lListings = lListings,
     nWindowDays = 90,
     strOutputDir = tempdir()
-  )
+  ))
   expect_true(file.exists(out))
 })
 
-test_that("Report_PrematureDeaths validates nWindowDays {#223}", {
+test_that("Report_PrematureDeaths validates nWindowDays (#223)", {
   expect_error(
     Report_PrematureDeaths(lListings = lListings, nWindowDays = -1),
     "nWindowDays must be a positive number"
   )
 })
 
-test_that("Report_PrematureDeaths warns when nWindowDays disagrees with dfResults {#223}", {
+test_that("Report_PrematureDeaths warns when nWindowDays disagrees with dfResults (#223)", {
   # Test the window-consistency guard directly (warnings don't propagate
   # through rmarkdown::render boundaries; the helper is exported for this purpose).
   expect_warning(
@@ -80,7 +80,7 @@ test_that("Report_PrematureDeaths warns when nWindowDays disagrees with dfResult
   )
 })
 
-test_that("pd_CheckWindowConsistency is silent when the counts agree {#223}", {
+test_that("pd_CheckWindowConsistency is silent when the counts agree (#223)", {
   # The mismatch comparison now lives inside the helper, so an agreeing call
   # (nPremature == nFlagged) returns invisibly with no warning.
   expect_no_warning(
@@ -88,17 +88,17 @@ test_that("pd_CheckWindowConsistency is silent when the counts agree {#223}", {
   )
 })
 
-test_that("Report_PrematureDeaths renders the dynamic subtitle, not literal pseudo-front-matter {#223}", {
+test_that("Report_PrematureDeaths renders the dynamic subtitle, not literal pseudo-front-matter (#223)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
-  out <- Report_PrematureDeaths(
+  out <- quiet_render(Report_PrematureDeaths(
     dfResults = dfResults,
     dfMetrics = dfMetrics,
     dfGroups = dfGroups,
     lListings = lListings,
     nWindowDays = 90,
     strOutputDir = tempdir()
-  )
+  ))
   html <- paste(readLines(out, warn = FALSE), collapse = "\n")
   # The results='asis' subtitle renders as real content (snapshot date shown)...
   expect_true(grepl("Snapshot Date: 2026-05-01", html, fixed = TRUE))
@@ -109,17 +109,17 @@ test_that("Report_PrematureDeaths renders the dynamic subtitle, not literal pseu
   expect_false(grepl("subtitle: [^{]", html))
 })
 
-test_that("Report_PrematureDeaths renders the studcomp discontinuation note {#246}", {
+test_that("Report_PrematureDeaths renders the studcomp discontinuation note (#246)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
-  out <- Report_PrematureDeaths(
+  out <- quiet_render(Report_PrematureDeaths(
     dfResults = dfResults,
     dfMetrics = dfMetrics,
     dfGroups = dfGroups,
     lListings = lListings,
     nWindowDays = 90,
     strOutputDir = tempdir()
-  )
+  ))
   html <- paste(readLines(out, warn = FALSE), collapse = "\n")
   expect_true(grepl("Study discontinuation", html)) # CAT-3 note text
   expect_true(grepl("studcomp", html, ignore.case = TRUE))
@@ -128,14 +128,14 @@ test_that("Report_PrematureDeaths renders the studcomp discontinuation note {#24
 test_that("Report no longer emits the custom count/% toggle scaffolding (#264)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
-  out <- Report_PrematureDeaths(
+  out <- quiet_render(Report_PrematureDeaths(
     dfResults = dfResults,
     dfMetrics = dfMetrics,
     dfGroups = dfGroups,
     lListings = lListings,
     nWindowDays = 90,
     strOutputDir = tempdir()
-  )
+  ))
   html <- paste(readLines(out, warn = FALSE), collapse = "\n")
   # The hand-rolled sticky toggle is gone; the bucket charts rely on gsm.viz's
   # native stack/dodge/fill control. None of its markers may survive.
@@ -144,17 +144,17 @@ test_that("Report no longer emits the custom count/% toggle scaffolding (#264)",
   expect_false(grepl("pdSetMode", html, fixed = TRUE))
 })
 
-test_that("Report_PrematureDeaths includes country filter JS and banner {#246}", {
+test_that("Report_PrematureDeaths includes country filter JS and banner (#246)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
-  out <- Report_PrematureDeaths(
+  out <- quiet_render(Report_PrematureDeaths(
     dfResults = dfResults,
     dfMetrics = dfMetrics,
     dfGroups = dfGroups,
     lListings = lListings,
     nWindowDays = 90,
     strOutputDir = tempdir()
-  )
+  ))
   html <- paste(readLines(out, warn = FALSE), collapse = "\n")
 
   # Filter banner present
@@ -180,17 +180,17 @@ test_that("Report_PrematureDeaths includes country filter JS and banner {#246}",
   expect_true(grepl('id="pd-site-scatter"', html))
 })
 
-test_that("Report_PrematureDeaths wires the site-barchart listing filter {#221}", {
+test_that("Report_PrematureDeaths wires the site-barchart listing filter (#221)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
-  out <- Report_PrematureDeaths(
+  out <- quiet_render(Report_PrematureDeaths(
     dfResults = dfResults,
     dfMetrics = dfMetrics,
     dfGroups = dfGroups,
     lListings = lListings,
     nWindowDays = 90,
     strOutputDir = tempdir()
-  )
+  ))
   html <- paste(readLines(out, warn = FALSE), collapse = "\n")
 
   # Site click is wired as a second, independent filter source via gsm.vizr's
@@ -206,17 +206,17 @@ test_that("Report_PrematureDeaths wires the site-barchart listing filter {#221}"
   expect_match(html, "window.pdResetSiteFilter", fixed = TRUE)
 })
 
-test_that("Report wires the numeric-y scatter point filter {#247}", {
+test_that("Report wires the numeric-y scatter point filter (#247)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
-  out <- Report_PrematureDeaths(
+  out <- quiet_render(Report_PrematureDeaths(
     dfResults = dfResults,
     dfMetrics = dfMetrics,
     dfGroups = dfGroups,
     lListings = lListings,
     nWindowDays = 90,
     strOutputDir = tempdir()
-  )
+  ))
   html <- paste(readLines(out, warn = FALSE), collapse = "\n")
   expect_match(html, "function filterScatterChart", fixed = TRUE)
   expect_match(html, "pd-country-scatter", fixed = TRUE)
@@ -233,7 +233,7 @@ test_that("Report_PrematureDeaths still guards on plotly for the deferred scatte
   expect_true(grepl('check_installed\\("plotly"', body_src, perl = TRUE))
 })
 
-test_that("Report drops subjects without a randomization date from the cohort {#247}", {
+test_that("Report drops subjects without a randomization date from the cohort (#247)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
   # S4 is enrolled but never randomized (rgmn_dt NA): it has no position on the
@@ -251,14 +251,14 @@ test_that("Report drops subjects without a randomization date from the cohort {#
       rgmn_dt = as.Date(NA)
     )
   )
-  out <- Report_PrematureDeaths(
+  out <- quiet_render(Report_PrematureDeaths(
     dfResults = dfResults,
     dfMetrics = dfMetrics,
     dfGroups = dfGroups,
     lListings = lL,
     nWindowDays = 90,
     strOutputDir = tempdir()
-  )
+  ))
   html <- paste(readLines(out, warn = FALSE), collapse = "\n")
   # New wide overview table: the value row's first cell is Total enrolled. S4
   # (NA rgmn_dt) is dropped upstream, so it must read 3, not 4.
@@ -269,17 +269,17 @@ test_that("Report drops subjects without a randomization date from the cohort {#
   )
 })
 
-test_that("Overview renders the preamble and 4-column summary table {#250}", {
+test_that("Overview renders the preamble and 4-column summary table (#250)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
-  out <- Report_PrematureDeaths(
+  out <- quiet_render(Report_PrematureDeaths(
     dfResults = dfResults,
     dfMetrics = dfMetrics,
     dfGroups = dfGroups,
     lListings = lListings,
     nWindowDays = 90,
     strOutputDir = tempdir()
-  )
+  ))
   html <- paste(readLines(out, warn = FALSE), collapse = "\n")
   # Preamble, with the window interpolated from nWindowDays.
   expect_match(
@@ -298,18 +298,18 @@ test_that("Overview renders the preamble and 4-column summary table {#250}", {
   expect_false(grepl("Configured window", html))
 })
 
-test_that("Overview shows an em-dash for Ineligible when no eligibility data {#250}", {
+test_that("Overview shows an em-dash for Ineligible when no eligibility data (#250)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
   # Default lListings carries no Mapped_EXCLUSION -> Ineligible cell is a dash.
-  out <- Report_PrematureDeaths(
+  out <- quiet_render(Report_PrematureDeaths(
     dfResults = dfResults,
     dfMetrics = dfMetrics,
     dfGroups = dfGroups,
     lListings = lListings,
     nWindowDays = 90,
     strOutputDir = tempdir()
-  )
+  ))
   html <- paste(readLines(out, warn = FALSE), collapse = "\n")
   # The Ineligible cell renders as a bare em-dash (—) when there's no eligibility
   # data. Anchor to the <td> so an em-dash elsewhere can't satisfy this, and note
@@ -319,7 +319,7 @@ test_that("Overview shows an em-dash for Ineligible when no eligibility data {#2
   expect_match(html, "<td[^>]*>\\s*—\\s*</td>", perl = TRUE)
 })
 
-test_that("Overview shows ineligible count and percent when eligibility data present {#250}", {
+test_that("Overview shows ineligible count and percent when eligibility data present (#250)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
   lL <- lListings
@@ -328,29 +328,29 @@ test_that("Overview shows ineligible count and percent when eligibility data pre
     subjid = c("S1", "S2"),
     Source = c("Ineligible, Both Criteria", "Neither")
   )
-  out <- Report_PrematureDeaths(
+  out <- quiet_render(Report_PrematureDeaths(
     dfResults = dfResults,
     dfMetrics = dfMetrics,
     dfGroups = dfGroups,
     lListings = lL,
     nWindowDays = 90,
     strOutputDir = tempdir()
-  )
+  ))
   html <- paste(readLines(out, warn = FALSE), collapse = "\n")
   expect_match(html, "1 (50.0%)", fixed = TRUE)
 })
 
-test_that("Overview table right-aligns every column, including the string-value headers {#250}", {
+test_that("Overview table right-aligns every column, including the string-value headers (#250)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
-  out <- Report_PrematureDeaths(
+  out <- quiet_render(Report_PrematureDeaths(
     dfResults = dfResults,
     dfMetrics = dfMetrics,
     dfGroups = dfGroups,
     lListings = lListings,
     nWindowDays = 90,
     strOutputDir = tempdir()
-  )
+  ))
   html <- paste(readLines(out, warn = FALSE), collapse = "\n")
   # align = "r" makes kable emit text-align:right on every column. The two
   # string-value columns (Premature / Ineligible) previously defaulted to left;
@@ -368,39 +368,39 @@ test_that("Overview table right-aligns every column, including the string-value 
   )
 })
 
-test_that("Overview Premature Death(s) cell shows the <=30 / 31-90 breakdown sub-line {#252}", {
+test_that("Overview Premature Death(s) cell shows the <=30 / 31-90 breakdown sub-line (#252)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
-  out <- Report_PrematureDeaths(
+  out <- quiet_render(Report_PrematureDeaths(
     dfResults = dfResults,
     dfMetrics = dfMetrics,
     dfGroups = dfGroups,
     lListings = lListings,
     nWindowDays = 90,
     strOutputDir = tempdir()
-  )
+  ))
   html <- paste(readLines(out, warn = FALSE), collapse = "\n")
   # The sub-line renders the <=30 / 31-90 day-range labels, but R CMD check
   # renders via pandoc html4, which entity-encodes the "less-than-or-equal" math
   # glyph inside the raw-HTML kable cell -- so a raw-byte match on the glyph is
   # not portable across pandoc builds. Assert the styled sub-line span and the
   # renamed header here; the exact nDeath30 / nDeath3190 counts and the
-  # `== nPremature` invariant are covered by test-pd_OverviewStats.R {#252}.
+  # `== nPremature` invariant are covered by test-pd_OverviewStats.R (#252).
   expect_match(html, "font-size:smaller", fixed = TRUE)
   expect_match(html, "Participants Ineligible + Premature Death", fixed = TRUE)
 })
 
-test_that("Report listing shows Treatment Related Yes for a fatal related AE death {#248}", {
+test_that("Report listing shows Treatment Related Yes for a fatal related AE death (#248)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
-  out <- Report_PrematureDeaths(
+  out <- quiet_render(Report_PrematureDeaths(
     dfResults = dfResults,
     dfMetrics = dfMetrics,
     dfGroups = dfGroups,
     lListings = lListings,
     nWindowDays = 90,
     strOutputDir = tempdir()
-  )
+  ))
   html <- paste(readLines(out, warn = FALSE), collapse = "\n")
   # Assert the DT-serialized listing cell (quoted JSON "Yes"), NOT the prose
   # note under the table: both the new and the existing (Report_PrematureDeaths.Rmd:312)
@@ -409,17 +409,17 @@ test_that("Report listing shows Treatment Related Yes for a fatal related AE dea
   expect_true(grepl('"Yes"', html, fixed = TRUE)) # S1: deathcls AE + grade-5 RELATED AE
 })
 
-test_that("Report renders a country-reactive Reasons chart via gsm.vizr::bars() {#254} {#264} {#288}", {
+test_that("Report renders a country-reactive Reasons chart via gsm.vizr::bars() (#254) (#264) (#288)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
-  out <- Report_PrematureDeaths(
+  out <- quiet_render(Report_PrematureDeaths(
     dfResults = dfResults,
     dfMetrics = dfMetrics,
     dfGroups = dfGroups,
     lListings = lListings,
     nWindowDays = 90,
     strOutputDir = tempdir()
-  )
+  ))
   html <- paste(readLines(out, warn = FALSE), collapse = "\n")
   # chartId is stamped on the element at runtime; statically it lives in the
   # reasons chart's serialized metadata.
@@ -441,17 +441,17 @@ test_that("Report renders a country-reactive Reasons chart via gsm.vizr::bars() 
   )
 })
 
-test_that("Report renders the bucket/reason charts via gsm.vizr::bars() and inlines pdSiteRows/pdReasonRowsByCountry {#288}", {
+test_that("Report renders the bucket/reason charts via gsm.vizr::bars() and inlines pdSiteRows/pdReasonRowsByCountry (#288)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
-  out <- Report_PrematureDeaths(
+  out <- quiet_render(Report_PrematureDeaths(
     dfResults = dfResults,
     dfMetrics = dfMetrics,
     dfGroups = dfGroups,
     lListings = lListings,
     nWindowDays = 90,
     strOutputDir = tempdir()
-  )
+  ))
   html <- paste(readLines(out, warn = FALSE), collapse = "\n")
 
   # Pair each htmlwidget's container div (its class names the widget, e.g.
@@ -499,7 +499,7 @@ test_that("Report renders the bucket/reason charts via gsm.vizr::bars() and inli
   expect_true(grepl("pdReasonRowsByCountry", html, fixed = TRUE))
 })
 
-test_that("Report sources rgmn_dt from Mapped_Randomization when Mapped_SUBJ lacks it {#248}", {
+test_that("Report sources rgmn_dt from Mapped_Randomization when Mapped_SUBJ lacks it (#248)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
   # Production shape: Mapped_SUBJ has NO rgmn_dt; it must be sourced from
@@ -514,14 +514,14 @@ test_that("Report sources rgmn_dt from Mapped_Randomization when Mapped_SUBJ lac
     subjid = c("S1", "S2"),
     rgmn_dt = as.Date(c("2026-01-26", "2026-01-10"))
   )
-  out <- Report_PrematureDeaths(
+  out <- quiet_render(Report_PrematureDeaths(
     dfResults = dfResults,
     dfMetrics = dfMetrics,
     dfGroups = dfGroups,
     lListings = lL,
     nWindowDays = 90,
     strOutputDir = tempdir()
-  )
+  ))
   html <- paste(readLines(out, warn = FALSE), collapse = "\n")
   expect_match(
     html,
@@ -530,7 +530,7 @@ test_that("Report sources rgmn_dt from Mapped_Randomization when Mapped_SUBJ lac
   )
 })
 
-test_that("Report_PrematureDeaths renders the empty-state cleanly with zero premature deaths {#288}", {
+test_that("Report_PrematureDeaths renders the empty-state cleanly with zero premature deaths (#288)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
   # Regression: the setup chunk built reason_rows_by_country / pd_site_rows
@@ -544,20 +544,20 @@ test_that("Report_PrematureDeaths renders the empty-state cleanly with zero prem
   dfResults0$Metric <- 0
   dfResults0$Score <- 0
   dfResults0$Flag <- 0
-  out <- Report_PrematureDeaths(
+  out <- quiet_render(Report_PrematureDeaths(
     dfResults = dfResults0,
     dfMetrics = dfMetrics,
     dfGroups = dfGroups,
     lListings = lL,
     nWindowDays = 90,
     strOutputDir = tempdir()
-  )
+  ))
   expect_true(file.exists(out))
   html <- paste(readLines(out, warn = FALSE), collapse = "\n")
   expect_match(html, "No premature deaths in window", fixed = TRUE)
 })
 
-test_that("inlined JSON data cannot terminate the report's script block {#288}", {
+test_that("inlined JSON data cannot terminate the report's script block (#288)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
   # HTML ends a <script> element at the first "</script" regardless of JS
@@ -567,14 +567,14 @@ test_that("inlined JSON data cannot terminate the report's script block {#288}",
   lL <- lListings
   lL$Mapped_SUBJ$invid[1] <- paste0("INV", payload)
   lL$Mapped_Death$deathcls[1] <- paste0("Reason", payload)
-  out <- Report_PrematureDeaths(
+  out <- quiet_render(Report_PrematureDeaths(
     dfResults = dfResults,
     dfMetrics = dfMetrics,
     dfGroups = dfGroups,
     lListings = lL,
     nWindowDays = 90,
     strOutputDir = tempdir()
-  )
+  ))
   html <- paste(readLines(out, warn = FALSE), collapse = "\n")
   expect_false(grepl(payload, html, fixed = TRUE))
   # jsonlite renders "</" as "<\/" and script_safe_json escapes the "<", so the

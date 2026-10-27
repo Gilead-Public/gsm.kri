@@ -1,21 +1,22 @@
-# Six subjects over two sites and two countries, one per status plus two extra
-# numerator subjects at site I1 so it clears the accrual gate and I2 does not.
+# Seven subjects over three sites and three countries: I1 has two counted
+# non-starters, I2 one, I3 none.
 ipns_fixture <- function() {
   data.frame(
     studyid = "S",
-    subjid = paste0("S", 1:6),
-    invid = c("I1", "I1", "I1", "I1", "I2", "I2"),
-    country = c("US", "US", "US", "US", "DE", "DE"),
-    drv_days_lapsed_since_enrl = c(NA, 10L, 60L, 60L, 60L, NA),
+    subjid = paste0("S", 1:7),
+    invid = c("I1", "I1", "I1", "I1", "I2", "I2", "I3"),
+    country = c("US", "US", "US", "US", "DE", "DE", "FR"),
+    drv_days_lapsed_since_enrl = c(NA, 10L, 60L, 60L, 60L, NA, NA),
     drv_ip_nonstarter_status = c(
       "Dosed",
       "Potential Non-Starter within window",
       "Potential Non-Starter outside window",
       "Confirmed Non-Starter",
       "Confirmed Non-Starter",
+      "Dosed",
       "Dosed"
     ),
-    ipns_status_ord = c(0L, 1L, 2L, 3L, 3L, 0L),
+    ipns_status_ord = c(0L, 1L, 2L, 3L, 3L, 0L, 0L),
     stringsAsFactors = FALSE
   )
 }

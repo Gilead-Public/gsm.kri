@@ -27,11 +27,30 @@ library(gsm.core)
 library(gsm.kri)
 library(here)
 
+## Retired metric: inactive, with results in earlier snapshots only.
+## The example data have none, so one is copied from the Adverse Event Rate.
+dfMetrics <- gsm.core::reportingMetrics_country %>%
+  dplyr::filter(MetricID == "Analysis_cou0001") %>%
+  dplyr::mutate(
+    MetricID = "Analysis_cou9999",
+    Metric = "Retired Metric",
+    Abbreviation = "RET",
+    Active = FALSE
+  ) %>%
+  dplyr::bind_rows(gsm.core::reportingMetrics_country, .)
+dfResults <- gsm.core::reportingResults_country %>%
+  dplyr::filter(
+    MetricID == "Analysis_cou0001",
+    SnapshotDate < max(SnapshotDate)
+  ) %>%
+  dplyr::mutate(MetricID = "Analysis_cou9999") %>%
+  dplyr::bind_rows(gsm.core::reportingResults_country, .)
+
 ## Country Report
 lCharts_country <- gsm.kri::MakeCharts(
-  dfResults = gsm.core::reportingResults_country,
+  dfResults = dfResults,
   dfGroups = gsm.core::reportingGroups_country,
-  dfMetrics = gsm.core::reportingMetrics_country,
+  dfMetrics = dfMetrics,
   dfBounds = gsm.core::reportingBounds_country
 )
 ```
@@ -45,11 +64,10 @@ child_env <- list2env(
   list(
     params = list(
       lCharts = lCharts_country,
-      dfResults = gsm.kri::FilterByLatestSnapshotDate(
-        gsm.core::reportingResults_country
-      ),
+      # All snapshots: the retired metric has no results in the latest one.
+      dfResults = dfResults,
       dfGroups = gsm.core::reportingGroups_country,
-      dfMetrics = gsm.core::reportingMetrics_country
+      dfMetrics = dfMetrics
     )
   ),
   parent = environment()

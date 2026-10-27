@@ -20,6 +20,21 @@
   Site Risk Score immediately after the original Risk Score when
   `Analysis_srs0002` is available. Direct `Widget_GroupOverview()` consumers
   retain the original single-score layout unless they opt in (#280).
+- Add the IP monitoring report for IP non-starters and premature treatment discontinuations. Dosed participants are shown by study drug completion, including potential premature treatment discontinuations, and the participant listing shows study completion (#320, #332).
+- Added the IP Non-Starters metric: `kri0019` (site) and `cou0019` (country) count
+  participants who are Confirmed non-starters or Potential non-starters outside the
+  window. One non-starter flags amber and two or more flag red (#258, #312).
+- Added the Premature Treatment Discontinuation Rate metric: `kri0007-2` (site) and
+  `cou0007-2` (country), that replaces `kri0007`/`cou0007` these stay
+  available but inactive and no longer generate risk signals (#301, #331).
+- The KRI report labels inactive metrics with an "Inactive" badge and lists them last
+  (#325).
+- New `Detect_ConsecutiveRepeats()` counts, per subject, rolling windows of
+  consecutive identical measurements, for use with `gsm.core::Input_Rate()`
+  (#307).
+- New repeat-measure vital-sign metrics `kri0020a`-`f` (site) and
+  `cou0020a`-`f` (country) for weight, heart rate, systolic/diastolic BP,
+  respiratory rate, and temperature (#306).
 
 # gsm.kri v1.7.0
 

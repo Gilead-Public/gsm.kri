@@ -1,7 +1,10 @@
 ## Test Setup
+# Exact names and bActiveOnly = FALSE keep the inactive kri0007/cou0007 under
+# test; a pattern match would return the active kri0007-2/cou0007-2 instead.
 kri_workflows <- workr::MakeWorkflowList(
-  c(sprintf("kri%04d", 6:7), sprintf("cou%04d", 6:7)),
-  GetDefaultKRIPath()
+  I(c(sprintf("kri%04d", 6:7), sprintf("cou%04d", 6:7))),
+  GetDefaultKRIPath(),
+  bActiveOnly = FALSE
 )
 kri_custom <- workr::MakeWorkflowList(
   c(sprintf("kri%04d_custom", 6:7), sprintf("cou%04d_custom", 6:7)),
@@ -12,7 +15,7 @@ outputs <- map(kri_workflows, ~ map_vec(.x$steps, ~ .x$output))
 
 ## Test Code
 testthat::test_that("Qual: Given appropriate raw participant-level data, a Dispositon Assessment can be done using the Normal Approximation method  (#159)", {
-  TestAtLogLevel("WARN")
+  TestAtLogLevel()
   # default ---------------------------------
   test <- map(kri_workflows, ~ robust_runworkflow(.x, mapped_data))
 

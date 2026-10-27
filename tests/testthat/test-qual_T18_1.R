@@ -1,4 +1,4 @@
-# TestAtLogLevel("WARN")
+# TestAtLogLevel()
 ## Test Setup
 kri_workflows <- workr::MakeWorkflowList(
   sprintf("kri%04d", 15),
@@ -9,7 +9,7 @@ outputs <- map(kri_workflows, ~ map_vec(.x$steps, ~ .x$output))
 
 ## Test Code
 testthat::test_that("Qual: Given appropriate raw participant-level data, Deaths in First 90 Days assessment can be done using the Identity method (#193)", {
-  TestAtLogLevel("WARN")
+  TestAtLogLevel()
   # default ---------------------------------
   test <- map(kri_workflows, ~ robust_runworkflow(.x, mapped_data)) %>%
     suppressWarnings()

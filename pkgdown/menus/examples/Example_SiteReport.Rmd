@@ -31,6 +31,23 @@ library(gsm.core)
 library(gsm.kri)
 library(here)
 
+dfMetrics <- gsm.core::reportingMetrics %>%
+  dplyr::filter(MetricID == "Analysis_kri0001") %>%
+  dplyr::mutate(
+    MetricID = "Analysis_kri9999",
+    Metric = "Retired Metric",
+    Abbreviation = "RET",
+    Active = FALSE
+  ) %>%
+  dplyr::bind_rows(gsm.core::reportingMetrics, .)
+dfResults <- gsm.core::reportingResults %>%
+  dplyr::filter(
+    MetricID == "Analysis_kri0001",
+    SnapshotDate < max(SnapshotDate)
+  ) %>%
+  dplyr::mutate(MetricID = "Analysis_kri9999") %>%
+  dplyr::bind_rows(gsm.core::reportingResults, .)
+
 latest_snapshot <- max(gsm.core::reportingResults$SnapshotDate)
 weights <- gsm.kri::MakeWeights(gsm.core::reportingMetrics)
 current_kri_results <- gsm.core::reportingResults %>%
@@ -60,7 +77,7 @@ action_score_detail <- gsm.kri::MakeActionRiskScoreDetail(
 )
 
 site_results <- dplyr::bind_rows(
-  gsm.core::reportingResults,
+  dfResults,
   action_weighted_score
 )
 
@@ -68,7 +85,7 @@ site_results <- dplyr::bind_rows(
 lCharts <- gsm.kri::MakeCharts(
   dfResults = site_results,
   dfGroups = gsm.core::reportingGroups,
-  dfMetrics = gsm.core::reportingMetrics,
+  dfMetrics = dfMetrics,
   dfBounds = gsm.core::reportingBounds
 )
 ```
@@ -83,9 +100,9 @@ child_env <- list2env(
   list(
     params = list(
       lCharts = lCharts,
-      dfResults = gsm.kri::FilterByLatestSnapshotDate(site_results),
+  dfResults = site_results,
       dfGroups = gsm.core::reportingGroups,
-      dfMetrics = gsm.core::reportingMetrics,
+  dfMetrics = dfMetrics,
       strComparisonRiskMetric = "Analysis_srs0002",
       strComparisonRiskLabel = "Adjusted Risk Score",
       dfRiskScoreDetail = action_score_detail

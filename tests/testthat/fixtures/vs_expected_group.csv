@@ -1,0 +1,13 @@
+measure,GroupLevel,GroupID,Numerator,Denominator,Flag
+weight,Site,I1,1,5,1
+weight,Site,I2,3,10,2
+weight,Site,I3,1,6,0
+weight,Site,I4,1,1,
+weight,Country,US,4,15,1
+weight,Country,DE,2,7,1
+pulse,Site,I1,0,5,0
+pulse,Site,I2,0,12,0
+pulse,Site,I3,5,6,2
+pulse,Site,I4,0,1,
+pulse,Country,US,0,17,0
+pulse,Country,DE,5,7,2

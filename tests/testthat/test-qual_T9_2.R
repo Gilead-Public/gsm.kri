@@ -10,6 +10,7 @@ kri_custom <- workr::MakeWorkflowList(
 
 ## Test Code
 testthat::test_that("Qual: Labs Assessments can be done correctly using a grouping variable, such as Site or Country for KRIs, and Study for QTLs, when applicable (#159)", {
+  # These tests assert on gsm.core "warn" logs, so WARN (not FATAL) is required.
   TestAtLogLevel("WARN")
   ## regular -----------------------------------------
   test <- map(
