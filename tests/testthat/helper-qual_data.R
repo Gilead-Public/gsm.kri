@@ -57,7 +57,11 @@ lData <- list(
   Raw_OverallResponse = lSource$Raw_OverallResponse %>%
     rename(response_folder = foldername),
   Raw_Death = lSource$Raw_Death,
-  Raw_Randomization = lSource$Raw_Randomization
+  Raw_Randomization = lSource$Raw_Randomization,
+  Raw_VS = lSource$Raw_VS %>%
+    rename(studyid = project) %>%
+    rename(visit = foldername) %>%
+    rename(bsa = bsaentry)
 )
 
 ## Data with missing values (15% NA's)
@@ -88,29 +92,21 @@ domains <- c(gsub("Raw_", "", names(lSource)), "COUNTRY", "EXCLUSION")
 mappings_wf <- workr::MakeWorkflowList(
   strNames = domains,
   strPath = "workflow/1_mappings",
-  strPackage= "gsm.mapping"
+  strPackage = "gsm.mapping"
 )
-
-ConsoleAppender <- log4r::console_appender(layout = gsm.core::cli_fmt)
 
 # Build qualification fixtures lazily so unrelated tests do not pay the full
 # workflow setup cost during helper sourcing.
 delayedAssign(
   "mapped_data",
-  {
-    gsm.core::SetLogger(log4r::logger(
-      threshold = "WARN",
-      appenders = ConsoleAppender
-    ))
-    on.exit(
-      gsm.core::SetLogger(log4r::logger(
-        "DEBUG",
-        appenders = ConsoleAppender
-      )),
-      add = TRUE
-    )
+  # Wrapped in a function: on.exit() inside a bare promise has no frame of its
+  # own, so the FATAL level could leak into the test that first forces this.
+  (function() {
+    lvlStart <- gsm.core::GetLogLevel()
+    gsm.core::SetLogLevel("FATAL")
+    on.exit(gsm.core::SetLogLevel(lvlStart), add = TRUE)
     get_cached_mapped_data(lData, mappings_wf)
-  }
+  })()
 )
 
 delayedAssign(

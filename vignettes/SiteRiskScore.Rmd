@@ -20,7 +20,7 @@ This vignette describes how **site-level risk scores** are calculated using Key 
 
 # Risk Indicators, Flags and Weights
 
-Each KRI (e.g., Adverse Events, Serious Adverse Events, Protocol Deviations) in the `gsm` framework is assigned a *flag* as part of the [standard analysis workflow](https://gilead-biostats.github.io/gsm.core/articles/DataAnalysis.html). Flags can also be associated with a *weight*, which reflects their contribution to site risk. For example, a site with a low adverse event rate could present more risk than a site with a low query rate. While both KRIs could have the same `flag` value (e.g. -2, representing low rates compared to other sites)  a higher *weight* could be assigned to the AE KRI flag than the query rate KRI flag. Default flag weights for the 12 standard `gsm` are shown below. 
+Each KRI (e.g., Adverse Events, Serious Adverse Events, Protocol Deviations) in the `gsm` framework is assigned a *flag* as part of the [standard analysis workflow](https://gilead-public.github.io/gsm.core/articles/DataAnalysis.html). Flags can also be associated with a *weight*, which reflects their contribution to site risk. For example, a site with a low adverse event rate could present more risk than a site with a low query rate. While both KRIs could have the same `flag` value (e.g. -2, representing low rates compared to other sites)  a higher *weight* could be assigned to the AE KRI flag than the query rate KRI flag. Default flag weights for the 12 standard `gsm` are shown below. 
   
 ```{r, echo=FALSE}
 library(knitr)
@@ -46,7 +46,7 @@ The `gsm.core::flag()` function is used to calculate site-level flag values and 
 
 When `vRiskScoreWeight` is provided, the `Flag()` output will include additional columns capturing `Weight` and `MaxWeight` with the corresponding weight for each KRI. 
 
-These parameters allow for flexible configuration of the relative risk for different metrics in a study. While single metrics can be run via direct calls to `Flag()`, [YAML workflows are recommended for reusable implementations](https://gilead-biostats.github.io/gsm.kri/articles/AddingKRIs.html). As such, all standard KRIs include default thresholds, flags and weights. For reference, the relevant sections of the [Adverse Event KRI YAML](https://github.com/Gilead-BioStats/gsm.kri/blob/main/inst/workflow/2_metrics/kri0001.yaml), including the default flag and weight values and `Flag()` function call are shown below for reference: 
+These parameters allow for flexible configuration of the relative risk for different metrics in a study. While single metrics can be run via direct calls to `Flag()`, [YAML workflows are recommended for reusable implementations](https://gilead-public.github.io/gsm.kri/articles/AddingKRIs.html). As such, all standard KRIs include default thresholds, flags and weights. For reference, the relevant sections of the [Adverse Event KRI YAML](https://github.com/Gilead-Public/gsm.kri/blob/main/inst/workflow/2_metrics/kri0001.yaml), including the default flag and weight values and `Flag()` function call are shown below for reference: 
 
 ```
 meta:
@@ -188,7 +188,7 @@ The widget produces an interactive table showing risk score summaries across stu
 knitr::include_graphics("figures/CrossStudySRS.png")
 ```
 
-For a complete working example, see [https://github.com/Gilead-BioStats/gsm.kri/blob/main/pkgdown/menus/examples/Example_CrossStudySRS.Rmd](https://github.com/Gilead-BioStats/gsm.kri/blob/main/pkgdown/menus/examples/Example_CrossStudySRS.Rmd), which demonstrates:
+For a complete working example, see [https://github.com/Gilead-Public/gsm.kri/blob/main/pkgdown/menus/examples/Example_CrossStudySRS.Rmd](https://github.com/Gilead-Public/gsm.kri/blob/main/pkgdown/menus/examples/Example_CrossStudySRS.Rmd), which demonstrates:
 
 - Simulating multi-study data with site risk scores
 - Creating the cross-study widget

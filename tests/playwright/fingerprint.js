@@ -1,7 +1,7 @@
 // Shared structural fingerprint of a rendered gsm.kri report page. Captures
 // only DOM-observable facts (portable across machines / headless-chromium
 // versions) so the same fingerprint can be captured on the 2.3.0 bundle,
-// committed as baseline.json, and re-derived + diffed on 2.4.0.
+// committed as baseline.json, and re-derived + diffed on 2.4.1.
 // gsm.viz widgets render as Chart.js <canvas> (barChart/scatterPlot/timeSeries)
 // or a d3 <table class="group-overview">; htmlwidgets wraps each in .html-widget.
 const path = require('path');

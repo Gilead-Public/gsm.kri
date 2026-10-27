@@ -9,8 +9,8 @@ The Good Statistical Monitoring or 'gsm' suite of R packages
     provides workflows to generate metrics and functionality to visualize
     and report on these metrics.
 
-https://github.com/Gilead-BioStats/gsm.kri,
-    https://gilead-biostats.github.io/gsm.kri
+https://github.com/Gilead-Public/gsm.kri,
+    https://gilead-public.github.io/gsm.kri
 
 ### Overall structure
 
@@ -59,3 +59,4 @@ For any feature, fix, or refactor:
 | Triggers | Path |
 |----------|------|
 | tag tests with issues | @.github/skills/tag-tests-with-issues/SKILL.md |
+| update gsm.viz bundles | @.github/skills/update-gsm-viz-bundle/SKILL.md |

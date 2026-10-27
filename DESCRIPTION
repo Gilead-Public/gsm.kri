@@ -1,7 +1,7 @@
 Type: Package
 Package: gsm.kri
 Title: Good Statistical Monitoring KRIs
-Version: 1.6.0
+Version: 1.7.0.9001
 Authors@R: c(
     person("Jeremy", "Wildfire", , "jwildfire@gmail.com", role = c("aut", "cre")),
     person("Laura", "Maxwell", , "laura.maxwell@atorusresearch.com", role = "aut"),
@@ -14,38 +14,37 @@ Description: The Good Statistical Monitoring or 'gsm' suite of R packages
     provides workflows to generate metrics and functionality to visualize
     and report on these metrics.
 License: Apache License (>= 2)
-URL: https://github.com/Gilead-BioStats/gsm.kri,
-    https://gilead-biostats.github.io/gsm.kri
-BugReports: https://github.com/Gilead-BioStats/gsm.kri/issues
+URL: https://github.com/Gilead-Public/gsm.kri,
+    https://gilead-public.github.io/gsm.kri
+BugReports: https://github.com/Gilead-Public/gsm.kri/issues
 Depends:
-    R (>= 4.0)
+    R (>= 4.1.0)
 Imports: 
     cli,
-    dplyr,
+    dplyr (>= 1.1.0),
     DT,
     ggplot2,
     glue,
-    gsm.core (>= 1.2.0),
+    gsm.core (>= 1.3.1.9000),
+    gsm.vizr (>= 0.1.0),
     gt,
     htmltools,
     htmlwidgets,
     jsonlite,
     lifecycle,
-    log4r,
     magrittr,
     purrr,
     rlang,
     rmarkdown,
-    stats,
     stringr,
     tibble,
     tidyr,
     workr
 Suggests: 
     fontawesome,
-    gsm.mapping (>= 1.1.3),
-    gsm.qtl (>= 1.1.0),
+    gsm.mapping (>= 1.1.6.9001),
     gsm.reporting (>= 1.1.4),
+    gsm.qtl (>= 1.4.0),
     here,
     knitr,
     lubridate,
@@ -57,15 +56,13 @@ Suggests:
 VignetteBuilder: 
     knitr
 Remotes:
-    gsm.core=Gilead-BioStats/gsm.core@main,
-    gsm.mapping=Gilead-BioStats/gsm.mapping@main,
-    gsm.qtl=Gilead-BioStats/gsm.qtl@main,
-    gsm.reporting=Gilead-BioStats/gsm.reporting@main,
-    workr=Gilead-BioStats/workr@main,
-    qcthat=Gilead-BioStats/qcthat@main,
-    log4r=r-lib/log4r
-Config/roxygen2/version: 8.0.0
+    gsm.core=Gilead-Public/gsm.core@dev,
+    gsm.mapping=Gilead-Public/gsm.mapping@dev,
+    gsm.qtl=Gilead-Public/gsm.qtl@dev,
+    gsm.reporting=Gilead-Public/gsm.reporting@dev,
+    gsm.vizr=Gilead-Public/gsm.vizr@dev,
+    qcthat=Gilead-Public/qcthat@dev
+Config/roxygen2/version: 8.1.0
 Config/testthat/edition: 3
 Config/testthat/parallel: false
 Encoding: UTF-8
-LazyData: true

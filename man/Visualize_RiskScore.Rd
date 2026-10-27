@@ -21,5 +21,5 @@ Creates an interactive risk score widget for cross-study visualization.
 }
 \details{
 For a working example see
-[Cross-Study KRI Report](https://gilead-biostats.github.io/gsm.kri/examples/Example_CrossStudySRS.html).
+[Cross-Study KRI Report](https://gilead-public.github.io/gsm.kri/examples/Example_CrossStudySRS.html).
 }

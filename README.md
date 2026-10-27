@@ -4,17 +4,17 @@
 
 <div class="pkgdown-release">
 
-[![R-CMD-check](https://github.com/Gilead-BioStats/gsm.kri/actions/workflows/R-CMD-check.yaml/badge.svg?branch=main)](https://github.com/Gilead-BioStats/gsm.kri/actions/workflows/R-CMD-check.yaml)
-[![test-coverage](https://github.com/Gilead-BioStats/gsm.kri/actions/workflows/test-coverage.yaml/badge.svg?branch=main)](https://github.com/Gilead-BioStats/gsm.kri/actions/workflows/test-coverage.yaml)
-[![pkgdown-all](https://github.com/Gilead-BioStats/gsm.kri/actions/workflows/pkgdown-all.yaml/badge.svg?branch=main)](https://github.com/Gilead-BioStats/gsm.kri/actions/workflows/pkgdown-all.yaml)
+[![R-CMD-check](https://github.com/Gilead-Public/gsm.kri/actions/workflows/R-CMD-check.yaml/badge.svg?branch=main)](https://github.com/Gilead-Public/gsm.kri/actions/workflows/R-CMD-check.yaml)
+[![test-coverage](https://github.com/Gilead-Public/gsm.kri/actions/workflows/test-coverage.yaml/badge.svg?branch=main)](https://github.com/Gilead-Public/gsm.kri/actions/workflows/test-coverage.yaml)
+[![pkgdown-all](https://github.com/Gilead-Public/gsm.kri/actions/workflows/pkgdown-all.yaml/badge.svg?branch=main)](https://github.com/Gilead-Public/gsm.kri/actions/workflows/pkgdown-all.yaml)
 
 </div>
 
 <div class="pkgdown-devel">
 
-[![R-CMD-check](https://github.com/Gilead-BioStats/gsm.kri/actions/workflows/R-CMD-check.yaml/badge.svg?branch=dev)](https://github.com/Gilead-BioStats/gsm.kri/actions/workflows/R-CMD-check.yaml)
-[![test-coverage](https://github.com/Gilead-BioStats/gsm.kri/actions/workflows/test-coverage.yaml/badge.svg?branch=dev)](https://github.com/Gilead-BioStats/gsm.kri/actions/workflows/test-coverage.yaml)
-[![pkgdown-all](https://github.com/Gilead-BioStats/gsm.kri/actions/workflows/pkgdown-all.yaml/badge.svg?branch=dev)](https://github.com/Gilead-BioStats/gsm.kri/actions/workflows/pkgdown-all.yaml)
+[![R-CMD-check](https://github.com/Gilead-Public/gsm.kri/actions/workflows/R-CMD-check.yaml/badge.svg?branch=dev)](https://github.com/Gilead-Public/gsm.kri/actions/workflows/R-CMD-check.yaml)
+[![test-coverage](https://github.com/Gilead-Public/gsm.kri/actions/workflows/test-coverage.yaml/badge.svg?branch=dev)](https://github.com/Gilead-Public/gsm.kri/actions/workflows/test-coverage.yaml)
+[![pkgdown-all](https://github.com/Gilead-Public/gsm.kri/actions/workflows/pkgdown-all.yaml/badge.svg?branch=dev)](https://github.com/Gilead-Public/gsm.kri/actions/workflows/pkgdown-all.yaml)
 
 </div>
 
@@ -30,7 +30,7 @@ The {gsm} ecosystem provides a standardized Risk Based Quality Monitoring (RBQM)
 
 
 The `{gsm.kri}` package provides the necessary functions and workflows to produce the data visualizations, widgets and tables that ultimately go into an html KRI report. This package also provides the functions and scripts that generate the html KRI reports.
-This README provides a high-level overview of {gsm.kri}; see the [package website](https://gilead-biostats.github.io/gsm.kri/) for additional details.
+This README provides a high-level overview of {gsm.kri}; see the [package website](https://gilead-public.github.io/gsm.kri/) for additional details.
 
 ## Installation
 
@@ -38,7 +38,7 @@ You can install the latest release of gsm.kri from [GitHub](https://github.com/)
 
 ``` r
 # install.packages("pak")
-pak::pak("Gilead-BioStats/gsm.kri@*release")
+pak::pak("Gilead-Public/gsm.kri@*release")
 ```
 
 <div class="pkgdown-devel">
@@ -48,7 +48,7 @@ You can install the development version of gsm.kri from
 
 ``` r
 # install.packages("pak")
-pak::pak("Gilead-BioStats/gsm.kri")
+pak::pak("Gilead-Public/gsm.kri")
 ```
 
 </div>
@@ -102,13 +102,13 @@ kri_report_path <- Report_KRI(
 ```
 Full reports for a sample trial run with [`{clindata}`](https://github.com/Gilead-BioStats/clindata) are provided below:
 
-- [Site Report](https://gilead-biostats.github.io/gsm.kri/report_kri_site.html)
-- [Country Report](https://gilead-biostats.github.io/gsm.kri/report_kri_country.html)
+- [Site Report](https://gilead-public.github.io/gsm.kri/report_kri_site.html)
+- [Country Report](https://gilead-public.github.io/gsm.kri/report_kri_country.html)
 
 ## Chart Customization
 
 All widgets can be customized with any configuration setting available via the underlying
-[JavaScript library API](https://github.com/Gilead-BioStats/gsm.viz/wiki/API) at the report, chart, or metric
+[JavaScript library API](https://github.com/Gilead-Public/gsm.viz/wiki/API) at the report, chart, or metric
 level. Customize a widget by passing any configuration setting as an argument to the widget
 function. Below we can change the default x-axis type of `logarithmic` to `linear` for the scatter
 plot widget:

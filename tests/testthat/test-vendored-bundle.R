@@ -1,8 +1,9 @@
-test_that("exactly one vendored gsm.viz bundle ships and it is gsm.viz-2.4.0 (#263)", {
-  # A gsm.viz upgrade must REPLACE the vendored bundle, not add a second copy:
-  # a stray second gsm.viz-* dir would let a widget load a stale bundle. Pinning
-  # the version also fails loudly if a future bump lands without updating the
-  # vendored assets. Mirrors the JS bundle-exports Playwright check.
+test_that("gsm.kri ships no vendored gsm.viz bundle (#263, #291)", {
+  # #263 pinned the vendored bundle to a single directory so a widget could
+  # never load a stale second copy. #291 retired vendoring entirely -- the
+  # bundle comes from gsm.vizr::html_dependency_gsm_viz() now -- so the guard
+  # inverts: re-vendoring one here would shadow gsm.vizr's copy and resurrect
+  # the exact bug #263 fixed.
   lib <- system.file("htmlwidgets", "lib", package = "gsm.kri")
   skip_if(!nzchar(lib), "htmlwidgets/lib not installed")
   bundles <- grep(
@@ -10,5 +11,5 @@ test_that("exactly one vendored gsm.viz bundle ships and it is gsm.viz-2.4.0 (#2
     list.dirs(lib, full.names = FALSE, recursive = FALSE),
     value = TRUE
   )
-  expect_identical(bundles, "gsm.viz-2.4.0")
+  expect_identical(bundles, character(0))
 })

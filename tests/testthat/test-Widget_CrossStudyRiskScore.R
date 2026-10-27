@@ -107,11 +107,13 @@ testthat::test_that("Widget_CrossStudyRiskScore validates inputs (#71)", {
 
 test_that("Cross-study SRS report widget allows filtering on multiple studies (#171)", {
   skip_if_not_installed("qcthat")
+  # gh shows a pagination progress bar while qcthat looks up the issue.
+  withr::local_options(cli.progress_show_after = Inf, cli.progress_handlers = character())
   qcthat::ExpectUserAccepts(
     "Can filter cross-study SRS report on multiple studies.",
     intIssue = 171,
     chrInstructions = paste(
-      "1. Navigate to the [Cross-Study SRS Report example](https://gilead-biostats.github.io/gsm.kri/dev/examples/Example_CrossStudySRS.html).",
+      "1. Navigate to the [Cross-Study SRS Report example](https://gilead-public.github.io/gsm.kri/dev/examples/Example_CrossStudySRS.html).",
       "2. Use the 'Filter by Study' option, following the instructions on the page.",
       sep = "\n"
     ),
