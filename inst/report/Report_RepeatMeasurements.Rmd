@@ -161,6 +161,15 @@ cat('
 #rm-overview th.rm-l, #rm-overview td.rm-l { text-align: left; }
 #rm-overview .rm-sep { border-left: 1px solid #d0d7de; }
 #rm-overview .b { color: #666666; font-size: smaller; }
+#rm-overview .rm-ov-dist th { font-weight: 600; }
+#rm-overview .rm-ov-dist td.rm-sep { min-width: 300px; }
+.rm-bar { display: inline-flex; width: 240px; height: 18px; border-radius: 3px; overflow: hidden; vertical-align: middle; background-color: #f0f2f5; cursor: help; }
+.rm-bar > span { display: inline-block; height: 100%; font-size: 11px; line-height: 18px; text-align: center; overflow: hidden; }
+.rm-seg-none { background-color: #d0d7de; color: #24292f; }
+.rm-seg-amber { background-color: #FEAA02; color: #24292f; }
+.rm-seg-red { background-color: #FF5859; color: #ffffff; }
+.rm-bar-n { display: inline-block; min-width: 3em; margin-left: 6px; color: #57606a; font-size: 12px; vertical-align: middle; }
+.rm-ne { color: #8c959f; font-style: italic; }
 .rm-fl { display: inline-block; min-width: 3em; text-align: left; }
 .rm-info { display: inline-block; width: 15px; height: 15px; margin-left: 4px; border-radius: 50%; border: 1px solid #3C587F; color: #3C587F; font-size: 10px; font-weight: 700; line-height: 13px; text-align: center; font-style: normal; cursor: help; vertical-align: 1px; }
 .rm-kri { display: inline-block; margin-left: 4px; padding: 0 4px; border-radius: 3px; background-color: #3C587F; color: #ffffff; font-size: 9px; font-weight: 700; letter-spacing: 0.04em; line-height: 14px; vertical-align: 1px; cursor: help; }
@@ -341,6 +350,19 @@ if (!in_cmp) {
 ```
 
 ## Study overview
+
+```{r overview-controls, echo=FALSE}
+htmltools::div(
+  class = "rm-controls",
+  htmltools::tags$span(
+    class = "rm-seg",
+    role = "group",
+    `aria-label` = "Overview view",
+    htmltools::tags$button(id = "rm-ov-counts", type = "button", `data-rm-ov` = "counts", `aria-pressed` = "true", "Counts"),
+    htmltools::tags$button(id = "rm-ov-distribution", type = "button", `data-rm-ov` = "distribution", `aria-pressed` = "false", "Distribution")
+  )
+)
+```
 
 <div id="rm-overview"></div>
 

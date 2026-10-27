@@ -28,6 +28,9 @@ test_that("Report_RepeatMeasurements renders the filter strip and study overview
     expect_match(html, paste0('type="checkbox" value="', v, '" data-rm-vital-cb checked'), fixed = TRUE)
   }
   expect_false(grepl("data-rm-group=", html, fixed = TRUE))
+  # The overview opens as counts and can switch to distribution bars.
+  expect_match(html, 'id="rm-ov-counts" type="button" data-rm-ov="counts" aria-pressed="true"', fixed = TRUE)
+  expect_match(html, 'id="rm-ov-distribution" type="button" data-rm-ov="distribution" aria-pressed="false"', fixed = TRUE)
   expect_match(html, "WT 3/8 <span class=\"ok\">= kri0020a", fixed = TRUE)
   expect_match(html, "HR 1/3 <span class=\"ok\">= kri0020b", fixed = TRUE)
   expect_match(html, "W = 3 (from the kri0020 metrics)", fixed = TRUE)

@@ -21,6 +21,8 @@
     onlyRepeat: true,
     // Data table shape and its "only ... with a repeat window" toggle.
     shape: 'wide',
+    // Study overview view: 'counts' table or 'distribution' bars.
+    overview: 'counts',
     dtOnly: true,
     // Listing settings to restore when the participant filter is cleared.
     prev: null
@@ -264,10 +266,70 @@
     return '<i class="rm-info" tabindex="0" role="img" aria-label="' + esc(text) + '" title="' + esc(text) + '">i</i>';
   }
 
+  // One entry per shown measure: site and participant flag counts for the whole study.
+  function overviewRows() {
+    var counts = overviewCounts();
+    return bpVitals().map(function (v) {
+      var r = counts[v.vital] || { evaluable: 0, amber: 0, red: 0 };
+      var s = sites()[v.vital] || { source: 'report', flags: {} };
+      var site = { evaluated: 0, amber: 0, red: 0 };
+      Object.keys(s.flags).forEach(function (id) {
+        var f = s.flags[id];
+        if (f === null || f === undefined) return;
+        site.evaluated++;
+        if (f === 1) site.amber++;
+        if (f === 2) site.red++;
+      });
+      return { v: v, kri: s.source === 'KRI', site: site, part: r };
+    });
+  }
+
+  function measureCell(v) {
+    return '<td class="rm-l">' + esc(v.label) +
+      (v.metric ? '<span class="rm-kri" title="' + esc(v.metric) + '">KRI</span>' : '') + '</td>';
+  }
+
+  // A 100% stacked bar of not flagged / Amber / Red; labels only where they fit.
+  function stackBar(n, amber, red, noun, source) {
+    if (!n) return '<span class="rm-ne">Not evaluated</span>';
+    var parts = [
+      ['none', n - amber - red, 'Not flagged'],
+      ['amber', amber, 'Amber'],
+      ['red', red, 'Red']
+    ];
+    var title = parts.map(function (x) {
+      return x[2] + ': ' + x[1].toLocaleString() + ' (' + pct(x[1], n) + ')';
+    }).join(' \u00b7 ') + ' of ' + n.toLocaleString() + ' ' + noun + (source ? ' \u00b7 ' + source : '');
+    return '<span class="rm-bar" role="img" aria-label="' + esc(title) + '" title="' + esc(title) + '">' +
+      parts.map(function (x) {
+        var w = (100 * x[1]) / n;
+        return w > 0
+          ? '<span class="rm-seg-' + x[0] + '" data-rm-part="' + x[0] + '" style="width:' + w.toFixed(2) + '%">' + (w >= 7.5 ? Math.round(w) + '%' : '') + '</span>'
+          : '';
+      }).join('') + '</span><span class="rm-bar-n">' + n.toLocaleString() + '</span>';
+  }
+
+  function siteInfo() {
+    return info(
+      'Site flag: ' + siteRuleText() + '. N: sites evaluated / sites with enrolled participants. ' +
+      'Filled circles: the KRI site flags (kri0020a\u2013f, latest snapshot). ' +
+      'Empty circles: calculated in the report with the same rule, for measures without KRI results.'
+    );
+  }
+
+  function participantInfo() {
+    return info(
+      'Participant flag: ' + ruleText() + '. N: evaluable / enrolled participants. ' +
+      'Empty circles: calculated in the report; change the rule under Settings.'
+    );
+  }
+
   function renderOverview() {
     var el = byId('rm-overview');
     if (!el) return;
-    var counts = overviewCounts();
+    document.querySelectorAll('[data-rm-ov]').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b.getAttribute('data-rm-ov') === state.overview));
+    });
     var participants = rmData().participants || [];
     var enrolled = participants.length;
     var siteIds = {};
@@ -275,38 +337,42 @@
       siteIds[p.invid] = true;
     });
     var nSites = Object.keys(siteIds).length;
-    var h =
-      '<table class="table table-condensed"><thead>' +
-      '<tr><th rowspan="2" class="rm-l">Measure</th>' +
-      '<th colspan="2" class="rm-grp rm-sep">Sites' + info(
-        'Site flag: ' + siteRuleText() + '. N: sites evaluated / sites with enrolled participants. ' +
-        'Filled circles: the KRI site flags (kri0020a\u2013f, latest snapshot). ' +
-        'Empty circles: calculated in the report with the same rule, for measures without KRI results.'
-      ) + '</th>' +
-      '<th colspan="2" class="rm-grp rm-sep">Participants' + info(
-        'Participant flag: ' + ruleText() + '. N: evaluable / enrolled participants. ' +
-        'Empty circles: calculated in the report; change the rule under Settings.'
-      ) + '</th></tr>' +
-      '<tr><th class="rm-sep">N</th><th>Flags</th><th class="rm-sep">N</th><th>Flags</th></tr></thead><tbody>';
-    bpVitals().forEach(function (v) {
-      var r = counts[v.vital] || { evaluable: 0, amber: 0, red: 0 };
-      var s = sites()[v.vital] || { source: 'report', flags: {} };
-      var evaluated = 0;
-      var amber = 0;
-      var red = 0;
-      Object.keys(s.flags).forEach(function (id) {
-        var f = s.flags[id];
-        if (f === null || f === undefined) return;
-        evaluated++;
-        if (f === 1) amber++;
-        if (f === 2) red++;
+    var rows = overviewRows();
+    var h;
+    if (state.overview === 'distribution') {
+      h = '<table class="table table-condensed rm-ov-dist" data-rm-ov-view="distribution"><thead><tr>' +
+        '<th class="rm-l">Measure</th>' +
+        '<th class="rm-l rm-sep">Sites' + siteInfo() + ' <span class="b">% of sites evaluated</span></th>' +
+        '<th class="rm-l rm-sep">Participants' + participantInfo() + ' <span class="b">% of evaluable participants</span></th>' +
+        '</tr></thead><tbody>';
+      rows.forEach(function (o) {
+        h += '<tr data-rm-overview="' + esc(o.v.vital) + '">' + measureCell(o.v) +
+          '<td class="rm-l rm-sep" data-rm-col="site-dist" data-rm-source="' + (o.kri ? 'KRI' : 'report') + '">' +
+          stackBar(o.site.evaluated, o.site.amber, o.site.red, 'sites evaluated', o.kri ? 'from ' + o.v.metric : 'calculated in the report') + '</td>' +
+          '<td class="rm-l rm-sep" data-rm-col="participant-dist">' +
+          stackBar(o.part.evaluable, o.part.amber, o.part.red, 'evaluable participants', 'calculated in the report') + '</td></tr>';
       });
-      var kri = s.source === 'KRI';
+      el.innerHTML = h + '</tbody></table>' +
+        '<p class="rm-legend">The whole study: the filters do not change this chart. ' +
+        '<span class="rm-dot" style="background:#d0d7de;border-color:#d0d7de"></span>Not flagged \u00b7 ' +
+        '<span class="rm-dot" style="background:' + FLAG_COLORS[1] + ';border-color:' + FLAG_COLORS[1] + '"></span>Amber \u00b7 ' +
+        '<span class="rm-dot" style="background:' + FLAG_COLORS[2] + ';border-color:' + FLAG_COLORS[2] + '"></span>Red. ' +
+        'The number after a bar is the sites evaluated or participants evaluable. Hover a bar for counts.</p>';
+      return;
+    }
+    h =
+      '<table class="table table-condensed" data-rm-ov-view="counts"><thead>' +
+      '<tr><th rowspan="2" class="rm-l">Measure</th>' +
+      '<th colspan="2" class="rm-grp rm-sep">Sites' + siteInfo() + '</th>' +
+      '<th colspan="2" class="rm-grp rm-sep">Participants' + participantInfo() + '</th></tr>' +
+      '<tr><th class="rm-sep">N</th><th>Flags</th><th class="rm-sep">N</th><th>Flags</th></tr></thead><tbody>';
+    rows.forEach(function (o) {
+      var v = o.v;
+      var r = o.part;
       h +=
-        '<tr data-rm-overview="' + esc(v.vital) + '"><td class="rm-l">' + esc(v.label) +
-        (v.metric ? '<span class="rm-kri" title="' + esc(v.metric) + '">KRI</span>' : '') + '</td>' +
-        '<td class="rm-sep" data-rm-col="sites" title="' + evaluated + ' of ' + nSites + ' sites evaluated">' + evaluated + ' / ' + nSites + '</td>' +
-        '<td data-rm-col="site-flags" data-rm-source="' + s.source + '">' + dots(amber, red, kri, kri
+        '<tr data-rm-overview="' + esc(v.vital) + '">' + measureCell(v) +
+        '<td class="rm-sep" data-rm-col="sites" title="' + o.site.evaluated + ' of ' + nSites + ' sites evaluated">' + o.site.evaluated + ' / ' + nSites + '</td>' +
+        '<td data-rm-col="site-flags" data-rm-source="' + (o.kri ? 'KRI' : 'report') + '">' + dots(o.site.amber, o.site.red, o.kri, o.kri
           ? 'Amber / Red sites from ' + v.metric
           : 'Amber / Red sites calculated in the report') + '</td>' +
         '<td class="rm-sep" data-rm-col="participants" title="' + r.evaluable + ' of ' + enrolled + ' participants evaluable (' + pct(r.evaluable, enrolled) + ')">' +
@@ -783,6 +849,10 @@
       return;
     } else if (t.closest('#rm-tiles-csv')) {
       downloadTiles();
+      return;
+    } else if (t.closest('[data-rm-ov]')) {
+      state.overview = t.closest('[data-rm-ov]').getAttribute('data-rm-ov');
+      renderOverview();
       return;
     } else if (t.closest('[data-rm-shape]')) {
       state.shape = t.closest('[data-rm-shape]').getAttribute('data-rm-shape');

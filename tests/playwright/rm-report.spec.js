@@ -154,6 +154,39 @@ test.describe('Repeat Measurements report', () => {
     expect((await state(page)).overview).toBe(before);
   });
 
+  test('the study overview switches between counts and distribution bars (#344)', async ({ page }) => {
+    await expect(page.locator('#rm-ov-counts')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#rm-overview [data-rm-ov-view="counts"]')).toHaveCount(1);
+    await page.locator('#rm-ov-distribution').click();
+    await expect(page.locator('#rm-ov-distribution')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#rm-ov-counts')).toHaveAttribute('aria-pressed', 'false');
+    await expect(page.locator('#rm-overview [data-rm-ov-view="distribution"]')).toHaveCount(1);
+    const bars = await page.evaluate(() => Array.from(document.querySelectorAll('#rm-overview tr[data-rm-overview]')).map((tr) => {
+      const parts = (col) => {
+        const cell = tr.querySelector('[data-rm-col="' + col + '"]');
+        const out = {};
+        cell.querySelectorAll('[data-rm-part]').forEach((x) => {
+          out[x.dataset.rmPart] = Math.round(parseFloat(x.style.width));
+        });
+        return { parts: out, n: (cell.querySelector('.rm-bar-n') || {}).textContent || null, text: cell.textContent, title: (cell.querySelector('.rm-bar') || {}).title || '' };
+      };
+      return { vital: tr.dataset.rmOverview, site: parts('site-dist'), part: parts('participant-dist') };
+    }));
+    expect(bars.map((b) => b.vital)).toEqual(['weight', 'pulse', 'sysbp', 'diabp', 'resp', 'temp', 'height']);
+    // Weight: sites S1 Red, S2 Green, S3 Amber; participants A Amber of 3 evaluable.
+    expect([bars[0].site.parts, bars[0].site.n]).toEqual([{ none: 33, amber: 33, red: 33 }, '3']);
+    expect(bars[0].site.title).toMatch(/Red: 1 \(33%\).*of 3 sites evaluated.*from kri0020a/);
+    expect([bars[0].part.parts, bars[0].part.n]).toEqual([{ none: 67, amber: 33 }, '3']);
+    // Height: no site reaches the accrual, so the site bar is not drawn.
+    expect([bars[6].site.parts, bars[6].site.text]).toEqual([{}, 'Not evaluated']);
+    // Filters do not change it.
+    const before = await page.locator('#rm-overview tbody').innerHTML();
+    await clickBar(page, 'rm-country-weight', { GroupID: 'JP', Level: 'country' });
+    expect(await page.locator('#rm-overview tbody').innerHTML()).toBe(before);
+    await page.locator('#rm-ov-counts').click();
+    await expect(page.locator('#rm-overview [data-rm-ov-view="counts"]')).toHaveCount(1);
+  });
+
   test('the Vitals multi-select filters the charts, tiles and listing (#344)', async ({ page }) => {
     const opts = await page.locator('[data-rm-vital-cb]').evaluateAll((els) => els.map((e) => e.value));
     expect(opts).toEqual(['weight', 'pulse', 'sysbp', 'diabp', 'resp', 'temp', 'height']);
