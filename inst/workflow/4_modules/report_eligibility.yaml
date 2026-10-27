@@ -62,25 +62,13 @@ steps:
       'IE_num': IE_num
       'IE_denom': Mapped_EXCLUSION
 
-  # Define report template inputs.
-  - output: strInputPath
-    name: system.file
-    params:
-      ...: "report/Report_Eligibility.Rmd"
-      package: "gsm.kri"
-  - output: lParams
-    name: list
+  # Generate report.
+  - output: Report
+    name: gsm.kri::Report_Eligibility
     params:
       dfResults: dfResults
       dfMetrics: dfMetrics
       dfGroups: dfGroups
       lListings: lListings
-
-  # Generate report.
-  - output: Report
-    name: gsm.kri::RenderRmd
-    params:
-      lParams: lParams
       strOutputFile: ID
-      strInputPath: strInputPath
 
