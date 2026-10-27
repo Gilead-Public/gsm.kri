@@ -4,7 +4,8 @@
 
 - Add the Repeat Measurements report for the repeat-measure vital sign
   KRIs (`kri0020a`-`f`). It shows a whole-study overview of every
-  measure (KRI or not) with site and participant flag counts, flag
+  measure (KRI or not) with site and participant flag counts, or as 100%
+  bars of the share of sites and participants flagged, flag
   distributions by study, country and site, a Participant Listing of
   per-vital flags, a vitals listing that highlights repeated values, and
   a Long / Wide data table of every value. Every measure, including
