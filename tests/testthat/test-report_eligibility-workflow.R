@@ -11,7 +11,7 @@ GetEligibilityWorkflow <- function() {
   )[["report_eligibility"]]
 }
 
-test_that("report_eligibility module is discoverable and wired to Report_Eligibility", {
+test_that("report_eligibility module is discoverable and wired to Report_Eligibility (#351)", {
   wf <- GetEligibilityWorkflow()
 
   expect_false(is.null(wf))
@@ -37,7 +37,7 @@ test_that("report_eligibility module is discoverable and wired to Report_Eligibi
   )
 })
 
-test_that("report_eligibility workflow runs with minimal inputs and renders the report", {
+test_that("report_eligibility workflow runs with minimal inputs and renders the report (#351)", {
   skip_if_not_installed("gsm.qtl")
   skip_if_not_installed("rmarkdown")
   skip_if_not_installed("knitr")
