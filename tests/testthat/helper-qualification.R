@@ -252,3 +252,13 @@ qualification_flag_identity <- function(
     select(-median) %>%
     arrange(match(Flag, c(2, -2, 1, -1, 0)))
 }
+
+# Transform_Rate() drops groups whose total denominator is 0, so only those
+# groups are expected in Analysis_Transformed.
+CountTransformedGroups <- function(dfInput, strDenominatorCol = "Denominator") {
+  dfInput %>%
+    group_by(.data$GroupID) %>%
+    summarise(Denominator = sum(.data[[strDenominatorCol]])) %>%
+    filter(.data$Denominator != 0) %>%
+    nrow()
+}

@@ -9,7 +9,8 @@ SummarizeCrossStudy(
   strGroupLevel = "Site",
   dfGroups = NULL,
   strNameCol = "InvestigatorLastName",
-  strEnrollmentCol = "ParticipantCount"
+  strEnrollmentCol = "ParticipantCount",
+  strRiskScoreMetric = "Analysis_srs0001"
 )
 }
 \arguments{
@@ -22,6 +23,9 @@ SummarizeCrossStudy(
 \item{strNameCol}{`character` The column name in dfGroups to use for investigator names. Default is 'InvestigatorLastName'.}
 
 \item{strEnrollmentCol}{`character` The Param value in dfGroups to use for site enrollment counts. Default is 'ParticipantCount'.}
+
+\item{strRiskScoreMetric}{`character` Risk score MetricID to summarize.
+Defaults to `"Analysis_srs0001"`.}
 }
 \value{
 `data.frame` Summary table with the following columns:

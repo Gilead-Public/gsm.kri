@@ -1,5 +1,25 @@
 # gsm.kri (development version)
 
+- Added `CalculateActionRiskScore()` and the `srs0002` workflow for an
+  action-status-weighted Site Risk Score. Open, closed, and awaiting-triage
+  findings are included by default; no-action findings are excluded; missing
+  nonzero action states fail unless an explicit fallback is configured. The
+  full raw SRS denominator is retained. For each site and metric, the latest
+  signal snapshot on or before the results snapshot (or
+  `dActionSnapshotDate`) is applied within a complete frozen extraction.
+  `dActionExtractionDate` selects the extraction cutoff; later-extracted
+  decisions are not used by default. Multiple actions use the largest factor
+  and retain character identifiers and extraction provenance in the detail.
+  The workflow conservatively includes missing states (#280).
+- Added `MakeActionRiskScoreDetail()`, which returns the per-KRI contributions
+  behind the action-weighted score, and a `dfRiskScoreDetail` argument to
+  `Report_KRI()` that shows them in the site overview (#280).
+- Added configurable risk-score MetricIDs to the cross-study summary and widget
+  APIs while retaining `Analysis_srs0001` as the default (#280).
+- Extended the existing site overview in `Report_KRI()` to display an adjusted
+  Site Risk Score immediately after the original Risk Score when
+  `Analysis_srs0002` is available. Direct `Widget_GroupOverview()` consumers
+  retain the original single-score layout unless they opt in (#280).
 - Add the IP monitoring report for IP non-starters and premature treatment discontinuations. Dosed participants are shown by study drug completion, including potential premature treatment discontinuations, and the participant listing shows study completion (#320, #332).
 - Added the IP Non-Starters metric: `kri0019` (site) and `cou0019` (country) count
   participants who are Confirmed non-starters or Potential non-starters outside the

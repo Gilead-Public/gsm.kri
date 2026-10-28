@@ -32,11 +32,7 @@ testthat::test_that("Qual: Protocol Deviation Assessments can be done correctly 
   iwalk(
     test,
     ~ expect_equal(
-      # Transform_Rate() drops groups whose denominator sums to zero.
-      .x$Analysis_Input |>
-        dplyr::summarise(Denominator = sum(.data$Denominator), .by = "GroupID") |>
-        dplyr::filter(.data$Denominator > 0) |>
-        nrow(),
+      CountTransformedGroups(.x$Analysis_Input),
       nrow(.x$Analysis_Transformed)
     )
   )
@@ -60,7 +56,7 @@ testthat::test_that("Qual: Protocol Deviation Assessments can be done correctly 
   iwalk(
     test_custom,
     ~ expect_equal(
-      n_distinct(.x$Mapped_SUBJ[[tolower(kri_custom[[.y]]$meta$GroupLevel)]]),
+      CountTransformedGroups(.x$Analysis_Input),
       nrow(.x$Analysis_Transformed)
     )
   )

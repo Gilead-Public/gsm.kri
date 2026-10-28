@@ -18,6 +18,10 @@ output:
 
 This page provides a sample Site KRI Report generated using the standard KRIs included in the `gsm.kri` package. Expand the "Setup" section below to see the code used to generate the report. Or scroll down for the standard KRI report output.
 
+The example calculates `Analysis_srs0002` from the deterministic longitudinal
+`gsm.core::reportingActionLog` fixture. The existing Site Overview displays the
+adjusted score immediately after the original Site Risk Score.
+
 <details>
 <summary>Setup</summary>
 
@@ -27,8 +31,6 @@ library(gsm.core)
 library(gsm.kri)
 library(here)
 
-## Retired metric: inactive, with results in earlier snapshots only.
-## The example data have none, so one is copied from the Adverse Event Rate.
 dfMetrics <- gsm.core::reportingMetrics %>%
   dplyr::filter(MetricID == "Analysis_kri0001") %>%
   dplyr::mutate(
@@ -46,9 +48,42 @@ dfResults <- gsm.core::reportingResults %>%
   dplyr::mutate(MetricID = "Analysis_kri9999") %>%
   dplyr::bind_rows(gsm.core::reportingResults, .)
 
+latest_snapshot <- max(gsm.core::reportingResults$SnapshotDate)
+weights <- gsm.kri::MakeWeights(gsm.core::reportingMetrics)
+current_kri_results <- gsm.core::reportingResults %>%
+  dplyr::filter(
+    .data$SnapshotDate == latest_snapshot,
+    .data$GroupLevel == "Site",
+    grepl("^Analysis_kri", .data$MetricID),
+    .data$MetricID %in% weights$MetricID
+  )
+action_weighted_score <- gsm.kri::CalculateActionRiskScore(
+  dfResults = current_kri_results,
+  dfWeights = weights,
+  dfActionLog = gsm.core::reportingActionLog,
+  strMissingState = "error"
+) %>%
+  dplyr::mutate(
+    StudyID = unique(current_kri_results$StudyID),
+    SnapshotDate = latest_snapshot
+  )
+
+# Per-KRI detail explains each adjusted score in the Site Overview.
+action_score_detail <- gsm.kri::MakeActionRiskScoreDetail(
+  dfResults = current_kri_results,
+  dfWeights = weights,
+  dfActionLog = gsm.core::reportingActionLog,
+  strMissingState = "error"
+)
+
+site_results <- dplyr::bind_rows(
+  dfResults,
+  action_weighted_score
+)
+
 ## Site Report
 lCharts <- gsm.kri::MakeCharts(
-  dfResults = dfResults,
+  dfResults = site_results,
   dfGroups = gsm.core::reportingGroups,
   dfMetrics = dfMetrics,
   dfBounds = gsm.core::reportingBounds
@@ -65,10 +100,12 @@ child_env <- list2env(
   list(
     params = list(
       lCharts = lCharts,
-      # All snapshots: the retired metric has no results in the latest one.
-      dfResults = dfResults,
+  dfResults = site_results,
       dfGroups = gsm.core::reportingGroups,
-      dfMetrics = dfMetrics
+  dfMetrics = dfMetrics,
+      strComparisonRiskMetric = "Analysis_srs0002",
+      strComparisonRiskLabel = "Adjusted Risk Score",
+      dfRiskScoreDetail = action_score_detail
     )
   ),
   parent = environment()
