@@ -87,7 +87,7 @@ test_that("flag and blood pressure arguments reach the report settings and paire
   expect_false(any(c("flagged", "group") %in% names(data$vitals)))
   expect_true(is.na(data$vitals$metric[data$vitals$vital == "bp"]))
   expect_match(gsub("\\s+", " ", html), "% of windows that repeat, Amber \u2265 10%, Red \u2265 50%; participants need 2 windows for a flag", fixed = TRUE)
-  expect_match(html, 'data-rm-vital="bp"', fixed = TRUE)
+  expect_match(html, 'data-rm-vital-opt="bp"', fixed = TRUE)
   x <- rm_WidgetPayloads(html)[["rm-tiles"]]
   expect_true("bp" %in% vapply(x$tiles, `[[`, character(1), "vital"))
   expect_true(any(grepl("120/80", unlist(rm_WidgetPayloads(html)[["rm-dt-wide"]]$data), fixed = TRUE)))
@@ -95,20 +95,18 @@ test_that("flag and blood pressure arguments reach the report settings and paire
   expect_error(Report_RepeatMeasurements(lListings = f, strBPMode = "paired"), "should be one of")
 })
 
-test_that("the report shows each vital's flag distribution by study, country and site (#345)", {
+test_that("the participant distribution is one table of flags by measure for each country or site (#345)", {
   html <- rm_default_html()
-  vChartIDs <- vapply(
-    Filter(function(x) !is.null(x$metadata$chartId), rm_WidgetPayloads(html)),
-    function(x) x$metadata$chartId,
-    character(1)
-  )
-  vVitals <- c("weight", "pulse", "sysbp", "diabp", "resp", "temp", "height")
-  expect_true(all(
-    c("rm-study", paste0("rm-country-", vVitals), paste0("rm-site-", vVitals)) %in% vChartIDs
-  ))
-  for (strVital in vVitals) {
-    expect_match(html, paste0('data-rm-vital="', strVital, '"'), fixed = TRUE)
-  }
+  # rmFilters.js draws the table; the report has no distribution charts.
+  vChartIDs <- unlist(lapply(rm_WidgetPayloads(html), function(x) x$metadata$chartId))
+  expect_false(any(grepl("^rm-(study|country|site)", vChartIDs)))
+  expect_match(html, '<div id="rm-dist" class="rm-dist-wrap"></div>', fixed = TRUE)
+  expect_match(html, 'id="rm-dist-country" type="button" data-rm-dist="level" value="country" aria-pressed="true"', fixed = TRUE)
+  expect_match(html, 'id="rm-dist-site" type="button" data-rm-dist="level" value="site" aria-pressed="false"', fixed = TRUE)
+  expect_match(html, 'id="rm-dist-participants" type="button" data-rm-dist="unit" value="participants" aria-pressed="true"', fixed = TRUE)
+  expect_match(html, 'id="rm-dist-sites" type="button" data-rm-dist="unit" value="sites" aria-pressed="false"', fixed = TRUE)
+  expect_match(html, 'id="rm-dist-search"', fixed = TRUE)
+  expect_match(html, 'id="rm-dist-tip"', fixed = TRUE)
   data <- rm_DataBlock(html)
   # Site flags: the latest KRI flag for weight and HR, the report's own
   # calculation (here below accrual) for the other vitals.
@@ -121,7 +119,7 @@ test_that("the report shows each vital's flag distribution by study, country and
   expect_true(all(is.na(dfH$flag)))
   expect_equal(data$siteRule$thresholds, c(0.2, 0.3))
   expect_equal(data$siteRule$accrual, 3)
-  # rmFilters.js builds the bars from the tiles, so every tile carries N, D
+  # rmFilters.js builds the table from the tiles, so every tile carries N, D
   # and its site and country.
   x <- rm_WidgetPayloads(html)[["rm-tiles"]]
   expect_true(all(c("country", "invid", "Numerator", "Denominator", "flag") %in% names(x$tiles[[1]])))
@@ -203,13 +201,13 @@ test_that("Repeat Measurements report example is accepted by a user (#348)", {
     intIssue = 348,
     chrInstructions = paste(
       "1. Navigate to the [Repeat Measurements report example](https://gilead-public.github.io/gsm.kri/dev/examples/Example_RepeatMeasurements.html).",
-      "2. Use the vital-group buttons, then click a country bar and a site bar.",
+      "2. Choose vitals in the Vitals menu. In the Participant distribution, switch Rows between Country and Site, then click a country row and a site row.",
       "3. In the Participant Listing, switch the cell label, then click a participant or tile.",
       "4. In the Vitals Listing and the Data table, click a row; click it again to clear. Switch the Data table between Long and Wide.",
       sep = "\n"
     ),
     chrChecks = c(
-      "The overview counts match the distribution charts for each vital.",
+      "The Study row of the Participant distribution matches the Study overview for each measure.",
       "Filters apply to every section, and the floating filter strip shows what is selected and how many participants are in scope.",
       "Selecting a participant in any listing filters the Vitals Listing and the Data table to that participant.",
       "Repeated values are highlighted in the Vitals Listing and both Data table shapes.",

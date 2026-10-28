@@ -23,6 +23,12 @@
     shape: 'wide',
     // Study overview view: 'counts' table or 'distribution' bars.
     overview: 'counts',
+    // §2: rows by country or site; cells participant or (by country) site flags.
+    distLevel: 'country',
+    distUnit: 'participants',
+    distSort: null,
+    distDir: -1,
+    distSearch: '',
     dtOnly: true,
     // Listing settings to restore when the participant filter is cleared.
     prev: null
@@ -390,113 +396,280 @@
   }
 
   // ---- §2 distribution ----------------------------------------------------
-  // Mirrors rm_DistributionRows(): evaluable participants by flag per group,
-  // groups sorted by % flagged, then evaluable participants, then name.
-  function distRows(level, vital) {
-    var vitals = (vital ? [vital] : shownVitals().map(function (v) {
-      return v.vital;
-    }));
-    var short = {};
-    rmData().vitals.forEach(function (v) {
-      short[v.vital] = v.short;
-    });
-    var groups = {};
-    var list = [];
-    (allTiles || []).forEach(function (t) {
-      if (vitals.indexOf(t.vital) < 0 || RAG.indexOf(t.flag) < 0) return;
-      // The site charts narrow to the selected country; the others keep every bar.
-      if (level === 'site' && state.country && t.country !== state.country) return;
-      var id = level === 'study' ? short[t.vital] : level === 'country' ? t.country : t.invid;
-      var key = t.vital + '\u0000' + id;
-      var g = groups[key];
-      if (!g) {
-        g = groups[key] = { vital: t.vital, GroupID: id, OuterGroupID: level === 'site' ? t.country : null, n: { Red: 0, Amber: 0, Green: 0 }, ev: 0 };
-        list.push(g);
+  // One row per country or site, one column per shown measure. Cells are a
+  // 100% bar of evaluable participants (or, by country, sites evaluated) by
+  // flag; the hover card has the counts.
+  var NE_COLOR = '#CACACA';
+
+  function blank() {
+    return { enr: 0, ev: 0, a: 0, r: 0, sites: 0, sev: 0, sa: 0, sr: 0, N: 0, D: 0 };
+  }
+
+  // { study, countries, sites } groups with per-measure counts.
+  function distGroups() {
+    var vitals = bpVitals();
+    var siteFlags = sites();
+    var study = { label: 'Study', key: null, m: {} };
+    var countries = {};
+    var siteRows = {};
+    var get = function (map, key, extra) {
+      if (!map[key]) {
+        map[key] = Object.assign({ label: key, key: key, m: {}, siteIds: {} }, extra || {});
+        vitals.forEach(function (v) {
+          map[key].m[v.vital] = blank();
+        });
       }
-      g.n[t.flag]++;
-      g.ev++;
-    });
-    list.sort(function (a, b) {
-      var va = vitals.indexOf(a.vital);
-      var vb = vitals.indexOf(b.vital);
-      if (va !== vb) return va - vb;
-      var pa = (a.n.Red + a.n.Amber) / a.ev;
-      var pb = (b.n.Red + b.n.Amber) / b.ev;
-      if (pa !== pb) return pb - pa;
-      if (a.ev !== b.ev) return b.ev - a.ev;
-      return a.GroupID < b.GroupID ? -1 : a.GroupID > b.GroupID ? 1 : 0;
-    });
-    var rows = [];
-    var order = [];
-    list.forEach(function (g) {
-      if (order.indexOf(g.GroupID) < 0) order.push(g.GroupID);
-      RAG.forEach(function (f) {
-        if (g.n[f]) rows.push({ vital: g.vital, GroupID: g.GroupID, OuterGroupID: g.OuterGroupID, Flag: f, n: g.n[f], Level: level });
-      });
-    });
-    return { rows: rows, order: order };
-  }
-
-  function updateBars(c, d) {
-    var spec = c.data._spec_;
-    var x = Object.assign({}, (spec.scales || {}).x, { order: d.order });
-    c.helpers.updateData(c, d.rows, Object.assign({}, spec, { scales: Object.assign({}, spec.scales, { x: x }) }));
-  }
-
-  // Site tick labels take the colour of the site's flag for that vital.
-  function colorSiteTicks(c, vital) {
-    var flags = (sites()[vital] || {}).flags;
-    if (!flags) return;
-    keepTickColors(c, vital);
-    var opts = c.config.options;
-    var axis = opts.indexAxis === 'y' ? 'y' : 'x';
-    if (!opts.scales || !opts.scales[axis]) return;
-    var ticks = (opts.scales[axis].ticks = opts.scales[axis].ticks || {});
-    if (ticks._rmFlags) return;
-    ticks._rmFlags = true;
-    ticks.color = function (ctx) {
-      var label = c.data.labels[ctx.index];
-      var f = flags[label];
-      return f === undefined || f === null ? '#666666' : FLAG_COLORS[Math.abs(f)] || '#666666';
+      return map[key];
     };
-    c.update('none');
-  }
-
-  // gsm.viz's position and category toggles call helpers.updateSpec, which
-  // rebuilds options.scales and drops the tick colours; re-apply them after.
-  function keepTickColors(c, vital) {
-    if (c._rmTicks || !c.helpers || !c.helpers.updateSpec) return;
-    c._rmTicks = true;
-    var updateSpec = c.helpers.updateSpec;
-    c.helpers = Object.assign({}, c.helpers, {
-      updateSpec: function (chart, spec) {
-        var out = updateSpec.apply(this, arguments);
-        colorSiteTicks(chart, vital);
-        return out;
-      }
+    vitals.forEach(function (v) {
+      study.m[v.vital] = blank();
     });
-  }
-
-  function syncBars() {
-    var study = chart('rm-study');
-    if (study) updateBars(study, distRows('study'));
-    rmData().vitals.forEach(function (v) {
-      ['country', 'site'].forEach(function (level) {
-        var c = chart('rm-' + level + '-' + v.vital);
-        if (!c) return;
-        updateBars(c, distRows(level, v.vital));
-        var selected = level === 'country' ? state.country : state.site;
-        if (selected && c.data.labels.indexOf(selected) >= 0) {
-          c.helpers.selectCategory(c, selected);
-        } else {
-          c.helpers.clearSelection(c);
-        }
-        if (level === 'site') colorSiteTicks(c, v.vital);
+    (rmData().participants || []).forEach(function (p) {
+      var c = get(countries, p.country);
+      var st = get(siteRows, p.invid, { country: p.country });
+      c.siteIds[p.invid] = true;
+      vitals.forEach(function (v) {
+        study.m[v.vital].enr++;
+        c.m[v.vital].enr++;
+        st.m[v.vital].enr++;
       });
     });
-    document.querySelectorAll('[data-rm-vital]').forEach(function (div) {
-      div.style.display = isShown(div.getAttribute('data-rm-vital')) ? '' : 'none';
+    (allTiles || []).forEach(function (t) {
+      var st = siteRows[t.invid];
+      if (!st || !st.m[t.vital]) return;
+      st.m[t.vital].N += t.Numerator || 0;
+      st.m[t.vital].D += t.Denominator || 0;
+      if (RAG.indexOf(t.flag) < 0) return;
+      [study, countries[st.country], st].forEach(function (g) {
+        var x = g.m[t.vital];
+        x.ev++;
+        if (t.flag === 'Amber') x.a++;
+        if (t.flag === 'Red') x.r++;
+      });
     });
+    // Site flags: KRI results, or calculated in the report for the other measures.
+    Object.keys(siteRows).forEach(function (id) {
+      var st = siteRows[id];
+      vitals.forEach(function (v) {
+        var f = ((siteFlags[v.vital] || {}).flags || {})[id];
+        f = f === undefined ? null : f;
+        st.m[v.vital].flag = f;
+        [study, countries[st.country]].forEach(function (g) {
+          var x = g.m[v.vital];
+          x.sites++;
+          if (f === null) return;
+          x.sev++;
+          if (f === 1) x.sa++;
+          if (f === 2) x.sr++;
+        });
+      });
+    });
+    var byName = function (a, b) {
+      return a.label < b.label ? -1 : a.label > b.label ? 1 : 0;
+    };
+    return {
+      study: study,
+      countries: Object.keys(countries).map(function (k) {
+        return countries[k];
+      }).sort(byName),
+      sites: Object.keys(siteRows).map(function (k) {
+        return siteRows[k];
+      }).sort(function (a, b) {
+        return a.country < b.country ? -1 : a.country > b.country ? 1 : byName(a, b);
+      })
+    };
+  }
+
+  function distSiteUnit() {
+    return state.distUnit === 'sites' && state.distLevel === 'country';
+  }
+
+  function tipDot(color, hollow) {
+    return '<span class="d" style="' + (hollow ? 'border:2px solid ' + color : 'background:' + color) + '"></span>';
+  }
+
+  function tipHtml(head, nLab, n, d, a, r, hollow, extra) {
+    var row = function (color, lab, v) {
+      return '<tr><td>' + tipDot(color, hollow) + lab + '</td><td class="n">' + v.toLocaleString() + '</td><td class="n">' + (n ? pct(v, n) : '') + '</td></tr>';
+    };
+    return '<div class="h">' + head + '</div>' + (extra || '') +
+      '<div>' + nLab + ': <b>' + n.toLocaleString() + ' / ' + d.toLocaleString() + '</b> (' + pct(n, d) + ')</div>' +
+      (n
+        ? '<table>' + row('#d0d7de', 'Not flagged', n - a - r) + row(FLAG_COLORS[1], 'Amber', a) + row(FLAG_COLORS[2], 'Red', r) + '</table>' +
+          '<div class="sub">' + (a + r).toLocaleString() + ' flagged (' + pct(a + r, n) + ')</div>'
+        : '<div class="sub">Not evaluated</div>');
+  }
+
+  function distBar(n, a, r, label) {
+    if (!n) return '<span class="rm-ne">Not evaluated</span>';
+    var parts = [['none', n - a - r], ['amber', a], ['red', r]];
+    return '<span class="rm-bar" role="img" aria-label="' + esc(label) + '">' +
+      parts.map(function (x) {
+        var w = (100 * x[1]) / n;
+        return w > 0
+          ? '<span class="rm-seg-' + x[0] + '" data-rm-part="' + x[0] + '" style="width:' + w.toFixed(2) + '%">' + (w >= 30 ? Math.round(w) + '%' : '') + '</span>'
+          : '';
+      }).join('') + '</span><span class="rm-bar-n">' + n.toLocaleString() + '</span>';
+  }
+
+  function distCell(g, v, isStudy) {
+    var x = g.m[v.vital];
+    var kri = (sites()[v.vital] || {}).source === 'KRI';
+    var head = '<b>' + esc(g.label) + '</b> \u00b7 ' + esc(v.label);
+    var n, a, r, tip, summary, sf = '';
+    if (distSiteUnit()) {
+      n = x.sev;
+      a = x.sa;
+      r = x.sr;
+      tip = tipHtml(head + ' \u00b7 site flags', 'Sites evaluated', n, x.sites, a, r, !kri,
+        '<div class="sub" style="margin:0 0 3px">' + (kri ? 'KRI site flags (' + esc(v.metric) + ')' : 'Calculated in the report') + '</div>');
+      summary = a + ' Amber, ' + r + ' Red of ' + n + ' sites evaluated';
+    } else {
+      n = x.ev;
+      a = x.a;
+      r = x.r;
+      var extra = '';
+      if (state.distLevel === 'site' && !isStudy) {
+        var f = x.flag;
+        var color = f === null || f === undefined ? NE_COLOR : FLAG_COLORS[f];
+        var name = f === null || f === undefined ? 'Not evaluated' : ['Green', 'Amber', 'Red'][f];
+        sf = '<span class="rm-sf rm-dot' + (kri ? '' : ' rm-o') + '" data-rm-site-flag="' + name + '" title="Site flag: ' + name + (kri ? ' (' + esc(v.metric) + ')' : ' (calculated)') + '" style="background:' + color + ';border-color:' + color + '"></span>';
+        extra = '<div style="margin-bottom:3px">Site flag: ' + tipDot(color, !kri) + '<b>' + name + '</b>' +
+          (x.D ? ' \u00b7 ' + x.N + ' of ' + x.D + ' windows repeat (' + pct(x.N, x.D) + ')' : '') +
+          '<span style="color:#c9d1d9"> \u00b7 ' + (kri ? esc(v.metric) : 'calculated') + '</span></div>';
+      }
+      tip = tipHtml(head + ' \u00b7 participants', 'Evaluable', n, x.enr, a, r, true, extra);
+      summary = a + ' Amber, ' + r + ' Red of ' + n + ' evaluable participants';
+    }
+    return '<td class="rm-sep rm-cell" data-rm-dist-vital="' + esc(v.vital) + '" data-rm-n="' + n + '" data-rm-amber="' + a + '" data-rm-red="' + r +
+      '" data-rm-tip="' + esc(tip) + '">' + sf + distBar(n, a, r, summary) + '</td>';
+  }
+
+  function distSortVal(g, vital) {
+    var x = g.m[vital];
+    if (distSiteUnit()) return x.sev ? (x.sa + x.sr) / x.sev : -1;
+    return x.ev ? (x.a + x.r) / x.ev : -1;
+  }
+
+  function renderDist() {
+    var el = byId('rm-dist');
+    if (!el) return;
+    var isSite = state.distLevel === 'site';
+    if (isSite) state.distUnit = 'participants';
+    document.querySelectorAll('[data-rm-dist]').forEach(function (b) {
+      var k = b.getAttribute('data-rm-dist') === 'level' ? 'distLevel' : 'distUnit';
+      b.setAttribute('aria-pressed', String(b.value === state[k]));
+    });
+    var sb = byId('rm-dist-sites');
+    if (sb) {
+      sb.disabled = isSite;
+      sb.title = isSite
+        ? 'Country view only. In site view, the dot before the bar is the site\u2019s own flag.'
+        : 'Show site flags for each country';
+    }
+    var search = byId('rm-dist-search');
+    if (search) search.hidden = !isSite;
+    var unitSites = distSiteUnit();
+    var vitals = shownVitals();
+    if (state.distSort && !vitals.some(function (v) { return v.vital === state.distSort; })) state.distSort = null;
+    var groups = distGroups();
+    var all = isSite ? groups.sites : groups.countries;
+    // Site rows narrow to the selected country, like the other sections.
+    var rows = all.filter(function (g) {
+      if (!isSite) return true;
+      if (state.country && g.country !== state.country) return false;
+      var q = state.distSearch.trim().toLowerCase();
+      return !q || (g.label + ' ' + g.country).toLowerCase().indexOf(q) >= 0;
+    });
+    if (state.distSort) {
+      rows.sort(function (a, b) {
+        return state.distDir * (distSortVal(a, state.distSort) - distSortVal(b, state.distSort)) ||
+          (a.label < b.label ? -1 : a.label > b.label ? 1 : 0);
+      });
+    }
+    var who = unitSites ? 'sites' : 'participants';
+    var lead = isSite
+      ? '<th rowspan="2" class="rm-l rm-stick">Site</th><th rowspan="2" class="rm-l rm-stick2">Country</th>'
+      : '<th rowspan="2" class="rm-l rm-stick">Country</th>';
+    var h1 = '<tr>' + lead;
+    var h2 = '<tr class="rm-sub">';
+    vitals.forEach(function (v) {
+      var on = state.distSort === v.vital;
+      h1 += '<th class="rm-grp rm-sep" data-rm-dist-sort="' + esc(v.vital) + '" title="Sort by % ' + who + ' flagged"' +
+        (on ? ' aria-sort="' + (state.distDir < 0 ? 'descending' : 'ascending') + '"' : '') + '>' + esc(v.label) +
+        (v.metric ? '<span class="rm-kri" title="' + esc(v.metric) + '">KRI</span>' : '') +
+        (on ? '<span class="rm-arr">' + (state.distDir < 0 ? '\u25bc' : '\u25b2') + '</span>' : '') + '</th>';
+      h2 += '<th class="rm-sep">' + (unitSites ? 'Site flags' : 'Participant flags') + '</th>';
+    });
+    var body = '<tr class="rm-study" data-rm-dist-study=""><td class="rm-l rm-stick">Study</td>' + (isSite ? '<td class="rm-l rm-stick2"></td>' : '');
+    vitals.forEach(function (v) {
+      body += distCell(groups.study, v, true);
+    });
+    body += '</tr>';
+    var selected = isSite ? state.site : state.country;
+    rows.forEach(function (g) {
+      var on = selected === g.key;
+      var cls = on ? 'rm-on' : selected ? 'rm-dim' : '';
+      body += '<tr data-rm-dist-row="' + state.distLevel + '" data-rm-dist-key="' + esc(g.key) + '"' + (isSite ? ' data-rm-dist-country="' + esc(g.country) + '"' : '') +
+        (cls ? ' class="' + cls + '"' : '') + ' aria-selected="' + on + '" title="Click to filter the report to ' + (isSite ? 'site ' : '') + esc(g.label) + '; click again to clear">' +
+        '<td class="rm-l rm-stick">' + esc(g.label) + '</td>' + (isSite ? '<td class="rm-l rm-stick2">' + esc(g.country) + '</td>' : '');
+      vitals.forEach(function (v) {
+        body += distCell(g, v, false);
+      });
+      body += '</tr>';
+    });
+    el.innerHTML = vitals.length
+      ? '<table class="table table-condensed" data-rm-dist-level="' + state.distLevel + '" data-rm-dist-unit="' + (unitSites ? 'sites' : 'participants') + '"><thead>' +
+        h1 + '</tr>' + h2 + '</tr></thead><tbody>' + body + '</tbody></table>'
+      : '<p class="rm-ne">No vitals selected.</p>';
+    var first = el.querySelector('thead th.rm-stick');
+    if (first) {
+      first.insertAdjacentHTML('beforeend', unitSites
+        ? info('Site flag: ' + siteRuleText() + '. N: sites evaluated / sites with enrolled participants. ' +
+          'Filled circles: the KRI site flags (kri0020a\u2013f, latest snapshot). Empty circles: calculated in the report with the same rule.')
+        : info('Participant flag: ' + ruleText() + '. N: evaluable / enrolled participants. Calculated in the report; change the rule under Settings.' +
+          (isSite ? ' The dot before a bar is the site\u2019s own flag: ' + siteRuleText() + '.' : '')));
+      el.style.setProperty('--rm-c1', first.offsetWidth + 'px');
+      el.style.setProperty('--rm-h1', el.querySelector('thead tr').offsetHeight + 'px');
+    }
+    var count = byId('rm-dist-count');
+    if (count) {
+      var sorted = vitals.filter(function (v) { return v.vital === state.distSort; })[0];
+      count.textContent = (isSite ? rows.length + ' of ' + all.length + ' sites' : rows.length + ' countr' + (rows.length === 1 ? 'y' : 'ies')) +
+        (sorted ? ' \u00b7 sorted by % flagged, ' + sorted.label : '');
+    }
+    var legend = byId('rm-dist-legend');
+    if (legend) {
+      legend.innerHTML = '<span class="rm-dot" style="background:#d0d7de;border-color:#d0d7de"></span>Not flagged \u00b7 ' +
+        '<span class="rm-dot" style="background:' + FLAG_COLORS[1] + ';border-color:' + FLAG_COLORS[1] + '"></span>Amber \u00b7 ' +
+        '<span class="rm-dot" style="background:' + FLAG_COLORS[2] + ';border-color:' + FLAG_COLORS[2] + '"></span>Red. ' +
+        'The number after a bar is the ' + (unitSites ? 'sites evaluated' : 'participants evaluable') + '. Hover a cell for counts.' +
+        (isSite ? ' The dot before a bar is the site\u2019s own flag for the measure (filled: KRI; empty: calculated; grey: not evaluated).' : '') +
+        ' Hover <i class="rm-info" aria-hidden="true">i</i> for the flag rules.';
+    }
+  }
+
+  function distTip(e) {
+    var tip = byId('rm-dist-tip');
+    if (!tip) return;
+    var td = e.type === 'mouseover' && e.target.closest ? e.target.closest('#rm-dist td[data-rm-tip]') : null;
+    if (e.type === 'mouseover') {
+      if (!td) {
+        tip.hidden = true;
+        return;
+      }
+      tip.innerHTML = td.getAttribute('data-rm-tip');
+      tip.hidden = false;
+    }
+    if (tip.hidden) return;
+    var w = tip.offsetWidth;
+    var h = tip.offsetHeight;
+    var x = e.clientX + 14;
+    var y = e.clientY + 16;
+    if (x + w > window.innerWidth - 8) x = e.clientX - w - 14;
+    if (y + h > window.innerHeight - 8) y = e.clientY - h - 12;
+    tip.style.left = x + 'px';
+    tip.style.top = y + 'px';
   }
 
   // ---- §3 participant listing (tiles) -------------------------------------
@@ -783,7 +956,7 @@
       syncSettings();
     }
     renderOverview();
-    syncBars();
+    renderDist();
     syncTiles();
     syncListing();
     syncDataTable();
@@ -854,6 +1027,39 @@
       state.overview = t.closest('[data-rm-ov]').getAttribute('data-rm-ov');
       renderOverview();
       return;
+    } else if (t.closest('[data-rm-dist]')) {
+      var db = t.closest('[data-rm-dist]');
+      if (db.disabled) return;
+      if (db.getAttribute('data-rm-dist') === 'level') state.distLevel = db.value;
+      else state.distUnit = db.value;
+      renderDist();
+      return;
+    } else if (t.closest('#rm-dist th[data-rm-dist-sort]')) {
+      var k2 = t.closest('th').getAttribute('data-rm-dist-sort');
+      if (state.distSort !== k2) {
+        state.distSort = k2;
+        state.distDir = -1;
+      } else if (state.distDir < 0) {
+        state.distDir = 1;
+      } else {
+        state.distSort = null;
+        state.distDir = -1;
+      }
+      renderDist();
+      return;
+    } else if (t.closest('#rm-dist tbody tr[data-rm-dist-row]')) {
+      var dr = t.closest('tr');
+      var key2 = dr.getAttribute('data-rm-dist-key');
+      if (dr.getAttribute('data-rm-dist-row') === 'country') {
+        state.country = key2 === state.country && !state.site ? null : key2;
+        state.site = null;
+      } else if (key2 === state.site) {
+        state.site = null;
+      } else {
+        state.site = key2;
+        state.country = dr.getAttribute('data-rm-dist-country');
+      }
+      setSubj(null);
     } else if (t.closest('[data-rm-shape]')) {
       state.shape = t.closest('[data-rm-shape]').getAttribute('data-rm-shape');
       syncDataTable();
@@ -920,6 +1126,11 @@
   });
 
   document.addEventListener('input', function (e) {
+    if (e.target.id === 'rm-dist-search') {
+      state.distSearch = e.target.value;
+      renderDist();
+      return;
+    }
     if (e.target.id !== 'rm-tiles-search') return;
     state.search = e.target.value;
     syncTiles();
@@ -931,28 +1142,21 @@
     pickParticipant((e.detail || {}).subjid);
   });
 
-  // gsm.vizr dispatches gsm-viz-select from the bar charts.
-  document.addEventListener('gsm-viz-select', function (e) {
-    var d = e.detail || {};
-    var id = d.chartId || '';
-    var row = d.datum || {};
-    if (d.type !== 'click' || !row.GroupID) return;
-    if (id.indexOf('rm-country-') === 0) {
-      state.country = row.GroupID === state.country && !state.site ? null : row.GroupID;
-      state.site = null;
-    } else if (id.indexOf('rm-site-') === 0) {
-      if (row.GroupID === state.site) {
-        state.site = null;
-      } else {
-        state.site = row.GroupID;
-        state.country = row.OuterGroupID;
+  ['mouseover', 'mousemove'].forEach(function (type) {
+    document.addEventListener(type, function (e) {
+      if (type === 'mousemove' && !(e.target.closest && e.target.closest('#rm-dist'))) {
+        var tip = byId('rm-dist-tip');
+        if (tip) tip.hidden = true;
+        return;
       }
-    } else {
-      return;
-    }
-    setSubj(null);
-    rmSync();
+      distTip(e);
+    });
   });
+  // The card follows the pointer; scrolling the table moves the cell away from it.
+  document.addEventListener('scroll', function (e) {
+    var tip = byId('rm-dist-tip');
+    if (tip && e.target && e.target.id === 'rm-dist') tip.hidden = true;
+  }, true);
 
   window.addEventListener('load', function () {
     var toc = byId('rm-toc-toggle');

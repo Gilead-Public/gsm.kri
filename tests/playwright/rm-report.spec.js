@@ -12,16 +12,42 @@ const BP = 'file://' + path.resolve(__dirname, 'fixture', 'RM_bp.html');
 // rule (Amber 2, Red 3) only A weight is flagged, Amber. Height has no KRI but
 // is flagged with the same rule.
 
-// The same bubbling event gsm.vizr's bars() dispatches on a bar click, so the
-// test does not depend on bar geometry that zoom can move.
-function clickBar(page, chartId, row) {
-  return page.evaluate(({ chartId, row }) => {
-    document.getElementById(chartId).dispatchEvent(new CustomEvent('gsm-viz-select', {
-      bubbles: true,
-      detail: { type: 'click', chartId, category: row.GroupID, datum: row },
-    }));
-  }, { chartId, row });
+// Clicks a country or site row of the participant distribution table.
+async function clickDistRow(page, level, key) {
+  await page.click('#rm-dist-' + level);
+  await page.click('#rm-dist tbody tr[data-rm-dist-row="' + level + '"][data-rm-dist-key="' + key + '"] td.rm-stick');
 }
+
+// The participant distribution table: row keys, measure columns and each
+// cell's N / Amber / Red (or site flag dot) by "row vital".
+const dist = (page) => page.evaluate(() => {
+  const el = document.getElementById('rm-dist');
+  const cells = {};
+  el.querySelectorAll('tbody tr').forEach((tr) => {
+    const key = tr.dataset.rmDistKey || 'Study';
+    tr.querySelectorAll('td[data-rm-dist-vital]').forEach((td) => {
+      const dot = td.querySelector('.rm-sf');
+      cells[key + ' ' + td.dataset.rmDistVital] = {
+        n: +td.dataset.rmN,
+        amber: +td.dataset.rmAmber,
+        red: +td.dataset.rmRed,
+        dot: dot ? dot.dataset.rmSiteFlag + (dot.classList.contains('rm-o') ? ' calculated' : ' KRI') : null,
+      };
+    });
+  });
+  return {
+    level: el.querySelector('table').dataset.rmDistLevel,
+    unit: el.querySelector('table').dataset.rmDistUnit,
+    rows: Array.from(el.querySelectorAll('tbody tr[data-rm-dist-key]')).map((tr) => tr.dataset.rmDistKey),
+    on: Array.from(el.querySelectorAll('tbody tr.rm-on')).map((tr) => tr.dataset.rmDistKey),
+    dim: el.querySelectorAll('tbody tr.rm-dim').length,
+    measures: Array.from(el.querySelectorAll('th[data-rm-dist-sort]')).map((th) => th.dataset.rmDistSort),
+    sub: [...new Set(Array.from(el.querySelectorAll('thead tr.rm-sub th')).map((th) => th.textContent))],
+    sort: Array.from(el.querySelectorAll('th[aria-sort]')).map((th) => th.dataset.rmDistSort + ' ' + th.getAttribute('aria-sort')),
+    count: document.getElementById('rm-dist-count').textContent,
+    cells,
+  };
+});
 
 // Shows only the given vitals through the Vitals multi-select.
 async function pickVitals(page, vitals) {
@@ -149,7 +175,7 @@ test.describe('Repeat Measurements report', () => {
     await expect(page.locator('#rm-overview .rm-info').first()).toHaveAttribute('title', /Amber \u2265 20%, Red \u2265 30%; sites need 3 windows/);
     // Filters do not change the overview.
     const before = (await state(page)).overview;
-    await clickBar(page, 'rm-country-weight', { GroupID: 'JP', Level: 'country' });
+    await clickDistRow(page, 'country', 'JP');
     await pickVitals(page, ['pulse']);
     expect((await state(page)).overview).toBe(before);
   });
@@ -181,13 +207,13 @@ test.describe('Repeat Measurements report', () => {
     expect([bars[6].site.parts, bars[6].site.text]).toEqual([{}, 'Not evaluated']);
     // Filters do not change it.
     const before = await page.locator('#rm-overview tbody').innerHTML();
-    await clickBar(page, 'rm-country-weight', { GroupID: 'JP', Level: 'country' });
+    await clickDistRow(page, 'country', 'JP');
     expect(await page.locator('#rm-overview tbody').innerHTML()).toBe(before);
     await page.locator('#rm-ov-counts').click();
     await expect(page.locator('#rm-overview [data-rm-ov-view="counts"]')).toHaveCount(1);
   });
 
-  test('the Vitals multi-select filters the charts, tiles and listing (#344)', async ({ page }) => {
+  test('the Vitals multi-select filters the distribution, tiles and listing (#344)', async ({ page }) => {
     const opts = await page.locator('[data-rm-vital-cb]').evaluateAll((els) => els.map((e) => e.value));
     expect(opts).toEqual(['weight', 'pulse', 'sysbp', 'diabp', 'resp', 'temp', 'height']);
     await page.click('#rm-vital-btn');
@@ -201,8 +227,7 @@ test.describe('Repeat Measurements report', () => {
     expect(s.vitals).toEqual(['B pulse']);
     expect(s.wideVitals).toEqual(['pulse']);
     expect([...new Set(s.wide)]).toEqual(['B']);
-    await expect(page.locator('[data-rm-vital="weight"]').first()).toBeHidden();
-    await expect(page.locator('[data-rm-vital="pulse"]').first()).toBeAttached();
+    expect((await dist(page)).measures).toEqual(['pulse']);
     // A vital without a KRI can be picked like any other.
     await page.click('#rm-vital-btn');
     await page.check('[data-rm-vital-cb][value="height"]');
@@ -212,53 +237,140 @@ test.describe('Repeat Measurements report', () => {
     expect(s.vitalSummary).toBe('HR, Ht');
     expect(s.tileColumns).toEqual(['HR', 'Ht']);
     expect(s.vitals.sort()).toEqual(['B pulse', 'D height']);
+    expect((await dist(page)).measures).toEqual(['pulse', 'height']);
+    await page.click('#rm-vital-btn');
+    await page.uncheck('[data-rm-vital-cb][value="pulse"]');
+    await page.uncheck('[data-rm-vital-cb][value="height"]');
+    await expect(page.locator('#rm-dist')).toHaveText('No vitals selected.');
   });
 
-  test('country and site bars filter every section and show chips (#344, #345)', async ({ page }) => {
-    await clickBar(page, 'rm-country-weight', { GroupID: 'JP', Level: 'country' });
+  test('the participant distribution shows participant flags by measure for each country, with a Study row matching the overview (#345)', async ({ page }) => {
+    let d = await dist(page);
+    expect([d.level, d.unit]).toEqual(['country', 'participants']);
+    expect(d.measures).toEqual(['weight', 'pulse', 'sysbp', 'diabp', 'resp', 'temp', 'height']);
+    expect(d.sub).toEqual(['Participant flags']);
+    expect(d.rows).toEqual(['JP', 'US']);
+    expect(d.count).toBe('2 countries');
+    // A (US) is the only flag: Amber weight.
+    expect(d.cells['US weight']).toEqual({ n: 2, amber: 1, red: 0, dot: null });
+    expect(d.cells['JP weight']).toEqual({ n: 1, amber: 0, red: 0, dot: null });
+    expect(d.cells['JP height']).toEqual({ n: 1, amber: 0, red: 0, dot: null });
+    const f = await flags(page);
+    for (const v of d.measures) {
+      const c = d.cells['Study ' + v];
+      expect({ evaluable: c.n, amber: c.amber, red: c.red }, v).toEqual(f.overview[v]);
+    }
+    await expect(page.locator('#rm-dist tr[data-rm-dist-key="US"] td[data-rm-dist-vital="weight"] [data-rm-part]')).toHaveCount(2);
+    await expect(page.locator('#rm-dist tr[data-rm-dist-key="JP"] td[data-rm-dist-vital="pulse"]')).toHaveText('Not evaluated');
+    await expect(page.locator('#rm-dist thead th.rm-stick .rm-info')).toHaveAttribute('title', /Participant flag: repeating windows, Amber \u2265 2, Red \u2265 3/);
+    // The hover card has the counts.
+    await page.hover('#rm-dist tr[data-rm-dist-key="US"] td[data-rm-dist-vital="weight"]');
+    const tip = page.locator('#rm-dist-tip');
+    await expect(tip).toBeVisible();
+    await expect(tip).toContainText('US \u00b7 Weight \u00b7 participants');
+    await expect(tip).toContainText('Evaluable: 2 / 3 (67%)');
+    await expect(tip).toContainText('1 flagged (50%)');
+    await page.hover('h1');
+    await expect(tip).toBeHidden();
+
+    // Site flags by country: S1 Red, S2 Green (US); S3 Amber (JP).
+    await page.click('#rm-dist-sites');
+    d = await dist(page);
+    expect([d.unit, d.sub]).toEqual(['sites', ['Site flags']]);
+    expect(d.cells['US weight']).toEqual({ n: 2, amber: 0, red: 1, dot: null });
+    expect(d.cells['JP weight']).toEqual({ n: 1, amber: 1, red: 0, dot: null });
+    expect(d.cells['Study weight']).toEqual({ n: 3, amber: 1, red: 1, dot: null });
+    // Height: calculated in the report, no site reaches the accrual.
+    expect(d.cells['Study height'].n).toBe(0);
+    await expect(page.locator('#rm-dist thead th.rm-stick .rm-info')).toHaveAttribute('title', /Site flag: .*Amber \u2265 20%, Red \u2265 30%/);
+    await page.hover('#rm-dist tr[data-rm-dist-key="US"] td[data-rm-dist-vital="weight"]');
+    await expect(tip).toContainText('KRI site flags (kri0020a)');
+    await expect(tip).toContainText('Sites evaluated: 2 / 2 (100%)');
+  });
+
+  test('the participant distribution by site shows each site flag, searches and disables site-flag cells (#345)', async ({ page }) => {
+    await page.click('#rm-dist-sites');
+    await page.click('#rm-dist-site');
+    await expect(page.locator('#rm-dist-sites')).toBeDisabled();
+    await expect(page.locator('#rm-dist-participants')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#rm-dist-search')).toBeVisible();
+    let d = await dist(page);
+    expect([d.level, d.unit, d.sub]).toEqual(['site', 'participants', ['Participant flags']]);
+    // By country, then site.
+    expect(d.rows).toEqual(['S3', 'S1', 'S2']);
+    expect(d.count).toBe('3 of 3 sites');
+    await expect(page.locator('#rm-dist tr[data-rm-dist-key="S1"] td.rm-stick2')).toHaveText('US');
+    expect(d.cells['S1 weight']).toEqual({ n: 2, amber: 1, red: 0, dot: 'Red KRI' });
+    expect(d.cells['S3 weight'].dot).toBe('Amber KRI');
+    expect(d.cells['S2 weight'].dot).toBe('Green KRI');
+    expect(d.cells['S1 height'].dot).toBe('Not evaluated calculated');
+    expect(d.cells['Study weight'].dot).toBe(null);
+    await page.hover('#rm-dist tr[data-rm-dist-key="S1"] td[data-rm-dist-vital="weight"]');
+    await expect(page.locator('#rm-dist-tip')).toContainText('Site flag: Red \u00b7 2 of 4 windows repeat (50%) \u00b7 kri0020a');
+
+    await page.fill('#rm-dist-search', 's2');
+    d = await dist(page);
+    expect([d.rows, d.count]).toEqual([['S2'], '1 of 3 sites']);
+    await page.fill('#rm-dist-search', 'jp');
+    expect((await dist(page)).rows).toEqual(['S3']);
+    await page.fill('#rm-dist-search', '');
+
+    await page.click('#rm-dist-country');
+    await expect(page.locator('#rm-dist-sites')).toBeEnabled();
+    await expect(page.locator('#rm-dist-search')).toBeHidden();
+  });
+
+  test('clicking a measure sorts the distribution rows by % flagged (#345)', async ({ page }) => {
+    const weight = page.locator('#rm-dist th[data-rm-dist-sort="weight"]');
+    await weight.click();
+    let d = await dist(page);
+    // US: 1 of 2 flagged; JP: 0 of 1.
+    expect([d.rows, d.sort]).toEqual([['US', 'JP'], ['weight descending']]);
+    expect(d.count).toBe('2 countries \u00b7 sorted by % flagged, Weight');
+    await weight.click();
+    d = await dist(page);
+    expect([d.rows, d.sort]).toEqual([['JP', 'US'], ['weight ascending']]);
+    await weight.click();
+    d = await dist(page);
+    expect([d.rows, d.sort, d.count]).toEqual([['JP', 'US'], [], '2 countries']);
+    // By site: S1 50%, S3 0%, S2 not evaluated.
+    await page.click('#rm-dist-site');
+    await weight.click();
+    expect((await dist(page)).rows).toEqual(['S1', 'S3', 'S2']);
+  });
+
+  test('distribution rows filter every section and show chips (#344, #345)', async ({ page }) => {
+    await clickDistRow(page, 'country', 'JP');
     let s = await state(page);
     expect(s.count).toBe('2 / 5 participants selected');
     expect(s.tiles).toEqual(['D', 'E']);
     expect([...new Set(s.wide)]).toEqual(['D']);
     expect(s.vitals.sort()).toEqual(['D height', 'D weight']);
     expect(s.chips).toEqual(['JP']);
+    let d = await dist(page);
+    expect([d.on, d.dim]).toEqual([['JP'], 1]);
 
-    await clickBar(page, 'rm-site-weight', { GroupID: 'S1', OuterGroupID: 'US', Level: 'site' });
+    // Site rows narrow to the selected country.
+    await clickDistRow(page, 'site', 'S3');
+    d = await dist(page);
+    expect([d.rows, d.on, d.count]).toEqual([['S3'], ['S3'], '1 of 3 sites']);
+    s = await state(page);
+    expect(s.chips).toEqual(['JP', 'S3']);
+    // Click again to clear the site.
+    await page.click('#rm-dist tr[data-rm-dist-key="S3"] td.rm-stick');
+    expect((await state(page)).chips).toEqual(['JP']);
+
+    await page.click('#rm-chip-country button');
+    expect((await dist(page)).rows).toEqual(['S3', 'S1', 'S2']);
+    await page.click('#rm-dist tr[data-rm-dist-key="S1"] td.rm-stick');
     s = await state(page);
     expect(s.tiles).toEqual(['A', 'B']);
     expect(s.chips).toEqual(['US', 'S1']);
     await page.click('#rm-chip-site button');
     await page.click('#rm-chip-country button');
     expect((await state(page)).tiles).toHaveLength(5);
-  });
-
-  test('site labels take the colour of the site flag and keep it when the chart type changes (#345)', async ({ page }) => {
-    const color = (id, site) => page.evaluate(({ id, site }) => {
-      const c = document.getElementById(id).gsmChart;
-      const axis = c.config.options.indexAxis === 'y' ? 'y' : 'x';
-      const fn = c.config.options.scales[axis].ticks.color;
-      return typeof fn === 'function' ? fn({ index: c.data.labels.indexOf(site) }) : fn;
-    }, { id, site });
-    // S1 weight is flagged -2 (red) in rm_FixtureResults().
-    expect(await color('rm-site-weight', 'S1')).toBe('#FF5859');
-    // gsm.viz's chart-type controls call helpers.updateSpec, which used to drop
-    // the tick colours.
-    for (const position of ['dodge', 'fill', 'stack']) {
-      await page.evaluate((position) => {
-        const c = document.getElementById('rm-site-weight').gsmChart;
-        c.helpers.updateSpec(c, { position });
-      }, position);
-      expect(await color('rm-site-weight', 'S1'), position).toBe('#FF5859');
-    }
-    // A clicked toggle button takes the same path.
-    const toggled = await page.evaluate(() => {
-      const el = document.getElementById('rm-site-weight');
-      const btn = Array.from(el.closest('.rm-chart, .html-widget, div').parentElement.querySelectorAll('button'))
-        .find((b) => /dodge|side|group/i.test(b.textContent + ' ' + (b.title || '') + ' ' + (b.getAttribute('aria-label') || '')));
-      if (btn) btn.click();
-      return !!btn;
-    });
-    if (toggled) expect(await color('rm-site-weight', 'S1')).toBe('#FF5859');
+    d = await dist(page);
+    expect([d.on, d.dim]).toEqual([[], 0]);
   });
 
   test('the participant listing switches labels, sorts, searches and downloads (#347)', async ({ page }) => {
@@ -433,7 +545,7 @@ test.describe('Repeat Measurements report', () => {
 
   test('reset filters clears the vitals, country, site and participant (#344)', async ({ page }) => {
     await pickVitals(page, ['weight']);
-    await clickBar(page, 'rm-site-weight', { GroupID: 'S1', OuterGroupID: 'US', Level: 'site' });
+    await clickDistRow(page, 'site', 'S1');
     await page.locator('#rm-tiles th[data-subjid="A"]').click();
     let s = await state(page);
     expect(s.chips).toEqual(['US', 'S1', 'A']);
@@ -476,12 +588,11 @@ test.describe('Repeat Measurements report', () => {
     expect(f.overview.weight).toEqual({ evaluable: 3, amber: 1, red: 1 });
     expect(f.overview.pulse).toEqual({ evaluable: 2, amber: 0, red: 1 });
     expect(f.rule.every((t) => t.includes('% of windows that repeat, Amber \u2265 20%, Red \u2265 30%'))).toBe(true);
-    // The bars count the recomputed flags.
-    const red = await page.evaluate(() => {
-      const c = document.getElementById('rm-country-pulse').gsmChart;
-      return c.data.datasets.map((d) => d.label);
-    });
-    expect(red).toContain('Red');
+    // The distribution counts the recomputed flags.
+    const d = await dist(page);
+    expect(d.cells['US pulse']).toEqual({ n: 2, amber: 0, red: 1, dot: null });
+    expect(d.cells['Study weight']).toEqual({ n: 3, amber: 1, red: 1, dot: null });
+    await expect(page.locator('#rm-dist thead th.rm-stick .rm-info')).toHaveAttribute('title', /% of windows that repeat, Amber \u2265 20%, Red \u2265 30%/);
     // The tiles CSV carries the recomputed flags.
     const csv = await downloadCsv(page, '#rm-tiles-csv');
     expect(csv).toContain('US,S1,B,pulse,Red,1,2,0.5');
@@ -547,7 +658,6 @@ test.describe('Repeat Measurements blood pressure view', () => {
     const api = (id) => jQuery('#' + id + ' table.dataTable').DataTable();
     const col = (id, name) => api(id).settings()[0].aoColumns.findIndex((c) => c.name === name);
     const bp = ['sysbp', 'diabp', 'bp'];
-    const visible = (el) => !!el && el.offsetParent !== null;
     return {
       tiles: [...new Set(document.getElementById('rm-tiles').gsmChart.data.map((t) => t.vital))].filter((v) => bp.includes(v)),
       overview: Array.from(document.querySelectorAll('#rm-overview tr[data-rm-overview]')).map((tr) => tr.dataset.rmOverview).filter((v) => bp.includes(v)),
@@ -555,7 +665,7 @@ test.describe('Repeat Measurements blood pressure view', () => {
         .map((r) => r[col('rm-vitals', 'vital')]).filter((v) => bp.includes(v)),
       wide: api('rm-dt-wide').settings()[0].aoColumns
         .filter((c, i) => bp.includes(c.name) && api('rm-dt-wide').column(i).visible()).map((c) => c.name),
-      charts: bp.filter((v) => visible(document.querySelector('[data-rm-vital="' + v + '"]'))),
+      dist: Array.from(document.querySelectorAll('#rm-dist th[data-rm-dist-sort]')).map((th) => th.dataset.rmDistSort).filter((v) => bp.includes(v)),
     };
   });
 
@@ -565,6 +675,7 @@ test.describe('Repeat Measurements blood pressure view', () => {
     let v = await view(page);
     expect(v.tiles).toEqual(['sysbp', 'diabp']);
     expect(v.overview).toEqual(['sysbp', 'diabp']);
+    expect(v.dist).toEqual(['sysbp', 'diabp']);
     expect(v.listing.sort()).toEqual(['diabp', 'diabp', 'diabp', 'diabp', 'diabp', 'sysbp', 'sysbp', 'sysbp', 'sysbp', 'sysbp']);
     expect(v.wide).toEqual(['sysbp', 'diabp']);
 
@@ -573,6 +684,8 @@ test.describe('Repeat Measurements blood pressure view', () => {
     v = await view(page);
     expect(v.tiles).toEqual(['bp']);
     expect(v.overview).toEqual(['bp']);
+    expect(v.dist).toEqual(['bp']);
+    await expect(page.locator('#rm-dist th[data-rm-dist-sort="bp"] .rm-kri')).toHaveCount(0);
     expect(new Set(v.listing)).toEqual(new Set(['bp']));
     expect(v.wide).toEqual(['bp']);
     const bpRow = page.locator('#rm-overview tr[data-rm-overview="bp"]');
@@ -597,6 +710,7 @@ test.describe('Repeat Measurements blood pressure view', () => {
     v = await view(page);
     expect(v.tiles).toEqual(['sysbp', 'diabp', 'bp']);
     expect(v.wide).toEqual(['sysbp', 'diabp', 'bp']);
+    expect(v.dist).toEqual(['sysbp', 'diabp', 'bp']);
   });
 });
 

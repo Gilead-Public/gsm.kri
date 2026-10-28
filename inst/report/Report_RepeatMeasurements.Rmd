@@ -70,18 +70,6 @@ dfRecon <- rm_Reconcile(lClass$participants, dfResults)
 dfSites <- rm_SiteFlagRows(lClass, dfResults, dfMetrics)
 lSiteRule <- rm_SiteRule(dfMetrics)
 
-dist_rows <- lapply(
-  c(study = "study", country = "country", site = "site"),
-  function(level) rm_DistributionRows(lClass$participants, level, dfVitals)
-)
-dist_title <- function(i) {
-  paste0(dfVitals$label[i], " (", dplyr::coalesce(dfVitals$metric[i], "no KRI"), ")")
-}
-dist_order <- function(level, vital = NULL) {
-  df <- dist_rows[[level]]
-  if (!is.null(vital)) df <- df[df$vital == vital, ]
-  unique(df$GroupID)
-}
 tiles <- rm_ParticipantTiles(lClass)
 listing <- rm_VitalsListing(rm_VitalRows(lClass), nWindowLength = nW, bExport = bExport)
 data_table <- rm_DataTable(
@@ -161,6 +149,42 @@ cat('
 #rm-overview th.rm-l, #rm-overview td.rm-l { text-align: left; }
 #rm-overview .rm-sep { border-left: 1px solid #d0d7de; }
 #rm-overview .b { color: #666666; font-size: smaller; }
+#rm-dist.rm-dist-wrap { overflow: auto; max-height: 560px; border-bottom: 1px solid #eeeeee; }
+#rm-dist table { width: auto; margin-bottom: 0; border-collapse: separate; border-spacing: 0; }
+#rm-dist td, #rm-dist th { text-align: left; padding: 4px 7px; vertical-align: middle; white-space: nowrap; background-color: #ffffff; border-top: 1px solid #dddddd; }
+#rm-dist thead th { position: sticky; top: 0; z-index: 2; border-top: 0; font-weight: 600; }
+#rm-dist thead tr.rm-sub th { top: var(--rm-h1, 30px); border-bottom: 2px solid #dddddd; font-weight: normal; color: #57606a; font-size: 12px; }
+#rm-dist th.rm-grp { text-align: center; }
+#rm-dist .rm-sep { border-left: 1px solid #d0d7de; }
+#rm-dist .rm-stick { position: sticky; left: 0; z-index: 1; }
+#rm-dist .rm-stick2 { position: sticky; left: var(--rm-c1, 90px); z-index: 1; box-shadow: 1px 0 0 #d0d7de; color: #57606a; }
+#rm-dist thead .rm-stick, #rm-dist thead .rm-stick2 { z-index: 3; }
+#rm-dist th[data-rm-dist-sort] { cursor: pointer; user-select: none; }
+#rm-dist th[data-rm-dist-sort]:hover { color: #3C587F; text-decoration: underline; }
+#rm-dist .rm-arr { color: #3C587F; font-size: 11px; margin-left: 3px; }
+#rm-dist tbody tr[data-rm-dist-row] { cursor: pointer; }
+#rm-dist tbody tr[data-rm-dist-row]:hover td { background-color: #f6f8fa; }
+#rm-dist tbody tr.rm-study td { font-weight: 600; background-color: #fafbfc; border-bottom: 2px solid #dddddd; }
+#rm-dist tbody tr.rm-on td { background-color: #e7eef8; }
+#rm-dist tbody tr.rm-dim td { opacity: 0.45; }
+#rm-dist td.rm-cell { cursor: help; }
+#rm-dist .rm-bar { width: 116px; height: 16px; cursor: inherit; }
+#rm-dist .rm-bar > span { font-size: 10px; line-height: 16px; }
+#rm-dist .rm-bar-n { min-width: 2.2em; text-align: left; }
+#rm-dist .rm-sf { margin-right: 6px; }
+.rm-controls .rm-grp { display: inline-flex; align-items: center; gap: 6px; color: #57606a; }
+.rm-controls input[type=search] { font-size: 13px; padding: 3px 8px; border: 1px solid #d0d7de; border-radius: 4px; width: 200px; }
+.rm-seg button:disabled { color: #aab4c0; cursor: not-allowed; }
+.rm-seg button[aria-pressed="true"]:disabled { background-color: #aab4c0; color: #ffffff; }
+.rm-tip { position: fixed; z-index: 1040; pointer-events: none; background: #24292f; color: #ffffff; font-size: 12px; line-height: 1.45; padding: 7px 10px; border-radius: 6px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18); max-width: 320px; white-space: normal; text-align: left; }
+.rm-tip[hidden] { display: none; }
+.rm-tip .h, .rm-tip .sub { color: #c9d1d9; }
+.rm-tip .h { margin-bottom: 3px; }
+.rm-tip .sub { margin-top: 3px; }
+.rm-tip table { border-collapse: collapse; margin-top: 2px; }
+.rm-tip td { padding: 1px 10px 1px 0; border: 0; color: #ffffff; }
+.rm-tip td.n { text-align: right; font-variant-numeric: tabular-nums; }
+.rm-tip .d { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; box-sizing: border-box; }
 #rm-overview .rm-ov-dist th { font-weight: 600; }
 #rm-overview .rm-ov-dist td.rm-sep { min-width: 300px; }
 .rm-bar { display: inline-flex; width: 240px; height: 18px; border-radius: 3px; overflow: hidden; vertical-align: middle; background-color: #f0f2f5; cursor: help; }
@@ -396,59 +420,46 @@ cat(sprintf(
 ))
 ```
 
-## Participant distribution {.tabset .tabset-pills}
+## Participant distribution
 
 ```{r dist-note, echo=FALSE, results='asis'}
-cat("\n> Evaluable participants by flag, as % of the evaluable participants in each group, sorted by % flagged. Click a country or site bar to filter. Site labels are coloured by the site's flag for the vital: the KRI flag when the KRI results are available, otherwise the flag the report calculates with the KRI's site rule.\n")
+cat("\n> Flags by measure for each country or site. Click a measure to sort by % flagged; click a row to filter the report to that country or site.\n")
 ```
 
-### Study
-```{r dist-study, echo=FALSE, eval=has_participants}
-gsm.vizr::bars(
-  data = dist_rows$study,
-  spec = rm_DistributionSpec("study", dist_order("study"), "Evaluable participants by flag and vital"),
-  metadata = list(chartId = "rm-study", level = "study"),
-  height = 320,
-  minHeight = 320
-)
-```
-
-### Country
-```{r dist-country, echo=FALSE, eval=has_participants}
-htmltools::div(
-  class = "rm-grid",
-  lapply(seq_len(nrow(dfVitals)), function(i) {
-    v <- dfVitals$vital[i]
-    htmltools::div(
-      `data-rm-vital` = v,
-      gsm.vizr::bars(
-        data = dist_rows$country[dist_rows$country$vital == v, ],
-        spec = rm_DistributionSpec("country", dist_order("country", v), dist_title(i)),
-        metadata = list(chartId = paste0("rm-country-", v), level = "country", vital = v),
-        height = 320,
-        minHeight = 320
+```{r dist-controls, echo=FALSE, eval=has_participants}
+dist_seg <- function(label, attr, values, selected) {
+  htmltools::tags$span(
+    class = "rm-seg",
+    role = "group",
+    `aria-label` = label,
+    lapply(names(values), function(v) {
+      htmltools::tags$button(
+        id = paste0("rm-dist-", v),
+        type = "button",
+        `data-rm-dist` = attr,
+        value = v,
+        `aria-pressed` = if (identical(v, selected)) "true" else "false",
+        values[[v]]
       )
-    )
-  })
-)
-```
-
-### Site
-```{r dist-site, echo=FALSE, eval=has_participants}
-htmltools::div(
-  lapply(seq_len(nrow(dfVitals)), function(i) {
-    v <- dfVitals$vital[i]
-    htmltools::div(
-      `data-rm-vital` = v,
-      gsm.vizr::bars(
-        data = dist_rows$site[dist_rows$site$vital == v, ],
-        spec = rm_DistributionSpec("site", dist_order("site", v), dist_title(i)),
-        metadata = list(chartId = paste0("rm-site-", v), level = "site", vital = v),
-        height = 360,
-        minHeight = 360
-      )
-    )
-  })
+    })
+  )
+}
+# rmFilters.js draws the table from the tiles, #rm-data and the settings.
+htmltools::tagList(
+  htmltools::div(
+    class = "rm-controls",
+    htmltools::tags$span(class = "rm-grp", "Rows", dist_seg("Rows", "level", c(country = "Country", site = "Site"), "country")),
+    htmltools::tags$span(
+      class = "rm-grp",
+      "Cells",
+      dist_seg("Cells", "unit", c(participants = "Participant flags", sites = "Site flags"), "participants")
+    ),
+    htmltools::tags$input(id = "rm-dist-search", type = "search", placeholder = "Search site or country", hidden = NA),
+    htmltools::tags$span(id = "rm-dist-count", class = "rm-unit")
+  ),
+  htmltools::div(id = "rm-dist", class = "rm-dist-wrap"),
+  htmltools::tags$p(id = "rm-dist-legend", class = "rm-legend"),
+  htmltools::div(id = "rm-dist-tip", class = "rm-tip", hidden = NA)
 )
 ```
 
