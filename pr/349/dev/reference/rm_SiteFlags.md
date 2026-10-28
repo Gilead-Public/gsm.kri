@@ -1,4 +1,4 @@
-# Site KRI flags for the Repeat Measurements distribution charts
+# Site KRI flags for the Repeat Measurements report
 
 \`r lifecycle::badge("experimental")\`
 
