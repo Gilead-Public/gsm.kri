@@ -1,3 +1,24 @@
+# gsm.kri v1.8.0
+
+This minor release adds the IP Monitoring report and metrics (IP non-starters and premature treatment discontinuation) and the repeat-measure vital-sign KRIs.
+
+- Refactored the Eligibility report workflow's module configuration and queries (#351).
+- Add the IP monitoring report for IP non-starters and premature treatment discontinuations. Dosed participants are shown by study drug completion, including potential premature treatment discontinuations, and the participant listing shows study completion (#320, #332).
+- Added the IP Non-Starters metric: `kri0019` (site) and `cou0019` (country) count
+  participants who are Confirmed non-starters or Potential non-starters outside the
+  window. One non-starter flags amber and two or more flag red (#258, #312).
+- Added the Premature Treatment Discontinuation Rate metric: `kri0007-2` (site) and
+  `cou0007-2` (country), that replaces `kri0007`/`cou0007` these stay
+  available but inactive and no longer generate risk signals (#301, #331).
+- The KRI report labels inactive metrics with an "Inactive" badge and lists them last
+  (#325).
+- New `Detect_ConsecutiveRepeats()` counts, per subject, rolling windows of
+  consecutive identical measurements, for use with `gsm.core::Input_Rate()`
+  (#307).
+- New repeat-measure vital-sign metrics `kri0020a`-`f` (site) and
+  `cou0020a`-`f` (country) for weight, heart rate, systolic/diastolic BP,
+  respiratory rate, and temperature (#306).
+
 # gsm.kri v1.7.0
 
 This minor release moves every gsm.viz-backed chart onto gsm.vizr: the vendored gsm.viz
@@ -18,6 +39,9 @@ stay on Plotly (#120).
 
 **Relocations to gsm.vizr:**
 
+- Added `kri0019` (site) and `cou0019` (country), which report the rate of IP
+  non-starters (subjects Confirmed or Potential-outside-window non-starters)
+  per the upstream `drv_ip_nonstarter_status` derivation (#258).
 - The legacy widget wrappers (`Widget_BarChart`, `Widget_ScatterPlot`, `Widget_TimeSeries`,
   `Widget_GroupOverview`), their Shiny bindings, `MakeChartConfig()`, and the shared
   widget-control JS/CSS moved to gsm.vizr (#291). gsm.kri re-exports every name, so

@@ -42,22 +42,21 @@ lListings <- list(
   IE_denom = dfEXCLUSION
 )
 
-test_that("Ensure report renders normally {#157}", {
+test_that("Ensure report renders normally (#157)", {
   testthat::skip_if_not_installed("gsm.qtl")
-  expect_output(
+  out <- quiet_render(
     Report_Eligibility(
       dfResults = dfResults,
       dfMetrics = dfMetrics,
       dfGroups = dfGroups,
       lListings = lListings,
-      strOutputDir = tempdir()
-    ) %>%
-      grepl(getwd(), .),
-    fixed = TRUE
+      strOutputDir = withr::local_tempdir()
+    )
   )
+  expect_true(file.exists(out))
 })
 
-test_that("Report_Eligibility renders its 7 bar charts through gsm.vizr-backed gsm.qtl, with the plotly/ggplot2 setup dropped {#286}", {
+test_that("Report_Eligibility renders its 7 bar charts through gsm.vizr-backed gsm.qtl, with the plotly/ggplot2 setup dropped (#286)", {
   testthat::skip_if_not_installed("gsm.qtl")
 
   # gsm.qtl's eligibility/criteria bar helpers are gsm.vizr::bars()-backed as
@@ -79,13 +78,13 @@ test_that("Report_Eligibility renders its 7 bar charts through gsm.vizr-backed g
   bar_charts_source <- sub("^.*## Bar Charts", "", rmd_source)
   expect_false(grepl("fig.height=4", bar_charts_source, fixed = TRUE))
 
-  out <- Report_Eligibility(
+  out <- quiet_render(Report_Eligibility(
     dfResults = dfResults,
     dfMetrics = dfMetrics,
     dfGroups = dfGroups,
     lListings = lListings,
-    strOutputDir = tempdir()
-  )
+    strOutputDir = withr::local_tempdir()
+  ))
   html <- paste(readLines(out, warn = FALSE), collapse = "\n")
 
   # Pair each htmlwidget's container div (its class names the widget, e.g.

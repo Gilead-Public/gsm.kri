@@ -1,7 +1,10 @@
 ## Test Setup
+# Exact names and bActiveOnly = FALSE keep the inactive kri0007/cou0007 under
+# test; a pattern match would return the active kri0007-2/cou0007-2 instead.
 kri_workflows <- workr::MakeWorkflowList(
-  c("kri0006", "kri0007", "cou0006", "cou0007"),
-  GetDefaultKRIPath()
+  I(c("kri0006", "kri0007", "cou0006", "cou0007")),
+  GetDefaultKRIPath(),
+  bActiveOnly = FALSE
 )
 kri_custom <- workr::MakeWorkflowList(
   c("kri0006_custom", "kri0007_custom", "cou0006_custom", "cou0007_custom"),
@@ -10,7 +13,7 @@ kri_custom <- workr::MakeWorkflowList(
 
 ## Test Code
 testthat::test_that("Qual: Disposition Assessments can be done correctly using a grouping variable, such as Site or Country for KRIs, and Study for QTLs, when applicable (#159)", {
-  TestAtLogLevel("WARN")
+  TestAtLogLevel()
   ## regular -----------------------------------------
   test <- map(kri_workflows, ~ robust_runworkflow(.x, mapped_data, steps = 1:7))
 

@@ -1,7 +1,7 @@
 Type: Package
 Package: gsm.kri
 Title: Good Statistical Monitoring KRIs
-Version: 1.7.0
+Version: 1.8.0
 Authors@R: c(
     person("Jeremy", "Wildfire", , "jwildfire@gmail.com", role = c("aut", "cre")),
     person("Laura", "Maxwell", , "laura.maxwell@atorusresearch.com", role = "aut"),
@@ -21,11 +21,11 @@ Depends:
     R (>= 4.1.0)
 Imports: 
     cli,
-    dplyr,
+    dplyr (>= 1.1.0),
     DT,
     ggplot2,
     glue,
-    gsm.core (>= 1.3.1),
+    gsm.core (>= 1.3.2),
     gsm.vizr (>= 0.1.0),
     gt,
     htmltools,
@@ -42,7 +42,7 @@ Imports:
     workr
 Suggests: 
     fontawesome,
-    gsm.mapping (>= 1.1.3),
+    gsm.mapping (>= 1.2.0),
     gsm.reporting (>= 1.1.4),
     gsm.qtl (>= 1.4.0),
     here,
@@ -56,11 +56,11 @@ Suggests:
 VignetteBuilder: 
     knitr
 Remotes:
-    gsm.core=Gilead-Public/gsm.core@main,
-    gsm.mapping=Gilead-Public/gsm.mapping@main,
-    gsm.qtl=Gilead-Public/gsm.qtl@main,
-    gsm.reporting=Gilead-Public/gsm.reporting@main,
-    gsm.vizr=Gilead-Public/gsm.vizr@main,
+    gsm.core=Gilead-Public/gsm.core@release-1.3.2,
+    gsm.mapping=Gilead-Public/gsm.mapping@release-1.2.0,
+    gsm.qtl=Gilead-Public/gsm.qtl@release-1.4.0,
+    gsm.reporting=Gilead-Public/gsm.reporting@release-1.1.8,
+    gsm.vizr=Gilead-Public/gsm.vizr@release-0.1.0,
     qcthat=Gilead-Public/qcthat@main
 Config/roxygen2/version: 8.1.0
 Config/testthat/edition: 3

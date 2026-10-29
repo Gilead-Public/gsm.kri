@@ -1,5 +1,5 @@
 # --- pd_SimulatePrematureDeathCohort ----------------------------------------
-test_that("simulation exposes rgmn_dt and a studcomp frame for all subjects {#246}", {
+test_that("simulation exposes rgmn_dt and a studcomp frame for all subjects (#246)", {
   subj <- tibble::tibble(studyid = "ST01", subjid = paste0("S", 1:50))
   sim <- pd_SimulatePrematureDeathCohort(
     subj,
@@ -17,7 +17,7 @@ test_that("simulation exposes rgmn_dt and a studcomp frame for all subjects {#24
   expect_true(all(c("subjid", "aetoxgr", "aerel") %in% names(sim$Mapped_AE)))
 })
 
-test_that("pd_SimulatePrematureDeathCohort returns a censored, schema-stable death frame {#246}", {
+test_that("pd_SimulatePrematureDeathCohort returns a censored, schema-stable death frame (#246)", {
   dfSubj <- tibble::tibble(
     studyid = "ABC",
     subjid = paste0("S", seq_len(500))
@@ -49,7 +49,7 @@ test_that("pd_SimulatePrematureDeathCohort returns a censored, schema-stable dea
   expect_true(all(sim$Mapped_Death$death_dt <= snap)) # censoring vs snapshot
 })
 
-test_that("pd_SimulatePrematureDeathCohort is reproducible for a fixed seed {#246}", {
+test_that("pd_SimulatePrematureDeathCohort is reproducible for a fixed seed (#246)", {
   dfSubj <- tibble::tibble(studyid = "ABC", subjid = paste0("S", seq_len(500)))
   snap <- as.Date("2026-06-01")
   a <- pd_SimulatePrematureDeathCohort(
