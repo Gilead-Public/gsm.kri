@@ -67,7 +67,9 @@ rm_OverviewRows <- function(lClass, dfSites = rm_SiteFlagRows(lClass)) {
 #'
 #' @return A `tibble` with `vital`, `country`, `invid`, `Numerator`,
 #'   `Denominator`, `flag` (`0` Green, `1` Amber, `2` Red, `NA` not evaluated)
-#'   and `source`, one row per vital and site with enrolled participants.
+#'   and `source`, one row per vital and site with enrolled participants. A
+#'   site whose participants have more than one country lists them in
+#'   `country`, comma-separated.
 #' @keywords internal
 #' @export
 rm_SiteFlagRows <- function(lClass, dfResults = NULL, dfMetrics = NULL) {
@@ -75,12 +77,14 @@ rm_SiteFlagRows <- function(lClass, dfResults = NULL, dfMetrics = NULL) {
   lKRI <- rm_SiteFlags(dfResults)
   df <- lClass$participants %>%
     dplyr::mutate(country = as.character(.data$country), invid = as.character(.data$invid)) %>%
-    dplyr::group_by(.data$vital, .data$country, .data$invid) %>%
+    dplyr::group_by(.data$vital, .data$invid) %>%
     dplyr::summarise(
+      country = paste(sort(unique(.data$country)), collapse = ", "),
       Numerator = sum(.data$Numerator),
       Denominator = sum(.data$Denominator),
       .groups = "drop"
     ) %>%
+    dplyr::relocate("country", .before = "invid") %>%
     dplyr::arrange(match(.data$vital, lClass$vitals$vital), .data$invid)
   vRate <- ifelse(df$Denominator > 0, df$Numerator / df$Denominator, NA_real_)
   df$flag <- dplyr::case_when(

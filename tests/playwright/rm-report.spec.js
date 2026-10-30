@@ -6,6 +6,7 @@ const FULL = 'file://' + path.resolve(__dirname, 'fixture', 'RM.html');
 const DEGRADED = 'file://' + path.resolve(__dirname, 'fixture', 'RM_degraded.html');
 const BP = 'file://' + path.resolve(__dirname, 'fixture', 'RM_bp.html');
 const EDGE = 'file://' + path.resolve(__dirname, 'fixture', 'RM_edge.html');
+const SPLIT = 'file://' + path.resolve(__dirname, 'fixture', 'RM_split.html');
 
 // Facts of rm_Fixture() in tests/testthat/helper-rm.R (render-rm-fixture.R):
 // A, B (US/S1), C (US/S2), D, E (JP/S3); repeating windows in A weight (2/2),
@@ -905,5 +906,50 @@ test.describe('Repeat Measurements edge cases', () => {
     const s = await state(page);
     expect(s.tiles).toEqual(['F']);
     expect(s.chips).toEqual(['(missing)']);
+  });
+});
+
+// rm_FixtureSplit(): S1 (US) has A, Amber; S2 has B (US), Green, and C (JP),
+// Red. S2's weight is 3/5 windows, a calculated Red site flag.
+test.describe('a site that spans countries', () => {
+  let errors = [];
+  test.beforeEach(async ({ page }) => {
+    errors = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+    await page.goto(SPLIT);
+    await page.waitForFunction(() => document.querySelectorAll('#rm-tiles tbody tr').length > 0);
+  });
+  test.afterEach(() => expect(errors).toEqual([]));
+
+  test('each participant counts toward their own country (#344)', async ({ page }) => {
+    let d = await dist(page);
+    expect(d.rows).toEqual(['JP', 'US']);
+    expect(d.cells['US weight']).toMatchObject({ n: 2, amber: 1, red: 0 });
+    expect(d.cells['JP weight']).toMatchObject({ n: 1, amber: 0, red: 1 });
+    expect(d.counts).toMatchObject({ JP: [1, 1], US: [2, 2] });
+    // By site flags, S2 counts once in the study and once in each country.
+    await page.click('#rm-dist-sites');
+    d = await dist(page);
+    expect(d.cells['Study weight']).toMatchObject({ n: 1, red: 1 });
+    expect(d.cells['JP weight']).toMatchObject({ n: 1, red: 1 });
+    expect(d.cells['US weight']).toMatchObject({ n: 1, red: 1 });
+  });
+
+  test('the site is one row that lists its countries and filters by site alone (#344)', async ({ page }) => {
+    await page.click('#rm-dist-site');
+    const d = await dist(page);
+    expect(d.rows).toEqual(['S2', 'S1']);
+    expect(await page.locator('#rm-dist tr[data-rm-dist-key="S2"] td.rm-stick2').textContent()).toBe('JP, US');
+    expect(d.cells['S2 weight']).toMatchObject({ n: 2, red: 1, dot: 'Red calculated' });
+    await clickDistRow(page, 'site', 'S2');
+    const s = await state(page);
+    expect(s.tiles.sort()).toEqual(['B', 'C']);
+    expect(s.chips).toEqual(['S2']);
+    // A country filter keeps the site in either of its countries.
+    await page.click('#rm-dist-country');
+    await clickDistRow(page, 'country', 'JP');
+    await page.click('#rm-dist-site');
+    expect((await dist(page)).rows).toEqual(['S2']);
   });
 });

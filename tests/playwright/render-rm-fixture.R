@@ -1,7 +1,8 @@
 # Renders Report_RepeatMeasurements from the testthat fixture to fixture/RM.html;
 # without vital signs or repeat-measure metrics, fixture/RM_degraded.html, and
 # with systolic and diastolic BP for participant A, fixture/RM_bp.html; and
-# with a missing country, a quoted country and a 2/3 threshold, fixture/RM_edge.html.
+# with a missing country, a quoted country and a 2/3 threshold, fixture/RM_edge.html;
+# and a site that spans countries, fixture/RM_split.html.
 # Run from the gsm.kri package root after devtools::load_all(".").
 source("tests/testthat/helper-rm.R")
 dir.create("tests/playwright/fixture", showWarnings = FALSE, recursive = TRUE)
@@ -38,3 +39,9 @@ Report_RepeatMeasurements(
   strOutputDir = out_dir,
   strOutputFile = "RM_edge.html"
 )
+suppressWarnings(Report_RepeatMeasurements(
+  dfMetrics = rm_FixtureMetrics(),
+  lListings = rm_FixtureSplit(),
+  strOutputDir = out_dir,
+  strOutputFile = "RM_split.html"
+))

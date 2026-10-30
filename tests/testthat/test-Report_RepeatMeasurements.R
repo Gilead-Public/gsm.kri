@@ -65,6 +65,19 @@ test_that("thresholds reach the browser exactly, so R and the browser agree at a
   expect_true("(missing)" %in% lData$participants$country)
 })
 
+test_that("a site that spans countries is noted, and each participant keeps their own country (#344)", {
+  html <- render_rm(lListings = rm_FixtureSplit(), dfMetrics = rm_FixtureMetrics())
+  expect_match(
+    gsub("\\s+", " ", html),
+    "1 site with participants in more than one country</strong> (S2). As in the country KRIs, each participant counts toward their own country, so the site is counted in each of its countries.",
+    fixed = TRUE
+  )
+  lData <- rm_DataBlock(html)
+  expect_equal(lData$participants$country, c("US", "US", "JP"))
+  expect_equal(sum(lData$sites$invid == "S2" & lData$sites$vital == "weight"), 1)
+  expect_false(grepl("more than one country", rm_default_html(), fixed = TRUE))
+})
+
 test_that("the strip has reset, settings and contents buttons, and settings default to 2 / 3 repeating windows (#344)", {
   html <- rm_default_html()
   for (id in c("rm-reset", "rm-settings-toggle", "rm-toc-toggle", "rm-settings", "rm-th-amber", "rm-th-red", "rm-min-windows", "rm-settings-defaults", "rm-settings-done")) {

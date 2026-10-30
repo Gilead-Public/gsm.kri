@@ -478,6 +478,15 @@ if (!has_participants) {
     nNeeded, lClass$meta$min_windows, if (lClass$meta$min_windows == 1) "" else "s", nW
   ))
 }
+if (length(lClass$meta$split_sites) > 0) {
+  cat(sprintf(
+    "\n> **%s site%s with participants in more than one country** (%s). As in the country KRIs, each participant counts toward their own country, so %s counted in each of %s countries.\n",
+    length(lClass$meta$split_sites), if (length(lClass$meta$split_sites) == 1) "" else "s",
+    htmltools::htmlEscape(paste(lClass$meta$split_sites, collapse = ", ")),
+    if (length(lClass$meta$split_sites) == 1) "the site is" else "each site is",
+    if (length(lClass$meta$split_sites) == 1) "its" else "their"
+  ))
+}
 if (!in_cmp) {
   cat(sprintf(
     "\n> The repeat-measure KRIs (`kri0020a`&ndash;`f`) are not in this study's metrics. The report uses W = %s (%s) and flags sites at Amber \u2265 %s%%, Red \u2265 %s%% of windows, with at least %s windows.\n",

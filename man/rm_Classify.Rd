@@ -51,7 +51,9 @@ A `list`:
   * `vitals`: the rows of [rm_Vitals()] in the report, plus any other
     numeric `Mapped_VS` column.
   * `meta`: `window_length`, `window_source` (`"metrics"`, `"argument"` or
-    `"default"`), `rule`, `thresholds` (Amber, Red) and `min_windows`.
+    `"default"`), `rule`, `thresholds` (Amber, Red), `min_windows` and
+    `split_sites` (sites whose participants have more than one country;
+    a warning lists them).
 }
 \description{
 `r lifecycle::badge("experimental")`

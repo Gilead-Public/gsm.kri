@@ -98,7 +98,9 @@ rm_FlagColors <- function() {
 #'   * `vitals`: the rows of [rm_Vitals()] in the report, plus any other
 #'     numeric `Mapped_VS` column.
 #'   * `meta`: `window_length`, `window_source` (`"metrics"`, `"argument"` or
-#'     `"default"`), `rule`, `thresholds` (Amber, Red) and `min_windows`.
+#'     `"default"`), `rule`, `thresholds` (Amber, Red), `min_windows` and
+#'     `split_sites` (sites whose participants have more than one country;
+#'     a warning lists them).
 #' @keywords internal
 #' @export
 rm_Classify <- function(
@@ -133,6 +135,16 @@ rm_Classify <- function(
   for (strCol in c("country", "invid")) {
     dfSubj[[strCol]] <- as.character(dfSubj[[strCol]])
     dfSubj[[strCol]][is.na(dfSubj[[strCol]]) | dfSubj[[strCol]] == ""] <- "(missing)"
+  }
+  # Country comes from each participant (as in the cou0020 KRIs), so a site
+  # whose participants carry different countries is counted in each of them.
+  nCountries <- tapply(dfSubj$country, dfSubj$invid, function(x) length(unique(x)))
+  vSplitSites <- as.character(names(nCountries)[nCountries > 1])
+  if (length(vSplitSites) > 0) {
+    gsm.core::LogMessage(
+      level = "warn",
+      message = "{length(vSplitSites)} site(s) have participants in more than one country: {paste(vSplitSites, collapse = ', ')}. Each participant counts toward their own country."
+    )
   }
 
   dfVitals <- rm_Vitals()
@@ -252,7 +264,10 @@ rm_Classify <- function(
     measurements = dfMeasurements,
     records = if (is.null(dfVS)) NULL else tibble::as_tibble(dfVS),
     vitals = dfVitals,
-    meta = c(lWindow, list(rule = strFlagRule, thresholds = vThresholds, min_windows = nMinWindows))
+    meta = c(lWindow, list(
+      rule = strFlagRule, thresholds = vThresholds, min_windows = nMinWindows,
+      split_sites = vSplitSites
+    ))
   )
 }
 

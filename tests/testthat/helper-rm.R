@@ -91,6 +91,21 @@ rm_FixtureEdge <- function() {
   list(Mapped_VS = dfVS, Mapped_SUBJ = dfSubj)
 }
 
+# A site that spans countries: S1 (US) has A; S2 has B (US) and C (JP). Under
+# the default count rule A's weight is Amber (2/2), B's Green (0/2) and C's
+# Red (3/3); S2's weight is 3/5 windows.
+rm_FixtureSplit <- function() {
+  dfVS <- rm_vs(list(A = c(70, 70, 70, 70), B = c(80, 81, 82, 83), C = c(1, 1, 1, 1, 1)))
+  dfVS$vsperf_std <- "Y"
+  dfSubj <- data.frame(
+    studyid = "STUDY1",
+    subjid = c("A", "B", "C"),
+    invid = c("S1", "S2", "S2"),
+    country = c("US", "US", "JP")
+  )
+  list(Mapped_VS = dfVS, Mapped_SUBJ = dfSubj)
+}
+
 # Site results for kri0020a/b that reconcile with rm_Fixture(), plus an older
 # snapshot that does not.
 rm_FixtureResults <- function() {

@@ -450,7 +450,8 @@
     });
     (rmData().participants || []).forEach(function (p) {
       var c = get(countries, p.country);
-      var st = get(siteRows, p.invid, { country: p.country });
+      var st = get(siteRows, p.invid, { countries: {} });
+      st.countries[p.country] = true;
       c.siteIds[p.invid] = true;
       study.siteIds[p.invid] = true;
       study.np++;
@@ -462,13 +463,19 @@
         st.m[v.vital].enr++;
       });
     });
+    // Country comes from each participant, as in the country KRIs, so a site
+    // can span countries: it is one row, counted once in each of its countries.
+    Object.keys(siteRows).forEach(function (id) {
+      siteRows[id].country = Object.keys(siteRows[id].countries).sort().join(', ');
+    });
     (allTiles || []).forEach(function (t) {
       var st = siteRows[t.invid];
       if (!st || !st.m[t.vital]) return;
       st.m[t.vital].N += t.Numerator || 0;
       st.m[t.vital].D += t.Denominator || 0;
       if (RAG.indexOf(t.flag) < 0) return;
-      [study, countries[st.country], st].forEach(function (g) {
+      [study, countries[t.country], st].forEach(function (g) {
+        if (!g) return;
         var x = g.m[t.vital];
         x.ev++;
         if (t.flag === 'Amber') x.a++;
@@ -482,7 +489,9 @@
         var f = ((siteFlags[v.vital] || {}).flags || {})[id];
         f = f === undefined ? null : f;
         st.m[v.vital].flag = f;
-        [study, countries[st.country]].forEach(function (g) {
+        [study].concat(Object.keys(st.countries).map(function (k) {
+          return countries[k];
+        })).forEach(function (g) {
           var x = g.m[v.vital];
           x.sites++;
           if (f === null) return;
@@ -626,7 +635,7 @@
     var rows = all.filter(function (g) {
       if (state.distFlag !== 'all' && !distFlagged(g, vitals)) return false;
       if (!isSite) return true;
-      if (state.country && g.country !== state.country) return false;
+      if (state.country && !g.countries[state.country]) return false;
       var q = state.distSearch.trim().toLowerCase();
       return !q || (g.label + ' ' + g.country).toLowerCase().indexOf(q) >= 0;
     });
@@ -671,7 +680,7 @@
     rows.forEach(function (g) {
       var on = selected === g.key;
       var cls = on ? 'rm-on' : selected ? 'rm-dim' : '';
-      body += '<tr data-rm-dist-row="' + state.distLevel + '" data-rm-dist-key="' + esc(g.key) + '"' + (isSite ? ' data-rm-dist-country="' + esc(g.country) + '"' : '') +
+      body += '<tr data-rm-dist-row="' + state.distLevel + '" data-rm-dist-key="' + esc(g.key) + '"' + (isSite ? ' data-rm-dist-country="' + esc(Object.keys(g.countries).length === 1 ? g.country : '') + '"' : '') +
         (cls ? ' class="' + cls + '"' : '') + ' aria-selected="' + on + '" title="Click to filter the report to ' + (isSite ? 'site ' : '') + esc(g.label) + '; click again to clear">' +
         '<td class="rm-l rm-stick">' + esc(g.label) + '</td>' + (isSite ? '<td class="rm-l rm-stick2">' + esc(g.country) + '</td>' : '') + counts(g);
       vitals.forEach(function (v) {
@@ -1136,7 +1145,7 @@
         state.site = null;
       } else {
         state.site = key2;
-        state.country = dr.getAttribute('data-rm-dist-country');
+        state.country = dr.getAttribute('data-rm-dist-country') || null;
       }
       setSubj(null);
     } else if (t.closest('[data-rm-shape]')) {

@@ -47,6 +47,21 @@ test_that("site flags come from the KRI where it has results and from the site r
   expect_equal(df$flag[df$vital == "height"], c(NA, NA, 2L))
 })
 
+test_that("a site that spans countries is one site row, counted once in the study (#344)", {
+  lClass <- suppressWarnings(rm_Classify(rm_FixtureSplit()))
+  df <- rm_SiteFlagRows(lClass)
+  dfW <- df[df$vital == "weight", ]
+  expect_equal(dfW$invid, c("S1", "S2"))
+  expect_equal(dfW$country, c("US", "JP, US"))
+  expect_equal(dfW$Numerator, c(2, 3))
+  expect_equal(dfW$Denominator, c(2, 5))
+  # S1 is below the accrual of 3 windows; S2 is 3/5 = 60%, Red.
+  expect_equal(dfW$flag, c(NA, 2L))
+  dfOV <- rm_OverviewRows(lClass, df)
+  dfOV <- dfOV[dfOV$vital == "weight", ]
+  expect_equal(c(dfOV$sites, dfOV$sites_evaluated, dfOV$site_red), c(2L, 1L, 1L))
+})
+
 test_that("the site rule reads the kri0020 thresholds and accrual from the metrics (#344)", {
   expect_equal(rm_SiteRule(), list(thresholds = c(0.2, 0.3), accrual = 3))
   dfMetrics <- data.frame(

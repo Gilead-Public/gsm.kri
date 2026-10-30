@@ -250,3 +250,15 @@ test_that("a missing country or site is labelled (missing) (#343)", {
   expect_equal(df$invid, c("S4", "(missing)"))
   expect_equal(unique(lClass$measurements$country[lClass$measurements$subjid == "F"]), "(missing)")
 })
+
+test_that("a site with participants in two countries warns and keeps each participant's country (#343)", {
+  expect_warning(
+    lClass <- rm_Classify(rm_FixtureSplit()),
+    "1 site(s) have participants in more than one country: S2",
+    fixed = TRUE
+  )
+  expect_equal(lClass$meta$split_sites, "S2")
+  df <- lClass$participants[lClass$participants$vital == "weight", ]
+  expect_equal(df$country, c("US", "US", "JP"))
+  expect_equal(rm_Classify(rm_Fixture())$meta$split_sites, character(0))
+})
