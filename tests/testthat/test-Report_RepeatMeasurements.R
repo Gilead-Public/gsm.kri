@@ -14,9 +14,16 @@ rm_default_html <- local({
 
 test_that("Report_RepeatMeasurements renders the filter strip and study overview (#344)", {
   html <- rm_default_html()
-  expect_match(html, "<h1>Repeat Measurements</h1>", fixed = TRUE)
-  expect_match(html, "<strong>Study:</strong> STUDY1", fixed = TRUE)
-  expect_match(html, "Snapshot date: 2024-03-01", fixed = TRUE)
+  # The header card holds the title, outside the contents list, and the study facts.
+  flat <- gsub("\\s+", " ", html)
+  expect_match(html, '<header id="rm-header" class="rm-header">', fixed = TRUE)
+  expect_match(html, '<h1 class="toc-ignore">Repeat Measurements</h1>', fixed = TRUE)
+  expect_match(flat, '<span class="rm-pill"> <b>Study</b> STUDY1 </span>', fixed = TRUE)
+  expect_match(flat, '<span class="rm-pill"> <b>Snapshot</b> 2024-03-01 </span>', fixed = TRUE)
+  expect_match(flat, '<span class="rm-pill"> <b>Window</b> W = 3 </span>', fixed = TRUE)
+  expect_match(html, 'id="rm-how-toggle" type="button" class="rm-btn" aria-expanded="false" aria-controls="rm-how"', fixed = TRUE)
+  expect_match(html, '<div id="rm-how" class="rm-how" hidden>', fixed = TRUE)
+  expect_false(grepl('class="rm-ctx"', html, fixed = TRUE))
   for (id in c("rm-filter-strip", "rm-chip-country", "rm-chip-site", "rm-chip-subj", "rm-count", "rm-overview", "rm-data")) {
     expect_match(html, paste0('id="', id, '"'), fixed = TRUE)
   }
@@ -28,9 +35,9 @@ test_that("Report_RepeatMeasurements renders the filter strip and study overview
     expect_match(html, paste0('type="checkbox" value="', v, '" data-rm-vital-cb checked'), fixed = TRUE)
   }
   expect_false(grepl("data-rm-group=", html, fixed = TRUE))
-  # The overview opens as counts and can switch to distribution bars.
-  expect_match(html, 'id="rm-ov-counts" type="button" data-rm-ov="counts" aria-pressed="true"', fixed = TRUE)
-  expect_match(html, 'id="rm-ov-distribution" type="button" data-rm-ov="distribution" aria-pressed="false"', fixed = TRUE)
+  # The overview opens as distribution bars and can switch to counts.
+  expect_match(html, 'id="rm-ov-distribution" type="button" data-rm-ov="distribution" aria-pressed="true"', fixed = TRUE)
+  expect_match(html, 'id="rm-ov-counts" type="button" data-rm-ov="counts" aria-pressed="false"', fixed = TRUE)
   expect_match(html, "WT 3/8 <span class=\"ok\">= kri0020a", fixed = TRUE)
   expect_match(html, "HR 1/3 <span class=\"ok\">= kri0020b", fixed = TRUE)
   expect_match(html, "W = 3 (from the kri0020 metrics)", fixed = TRUE)
@@ -45,10 +52,11 @@ test_that("Report_RepeatMeasurements renders the filter strip and study overview
 
 test_that("the strip has reset, settings and contents buttons, and settings default to 2 / 3 repeating windows (#344)", {
   html <- rm_default_html()
-  for (id in c("rm-reset", "rm-settings-toggle", "rm-toc-toggle", "rm-settings", "rm-th-amber", "rm-th-red", "rm-min-windows", "rm-settings-defaults")) {
+  for (id in c("rm-reset", "rm-settings-toggle", "rm-toc-toggle", "rm-settings", "rm-th-amber", "rm-th-red", "rm-min-windows", "rm-settings-defaults", "rm-settings-done")) {
     expect_match(html, paste0('id="', id, '"'), fixed = TRUE)
   }
-  expect_match(html, '<div id="rm-settings" class="rm-settings" hidden>', fixed = TRUE)
+  # Settings open as a popover dialog from the strip.
+  expect_match(html, '<div id="rm-settings" class="rm-settings" role="dialog" aria-label="Report settings" hidden>', fixed = TRUE)
   for (v in c("separate", "combined", "both")) {
     expect_match(html, paste0('data-rm-set="bp" value="', v, '"'), fixed = TRUE)
   }
@@ -95,11 +103,13 @@ test_that("flag and blood pressure arguments reach the report settings and paire
   expect_error(Report_RepeatMeasurements(lListings = f, strBPMode = "paired"), "should be one of")
 })
 
-test_that("the participant distribution is one table of flags by measure for each country or site (#345)", {
+test_that("the Site/Country Distribution is one table of flags by measure for each country or site (#345)", {
   html <- rm_default_html()
   # rmFilters.js draws the table; the report has no distribution charts.
   vChartIDs <- unlist(lapply(rm_WidgetPayloads(html), function(x) x$metadata$chartId))
   expect_false(any(grepl("^rm-(study|country|site)", vChartIDs)))
+  expect_match(html, "<h2>Site/Country Distribution</h2>", fixed = TRUE)
+  expect_false(grepl("Participant distribution", html, fixed = TRUE))
   expect_match(html, '<div id="rm-dist" class="rm-dist-wrap"></div>', fixed = TRUE)
   expect_match(html, 'id="rm-dist-country" type="button" data-rm-dist="level" value="country" aria-pressed="true"', fixed = TRUE)
   expect_match(html, 'id="rm-dist-site" type="button" data-rm-dist="level" value="site" aria-pressed="false"', fixed = TRUE)
@@ -201,13 +211,13 @@ test_that("Repeat Measurements report example is accepted by a user (#348)", {
     intIssue = 348,
     chrInstructions = paste(
       "1. Navigate to the [Repeat Measurements report example](https://gilead-public.github.io/gsm.kri/dev/examples/Example_RepeatMeasurements.html).",
-      "2. Choose vitals in the Vitals menu. In the Participant distribution, switch Rows between Country and Site, then click a country row and a site row.",
+      "2. Choose vitals in the Vitals menu. In the Site/Country Distribution, switch Rows between Country and Site, then click a country row and a site row.",
       "3. In the Participant Listing, switch the cell label, then click a participant or tile.",
       "4. In the Vitals Listing and the Data table, click a row; click it again to clear. Switch the Data table between Long and Wide.",
       sep = "\n"
     ),
     chrChecks = c(
-      "The Study row of the Participant distribution matches the Study overview for each measure.",
+      "The Study row of the Site/Country Distribution matches the Study overview for each measure.",
       "Filters apply to every section, and the floating filter strip shows what is selected and how many participants are in scope.",
       "Selecting a participant in any listing filters the Vitals Listing and the Data table to that participant.",
       "Repeated values are highlighted in the Vitals Listing and both Data table shapes.",

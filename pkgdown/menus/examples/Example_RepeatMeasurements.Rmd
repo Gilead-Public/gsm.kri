@@ -1,9 +1,7 @@
 ---
 title: "Repeat Measurements Report"
-author: "[gsm.kri](https://gilead-public.github.io/gsm.kri) Example"
 description: "Example repeat measurements report generated with gsm.kri"
 index: 4
-date: "`r format(Sys.time(), '%B %d, %Y %H:%M:%S %Z')`"
 output:
   html_document:
     mathjax: null
@@ -13,13 +11,10 @@ output:
       smooth_scroll: true
     css: ../report/styles.css
 ---
-# Set Up
-This page provides a sample repeat measurements report for the repeat-measure vital sign KRIs (`kri0020a`-`f`, `cou0020a`-`f`), generated using the `gsm.kri` package. Expand the "Setup" section below to see the code used to generate the report. Or scroll down for the standard report output.
+<!-- The report's own header card carries the title, so hide the page's. -->
+<style>#header { display: none; }</style>
 
-<details>
-<summary>Setup</summary>
-
-```{r}
+```{r example-code, include=FALSE}
 # Load libraries
 library(gsm.core)
 library(gsm.mapping)
@@ -61,8 +56,6 @@ lListings <- list(
 )
 ```
 
-</details>
-
 ```{r, echo=FALSE, results='asis'}
 ## Render example report inline using knit_child
 child_env <- list2env(
@@ -77,7 +70,11 @@ child_env <- list2env(
       vFlagThresholds = NULL,
       nMinWindows = 1,
       strBPMode = "separate",
-      bExport = TRUE
+      bExport = TRUE,
+      strContext = sprintf(
+        '<a href="https://gilead-public.github.io/gsm.kri">gsm.kri</a> example &middot; rendered %s &middot; <a href="#example-code">Example code &darr;</a>',
+        format(Sys.time(), "%B %d, %Y %H:%M %Z")
+      )
     )
   ),
   parent = environment()
@@ -89,3 +86,15 @@ report_repeat_measurements <- knitr::knit_child(
 )
 cat(report_repeat_measurements, sep = "\n")
 ```
+
+## Example code
+
+<details>
+<summary>Show the code</summary>
+
+This page provides a sample repeat measurements report for the repeat-measure vital sign KRIs (`kri0020a`-`f`, `cou0020a`-`f`), generated using the `gsm.kri` package. The code below generates the report shown on this page.
+
+```{r, ref.label="example-code", eval=FALSE}
+```
+
+</details>

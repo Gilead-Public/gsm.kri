@@ -22,13 +22,15 @@
     // Data table shape and its "only ... with a repeat window" toggle.
     shape: 'wide',
     // Study overview view: 'counts' table or 'distribution' bars.
-    overview: 'counts',
+    overview: 'distribution',
     // §2: rows by country or site; cells participant or (by country) site flags.
     distLevel: 'country',
     distUnit: 'participants',
     distSort: null,
     distDir: -1,
     distSearch: '',
+    // §2 rows: 'all', 'any' (an Amber or Red cell) or 'red' (a Red cell).
+    distFlag: 'all',
     dtOnly: true,
     // Listing settings to restore when the participant filter is cleared.
     prev: null
@@ -209,6 +211,19 @@
     rmSync();
   }
 
+  // The settings popover opens under its button; the caret points at it.
+  function setSettings(open) {
+    var panel = byId('rm-settings');
+    var btn = byId('rm-settings-toggle');
+    if (!panel || !btn || panel.hidden === !open) return;
+    panel.hidden = !open;
+    btn.setAttribute('aria-expanded', String(open));
+    if (!open) return;
+    var strip = panel.parentElement.getBoundingClientRect();
+    var b = btn.getBoundingClientRect();
+    panel.style.setProperty('--rm-caret', Math.max(12, strip.right - b.right + b.width / 2 - 16) + 'px');
+  }
+
   // Hides the floating table of contents so the sections use the full width.
   function setToc(hidden) {
     var toc = byId('TOC');
@@ -330,6 +345,16 @@
     );
   }
 
+  // A row click picks its measure in the Measures select; the selected rows stand out.
+  function ovRow(vital) {
+    var only = shownVitals();
+    var partial = only.length < bpVitals().length;
+    var on = partial && isShown(vital);
+    var title = on && only.length === 1 ? 'Show all measures' : 'Show only this measure in the report';
+    return '<tr data-rm-overview="' + esc(vital) + '" class="' + (on ? 'rm-on' : partial ? 'rm-dim' : '') +
+      '" title="' + title + '">';
+  }
+
   function renderOverview() {
     var el = byId('rm-overview');
     if (!el) return;
@@ -352,14 +377,14 @@
         '<th class="rm-l rm-sep">Participants' + participantInfo() + ' <span class="b">% of evaluable participants</span></th>' +
         '</tr></thead><tbody>';
       rows.forEach(function (o) {
-        h += '<tr data-rm-overview="' + esc(o.v.vital) + '">' + measureCell(o.v) +
+        h += ovRow(o.v.vital) + measureCell(o.v) +
           '<td class="rm-l rm-sep" data-rm-col="site-dist" data-rm-source="' + (o.kri ? 'KRI' : 'report') + '">' +
           stackBar(o.site.evaluated, o.site.amber, o.site.red, 'sites evaluated', o.kri ? 'from ' + o.v.metric : 'calculated in the report') + '</td>' +
           '<td class="rm-l rm-sep" data-rm-col="participant-dist">' +
           stackBar(o.part.evaluable, o.part.amber, o.part.red, 'evaluable participants', 'calculated in the report') + '</td></tr>';
       });
       el.innerHTML = h + '</tbody></table>' +
-        '<p class="rm-legend">The whole study: the filters do not change this chart. ' +
+        '<p class="rm-legend">The whole study: the filters do not change this chart. Click a measure to show only it in the report. ' +
         '<span class="rm-dot" style="background:#d0d7de;border-color:#d0d7de"></span>Not flagged \u00b7 ' +
         '<span class="rm-dot" style="background:' + FLAG_COLORS[1] + ';border-color:' + FLAG_COLORS[1] + '"></span>Amber \u00b7 ' +
         '<span class="rm-dot" style="background:' + FLAG_COLORS[2] + ';border-color:' + FLAG_COLORS[2] + '"></span>Red. ' +
@@ -376,7 +401,7 @@
       var v = o.v;
       var r = o.part;
       h +=
-        '<tr data-rm-overview="' + esc(v.vital) + '">' + measureCell(v) +
+        ovRow(v.vital) + measureCell(v) +
         '<td class="rm-sep" data-rm-col="sites" title="' + o.site.evaluated + ' of ' + nSites + ' sites evaluated">' + o.site.evaluated + ' / ' + nSites + '</td>' +
         '<td data-rm-col="site-flags" data-rm-source="' + (o.kri ? 'KRI' : 'report') + '">' + dots(o.site.amber, o.site.red, o.kri, o.kri
           ? 'Amber / Red sites from ' + v.metric
@@ -386,7 +411,7 @@
         '<td data-rm-col="participant-flags">' + dots(r.amber, r.red, false, 'Amber / Red participants (' + pct(r.amber + r.red, r.evaluable) + ' of evaluable)') + '</td></tr>';
     });
     el.innerHTML = h + '</tbody></table>' +
-      '<p class="rm-legend">The whole study: the filters do not change this table. ' +
+      '<p class="rm-legend">The whole study: the filters do not change this table. Click a measure to show only it in the report. ' +
       '<span class="rm-dot" style="background:#8c959f;border-color:#8c959f"></span>KRI flag \u00b7 ' +
       '<span class="rm-dot rm-o" style="border-color:#8c959f"></span>calculated in the report. Hover <i class="rm-info" aria-hidden="true">i</i> for the flag rules.</p>';
   }
@@ -409,12 +434,12 @@
   function distGroups() {
     var vitals = bpVitals();
     var siteFlags = sites();
-    var study = { label: 'Study', key: null, m: {} };
+    var study = { label: 'Study', key: null, m: {}, siteIds: {}, np: 0 };
     var countries = {};
     var siteRows = {};
     var get = function (map, key, extra) {
       if (!map[key]) {
-        map[key] = Object.assign({ label: key, key: key, m: {}, siteIds: {} }, extra || {});
+        map[key] = Object.assign({ label: key, key: key, m: {}, siteIds: {}, np: 0 }, extra || {});
         vitals.forEach(function (v) {
           map[key].m[v.vital] = blank();
         });
@@ -428,6 +453,10 @@
       var c = get(countries, p.country);
       var st = get(siteRows, p.invid, { country: p.country });
       c.siteIds[p.invid] = true;
+      study.siteIds[p.invid] = true;
+      study.np++;
+      c.np++;
+      st.np++;
       vitals.forEach(function (v) {
         study.m[v.vital].enr++;
         c.m[v.vital].enr++;
@@ -545,10 +574,29 @@
       '" data-rm-tip="' + esc(tip) + '">' + sf + distBar(n, a, r, summary) + '</td>';
   }
 
+  // Sort keys: a vital (% flagged), or _np / _ns (enrolled participants / sites).
+  var COUNT_SORT = { _np: 'participants', _ns: 'sites' };
+
   function distSortVal(g, vital) {
+    if (vital === '_np') return g.np;
+    if (vital === '_ns') return Object.keys(g.siteIds).length;
     var x = g.m[vital];
     if (distSiteUnit()) return x.sev ? (x.sa + x.sr) / x.sev : -1;
     return x.ev ? (x.a + x.r) / x.ev : -1;
+  }
+
+  var DIST_KEYS = { level: 'distLevel', unit: 'distUnit', flag: 'distFlag' };
+
+  // Whether a row has a flag the Flags control keeps, in the unit the cells show.
+  function distFlagged(g, vitals) {
+    var red = state.distFlag === 'red';
+    var siteUnit = distSiteUnit();
+    return vitals.some(function (v) {
+      var x = g.m[v.vital];
+      var a = siteUnit ? x.sa : x.a;
+      var r = siteUnit ? x.sr : x.r;
+      return (red ? r : a + r) > 0;
+    });
   }
 
   function renderDist() {
@@ -557,7 +605,7 @@
     var isSite = state.distLevel === 'site';
     if (isSite) state.distUnit = 'participants';
     document.querySelectorAll('[data-rm-dist]').forEach(function (b) {
-      var k = b.getAttribute('data-rm-dist') === 'level' ? 'distLevel' : 'distUnit';
+      var k = DIST_KEYS[b.getAttribute('data-rm-dist')];
       b.setAttribute('aria-pressed', String(b.value === state[k]));
     });
     var sb = byId('rm-dist-sites');
@@ -571,11 +619,13 @@
     if (search) search.hidden = !isSite;
     var unitSites = distSiteUnit();
     var vitals = shownVitals();
-    if (state.distSort && !vitals.some(function (v) { return v.vital === state.distSort; })) state.distSort = null;
+    var countSort = state.distSort === '_np' || (state.distSort === '_ns' && !isSite);
+    if (state.distSort && !countSort && !vitals.some(function (v) { return v.vital === state.distSort; })) state.distSort = null;
     var groups = distGroups();
     var all = isSite ? groups.sites : groups.countries;
     // Site rows narrow to the selected country, like the other sections.
     var rows = all.filter(function (g) {
+      if (state.distFlag !== 'all' && !distFlagged(g, vitals)) return false;
       if (!isSite) return true;
       if (state.country && g.country !== state.country) return false;
       var q = state.distSearch.trim().toLowerCase();
@@ -588,20 +638,32 @@
       });
     }
     var who = unitSites ? 'sites' : 'participants';
-    var lead = isSite
-      ? '<th rowspan="2" class="rm-l rm-stick">Site</th><th rowspan="2" class="rm-l rm-stick2">Country</th>'
-      : '<th rowspan="2" class="rm-l rm-stick">Country</th>';
+    // Enrolled participants (and, by country, sites with enrolled participants) per row.
+    var counts = function (g) {
+      return '<td class="rm-n" data-rm-dist-np="' + g.np + '">' + g.np.toLocaleString() + '</td>' +
+        (isSite ? '' : '<td class="rm-n" data-rm-dist-ns="' + Object.keys(g.siteIds).length + '">' + Object.keys(g.siteIds).length.toLocaleString() + '</td>');
+    };
+    var sortAttrs = function (key) {
+      var on = state.distSort === key;
+      return ' data-rm-dist-sort="' + key + '"' + (on ? ' aria-sort="' + (state.distDir < 0 ? 'descending' : 'ascending') + '"' : '');
+    };
+    var arrow = function (key) {
+      return state.distSort === key ? '<span class="rm-arr">' + (state.distDir < 0 ? '\u25bc' : '\u25b2') + '</span>' : '';
+    };
+    var lead = (isSite
+      ? '<th class="rm-l rm-stick">Site</th><th class="rm-l rm-stick2">Country</th>'
+      : '<th class="rm-l rm-stick">Country</th>') +
+      '<th class="rm-n rm-cnt" title="Enrolled participants. Sort by participants"' + sortAttrs('_np') + '>' + arrow('_np') + 'Participants</th>' +
+      (isSite ? '' : '<th class="rm-n rm-cnt" title="Sites with enrolled participants. Sort by sites"' + sortAttrs('_ns') + '>' + arrow('_ns') + 'Sites</th>');
     var h1 = '<tr>' + lead;
-    var h2 = '<tr class="rm-sub">';
     vitals.forEach(function (v) {
       var on = state.distSort === v.vital;
-      h1 += '<th class="rm-grp rm-sep" data-rm-dist-sort="' + esc(v.vital) + '" title="Sort by % ' + who + ' flagged"' +
+      h1 += '<th class="rm-grp rm-sep" data-rm-dist-sort="' + esc(v.vital) + '" title="' + (unitSites ? 'Site flags' : 'Participant flags') + '. Sort by % ' + who + ' flagged"' +
         (on ? ' aria-sort="' + (state.distDir < 0 ? 'descending' : 'ascending') + '"' : '') + '>' + esc(v.label) +
         (v.metric ? '<span class="rm-kri" title="' + esc(v.metric) + '">KRI</span>' : '') +
         (on ? '<span class="rm-arr">' + (state.distDir < 0 ? '\u25bc' : '\u25b2') + '</span>' : '') + '</th>';
-      h2 += '<th class="rm-sep">' + (unitSites ? 'Site flags' : 'Participant flags') + '</th>';
     });
-    var body = '<tr class="rm-study" data-rm-dist-study=""><td class="rm-l rm-stick">Study</td>' + (isSite ? '<td class="rm-l rm-stick2"></td>' : '');
+    var body = '<tr class="rm-study" data-rm-dist-study=""><td class="rm-l rm-stick">Study</td>' + (isSite ? '<td class="rm-l rm-stick2"></td>' : '') + counts(groups.study);
     vitals.forEach(function (v) {
       body += distCell(groups.study, v, true);
     });
@@ -612,7 +674,7 @@
       var cls = on ? 'rm-on' : selected ? 'rm-dim' : '';
       body += '<tr data-rm-dist-row="' + state.distLevel + '" data-rm-dist-key="' + esc(g.key) + '"' + (isSite ? ' data-rm-dist-country="' + esc(g.country) + '"' : '') +
         (cls ? ' class="' + cls + '"' : '') + ' aria-selected="' + on + '" title="Click to filter the report to ' + (isSite ? 'site ' : '') + esc(g.label) + '; click again to clear">' +
-        '<td class="rm-l rm-stick">' + esc(g.label) + '</td>' + (isSite ? '<td class="rm-l rm-stick2">' + esc(g.country) + '</td>' : '');
+        '<td class="rm-l rm-stick">' + esc(g.label) + '</td>' + (isSite ? '<td class="rm-l rm-stick2">' + esc(g.country) + '</td>' : '') + counts(g);
       vitals.forEach(function (v) {
         body += distCell(g, v, false);
       });
@@ -620,7 +682,7 @@
     });
     el.innerHTML = vitals.length
       ? '<table class="table table-condensed" data-rm-dist-level="' + state.distLevel + '" data-rm-dist-unit="' + (unitSites ? 'sites' : 'participants') + '"><thead>' +
-        h1 + '</tr>' + h2 + '</tr></thead><tbody>' + body + '</tbody></table>'
+        h1 + '</tr></thead><tbody>' + body + '</tbody></table>'
       : '<p class="rm-ne">No vitals selected.</p>';
     var first = el.querySelector('thead th.rm-stick');
     if (first) {
@@ -630,13 +692,14 @@
         : info('Participant flag: ' + ruleText() + '. N: evaluable / enrolled participants. Calculated in the report; change the rule under Settings.' +
           (isSite ? ' The dot before a bar is the site\u2019s own flag: ' + siteRuleText() + '.' : '')));
       el.style.setProperty('--rm-c1', first.offsetWidth + 'px');
-      el.style.setProperty('--rm-h1', el.querySelector('thead tr').offsetHeight + 'px');
     }
     var count = byId('rm-dist-count');
     if (count) {
       var sorted = vitals.filter(function (v) { return v.vital === state.distSort; })[0];
-      count.textContent = (isSite ? rows.length + ' of ' + all.length + ' sites' : rows.length + ' countr' + (rows.length === 1 ? 'y' : 'ies')) +
-        (sorted ? ' \u00b7 sorted by % flagged, ' + sorted.label : '');
+      count.textContent = (isSite
+        ? rows.length + ' of ' + all.length + ' sites'
+        : (rows.length < all.length ? rows.length + ' of ' + all.length : rows.length) + ' countr' + (all.length === 1 ? 'y' : 'ies')) +
+        (sorted ? ' \u00b7 sorted by % flagged, ' + sorted.label : COUNT_SORT[state.distSort] ? ' \u00b7 sorted by ' + COUNT_SORT[state.distSort] : '');
     }
     var legend = byId('rm-dist-legend');
     if (legend) {
@@ -976,6 +1039,7 @@
     var clear = t.closest('[data-rm-clear]');
     var label = t.closest('[data-rm-label]');
     if (!t.closest('.rm-ms')) setVitalMenu(false);
+    if (!t.closest('#rm-settings') && !t.closest('#rm-settings-toggle')) setSettings(false);
     if (t.closest('#rm-vital-btn')) {
       setVitalMenu(byId('rm-vital-menu').hidden);
       return;
@@ -996,12 +1060,22 @@
       state.site = null;
       setSubj(null);
     } else if (t.closest('#rm-settings-toggle')) {
-      var panel = byId('rm-settings');
-      var btn = t.closest('#rm-settings-toggle');
-      var open = panel && panel.hidden;
-      if (panel) panel.hidden = !open;
-      btn.setAttribute('aria-expanded', String(!!open));
+      setSettings(byId('rm-settings').hidden);
       return;
+    } else if (t.closest('#rm-settings-done')) {
+      setSettings(false);
+      byId('rm-settings-toggle').focus();
+      return;
+    } else if (t.closest('#rm-how-toggle')) {
+      var how = byId('rm-how');
+      how.hidden = !how.hidden;
+      t.closest('#rm-how-toggle').setAttribute('aria-expanded', String(!how.hidden));
+      return;
+    } else if (t.closest('#rm-toc-hide')) {
+      setToc(true);
+      // The sidebar button disappears with the sidebar; the toolbar button restores it.
+      var show = byId('rm-toc-toggle');
+      if (show) show.focus();
     } else if (t.closest('#rm-toc-toggle')) {
       setToc(!document.body.classList.contains('rm-toc-hidden'));
       return;
@@ -1027,11 +1101,19 @@
       state.overview = t.closest('[data-rm-ov]').getAttribute('data-rm-ov');
       renderOverview();
       return;
+    } else if (t.closest('#rm-overview tbody tr[data-rm-overview]')) {
+      var ov = t.closest('tr').getAttribute('data-rm-overview');
+      var only = shownVitals();
+      state.hidden = {};
+      if (!(only.length === 1 && only[0].vital === ov)) {
+        bpVitals().forEach(function (v) {
+          if (v.vital !== ov) state.hidden[v.vital] = true;
+        });
+      }
     } else if (t.closest('[data-rm-dist]')) {
       var db = t.closest('[data-rm-dist]');
       if (db.disabled) return;
-      if (db.getAttribute('data-rm-dist') === 'level') state.distLevel = db.value;
-      else state.distUnit = db.value;
+      state[DIST_KEYS[db.getAttribute('data-rm-dist')]] = db.value;
       renderDist();
       return;
     } else if (t.closest('#rm-dist th[data-rm-dist-sort]')) {
@@ -1120,10 +1202,34 @@
   });
 
   document.addEventListener('keydown', function (e) {
-    if (e.key !== 'Escape' || !byId('rm-vital-menu') || byId('rm-vital-menu').hidden) return;
-    setVitalMenu(false);
-    byId('rm-vital-btn').focus();
+    if (e.key !== 'Escape') return;
+    var menu = byId('rm-vital-menu');
+    var panel = byId('rm-settings');
+    if (menu && !menu.hidden) {
+      setVitalMenu(false);
+      byId('rm-vital-btn').focus();
+    } else if (panel && !panel.hidden) {
+      setSettings(false);
+      byId('rm-settings-toggle').focus();
+    }
   });
+
+  // Slims the floating table of contents into an "On this page" list.
+  function slimToc() {
+    var toc = byId('TOC');
+    if (!toc || !toc.parentElement || !toc.parentElement.nextElementSibling ||
+      !toc.parentElement.nextElementSibling.classList.contains('toc-content')) return;
+    toc.classList.add('rm-toc');
+    toc.parentElement.classList.add('rm-toc-col');
+    if (byId('rm-toc-hide')) return;
+    var head = document.createElement('div');
+    head.className = 'rm-toc-head';
+    head.innerHTML = '<span>On this page</span><button id="rm-toc-hide" type="button" ' +
+      'class="rm-toc-hide" aria-label="Hide contents" title="Hide contents">&laquo;</button>';
+    toc.insertBefore(head, toc.firstChild);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', slimToc);
+  else slimToc();
 
   document.addEventListener('input', function (e) {
     if (e.target.id === 'rm-dist-search') {

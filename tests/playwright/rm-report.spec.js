@@ -12,13 +12,13 @@ const BP = 'file://' + path.resolve(__dirname, 'fixture', 'RM_bp.html');
 // rule (Amber 2, Red 3) only A weight is flagged, Amber. Height has no KRI but
 // is flagged with the same rule.
 
-// Clicks a country or site row of the participant distribution table.
+// Clicks a country or site row of the Site/Country Distribution table.
 async function clickDistRow(page, level, key) {
   await page.click('#rm-dist-' + level);
   await page.click('#rm-dist tbody tr[data-rm-dist-row="' + level + '"][data-rm-dist-key="' + key + '"] td.rm-stick');
 }
 
-// The participant distribution table: row keys, measure columns and each
+// The Site/Country Distribution table: row keys, measure columns and each
 // cell's N / Amber / Red (or site flag dot) by "row vital".
 const dist = (page) => page.evaluate(() => {
   const el = document.getElementById('rm-dist');
@@ -41,10 +41,16 @@ const dist = (page) => page.evaluate(() => {
     rows: Array.from(el.querySelectorAll('tbody tr[data-rm-dist-key]')).map((tr) => tr.dataset.rmDistKey),
     on: Array.from(el.querySelectorAll('tbody tr.rm-on')).map((tr) => tr.dataset.rmDistKey),
     dim: el.querySelectorAll('tbody tr.rm-dim').length,
-    measures: Array.from(el.querySelectorAll('th[data-rm-dist-sort]')).map((th) => th.dataset.rmDistSort),
-    sub: [...new Set(Array.from(el.querySelectorAll('thead tr.rm-sub th')).map((th) => th.textContent))],
+    measures: Array.from(el.querySelectorAll('th.rm-grp[data-rm-dist-sort]')).map((th) => th.dataset.rmDistSort),
+    headRows: el.querySelectorAll('thead tr').length,
+    sortTitle: el.querySelector('th.rm-grp[data-rm-dist-sort]').title,
     sort: Array.from(el.querySelectorAll('th[aria-sort]')).map((th) => th.dataset.rmDistSort + ' ' + th.getAttribute('aria-sort')),
     count: document.getElementById('rm-dist-count').textContent,
+    counts: Object.fromEntries(Array.from(el.querySelectorAll('tbody tr')).map((tr) => [
+      tr.dataset.rmDistKey || 'Study',
+      [tr.querySelector('[data-rm-dist-np]'), tr.querySelector('[data-rm-dist-ns]')].map((td) => (td ? +td.textContent : null)),
+    ])),
+    lead: Array.from(el.querySelectorAll('thead tr:first-child th:not(.rm-grp)')).map((th) => th.lastChild.nodeType === 3 && th.classList.contains('rm-cnt') ? th.lastChild.textContent : th.firstChild.textContent),
     cells,
   };
 });
@@ -87,6 +93,11 @@ const state = (page) => page.evaluate(() => {
 
 // Participant flags by "subjid vital" from the tiles, the listing and the overview.
 const flags = (page) => page.evaluate(() => {
+  // The flag counts are in the Counts view; the filters do not change the overview.
+  // The click closes an open Settings popover, so reopen it.
+  const open = !document.getElementById('rm-settings').hidden;
+  document.getElementById('rm-ov-counts').click();
+  if (open) document.getElementById('rm-settings-toggle').click();
   const api = jQuery('#rm-vitals table.dataTable').DataTable();
   const cols = api.settings()[0].aoColumns;
   const col = (name) => cols.findIndex((c) => c.name === name);
@@ -146,6 +157,7 @@ test.describe('Repeat Measurements report', () => {
   });
 
   test('the study overview lists every measure with site and participant flags for the whole study (#344)', async ({ page }) => {
+    await page.locator('#rm-ov-counts').click();
     const rows = await page.evaluate(() => Array.from(document.querySelectorAll('#rm-overview tr[data-rm-overview]')).map((tr) => {
       const n = (col) => tr.querySelector('[data-rm-col="' + col + '"]');
       return {
@@ -180,10 +192,7 @@ test.describe('Repeat Measurements report', () => {
     expect((await state(page)).overview).toBe(before);
   });
 
-  test('the study overview switches between counts and distribution bars (#344)', async ({ page }) => {
-    await expect(page.locator('#rm-ov-counts')).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.locator('#rm-overview [data-rm-ov-view="counts"]')).toHaveCount(1);
-    await page.locator('#rm-ov-distribution').click();
+  test('the study overview opens as distribution bars and switches to counts (#344)', async ({ page }) => {
     await expect(page.locator('#rm-ov-distribution')).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('#rm-ov-counts')).toHaveAttribute('aria-pressed', 'false');
     await expect(page.locator('#rm-overview [data-rm-ov-view="distribution"]')).toHaveCount(1);
@@ -210,10 +219,32 @@ test.describe('Repeat Measurements report', () => {
     await clickDistRow(page, 'country', 'JP');
     expect(await page.locator('#rm-overview tbody').innerHTML()).toBe(before);
     await page.locator('#rm-ov-counts').click();
+    await expect(page.locator('#rm-ov-counts')).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('#rm-overview [data-rm-ov-view="counts"]')).toHaveCount(1);
+    await page.locator('#rm-ov-distribution').click();
+    await expect(page.locator('#rm-overview [data-rm-ov-view="distribution"]')).toHaveCount(1);
   });
 
-  test('the Vitals multi-select filters the distribution, tiles and listing (#344)', async ({ page }) => {
+  test('clicking a study overview measure selects it in the Measures select, and again selects all (#344)', async ({ page }) => {
+    await expect(page.locator('.rm-eyebrow')).toHaveText('Measures');
+    const picked = () => page.locator('[data-rm-vital-cb]').evaluateAll((els) => els.filter((e) => e.checked).map((e) => e.value));
+    const row = (v) => page.locator('#rm-overview tbody tr[data-rm-overview="' + v + '"] td').first();
+    const distCols = () => page.locator('#rm-dist th.rm-grp[data-rm-dist-sort]').evaluateAll((els) => els.map((e) => e.dataset.rmDistSort));
+    await row('weight').click();
+    expect(await picked()).toEqual(['weight']);
+    expect(await distCols()).toEqual(['weight']);
+    await expect(page.locator('#rm-overview tr[data-rm-overview="weight"]')).toHaveClass(/rm-on/);
+    await expect(page.locator('#rm-overview tr[data-rm-overview="pulse"]')).toHaveClass(/rm-dim/);
+    // The Counts view picks the same way; another row replaces the selection.
+    await page.locator('#rm-ov-counts').click();
+    await row('pulse').click();
+    expect(await picked()).toEqual(['pulse']);
+    await row('pulse').click();
+    expect((await picked()).length).toBe(7);
+    await expect(page.locator('#rm-overview tr.rm-on, #rm-overview tr.rm-dim')).toHaveCount(0);
+  });
+
+  test('the Measures multi-select filters the distribution, tiles and listing (#344)', async ({ page }) => {
     const opts = await page.locator('[data-rm-vital-cb]').evaluateAll((els) => els.map((e) => e.value));
     expect(opts).toEqual(['weight', 'pulse', 'sysbp', 'diabp', 'resp', 'temp', 'height']);
     await page.click('#rm-vital-btn');
@@ -244,13 +275,18 @@ test.describe('Repeat Measurements report', () => {
     await expect(page.locator('#rm-dist')).toHaveText('No vitals selected.');
   });
 
-  test('the participant distribution shows participant flags by measure for each country, with a Study row matching the overview (#345)', async ({ page }) => {
+  test('the Site/Country Distribution shows participant flags by measure for each country, with a Study row matching the overview (#345)', async ({ page }) => {
     let d = await dist(page);
     expect([d.level, d.unit]).toEqual(['country', 'participants']);
     expect(d.measures).toEqual(['weight', 'pulse', 'sysbp', 'diabp', 'resp', 'temp', 'height']);
-    expect(d.sub).toEqual(['Participant flags']);
+    // One header row; the Cells toggle (and the header hover) says what the bars count.
+    expect(d.headRows).toBe(1);
+    expect(d.sortTitle).toBe('Participant flags. Sort by % participants flagged');
     expect(d.rows).toEqual(['JP', 'US']);
     expect(d.count).toBe('2 countries');
+    // Enrolled participants and sites per row.
+    expect(d.lead).toEqual(['Country', 'Participants', 'Sites']);
+    expect(d.counts).toEqual({ Study: [5, 3], JP: [2, 1], US: [3, 2] });
     // A (US) is the only flag: Amber weight.
     expect(d.cells['US weight']).toEqual({ n: 2, amber: 1, red: 0, dot: null });
     expect(d.cells['JP weight']).toEqual({ n: 1, amber: 0, red: 0, dot: null });
@@ -276,7 +312,7 @@ test.describe('Repeat Measurements report', () => {
     // Site flags by country: S1 Red, S2 Green (US); S3 Amber (JP).
     await page.click('#rm-dist-sites');
     d = await dist(page);
-    expect([d.unit, d.sub]).toEqual(['sites', ['Site flags']]);
+    expect([d.unit, d.sortTitle]).toEqual(['sites', 'Site flags. Sort by % sites flagged']);
     expect(d.cells['US weight']).toEqual({ n: 2, amber: 0, red: 1, dot: null });
     expect(d.cells['JP weight']).toEqual({ n: 1, amber: 1, red: 0, dot: null });
     expect(d.cells['Study weight']).toEqual({ n: 3, amber: 1, red: 1, dot: null });
@@ -288,17 +324,19 @@ test.describe('Repeat Measurements report', () => {
     await expect(tip).toContainText('Sites evaluated: 2 / 2 (100%)');
   });
 
-  test('the participant distribution by site shows each site flag, searches and disables site-flag cells (#345)', async ({ page }) => {
+  test('the Site/Country Distribution by site shows each site flag, searches and disables site-flag cells (#345)', async ({ page }) => {
     await page.click('#rm-dist-sites');
     await page.click('#rm-dist-site');
     await expect(page.locator('#rm-dist-sites')).toBeDisabled();
     await expect(page.locator('#rm-dist-participants')).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('#rm-dist-search')).toBeVisible();
     let d = await dist(page);
-    expect([d.level, d.unit, d.sub]).toEqual(['site', 'participants', ['Participant flags']]);
+    expect([d.level, d.unit]).toEqual(['site', 'participants']);
     // By country, then site.
     expect(d.rows).toEqual(['S3', 'S1', 'S2']);
     expect(d.count).toBe('3 of 3 sites');
+    expect(d.lead).toEqual(['Site', 'Country', 'Participants']);
+    expect(d.counts).toEqual({ Study: [5, null], S3: [2, null], S1: [2, null], S2: [1, null] });
     await expect(page.locator('#rm-dist tr[data-rm-dist-key="S1"] td.rm-stick2')).toHaveText('US');
     expect(d.cells['S1 weight']).toEqual({ n: 2, amber: 1, red: 0, dot: 'Red KRI' });
     expect(d.cells['S3 weight'].dot).toBe('Amber KRI');
@@ -339,6 +377,53 @@ test.describe('Repeat Measurements report', () => {
     expect((await dist(page)).rows).toEqual(['S1', 'S3', 'S2']);
   });
 
+  test('clicking Participants or Sites sorts the distribution rows by count (#345)', async ({ page }) => {
+    const np = page.locator('#rm-dist th[data-rm-dist-sort="_np"]');
+    const ns = page.locator('#rm-dist th[data-rm-dist-sort="_ns"]');
+    // US: 3 participants at 2 sites; JP: 2 at 1. Default order is by name.
+    await np.click();
+    let d = await dist(page);
+    expect([d.rows, d.sort, d.count]).toEqual([['US', 'JP'], ['_np descending'], '2 countries \u00b7 sorted by participants']);
+    await np.click();
+    expect((await dist(page)).rows).toEqual(['JP', 'US']);
+    await ns.click();
+    d = await dist(page);
+    expect([d.rows, d.sort, d.count]).toEqual([['US', 'JP'], ['_ns descending'], '2 countries \u00b7 sorted by sites']);
+    // Site view has no Sites column, so its sort clears; Participants still sorts.
+    await page.click('#rm-dist-site');
+    d = await dist(page);
+    // Unsorted site rows run by country (JP first), then site.
+    expect([d.rows, d.sort]).toEqual([['S3', 'S1', 'S2'], []]);
+    await np.click();
+    expect((await dist(page)).rows).toEqual(['S1', 'S3', 'S2']);
+  });
+
+  test('the Flags control keeps the rows with an Amber or Red flag in any shown measure (#345)', async ({ page }) => {
+    // Expected rows, from the cells' own counts.
+    const expected = (red) => page.evaluate((red) => Array.from(document.querySelectorAll('#rm-dist tbody tr[data-rm-dist-key]'))
+      .filter((tr) => Array.from(tr.querySelectorAll('td[data-rm-amber]')).some((td) => (red ? 0 : +td.dataset.rmAmber) + +td.dataset.rmRed > 0))
+      .map((tr) => tr.dataset.rmDistKey), red);
+    for (const level of ['country', 'site']) {
+      await page.click('#rm-dist-' + level);
+      await page.click('#rm-dist-all');
+      const all = (await dist(page)).rows;
+      const anyRows = await expected(false);
+      const redRows = await expected(true);
+      expect(anyRows.length).toBeLessThan(all.length);
+      await page.click('#rm-dist-any');
+      await expect(page.locator('#rm-dist-any')).toHaveAttribute('aria-pressed', 'true');
+      expect((await dist(page)).rows).toEqual(anyRows);
+      await page.click('#rm-dist-red');
+      expect((await dist(page)).rows).toEqual(redRows);
+    }
+    // The Study row stays, and the count says how many rows are kept.
+    await page.click('#rm-dist-country');
+    await page.click('#rm-dist-any');
+    await expect(page.locator('#rm-dist tr.rm-study')).toHaveCount(1);
+    const d = await dist(page);
+    expect(d.count).toBe(d.rows.length + ' of 2 countries');
+  });
+
   test('distribution rows filter every section and show chips (#344, #345)', async ({ page }) => {
     await clickDistRow(page, 'country', 'JP');
     let s = await state(page);
@@ -371,6 +456,23 @@ test.describe('Repeat Measurements report', () => {
     expect((await state(page)).tiles).toHaveLength(5);
     d = await dist(page);
     expect([d.on, d.dim]).toEqual([[], 0]);
+  });
+
+  test('every filter chip stays visible in the toolbar when all three are set (#344)', async ({ page }) => {
+    await page.setViewportSize({ width: 1000, height: 800 });
+    await page.click('#rm-dist-site');
+    await clickDistRow(page, 'site', 'S1');
+    await page.uncheck('#rm-only-repeat');
+    await page.locator('#rm-vitals tbody tr').first().click();
+    expect((await state(page)).chips).toHaveLength(3);
+    const boxes = await page.evaluate(() => {
+      const strip = document.getElementById('rm-filter-strip').getBoundingClientRect();
+      return Array.from(document.querySelectorAll('.rm-chip')).filter((c) => c.offsetParent).map((c) => {
+        const r = c.getBoundingClientRect();
+        return r.left >= strip.left && r.right <= strip.right && r.top >= strip.top && r.bottom <= strip.bottom;
+      });
+    });
+    expect(boxes).toEqual([true, true, true]);
   });
 
   test('the participant listing switches labels, sorts, searches and downloads (#347)', async ({ page }) => {
@@ -640,6 +742,50 @@ test.describe('Repeat Measurements report', () => {
     await btn.click();
     await expect(page.locator('#TOC')).toBeVisible();
     await expect(btn).toHaveText('Hide contents');
+    await expect(page.locator('#TOC')).toHaveClass(/rm-toc/);
+    // The sidebar's own button hides it too; the toolbar button brings it back.
+    await expect(page.locator('#TOC .rm-toc-head')).toContainText('On this page');
+    await page.click('#rm-toc-hide');
+    await expect(page.locator('#TOC')).toBeHidden();
+    await expect(btn).toHaveText('Show contents');
+    await expect(btn).toBeFocused();
+    await btn.click();
+    await expect(page.locator('#rm-toc-hide')).toBeVisible();
+    // The title card is not in the contents list.
+    await expect(page.locator('#TOC')).not.toContainText('Repeat Measurements');
+  });
+
+  test('the header card reveals how to read the report, and settings close on Done, Esc or a click outside (#344)', async ({ page }) => {
+    const how = page.locator('#rm-how');
+    await expect(how).toBeHidden();
+    await page.click('#rm-how-toggle');
+    await expect(how).toBeVisible();
+    await expect(how.locator('.rm-rule-text')).toContainText('Amber \u2265 2, Red \u2265 3');
+    await expect(page.locator('#rm-how-toggle')).toHaveAttribute('aria-expanded', 'true');
+    await page.click('#rm-how-toggle');
+    await expect(how).toBeHidden();
+
+    const panel = page.locator('#rm-settings');
+    const toggle = page.locator('#rm-settings-toggle');
+    await toggle.click();
+    await expect(panel).toBeVisible();
+    // The popover floats over the page instead of pushing it down.
+    expect(await panel.evaluate((el) => getComputedStyle(el).position)).toBe('absolute');
+    await page.click('#rm-settings-done');
+    await expect(panel).toBeHidden();
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+
+    await toggle.click();
+    await page.keyboard.press('Escape');
+    await expect(panel).toBeHidden();
+    await expect(toggle).toBeFocused();
+
+    await toggle.click();
+    await page.click('[data-rm-set="rule"][value="rate"]');
+    await expect(panel).toBeVisible();
+    await page.click('h1');
+    await expect(panel).toBeHidden();
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
   });
 });
 
@@ -688,6 +834,7 @@ test.describe('Repeat Measurements blood pressure view', () => {
     await expect(page.locator('#rm-dist th[data-rm-dist-sort="bp"] .rm-kri')).toHaveCount(0);
     expect(new Set(v.listing)).toEqual(new Set(['bp']));
     expect(v.wide).toEqual(['bp']);
+    await page.locator('#rm-ov-counts').click();
     const bpRow = page.locator('#rm-overview tr[data-rm-overview="bp"]');
     await expect(bpRow).toContainText('Blood pressure');
     await expect(bpRow.locator('.rm-kri')).toHaveCount(0);
