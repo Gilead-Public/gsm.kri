@@ -4,19 +4,23 @@
 
 - Add the Repeat Measurements report for the repeat-measure vital sign
   KRIs (`kri0020a`-`f`). It shows a whole-study overview of every
-  measure (KRI or not) with site and participant flag counts, or as 100%
-  bars of the share of sites and participants flagged, a participant
-  distribution table of flags by measure for each country or site
-  (participant flags, or site flags by country; sortable by % flagged),
-  a Participant Listing of per-vital flags, a vitals listing that
-  highlights repeated values, and a Long / Wide data table of every
-  value. Every measure, including height, BSA and paired BP, is flagged
-  with the participant rule; sites without KRI results are flagged in
-  the report with the KRI’s site rule. A Vitals multi-select and clicks
-  on a participant, tile or row filter the report. A Settings panel
-  shows blood pressure as separate, paired (combined) or both, and sets
-  the participant flag rule: repeating windows (default Amber 2, Red 3)
-  or % of windows, with a minimum number of windows.
+  measure (KRI or not) as 100% bars of the share of sites and
+  participants flagged, or as site and participant flag counts, a
+  Site/Country Distribution table of flags by measure for each country
+  or site, with its participant and site counts (participant flags, or
+  site flags by country; sortable by % flagged or by count, and
+  filterable to rows with any or Red flags), a Participant Listing of
+  per-vital flags, a vitals listing that highlights repeated values, and
+  a Long / Wide data table of every value. Every measure, including
+  height, BSA and paired BP, is flagged with the participant rule; sites
+  without KRI results are flagged in the report with the KRI’s site
+  rule. A Measures multi-select, a click on a Study overview measure,
+  and clicks on a participant, tile or row filter the report. A header
+  card sums up the study, snapshot, window length and flag rule, and one
+  sticky toolbar holds the filters and a Settings popover that shows
+  blood pressure as separate, paired (combined) or both, and sets the
+  participant flag rule: repeating windows (default Amber 2, Red 3) or %
+  of windows, with a minimum number of windows.
   [`Report_RepeatMeasurements()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_RepeatMeasurements.md)
   renders it, with `strFlagRule`, `vFlagThresholds`, `nMinWindows` and
   `strBPMode` setting the starting settings, and the
