@@ -1,0 +1,100 @@
+---
+title: "Repeat Measurements Report"
+description: "Example repeat measurements report generated with gsm.kri"
+index: 4
+output:
+  html_document:
+    mathjax: null
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    css: ../report/styles.css
+---
+<!-- The report's own header card carries the title, so hide the page's. -->
+<style>#header { display: none; }</style>
+
+```{r example-code, include=FALSE}
+# Load libraries
+library(gsm.core)
+library(gsm.mapping)
+library(gsm.reporting)
+library(gsm.kri)
+
+# --- Step 1: Map the subject and vital signs data -----------------------------
+mappings_wf <- MakeWorkflowList(
+  strNames = c("SUBJ", "VS"),
+  strPath = "workflow/1_mappings",
+  strPackage = "gsm.mapping",
+  bExact = TRUE
+)
+lRaw <- Ingest(gsm.core::lSource, CombineSpecs(mappings_wf))
+lMapped <- RunWorkflows(mappings_wf, lRaw)
+
+# --- Step 2: Run the repeat-measure KRIs --------------------------------------
+metrics_wf <- MakeWorkflowList(
+  strNames = c(paste0("kri0020", letters[1:6]), paste0("cou0020", letters[1:6])),
+  strPath = "workflow/2_metrics",
+  strPackage = "gsm.kri",
+  bExact = TRUE
+)
+lAnalyzed <- RunWorkflows(metrics_wf, lMapped)
+
+# --- Step 3: Bind the reporting results and metrics ---------------------------
+dSnapshotDate <- Sys.Date()
+dfResults <- BindResults(
+  lAnalyzed,
+  "Analysis_Summary",
+  dSnapshotDate = dSnapshotDate,
+  strStudyID = unique(lMapped$Mapped_SUBJ$studyid)[1]
+)
+dfMetrics <- MakeMetric(metrics_wf)
+
+lListings <- list(
+  Mapped_VS = lMapped$Mapped_VS,
+  Mapped_SUBJ = lMapped$Mapped_SUBJ
+)
+```
+
+```{r, echo=FALSE, results='asis'}
+## Render example report inline using knit_child
+child_env <- list2env(
+  list(
+    params = list(
+      dfResults = dfResults,
+      dfMetrics = dfMetrics,
+      lListings = lListings,
+      dSnapshotDate = dSnapshotDate,
+      nWindowLength = NULL,
+      strFlagRule = "count",
+      vFlagThresholds = NULL,
+      nMinWindows = 1,
+      strBPMode = "separate",
+      bExport = TRUE,
+      strContext = sprintf(
+        '<a href="https://gilead-public.github.io/gsm.kri">gsm.kri</a> example &middot; rendered %s &middot; <a href="#example-code">Example code &darr;</a>',
+        format(Sys.time(), "%B %d, %Y %H:%M %Z")
+      )
+    )
+  ),
+  parent = environment()
+)
+report_repeat_measurements <- knitr::knit_child(
+  system.file("report", "Report_RepeatMeasurements.Rmd", package = "gsm.kri"),
+  envir = child_env,
+  quiet = TRUE
+)
+cat(report_repeat_measurements, sep = "\n")
+```
+
+## Example code
+
+<details>
+<summary>Show the code</summary>
+
+This page provides a sample repeat measurements report for the repeat-measure vital sign KRIs (`kri0020a`-`f`, `cou0020a`-`f`), generated using the `gsm.kri` package. The code below generates the report shown on this page.
+
+```{r, ref.label="example-code", eval=FALSE}
+```
+
+</details>
