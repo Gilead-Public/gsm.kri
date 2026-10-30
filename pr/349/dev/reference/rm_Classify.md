@@ -38,7 +38,8 @@ rm_Classify(
 - lListings:
 
   \`list\` with \`Mapped_SUBJ\` (enrolled participants with \`subjid\`,
-  \`invid\` and \`country\`) and \`Mapped_VS\`.
+  \`invid\` and \`country\`; a missing \`invid\` or \`country\` is shown
+  as \`"(missing)"\`) and \`Mapped_VS\`.
 
 - dfMetrics:
 

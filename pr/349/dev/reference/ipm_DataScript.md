@@ -9,7 +9,7 @@ close the block.
 ## Usage
 
 ``` r
-ipm_DataScript(lData, strId = "ipc-data")
+ipm_DataScript(lData)
 ```
 
 ## Arguments
@@ -18,11 +18,7 @@ ipm_DataScript(lData, strId = "ipc-data")
 
   \`list\` Status rows and reason slices.
 
-- strId:
-
-  \`character\` Element id of the script tag.
-
 ## Value
 
-An \`htmltools\` \`\<script type="application/json"\>\` tag with id
-\`strId\`.
+An \`htmltools\` \`\<script type="application/json" id="ipc-data"\>\`
+tag.
