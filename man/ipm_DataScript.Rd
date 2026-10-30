@@ -4,16 +4,13 @@
 \alias{ipm_DataScript}
 \title{Inline data block for the IP Monitoring filter script}
 \usage{
-ipm_DataScript(lData, strId = "ipc-data")
+ipm_DataScript(lData)
 }
 \arguments{
 \item{lData}{`list` Status rows and reason slices.}
-
-\item{strId}{`character` Element id of the script tag.}
 }
 \value{
-An `htmltools` `<script type="application/json">` tag with id
-  `strId`.
+An `htmltools` `<script type="application/json" id="ipc-data">` tag.
 }
 \description{
 `r lifecycle::badge("experimental")`

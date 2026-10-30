@@ -5,6 +5,7 @@ const path = require('path');
 const FULL = 'file://' + path.resolve(__dirname, 'fixture', 'RM.html');
 const DEGRADED = 'file://' + path.resolve(__dirname, 'fixture', 'RM_degraded.html');
 const BP = 'file://' + path.resolve(__dirname, 'fixture', 'RM_bp.html');
+const EDGE = 'file://' + path.resolve(__dirname, 'fixture', 'RM_edge.html');
 
 // Facts of rm_Fixture() in tests/testthat/helper-rm.R (render-rm-fixture.R):
 // A, B (US/S1), C (US/S2), D, E (JP/S3); repeating windows in A weight (2/2),
@@ -662,7 +663,7 @@ test.describe('Repeat Measurements report', () => {
     expect(s.vitals.sort()).toEqual(['A weight', 'B pulse', 'D height', 'D weight']);
   });
 
-  test('the settings panel switches the flag rule and every section follows (#343, #344)', async ({ page }) => {
+  test('the settings panel switches the flag rule and participant flags in every section follow (#343, #344)', async ({ page }) => {
     await expect(page.locator('#rm-settings')).toBeHidden();
     await page.click('#rm-settings-toggle');
     await expect(page.locator('#rm-settings')).toBeVisible();
@@ -868,4 +869,41 @@ test('the degraded report explains what is missing and does not error (#344)', a
   await expect(page.locator('body')).toContainText('No vital signs recorded.');
   await expect(page.locator('body')).toContainText('not in this study');
   expect(errors).toEqual([]);
+});
+
+// rm_FixtureEdge(): F (no country, S4) repeats in 2 of 3 weight windows; G's
+// country (S5) holds quotes. Rate rule, Amber 0.5, Red 2/3.
+test.describe('Repeat Measurements edge cases', () => {
+  let errors;
+  const COUNTRY = 'X" data-x="1 \'q\'';
+  test.beforeEach(async ({ page }) => {
+    errors = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+    await page.goto(EDGE);
+    await page.waitForFunction(() => document.querySelectorAll('#rm-tiles tbody tr').length > 0);
+  });
+  test.afterEach(() => expect(errors).toEqual([]));
+
+  test('a 2/3 rate at a 2/3 threshold is Red in R and in the browser (#343)', async ({ page }) => {
+    const f = await flags(page);
+    expect(f.tiles['F weight']).toBe('Red');
+    expect(f.listing['F weight']).toBe('Red');
+    expect(f.overview.weight.red).toBe(1);
+  });
+
+  test('a country with quotes stays text in every title (#346)', async ({ page }) => {
+    await page.uncheck('#rm-dt-only');
+    expect(await page.locator('[data-x]').count()).toBe(0);
+    const titles = await page.locator('#rm-dt-wide tbody td span[title]').evaluateAll((els) => els.map((el) => el.title));
+    expect(titles).toContain(COUNTRY);
+  });
+
+  test('a missing country is a (missing) row that filters to its participant (#345)', async ({ page }) => {
+    expect((await dist(page)).rows).toContain('(missing)');
+    await clickDistRow(page, 'country', '(missing)');
+    const s = await state(page);
+    expect(s.tiles).toEqual(['F']);
+    expect(s.chips).toEqual(['(missing)']);
+  });
 });

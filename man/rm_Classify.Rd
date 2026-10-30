@@ -15,7 +15,8 @@ rm_Classify(
 }
 \arguments{
 \item{lListings}{`list` with `Mapped_SUBJ` (enrolled participants with
-`subjid`, `invid` and `country`) and `Mapped_VS`.}
+`subjid`, `invid` and `country`; a missing `invid` or `country` is
+shown as `"(missing)"`) and `Mapped_VS`.}
 
 \item{dfMetrics}{`data.frame` Reporting metrics; the `kri0020*` rows supply
 the window length and the rate thresholds. Optional.}

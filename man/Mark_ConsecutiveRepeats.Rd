@@ -52,10 +52,10 @@ when `strMeasureCol` is supplied.}
 
 Returns every non-missing measurement in the order
 [Detect_ConsecutiveRepeats()] evaluates it, marked when it sits inside a
-rolling window of `nWindowLength` identical consecutive values. Both
-functions share the same ordering and window logic, so summing
-`window_start` per subject reproduces the `Numerator` of
-[Detect_ConsecutiveRepeats()].
+rolling window of `nWindowLength` identical consecutive values. It applies
+the same validation, ordering and window rule, so summing `window_start` per
+subject reproduces the `Numerator` of [Detect_ConsecutiveRepeats()].
+Records with a missing subject are dropped.
 }
 \examples{
 df <- data.frame(

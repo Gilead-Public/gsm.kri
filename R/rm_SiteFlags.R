@@ -3,7 +3,9 @@
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' The latest site-level `kri0020a`–`f` flag per site, keyed by vital.
+#' The site-level `kri0020a`–`f` flags from each metric's latest snapshot,
+#' keyed by vital. A site without a flag in that snapshot is `NA` (not
+#' evaluated).
 #'
 #' @param dfResults `data.frame` Reporting results.
 #'
@@ -17,9 +19,13 @@ rm_SiteFlags <- function(dfResults) {
     return(stats::setNames(list(), character(0)))
   }
   df <- dfResults[grepl("^Analysis_kri0020[a-f]$", dfResults$MetricID) &
-    dfResults$GroupLevel %in% "Site" & !is.na(dfResults$Flag), ]
+    dfResults$GroupLevel %in% "Site", ]
+  # Pick each metric's latest snapshot before reading flags, so a missing
+  # latest flag stays not evaluated instead of reviving an older one.
   if ("SnapshotDate" %in% names(df) && nrow(df) > 0) {
-    df <- df[as.Date(df$SnapshotDate) == max(as.Date(df$SnapshotDate)), ]
+    vDate <- as.Date(df$SnapshotDate)
+    bLatest <- vDate == stats::ave(vDate, df$MetricID, FUN = function(x) max(x, na.rm = TRUE))
+    df <- df[bLatest %in% TRUE, ]
   }
   dfVitals <- rm_Vitals()
   df$vital <- dfVitals$vital[match(sub("^Analysis_", "", df$MetricID), dfVitals$metric)]

@@ -104,10 +104,9 @@ test_that("Report_PrematureDeaths renders the dynamic subtitle, not literal pseu
   expect_true(grepl("Snapshot Date: 2026-05-01", html, fixed = TRUE))
   # ...and the old mid-document "--- subtitle:/date: ---" block (which pandoc only
   # honours in the top header, so it leaked as a literal "subtitle:" line) is gone.
-  # Search outside <script> blocks: the gsm.viz bundle's JS config has
-  # `subtitle:` keys that are not leaked YAML lines.
-  strContent <- gsub("(?s)<script\\b.*?</script>", "", html, perl = TRUE)
-  expect_false(grepl("subtitle:", strContent, fixed = TRUE))
+  # Exclude the gsm.viz bundle's `subtitle: {` JS config (a Chart.js plugin key,
+  # not a leaked YAML line) by requiring a non-`{` char after the colon.
+  expect_false(grepl("subtitle: [^{]", html))
 })
 
 test_that("Report_PrematureDeaths renders the studcomp discontinuation note (#246)", {

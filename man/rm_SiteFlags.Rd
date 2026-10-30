@@ -16,6 +16,8 @@ A named `list` (vital to a named list of site flags); empty when
 \description{
 `r lifecycle::badge("experimental")`
 
-The latest site-level `kri0020a`–`f` flag per site, keyed by vital.
+The site-level `kri0020a`–`f` flags from each metric's latest snapshot,
+keyed by vital. A site without a flag in that snapshot is `NA` (not
+evaluated).
 }
 \keyword{internal}

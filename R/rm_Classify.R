@@ -68,7 +68,8 @@ rm_FlagColors <- function() {
 #' `diabp`, paired blood pressure (`bp`, see [rm_Vitals()]) is added.
 #'
 #' @param lListings `list` with `Mapped_SUBJ` (enrolled participants with
-#'   `subjid`, `invid` and `country`) and `Mapped_VS`.
+#'   `subjid`, `invid` and `country`; a missing `invid` or `country` is
+#'   shown as `"(missing)"`) and `Mapped_VS`.
 #' @param dfMetrics `data.frame` Reporting metrics; the `kri0020*` rows supply
 #'   the window length and the rate thresholds. Optional.
 #' @param nWindowLength `numeric` Window length when `dfMetrics` has none.
@@ -128,6 +129,11 @@ rm_Classify <- function(
     dfSubj$studyid <- NA_character_
   }
   dfSubj <- dfSubj[!duplicated(dfSubj$subjid), c("studyid", "country", "invid", "subjid")]
+  # A missing country or site becomes "(missing)" so the browser can filter it.
+  for (strCol in c("country", "invid")) {
+    dfSubj[[strCol]] <- as.character(dfSubj[[strCol]])
+    dfSubj[[strCol]][is.na(dfSubj[[strCol]]) | dfSubj[[strCol]] == ""] <- "(missing)"
+  }
 
   dfVitals <- rm_Vitals()
   dfVS <- lListings$Mapped_VS

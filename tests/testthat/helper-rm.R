@@ -72,6 +72,25 @@ rm_Fixture <- function() {
   list(Mapped_VS = dfVS, Mapped_SUBJ = dfSubj)
 }
 
+# Edge cases: F has no country and repeats in 2 of 3 weight windows, which is
+# Red at the rate thresholds 0.5 and 2/3; G's country holds quotes.
+rm_FixtureEdge <- function() {
+  dfVS <- data.frame(
+    subjid = rep(c("F", "G"), each = 5),
+    visit = paste0("V", 1:5),
+    vs_dt = as.Date("2024-01-01") + 0:4,
+    vsperf_std = "Y",
+    weight = c(1, 1, 1, 1, 2, 60, 61, 62, 63, 64)
+  )
+  dfSubj <- data.frame(
+    studyid = "STUDY1",
+    subjid = c("F", "G"),
+    invid = c("S4", "S5"),
+    country = c(NA, "X\" data-x=\"1 'q'")
+  )
+  list(Mapped_VS = dfVS, Mapped_SUBJ = dfSubj)
+}
+
 # Site results for kri0020a/b that reconcile with rm_Fixture(), plus an older
 # snapshot that does not.
 rm_FixtureResults <- function() {

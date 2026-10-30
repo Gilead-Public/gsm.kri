@@ -135,7 +135,7 @@ rm_VitalsListing <- function(dfVitalRows, nWindowLength = NULL, bExport = TRUE) 
               "function (data, type, row) {
                 if (type !== 'display') return data;
                 var m = row[%d];
-                return '<span title=\"' + (m || 'Not a KRI') + '\">' + data + (m ? '' : '<span class=\"rm-nk\"> *</span>') + '</span>';
+                return '<span title=\"' + String(m || 'Not a KRI').replace(/\"/g, '&quot;') + '\">' + data + (m ? '' : '<span class=\"rm-nk\"> *</span>') + '</span>';
               }",
               idx("metric")
             ))
@@ -170,7 +170,7 @@ rm_VitalsListing <- function(dfVitalRows, nWindowLength = NULL, bExport = TRUE) 
                 var pct = rate === null ? '\u2013' : (100 * rate).toFixed(0) + '%%';
                 var tip = (row[%3$d] || 'Not a KRI') + ' \u00b7 ' + data + ' \u00b7 measured ' + row[%4$d] +
                   ' \u00b7 N ' + row[%5$d] + ' of D ' + row[%6$d] + ' windows repeat';
-                return '<span class=\"rm-fr\" title=\"' + tip + '\"><span class=\"rm-dot\" style=\"background:' + c + '\"></span>' + pct + '</span>';
+                return '<span class=\"rm-fr\" title=\"' + tip.replace(/\"/g, '&quot;') + '\"><span class=\"rm-dot\" style=\"background:' + c + '\"></span>' + pct + '</span>';
               }",
               idx("rate"),
               jsonlite::toJSON(as.list(rm_FlagColors()), auto_unbox = TRUE),

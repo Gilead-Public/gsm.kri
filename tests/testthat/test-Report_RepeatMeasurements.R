@@ -50,6 +50,21 @@ test_that("Report_RepeatMeasurements renders the filter strip and study overview
   expect_true(data$export)
 })
 
+test_that("thresholds reach the browser exactly, so R and the browser agree at a boundary (#343, #344)", {
+  html <- render_rm(
+    lListings = rm_FixtureEdge(),
+    dfMetrics = rm_FixtureMetrics(),
+    strFlagRule = "rate",
+    vFlagThresholds = c(0.5, 2 / 3)
+  )
+  lData <- rm_DataBlock(html)
+  expect_identical(lData$settings$thresholds$rate[2], 2 / 3)
+  lTiles <- rm_WidgetPayloads(html)[["rm-tiles"]]$tiles
+  lF <- Filter(function(t) t$subjid == "F" && t$vital == "weight", lTiles)
+  expect_equal(lF[[1]]$flag, "Red")
+  expect_true("(missing)" %in% lData$participants$country)
+})
+
 test_that("the strip has reset, settings and contents buttons, and settings default to 2 / 3 repeating windows (#344)", {
   html <- rm_default_html()
   for (id in c("rm-reset", "rm-settings-toggle", "rm-toc-toggle", "rm-settings", "rm-th-amber", "rm-th-red", "rm-min-windows", "rm-settings-defaults", "rm-settings-done")) {
@@ -186,12 +201,15 @@ test_that("the report explains missing vital signs and a study without the repea
   html <- render_rm(rm_listings(f$Mapped_VS[0, ], f$Mapped_SUBJ))
   expect_match(html, "No vital signs recorded.", fixed = TRUE)
   expect_match(html, "not in this study", fixed = TRUE)
-  expect_match(html, "W = 3 (default)", fixed = TRUE)
+  expect_match(gsub("\\s+", " ", html), "W = 3 (default) and flags sites at Amber \u2265 20%, Red \u2265 30% of windows, with at least 3 windows.", fixed = TRUE)
 
   # No participant has 7 measurements of a vital.
   html <- render_rm(nWindowLength = 7)
-  expect_match(html, "No evaluable participants.", fixed = TRUE)
+  expect_match(gsub("\\s+", " ", html), "none has the 7 measurements of a vital needed for 1 window of 7.", fixed = TRUE)
   expect_match(html, "W = 7 (report argument)", fixed = TRUE)
+  # The minimum windows add to the measurements needed (W + 5 - 1).
+  html <- render_rm(nMinWindows = 5)
+  expect_match(gsub("\\s+", " ", html), "none has the 7 measurements of a vital needed for 5 windows of 3.", fixed = TRUE)
 })
 
 test_that("Report_RepeatMeasurements requires subject listings (#344)", {
@@ -218,7 +236,7 @@ test_that("Repeat Measurements report example is accepted by a user (#348)", {
     ),
     chrChecks = c(
       "The Study row of the Site/Country Distribution matches the Study overview for each measure.",
-      "Filters apply to every section, and the floating filter strip shows what is selected and how many participants are in scope.",
+      "Filters apply to every section except the Study overview, and the floating filter strip shows what is selected and how many participants are in scope.",
       "Selecting a participant in any listing filters the Vitals Listing and the Data table to that participant.",
       "Repeated values are highlighted in the Vitals Listing and both Data table shapes.",
       "The Participant Listing, Vitals Listing and Data table can be downloaded as CSV."

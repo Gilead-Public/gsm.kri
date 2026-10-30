@@ -176,7 +176,7 @@ rm_DataTable <- function(dfLong, dfWide, dfVitals, bExport = TRUE) {
             "function (data, type, row) {
               var m = row[%d];
               if (type !== 'display' || !m) return data;
-              return data + '<span class=\"rm-kri\" title=\"' + m + '\">KRI</span>';
+              return data + '<span class=\"rm-kri\" title=\"' + String(m).replace(/\"/g, '&quot;') + '\">KRI</span>';
             }",
             idx(dfLong, "metric")
           ))
@@ -271,7 +271,7 @@ rm_DataTable <- function(dfLong, dfWide, dfVitals, bExport = TRUE) {
           render = DT::JS(sprintf(
             "function (data, type, row) {
               if (type !== 'display') return data;
-              return '<span title=\"' + (row[%d] || '') + '\">' + data + '</span>';
+              return '<span title=\"' + String(row[%d] || '').replace(/\"/g, '&quot;') + '\">' + data + '</span>';
             }",
             idx(dfWide, "country")
           ))

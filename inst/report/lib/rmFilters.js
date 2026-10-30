@@ -135,8 +135,8 @@
     return 'Green';
   }
 
-  // reorder: false on load, where R already sorted the listing worst first.
-  function applyFlags(reorder) {
+  // Runs only when Settings change; on load the flags come from rm_Classify().
+  function applyFlags() {
     (allTiles || []).forEach(function (t) {
       t.flag = flagOf(t.Numerator, t.Denominator);
       t.severity = SEVERITY[t.flag];
@@ -149,7 +149,6 @@
       d[ci.flag] = flagOf(d[ci.Numerator], d[ci.Denominator]);
     });
     api.rows().invalidate('data');
-    if (reorder === false) return;
     // Keep worst first unless the reviewer sorted by another column.
     var order = api.order();
     if (!order.length || order[0][0] === ci.flag) api.order([[ci.flag, 'desc']]);
@@ -1012,10 +1011,8 @@
       var c = chart('rm-tiles');
       if (c) allTiles = c.data.slice();
     }
-    if (settings && !settings._applied) {
-      // R used the same settings, so this only keeps the two in step.
-      settings._applied = true;
-      applyFlags(false);
+    if (settings && !settings._synced) {
+      settings._synced = true;
       syncSettings();
     }
     renderOverview();
@@ -1088,9 +1085,9 @@
       settingsChanged(k === 'rule');
       return;
     } else if (t.closest('#rm-settings-defaults')) {
-      var keep = settings._applied;
+      var keep = settings._synced;
       settings = clone(defaults);
-      settings._applied = keep;
+      settings._synced = keep;
       settingsMsg('');
       settingsChanged(true);
       return;

@@ -240,3 +240,13 @@ test_that("Qual: participant N, D and flags match an independent derivation (#34
   expect_true(any(lClass$participants$flag == "Red"))
   expect_true(any(lRate$participants$flag == "Red"))
 })
+
+test_that("a missing country or site is labelled (missing) (#343)", {
+  lListings <- rm_FixtureEdge()
+  lListings$Mapped_SUBJ$invid[2] <- ""
+  lClass <- rm_Classify(lListings)
+  df <- unique(lClass$participants[c("subjid", "invid", "country")])
+  expect_equal(df$country, c("(missing)", "X\" data-x=\"1 'q'"))
+  expect_equal(df$invid, c("S4", "(missing)"))
+  expect_equal(unique(lClass$measurements$country[lClass$measurements$subjid == "F"]), "(missing)")
+})

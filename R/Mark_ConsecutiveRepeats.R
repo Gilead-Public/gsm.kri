@@ -5,10 +5,10 @@
 #'
 #' Returns every non-missing measurement in the order
 #' [Detect_ConsecutiveRepeats()] evaluates it, marked when it sits inside a
-#' rolling window of `nWindowLength` identical consecutive values. Both
-#' functions share the same ordering and window logic, so summing
-#' `window_start` per subject reproduces the `Numerator` of
-#' [Detect_ConsecutiveRepeats()].
+#' rolling window of `nWindowLength` identical consecutive values. It applies
+#' the same validation, ordering and window rule, so summing `window_start` per
+#' subject reproduces the `Numerator` of [Detect_ConsecutiveRepeats()].
+#' Records with a missing subject are dropped.
 #'
 #' @inheritParams Detect_ConsecutiveRepeats
 #'
@@ -38,30 +38,8 @@ Mark_ConsecutiveRepeats <- function(
   strMeasureVal = NULL,
   nWindowLength = 3
 ) {
-  .MarkRepeats(
-    df = df,
-    strValueCol = strValueCol,
-    strSubjectCol = strSubjectCol,
-    strDateCol = strDateCol,
-    strOrderCol = strOrderCol,
-    strMeasureCol = strMeasureCol,
-    strMeasureVal = strMeasureVal,
-    nWindowLength = nWindowLength
-  )$df
-}
-
-# Shared by Detect_ConsecutiveRepeats() and Mark_ConsecutiveRepeats() so the
-# report's marking can never disagree with the metric.
-.MarkRepeats <- function(
-  df,
-  strValueCol,
-  strSubjectCol,
-  strDateCol,
-  strOrderCol,
-  strMeasureCol,
-  strMeasureVal,
-  nWindowLength
-) {
+  # Validation mirrors Detect_ConsecutiveRepeats(), which is left unchanged so
+  # the KRI code is untouched; a test checks the two agree.
   if (!is.data.frame(df)) {
     cli::cli_abort("{.arg df} must be a data frame.")
   }
@@ -81,8 +59,6 @@ Mark_ConsecutiveRepeats <- function(
       "{.arg strMeasureVal} is required when {.arg strMeasureCol} is supplied."
     )
   }
-  # Validate each argument before c(), which would coerce numerics to strings
-  # and silently drop NULLs.
   lScalarCols <- list(
     strValueCol = strValueCol,
     strSubjectCol = strSubjectCol,
@@ -112,14 +88,17 @@ Mark_ConsecutiveRepeats <- function(
   if (length(strMissing)) {
     cli::cli_abort("Column{?s} not found in {.arg df}: {.val {strMissing}}.")
   }
+  # The marking columns are written onto df, so an input column with one of
+  # these names would be overwritten before it is used.
+  strReserved <- intersect(lCols, c("seq", "in_repeat_window", "window_start"))
+  if (length(strReserved)) {
+    cli::cli_abort("Column{?s} {.val {strReserved}} {?is/are} reserved for the output.")
+  }
 
   if (!is.null(strMeasureCol)) {
     df <- df[df[[strMeasureCol]] %in% strMeasureVal, , drop = FALSE]
   }
-
-  # Subjects whose values are all missing still get a 0/0 row in Detect_.
-  vSubjects <- unique(df[[strSubjectCol]])
-  df <- df[!is.na(df[[strValueCol]]), , drop = FALSE]
+  df <- df[!is.na(df[[strValueCol]]) & !is.na(df[[strSubjectCol]]), , drop = FALSE]
   # arrange() is stable and sorts in the C locale, so full ties keep input order.
   df <- dplyr::arrange(
     df,
@@ -131,12 +110,11 @@ Mark_ConsecutiveRepeats <- function(
     df$seq <- integer(0)
     df$in_repeat_window <- logical(0)
     df$window_start <- logical(0)
-    return(list(df = df, vSubjects = vSubjects))
+    return(df)
   }
   vSubject <- df[[strSubjectCol]]
   vValue <- df[[strValueCol]]
   bNewSubject <- c(TRUE, vSubject[-1] != vSubject[-n])
-  bNewSubject[is.na(bNewSubject)] <- TRUE
   # A run breaks on a new subject or a changed value, as rle() does per subject.
   bNewRun <- bNewSubject | c(TRUE, vValue[-1] != vValue[-n])
   vRun <- cumsum(bNewRun)
@@ -149,5 +127,5 @@ Mark_ConsecutiveRepeats <- function(
   df$window_start <- df$in_repeat_window &
     vPosInRun <= vRunLength - nWindowLength + 1
   rownames(df) <- NULL
-  list(df = df, vSubjects = vSubjects)
+  df
 }

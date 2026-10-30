@@ -127,8 +127,8 @@ htmltools::tags$header(
     class = "rm-how",
     hidden = NA,
     htmltools::HTML(sprintf('<ul>
-<li>A <strong>window</strong> is %1$s consecutive measurements of one vital for one participant, in visit order (missing values skipped). A window <strong>repeats</strong> when all %1$s values are identical. Each participant and vital has <strong>N</strong> repeating windows of <strong>D</strong> windows; the KRIs <code>kri0020a</code>&ndash;<code>f</code> sum N and D by site.</li>
-<li>Participants are <strong>evaluable</strong> for a vital once they have enough windows. Flag rule: %2$s. Change the rule, thresholds and minimum windows under <strong>Settings</strong> in the bar below; every section follows.</li>
+<li>A <strong>window</strong> is %1$s consecutive measurements of one vital for one participant, in date order (visit breaks ties; missing values skipped). A window <strong>repeats</strong> when all %1$s values are identical. Each participant and vital has <strong>N</strong> repeating windows of <strong>D</strong> windows; the KRIs <code>kri0020a</code>&ndash;<code>f</code> sum N and D by site.</li>
+<li>Participants are <strong>evaluable</strong> for a vital once they have enough windows. Flag rule: %2$s. Change the rule, thresholds and minimum windows under <strong>Settings</strong> in the bar below; participant flags in every section follow, while site flags keep the KRI rule.</li>
 <li><strong>Blood pressure</strong> (Settings): <em>Separate</em> shows systolic and diastolic BP (the KRIs); <em>Combined</em> shows paired BP, where a window repeats only when both readings repeat over the same visits (no KRI); <em>Both</em> shows all three.</li>
 <li>Pick measures under <strong>Measures</strong> in the bar below, or click a measure in the Study overview, to focus every section except the Study overview, which always covers the whole study. Click a country or site to filter; remove a filter with its &times; or all of them with <strong>Reset filters</strong>.</li>
 <li>The last three sections drill down from one row per participant (Participant Listing) to one per participant and vital (Vitals listing) to one per value or visit record (Data table). Click a participant, tile or row in any of them to filter the whole report to that participant; click it again to clear.</li>
@@ -358,7 +358,7 @@ rm_SettingsPanel <- function() {
     htmltools::tags$div(
       class = "rm-set-head",
       htmltools::tags$b("Report settings"),
-      htmltools::tags$span(class = "rm-set-hint", "Every section follows \u00b7 Esc to close")
+      htmltools::tags$span(class = "rm-set-hint", "Participant flags follow; site flags keep the KRI rule \u00b7 Esc to close")
     ),
     set_row(
       "Blood pressure",
@@ -457,7 +457,7 @@ htmltools::tags$div(
     chip("site", "Site"),
     chip("subj", "Participant")
   ),
-  htmltools::tags$span(id = "rm-count", class = "rm-count", title = "Filters apply to every section."),
+  htmltools::tags$span(id = "rm-count", class = "rm-count", title = "Filters apply to every section except the Study overview."),
   htmltools::tags$button(id = "rm-reset", type = "button", class = "rm-ghost", title = "Clear the vitals, country, site and participant filters", "Reset filters"),
   htmltools::tags$span(class = "rm-vr"),
   htmltools::tags$button(id = "rm-settings-toggle", type = "button", class = "rm-btn", `aria-expanded` = "false", `aria-controls` = "rm-settings", "Settings"),
@@ -472,12 +472,18 @@ if (!has_participants) {
 } else if (!has_vs) {
   cat("\n> **No vital signs recorded.** `Mapped_VS` has no measurements for the enrolled participants, so no participant is evaluable.\n")
 } else if (!has_evaluable) {
-  cat(sprintf("\n> **No evaluable participants.** No participant has %s measurements of a KRI vital yet.\n", nW))
+  nNeeded <- nW + lClass$meta$min_windows - 1
+  cat(sprintf(
+    "\n> **No evaluable participants** at the initial settings: none has the %s measurements of a vital needed for %s window%s of %s.\n",
+    nNeeded, lClass$meta$min_windows, if (lClass$meta$min_windows == 1) "" else "s", nW
+  ))
 }
 if (!in_cmp) {
   cat(sprintf(
-    "\n> The repeat-measure KRIs (`kri0020a`&ndash;`f`) are not in this study's metrics. The report uses W = %s and the default thresholds.\n",
-    nW
+    "\n> The repeat-measure KRIs (`kri0020a`&ndash;`f`) are not in this study's metrics. The report uses W = %s (%s) and flags sites at Amber \u2265 %s%%, Red \u2265 %s%% of windows, with at least %s windows.\n",
+    nW,
+    if (lClass$meta$window_source == "argument") "report argument" else "default",
+    format(100 * lSiteRule$thresholds[1]), format(100 * lSiteRule$thresholds[2]), lSiteRule$accrual
   ))
 }
 ```
@@ -678,22 +684,29 @@ htmltools::tagList(
 ```
 
 ```{r rm-data, echo=FALSE, eval=has_participants}
-ipm_DataScript(
-  list(
-    sites = dfSites[c("vital", "invid", "flag", "source")],
-    siteRule = list(thresholds = lSiteRule$thresholds, accrual = jsonlite::unbox(lSiteRule$accrual)),
-    vitals = lClass$vitals,
-    participants = unique(lClass$participants[c("subjid", "invid", "country")]),
-    # Unboxed so the scalars arrive as JSON scalars, not length-1 arrays.
-    settings = list(
-      rule = jsonlite::unbox(lSettings$rule),
-      thresholds = lSettings$thresholds,
-      minWindows = jsonlite::unbox(lSettings$minWindows),
-      bp = jsonlite::unbox(lSettings$bp)
-    ),
-    export = bExport
+lData <- list(
+  sites = dfSites[c("vital", "invid", "flag", "source")],
+  siteRule = list(thresholds = lSiteRule$thresholds, accrual = jsonlite::unbox(lSiteRule$accrual)),
+  vitals = lClass$vitals,
+  participants = unique(lClass$participants[c("subjid", "invid", "country")]),
+  # Unboxed so the scalars arrive as JSON scalars, not length-1 arrays.
+  settings = list(
+    rule = jsonlite::unbox(lSettings$rule),
+    thresholds = lSettings$thresholds,
+    minWindows = jsonlite::unbox(lSettings$minWindows),
+    bp = jsonlite::unbox(lSettings$bp)
   ),
-  strId = "rm-data"
+  export = bExport
+)
+# 17 significant digits round-trip every double, so the browser compares
+# windows with exactly R's thresholds (15 can flip a flag at the boundary).
+htmltools::tags$script(
+  type = "application/json",
+  id = "rm-data",
+  htmltools::HTML(gsub(
+    "<", "\\\\u003c",
+    jsonlite::toJSON(lData, dataframe = "rows", na = "null", null = "null", digits = I(17))
+  ))
 )
 ```
 
