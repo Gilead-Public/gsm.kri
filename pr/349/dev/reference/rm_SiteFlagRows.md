@@ -36,4 +36,5 @@ rm_SiteFlagRows(lClass, dfResults = NULL, dfMetrics = NULL)
 A \`tibble\` with \`vital\`, \`country\`, \`invid\`, \`Numerator\`,
 \`Denominator\`, \`flag\` (\`0\` Green, \`1\` Amber, \`2\` Red, \`NA\`
 not evaluated) and \`source\`, one row per vital and site with enrolled
-participants.
+participants. A site whose participants have more than one country lists
+them in \`country\`, comma-separated.

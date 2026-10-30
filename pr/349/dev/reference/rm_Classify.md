@@ -83,4 +83,6 @@ participants' \`Mapped_VS\` rows, with \`country\` and \`invid\` from
 \`vitals\`: the rows of \[rm_Vitals()\] in the report, plus any other
 numeric \`Mapped_VS\` column. \* \`meta\`: \`window_length\`,
 \`window_source\` (\`"metrics"\`, \`"argument"\` or \`"default"\`),
-\`rule\`, \`thresholds\` (Amber, Red) and \`min_windows\`.
+\`rule\`, \`thresholds\` (Amber, Red), \`min_windows\` and
+\`split_sites\` (sites whose participants have more than one country; a
+warning lists them).
