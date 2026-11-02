@@ -1,7 +1,14 @@
 # Changelog
 
-## gsm.kri (development version)
+## gsm.kri v1.8.0
 
+This minor release adds the IP Monitoring report and metrics (IP
+non-starters and premature treatment discontinuation) and the
+repeat-measure vital-sign KRIs.
+
+- Refactored the Eligibility report workflow’s module configuration and
+  queries
+  ([\#351](https://github.com/Gilead-Public/gsm.kri/issues/351)).
 - Add the IP monitoring report for IP non-starters and premature
   treatment discontinuations. Dosed participants are shown by study drug
   completion, including potential premature treatment discontinuations,
@@ -26,7 +33,7 @@
   [`Detect_ConsecutiveRepeats()`](https://gilead-public.github.io/gsm.kri/dev/reference/Detect_ConsecutiveRepeats.md)
   counts, per subject, rolling windows of consecutive identical
   measurements, for use with
-  [`gsm.core::Input_Rate()`](https://gilead-biostats.github.io/gsm.core/reference/Input_Rate.html)
+  [`gsm.core::Input_Rate()`](https://gilead-public.github.io/gsm.core/reference/Input_Rate.html)
   ([\#307](https://github.com/Gilead-Public/gsm.kri/issues/307)).
 - New repeat-measure vital-sign metrics `kri0020a`-`f` (site) and
   `cou0020a`-`f` (country) for weight, heart rate, systolic/diastolic
