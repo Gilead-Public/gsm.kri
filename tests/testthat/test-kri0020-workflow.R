@@ -1,7 +1,11 @@
 vs_ids <- c(paste0("kri0020", letters[1:6]), paste0("cou0020", letters[1:6]))
 vs_cols <- c(
-  a = "weight", b = "pulse", c = "sysbp",
-  d = "diabp", e = "resp", f = "temp"
+  a = "weight",
+  b = "pulse",
+  c = "sysbp",
+  d = "diabp",
+  e = "resp",
+  f = "temp"
 )
 
 run_vs <- function(strIDs) {
@@ -101,7 +105,11 @@ test_that("workflow results do not depend on Mapped_VS row order (#307)", {
 
 test_that("MakeWorkflowList regex path matches all suffixed variants (#306)", {
   TestAtLogLevel()
-  strPath <- file.path(system.file(package = "gsm.kri"), "workflow", "2_metrics")
+  strPath <- file.path(
+    system.file(package = "gsm.kri"),
+    "workflow",
+    "2_metrics"
+  )
   expect_no_warning(
     wf <- workr::MakeWorkflowList(strNames = "kri0020", strPath = strPath)
   )
