@@ -43,8 +43,8 @@ Imports:
 Suggests: 
     fontawesome,
     gsm.mapping (>= 1.2.0),
-    gsm.reporting (>= 1.1.4),
     gsm.qtl (>= 1.4.0),
+    gsm.reporting (>= 1.1.4),
     here,
     knitr,
     lubridate,
