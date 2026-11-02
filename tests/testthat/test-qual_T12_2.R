@@ -10,7 +10,7 @@ kri_custom <- workr::MakeWorkflowList(
 
 ## Test Code
 testthat::test_that("Qual: Query Age Assessments can be done correctly using a grouping variable, such as Site, Country, or Study, when applicable (#159)", {
-  TestAtLogLevel("WARN")
+  TestAtLogLevel()
   ## regular -----------------------------------------
   test <- map(
     kri_workflows,

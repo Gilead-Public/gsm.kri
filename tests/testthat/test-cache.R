@@ -4,6 +4,7 @@ library(testthat)
 test_cache_dir <- get_cache_dir("test_cache")
 
 test_that("caching functions work correctly (#182)", {
+  TestAtLogLevel()
   # Test cache directory creation
   cache_dir <- get_cache_dir("temp_test")
   expect_true(dir.exists(cache_dir))
@@ -38,8 +39,9 @@ test_that("caching functions work correctly (#182)", {
 })
 
 test_that("cached mapped data is generated correctly (#182)", {
+  TestAtLogLevel()
   # Clear test cache
-  clear_cache(test_cache_dir)
+  expect_message(clear_cache(test_cache_dir), "Cache cleared")
 
   # Test with a minimal data setup
   test_lData <- list(
@@ -103,7 +105,8 @@ test_that("cached mapped data is generated correctly (#182)", {
 })
 
 test_that("mapping output caching works (#182)", {
-  clear_cache(test_cache_dir)
+  TestAtLogLevel()
+  expect_message(clear_cache(test_cache_dir), "Cache cleared")
 
   test_mappings_wf <- workr::MakeWorkflowList(
     strNames = c("^SUBJ", "^AE"),
@@ -126,6 +129,7 @@ test_that("mapping output caching works (#182)", {
 })
 
 test_that("cache clearing works (#182)", {
+  TestAtLogLevel()
   # Ensure cache exists in test directory
   test_cache_file <- file.path(test_cache_dir, "test.rds")
   saveRDS(list(test = "data"), test_cache_file)
@@ -133,7 +137,7 @@ test_that("cache clearing works (#182)", {
   expect_true(file.exists(test_cache_file))
 
   # Clear test cache
-  clear_cache(test_cache_dir)
+  expect_message(clear_cache(test_cache_dir), "Cache cleared")
 
   # Check that cache files are removed
   gsm_cache_files <- list.files(test_cache_dir, pattern = "(mapped_data|mappings_wf|mapping_output)\\.rds$", full.names = TRUE)

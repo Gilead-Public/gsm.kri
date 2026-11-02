@@ -11,15 +11,16 @@ lData_pat0015 <- list(
 )
 
 RunOne <- function(strMetric) {
-  wf <- gsm.core::MakeWorkflowList(
+  wf <- workr::MakeWorkflowList(
     strNames = strMetric,
     strPath = GetDefaultKRIPath(),
     bExact = TRUE
   )[[strMetric]]
-  gsm.core::RunWorkflow(wf, lData_pat0015)$Analysis_Summary
+  workr::RunWorkflow(wf, lData_pat0015)$Analysis_Summary
 }
 
-test_that("pat0015 emits one row per enrolled subject with Flag=2 only for premature deaths {#221}", {
+test_that("pat0015 emits one row per enrolled subject with Flag=2 only for premature deaths (#221)", {
+  TestAtLogLevel()
   out <- RunOne("pat0015")
   expect_equal(nrow(out), 4) # one row per enrolled subject
   flagged <- out$GroupID[out$Flag == 2]
@@ -27,8 +28,9 @@ test_that("pat0015 emits one row per enrolled subject with Flag=2 only for prema
   expect_false("S004" %in% flagged) # death at day 120 is outside the window
 })
 
-test_that("WindowDays override narrows the kri0015 numerator {#221}", {
-  wf90 <- gsm.core::MakeWorkflowList(
+test_that("WindowDays override narrows the kri0015 numerator (#221)", {
+  TestAtLogLevel()
+  wf90 <- workr::MakeWorkflowList(
     strNames = "kri0015",
     strPath = GetDefaultKRIPath(),
     bExact = TRUE
@@ -38,10 +40,10 @@ test_that("WindowDays override narrows the kri0015 numerator {#221}", {
   wf30$meta$WindowDays <- 30
 
   num90 <- sum(
-    gsm.core::RunWorkflow(wf90, lData_pat0015)$Analysis_Summary$Numerator
+    workr::RunWorkflow(wf90, lData_pat0015)$Analysis_Summary$Numerator
   )
   num30 <- sum(
-    gsm.core::RunWorkflow(wf30, lData_pat0015)$Analysis_Summary$Numerator
+    workr::RunWorkflow(wf30, lData_pat0015)$Analysis_Summary$Numerator
   )
 
   expect_equal(num90, 2) # deaths at day 20 and day 50

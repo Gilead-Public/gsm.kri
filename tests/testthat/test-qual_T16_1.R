@@ -1,18 +1,22 @@
 TestAtLogLevel("WARN")
-## Test Setup
-kri_workflows <- workr::MakeWorkflowList(
-  strNames = c(paste0("kri000", 1:9), paste0("kri00", 10:12), "srs"),
-  strPath = GetDefaultKRIPath()
-)
-analyzed <- workr::RunWorkflows(
-  kri_workflows,
-  lData = c(mapped_data, list(lWorkflows = kri_workflows))
-) %>%
-  suppressWarnings()
-# Exclude pk/pd and exclusion since thats not counting to SRS
-
 ## Test Code
 testthat::test_that("Qual: Given summarized analytics data, all appropriate aspects of site risk score are available to calculate it correctly (#159)", {
+  # "kri0007" matches the active kri0007-2, which reads drv_drg_completion.
+  skip_if_not(
+    "drv_drg_completion" %in% names(gsm.core::lSource$Raw_SUBJ),
+    "lSource predates drv_drg_completion"
+  )
+  kri_workflows <- workr::MakeWorkflowList(
+    strNames = c(paste0("kri000", 1:9), paste0("kri00", 10:12), "srs"),
+    strPath = GetDefaultKRIPath()
+  )
+  # Exclude pk/pd and exclusion since thats not counting to SRS
+  analyzed <- workr::RunWorkflows(
+    kri_workflows,
+    lData = c(mapped_data, list(lWorkflows = kri_workflows))
+  ) %>%
+    suppressWarnings()
+
   # Check all kri workflows have 1:1 mapped flags and respective weights, exclude PK-PD and SRS
   expect_equal(
     map(kri_workflows[-13], function(x) {

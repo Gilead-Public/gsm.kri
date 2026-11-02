@@ -1,0 +1,99 @@
+meta:
+  Active: true
+  Type: Analysis
+  ID: cou0020e
+  GroupLevel: Country
+  Abbreviation: RMRR
+  Metric: Repeat Measure (Respiratory Rate)
+  Numerator: Windows of Consecutive Identical Respiratory Rate Values
+  Denominator: Evaluable Respiratory Rate Windows
+  Model: Identity
+  Score: Respiratory Rate Consecutive Repeat Rate
+  AnalysisType: identity
+  ValueCol: resp
+  WindowLength: 3
+  # Indirected because workr resolves bare "Numerator" to the meta label.
+  NumeratorCol: Numerator
+  DenominatorCol: Denominator
+  Threshold: "0.2,0.3"
+  Flag: "0,1,2"
+  AccrualMetric: Denominator
+  AccrualThreshold: 3
+  GenerateRiskSignal: false
+spec:
+  Mapped_SUBJ:
+    subjid:
+      type: character
+    country:
+      type: character
+  Mapped_VS:
+    subjid:
+      type: character
+    vs_dt:
+      type: Date
+    visit:
+      type: character
+    resp:
+      type: numeric
+steps:
+  - output: vThreshold
+    name: gsm.core::ParseThreshold
+    params:
+      strThreshold: Threshold
+  - output: vFlag
+    name: gsm.core::ParseThreshold
+    params:
+      strThreshold: Flag
+      bSort: false
+  # visit breaks same-date ties; Mapped_VS has no measurement time.
+  - output: Temp_Repeats
+    name: gsm.kri::Detect_ConsecutiveRepeats
+    params:
+      df: Mapped_VS
+      strValueCol: ValueCol
+      strSubjectCol: subjid
+      strDateCol: vs_dt
+      strOrderCol: visit
+      nWindowLength: WindowLength
+  - output: Analysis_Input
+    name: gsm.core::Input_Rate
+    params:
+      dfSubjects: Mapped_SUBJ
+      dfNumerator: Temp_Repeats
+      dfDenominator: Temp_Repeats
+      strSubjectCol: subjid
+      strGroupCol: country
+      strGroupLevel: GroupLevel
+      strNumeratorMethod: Sum
+      strDenominatorMethod: Sum
+      strNumeratorCol: NumeratorCol
+      strDenominatorCol: DenominatorCol
+  - output: Analysis_Transformed
+    name: gsm.core::Transform_Rate
+    params:
+      dfInput: Analysis_Input
+  - output: Analysis_Analyzed
+    name: gsm.core::Analyze_Identity
+    params:
+      dfTransformed: Analysis_Transformed
+  - output: Analysis_Flagged
+    name: gsm.core::Flag
+    params:
+      dfAnalyzed: Analysis_Analyzed
+      vThreshold: vThreshold
+      vFlag: vFlag
+      nAccrualThreshold: AccrualThreshold
+      strAccrualMetric: AccrualMetric
+  - output: Analysis_Summary
+    name: gsm.core::Summarize
+    params:
+      dfFlagged: Analysis_Flagged
+  - output: lAnalysis
+    name: list
+    params:
+      ID: ID
+      Analysis_Input: Analysis_Input
+      Analysis_Transformed: Analysis_Transformed
+      Analysis_Analyzed: Analysis_Analyzed
+      Analysis_Flagged: Analysis_Flagged
+      Analysis_Summary: Analysis_Summary

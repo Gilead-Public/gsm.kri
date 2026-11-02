@@ -43,13 +43,12 @@ test_that("gt_style applies standardized formatting", {
 })
 
 test_that("gt_style requires gt package", {
+  skip_if(requireNamespace("gt", quietly = TRUE), "gt is installed")
+
   # Create mock gt table structure for testing package requirement
   mock_table <- structure(list(), class = "gt_tbl")
 
-  # The function should check for gt installation
-  if (!requireNamespace("gt", quietly = TRUE)) {
-    expect_error(gt_style(mock_table), class = "rlang_error")
-  }
+  expect_error(gt_style(mock_table), class = "rlang_error")
 })
 
 test_that("gsm_gt passes additional arguments to gt::gt", {

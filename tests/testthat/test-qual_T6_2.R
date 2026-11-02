@@ -12,7 +12,7 @@ outputs <- map(kri_workflows, ~ map_vec(.x$steps, ~ .x$output))
 
 ## Test Code
 testthat::test_that("Qual: Adverse Event Assessments can be done correctly using a grouping variable, such as Site or Country for KRIs, and Study for QTLs, when applicable (#159)", {
-  TestAtLogLevel("WARN")
+  TestAtLogLevel()
   ## regular -----------------------------------------
   test <- map(kri_workflows, ~ robust_runworkflow(.x, mapped_data, steps = 1:7))
 
@@ -34,12 +34,11 @@ testthat::test_that("Qual: Adverse Event Assessments can be done correctly using
   iwalk(
     test,
     ~ expect_equal(
-      n_distinct(.x$Mapped_SUBJ[[
-        kri_workflows[[.y]]$steps[[which(
-          map_chr(kri_workflows[[.y]]$steps, ~ .x$name) ==
-            "gsm.core::Input_Rate"
-        )]]$params$strGroupCol
-      ]]),
+      # Transform_Rate() drops groups whose denominator sums to zero.
+      .x$Analysis_Input |>
+        dplyr::summarise(Denominator = sum(.data$Denominator), .by = "GroupID") |>
+        dplyr::filter(.data$Denominator > 0) |>
+        nrow(),
       nrow(.x$Analysis_Transformed)
     )
   )

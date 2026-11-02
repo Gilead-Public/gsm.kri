@@ -97,7 +97,7 @@ test_that("pd_BucketBarSpec drops the zoom caption when zoom is off (#264)", {
   expect_null(spec$labels)
 })
 
-test_that("pd_BucketBarSpec attaches the tooltip formatter as a js_hook with no 'NA' string-compare {#288}", {
+test_that("pd_BucketBarSpec attaches the tooltip formatter as a js_hook with no 'NA' string-compare (#288)", {
   spec <- pd_BucketBarSpec(90, strGroupLabel = "Site")
   expect_s3_class(spec$tooltip$formatter, "JS_EVAL")
   # gsm.vizr serializes with na = "null" (utils-serialize.R), so a missing
@@ -109,7 +109,7 @@ test_that("pd_BucketBarSpec attaches the tooltip formatter as a js_hook with no 
   expect_false(grepl("'NA'", formatter_code, fixed = TRUE))
 })
 
-test_that("gsm.vizr::bars() accepts pd_BucketBarSpec() and serializes the tooltip hook {#288}", {
+test_that("gsm.vizr::bars() accepts pd_BucketBarSpec() and serializes the tooltip hook (#288)", {
   spec <- pd_BucketBarSpec(90, strGroupLabel = "Site")
   rows <- pd_BucketRows(make_classified(), 90, strGroupCol = "invid")
   widget <- gsm.vizr::bars(

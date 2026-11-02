@@ -15,7 +15,7 @@ test_that("Empty dfs return empty dfs", {
 
 test_that("Correct data structure when proper dataframe is passed", {
   reportingResults_filt <- gsm.core::reportingResults %>%
-    dplyr::filter(MetricID == unique(gsm.core::reportingResults$MetricID)[[1]])
+    dplyr::filter(MetricID == "Analysis_kri0001")
   result <- MakeMetricTable(reportingResults_filt, gsm.core::reportingGroups)
   expect_s3_class(result, "data.frame")
   expect_setequal(
@@ -34,7 +34,7 @@ test_that("Flag filtering works correctly", {
     0
   )
   reportingResults_filt <- gsm.core::reportingResults %>%
-    dplyr::filter(MetricID == unique(gsm.core::reportingResults$MetricID)[[1]])
+    dplyr::filter(MetricID == "Analysis_kri0001")
   result <- MakeMetricTable(reportingResults_filt, gsm.core::reportingGroups)
   expect_s3_class(result, "data.frame")
   expect_length(
@@ -45,7 +45,7 @@ test_that("Flag filtering works correctly", {
 
 test_that("Score rounding works correctly", {
   reportingResults_filt <- gsm.core::reportingResults %>%
-    dplyr::filter(MetricID == unique(gsm.core::reportingResults$MetricID)[[1]])
+    dplyr::filter(MetricID == "Analysis_kri0001")
   result <- MakeMetricTable(reportingResults_filt, gsm.core::reportingGroups)
   expect_true(any(grepl("^-\\d+\\.\\d{2}$", as.character(result$Score))))
 })
@@ -58,7 +58,7 @@ test_that("Errors informatively when multiple MetricIDs passed in", {
 
 test_that("Enrolled is an integer", {
   reportingResults_filt <- gsm.core::reportingResults %>%
-    dplyr::filter(MetricID == unique(gsm.core::reportingResults$MetricID)[[1]])
+    dplyr::filter(MetricID == "Analysis_kri0001")
   result <- MakeMetricTable(reportingResults_filt, gsm.core::reportingGroups)
   expect_type(result$Enrolled, "integer")
 })
@@ -67,7 +67,7 @@ test_that("Output is expected object", {
   # Dynamically select sites based on their flag values instead of hard-coding
   latest_data <- gsm.core::reportingResults %>%
     FilterByLatestSnapshotDate() %>%
-    dplyr::filter(MetricID == unique(gsm.core::reportingResults$MetricID)[[1]])
+    dplyr::filter(MetricID == "Analysis_kri0001")
 
   # Select sites with zero flags (Flag == 0 or is.na(Flag))
   zero_flags <- latest_data %>%

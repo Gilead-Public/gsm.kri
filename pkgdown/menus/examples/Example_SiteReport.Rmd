@@ -27,11 +27,30 @@ library(gsm.core)
 library(gsm.kri)
 library(here)
 
+## Retired metric: inactive, with results in earlier snapshots only.
+## The example data have none, so one is copied from the Adverse Event Rate.
+dfMetrics <- gsm.core::reportingMetrics %>%
+  dplyr::filter(MetricID == "Analysis_kri0001") %>%
+  dplyr::mutate(
+    MetricID = "Analysis_kri9999",
+    Metric = "Retired Metric",
+    Abbreviation = "RET",
+    Active = FALSE
+  ) %>%
+  dplyr::bind_rows(gsm.core::reportingMetrics, .)
+dfResults <- gsm.core::reportingResults %>%
+  dplyr::filter(
+    MetricID == "Analysis_kri0001",
+    SnapshotDate < max(SnapshotDate)
+  ) %>%
+  dplyr::mutate(MetricID = "Analysis_kri9999") %>%
+  dplyr::bind_rows(gsm.core::reportingResults, .)
+
 ## Site Report
 lCharts <- gsm.kri::MakeCharts(
-  dfResults = gsm.core::reportingResults,
+  dfResults = dfResults,
   dfGroups = gsm.core::reportingGroups,
-  dfMetrics = gsm.core::reportingMetrics,
+  dfMetrics = dfMetrics,
   dfBounds = gsm.core::reportingBounds
 )
 ```
@@ -46,9 +65,10 @@ child_env <- list2env(
   list(
     params = list(
       lCharts = lCharts,
-      dfResults = gsm.kri::FilterByLatestSnapshotDate(gsm.core::reportingResults),
+      # All snapshots: the retired metric has no results in the latest one.
+      dfResults = dfResults,
       dfGroups = gsm.core::reportingGroups,
-      dfMetrics = gsm.core::reportingMetrics
+      dfMetrics = dfMetrics
     )
   ),
   parent = environment()

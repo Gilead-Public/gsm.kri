@@ -15,19 +15,19 @@ dfDeath <- tibble::tibble(
   deathcls = c("Adverse Event", "Disease Progression")
 )
 
-test_that("pd_PatientListing returns a DT htmlwidget {#223}", {
+test_that("pd_PatientListing returns a DT htmlwidget (#223)", {
   testthat::skip_if_not_installed("DT")
   tbl <- pd_PatientListing(dfResults, dfDeath)
   expect_s3_class(tbl, "datatables")
 })
 
-test_that("pd_PatientListing keeps only Flag==2 rows sorted by death_dy {#223}", {
+test_that("pd_PatientListing keeps only Flag==2 rows sorted by death_dy (#223)", {
   df <- pd_PatientListingData(dfResults, dfDeath)
   expect_equal(df$subjid, c("S2", "S1")) # day 20 before day 50; S3 (Flag 0) dropped
   expect_equal(df$death_reason, c("Disease Progression", "Adverse Event")) # deathcls, sorted S2(20),S1(50)
 })
 
-test_that("pd_PatientListing degrades to Unknown without deathcls {#223}", {
+test_that("pd_PatientListing degrades to Unknown without deathcls (#223)", {
   df <- pd_PatientListingData(
     dfResults,
     dplyr::select(dfDeath, subjid, death_dt, death_dy)
@@ -36,7 +36,7 @@ test_that("pd_PatientListing degrades to Unknown without deathcls {#223}", {
   expect_true(all(df$treatment_related == "Unknown")) # no deathcls, no dfAE
 })
 
-test_that("pd_PatientListingData maps blank/whitespace deathcls to Unknown in both death_reason and treatment_related {#221}", {
+test_that("pd_PatientListingData maps blank/whitespace deathcls to Unknown in both death_reason and treatment_related (#221)", {
   dfResultsBlank <- tibble::tibble(
     GroupID = c("E", "F", "G"),
     MetricID = "Analysis_pat0015",
@@ -56,7 +56,7 @@ test_that("pd_PatientListingData maps blank/whitespace deathcls to Unknown in bo
   expect_true(all(out$treatment_related == "Unknown"))
 })
 
-test_that("pd_PatientListing validates inputs {#223}", {
+test_that("pd_PatientListing validates inputs (#223)", {
   expect_error(
     pd_PatientListing(as.list(dfResults), dfDeath),
     "dfResults is not a data.frame"
@@ -67,7 +67,7 @@ test_that("pd_PatientListing validates inputs {#223}", {
   )
 })
 
-test_that("Treatment Related is Yes only for AE death + fatal related AE {#248}", {
+test_that("Treatment Related is Yes only for AE death + fatal related AE (#248)", {
   dfResultsTR <- tibble::tibble(
     GroupID = c("A", "B", "C", "D"),
     MetricID = "Analysis_pat0015",
@@ -92,7 +92,7 @@ test_that("Treatment Related is Yes only for AE death + fatal related AE {#248}"
   expect_equal(tr[["D"]], "Unknown") # AE death but AE grade 4 (not fatal)
 })
 
-test_that("Treatment Related is Unknown when deathcls missing {#248}", {
+test_that("Treatment Related is Unknown when deathcls missing (#248)", {
   dfResultsTR <- tibble::tibble(
     GroupID = c("E", "F"),
     MetricID = "Analysis_pat0015",
@@ -109,7 +109,7 @@ test_that("Treatment Related is Unknown when deathcls missing {#248}", {
   expect_true(all(out$treatment_related == "Unknown")) # deathcls missing/blank
 })
 
-test_that("Treatment Related non-AE death with a fatal related AE is Unknown {#248}", {
+test_that("Treatment Related non-AE death with a fatal related AE is Unknown (#248)", {
   dfResultsTR <- tibble::tibble(
     GroupID = "G",
     MetricID = "Analysis_pat0015",
@@ -126,7 +126,7 @@ test_that("Treatment Related non-AE death with a fatal related AE is Unknown {#2
   expect_equal(out$treatment_related, "Unknown") # contradictory -> Unknown
 })
 
-test_that("Treatment Related AE death with a fatal NOT RELATED AE is No {#248}", {
+test_that("Treatment Related AE death with a fatal NOT RELATED AE is No (#248)", {
   dfResultsTR <- tibble::tibble(
     GroupID = "H",
     MetricID = "Analysis_pat0015",
@@ -149,19 +149,19 @@ dfSubjects <- tibble::tibble(
   country = c("USA", "USA", "CAN")
 )
 
-test_that("pd_PatientListingData includes invid when dfSubjects provided {#223}", {
+test_that("pd_PatientListingData includes invid when dfSubjects provided (#223)", {
   df <- pd_PatientListingData(dfResults, dfDeath, dfSubjects)
   expect_true("invid" %in% names(df))
   expect_equal(df$invid, c("INV-1", "INV-1")) # S2 (day 20), S1 (day 50) — both Flag==2
 })
 
-test_that("pd_PatientListingData works without dfSubjects (backwards compat) {#223}", {
+test_that("pd_PatientListingData works without dfSubjects (backwards compat) (#223)", {
   df <- pd_PatientListingData(dfResults, dfDeath)
   expect_false("invid" %in% names(df))
   expect_equal(nrow(df), 2)
 })
 
-test_that("pd_CheckWindowConsistency warns on mismatch {#223}", {
+test_that("pd_CheckWindowConsistency warns on mismatch (#223)", {
   expect_warning(
     pd_CheckWindowConsistency(10, 0, 2),
     "disagrees with the window used to produce dfResults"
@@ -169,13 +169,13 @@ test_that("pd_CheckWindowConsistency warns on mismatch {#223}", {
   expect_null(suppressWarnings(pd_CheckWindowConsistency(10, 0, 2)))
 })
 
-test_that("pd_PatientListingData joins country when dfSubjects has it {#223}", {
+test_that("pd_PatientListingData joins country when dfSubjects has it (#223)", {
   df <- pd_PatientListingData(dfResults, dfDeath, dfSubjects)
   expect_true("country" %in% names(df))
   expect_equal(df$country, c("USA", "USA")) # S2 (day 20), S1 (day 50)
 })
 
-test_that("pd_PatientListingData orders identity columns first {#223}", {
+test_that("pd_PatientListingData orders identity columns first (#223)", {
   df <- pd_PatientListingData(dfResults, dfDeath, dfSubjects)
   expect_equal(
     names(df),
@@ -192,7 +192,7 @@ test_that("pd_PatientListingData orders identity columns first {#223}", {
   )
 })
 
-test_that("pd_PatientListingData derives randomization_date as death_dt - death_dy {#221}", {
+test_that("pd_PatientListingData derives randomization_date as death_dt - death_dy (#221)", {
   df <- pd_PatientListingData(dfResults, dfDeath)
   expect_s3_class(df$randomization_date, "Date")
   # Rows are sorted by death_dy asc: S2 (20) then S1 (50).
@@ -202,12 +202,12 @@ test_that("pd_PatientListingData derives randomization_date as death_dt - death_
   )
 })
 
-test_that("pd_PatientListingData drops the constant Flag column {#223}", {
+test_that("pd_PatientListingData drops the constant Flag column (#223)", {
   df <- pd_PatientListingData(dfResults, dfDeath)
   expect_false("Flag" %in% names(df))
 })
 
-test_that("pd_PatientListing names the invid column for the JS filter {#223}", {
+test_that("pd_PatientListing names the invid column for the JS filter (#223)", {
   testthat::skip_if_not_installed("DT")
   tbl <- pd_PatientListing(dfResults, dfDeath, dfSubjects)
   defs <- tbl$x$options$columnDefs
@@ -219,7 +219,7 @@ test_that("pd_PatientListing names the invid column for the JS filter {#223}", {
   expect_true(has_invid_name)
 })
 
-test_that("pd_PatientListing exposes a CSV download button {#223}", {
+test_that("pd_PatientListing exposes a CSV download button (#223)", {
   testthat::skip_if_not_installed("DT")
   tbl <- pd_PatientListing(dfResults, dfDeath, dfSubjects)
   expect_true("Buttons" %in% unlist(tbl$x$extensions))
@@ -234,7 +234,7 @@ test_that("pd_PatientListing exposes a CSV download button {#223}", {
   expect_match(tbl$x$options$dom, "l")
 })
 
-test_that("pd_PatientListing sorts by death_dy via a name-derived index {#223}", {
+test_that("pd_PatientListing sorts by death_dy via a name-derived index (#223)", {
   testthat::skip_if_not_installed("DT")
   tbl <- pd_PatientListing(dfResults, dfDeath, dfSubjects)
   sort_target <- tbl$x$options$order[[1]][[1]]
@@ -248,19 +248,19 @@ dfSubjectsStudy <- tibble::tibble(
   country = c("USA", "USA", "CAN")
 )
 
-test_that("pd_PatientListingData includes studyid when dfSubjects has it {#221}", {
+test_that("pd_PatientListingData includes studyid when dfSubjects has it (#221)", {
   df <- pd_PatientListingData(dfResults, dfDeath, dfSubjectsStudy)
   expect_true("studyid" %in% names(df))
   expect_equal(df$studyid, c("STUDY-X", "STUDY-X"))
 })
 
-test_that("pd_PatientListingData omits studyid when dfSubjects lacks it {#221}", {
+test_that("pd_PatientListingData omits studyid when dfSubjects lacks it (#221)", {
   df <- pd_PatientListingData(dfResults, dfDeath, dfSubjects)
   expect_false("studyid" %in% names(df))
   expect_true("randomization_date" %in% names(df))
 })
 
-test_that("pd_PatientListingData joins studyid even when dfSubjects has no invid {#221}", {
+test_that("pd_PatientListingData joins studyid even when dfSubjects has no invid (#221)", {
   dfSubjectsNoInvid <- tibble::tibble(
     subjid = c("S1", "S2", "S3"),
     studyid = "STUDY-X"
@@ -271,7 +271,7 @@ test_that("pd_PatientListingData joins studyid even when dfSubjects has no invid
   expect_false("invid" %in% names(df))
 })
 
-test_that("pd_PatientListingData puts Study first, Rand Date before Death Date {#221}", {
+test_that("pd_PatientListingData puts Study first, Rand Date before Death Date (#221)", {
   df <- pd_PatientListingData(dfResults, dfDeath, dfSubjectsStudy)
   expect_equal(
     names(df),
@@ -289,7 +289,7 @@ test_that("pd_PatientListingData puts Study first, Rand Date before Death Date {
   )
 })
 
-test_that("pd_PatientListing labels Study and Randomization Date columns {#221}", {
+test_that("pd_PatientListing labels Study and Randomization Date columns (#221)", {
   testthat::skip_if_not_installed("DT")
   tbl <- pd_PatientListing(dfResults, dfDeath, dfSubjectsStudy)
   header <- paste(as.character(tbl$x$container), collapse = " ")
@@ -297,7 +297,7 @@ test_that("pd_PatientListing labels Study and Randomization Date columns {#221}"
   expect_match(header, "Randomization Date", fixed = TRUE)
 })
 
-test_that("pd_PatientListingData yields NA randomization_date when death data missing {#221}", {
+test_that("pd_PatientListingData yields NA randomization_date when death data missing (#221)", {
   dfResultsMissing <- tibble::tibble(
     GroupID = "S9",
     GroupLevel = "Subject",
@@ -334,7 +334,7 @@ dfExclusionElig <- tibble::tibble(
   )
 )
 
-test_that("eligibility_status maps Source via the kri0014 rule {#249}", {
+test_that("eligibility_status maps Source via the kri0014 rule (#249)", {
   out <- pd_PatientListingData(
     dfResultsElig,
     dfDeathElig,
@@ -349,12 +349,12 @@ test_that("eligibility_status maps Source via the kri0014 rule {#249}", {
   expect_equal(es[["E5"]], "Unknown") # no row in Mapped_EXCLUSION
 })
 
-test_that("eligibility_status column is omitted without dfExclusion {#249}", {
+test_that("eligibility_status column is omitted without dfExclusion (#249)", {
   df <- pd_PatientListingData(dfResults, dfDeath)
   expect_false("eligibility_status" %in% names(df))
 })
 
-test_that("eligibility_status column is omitted when Source is absent {#249}", {
+test_that("eligibility_status column is omitted when Source is absent (#249)", {
   df <- pd_PatientListingData(
     dfResults,
     dfDeath,
@@ -363,7 +363,7 @@ test_that("eligibility_status column is omitted when Source is absent {#249}", {
   expect_false("eligibility_status" %in% names(df))
 })
 
-test_that("eligibility_status is the rightmost column {#249}", {
+test_that("eligibility_status is the rightmost column (#249)", {
   out <- pd_PatientListingData(
     dfResultsElig,
     dfDeathElig,
@@ -373,7 +373,7 @@ test_that("eligibility_status is the rightmost column {#249}", {
   expect_equal(utils::tail(names(out), 1), "eligibility_status")
 })
 
-test_that("pd_PatientListing labels the Eligibility Status column {#249}", {
+test_that("pd_PatientListing labels the Eligibility Status column (#249)", {
   testthat::skip_if_not_installed("DT")
   tbl <- pd_PatientListing(
     dfResultsElig,
@@ -385,7 +385,7 @@ test_that("pd_PatientListing labels the Eligibility Status column {#249}", {
   expect_match(header, "Eligibility Status", fixed = TRUE)
 })
 
-test_that("pd_PatientListing omits Eligibility Status without dfExclusion {#249}", {
+test_that("pd_PatientListing omits Eligibility Status without dfExclusion (#249)", {
   testthat::skip_if_not_installed("DT")
   tbl <- pd_PatientListing(dfResults, dfDeath)
   header <- paste(as.character(tbl$x$container), collapse = " ")
