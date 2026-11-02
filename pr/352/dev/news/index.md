@@ -33,7 +33,7 @@ repeat-measure vital-sign KRIs.
   [`Detect_ConsecutiveRepeats()`](https://gilead-public.github.io/gsm.kri/dev/reference/Detect_ConsecutiveRepeats.md)
   counts, per subject, rolling windows of consecutive identical
   measurements, for use with
-  [`gsm.core::Input_Rate()`](https://gilead-biostats.github.io/gsm.core/reference/Input_Rate.html)
+  [`gsm.core::Input_Rate()`](https://gilead-public.github.io/gsm.core/reference/Input_Rate.html)
   ([\#307](https://github.com/Gilead-Public/gsm.kri/issues/307)).
 - New repeat-measure vital-sign metrics `kri0020a`-`f` (site) and
   `cou0020a`-`f` (country) for weight, heart rate, systolic/diastolic
