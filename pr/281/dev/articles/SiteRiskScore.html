@@ -582,14 +582,12 @@ applied, and the resulting effective weight. It also retains
 and <code>ActionCount</code> for audit.
 <code><a href="../reference/CalculateActionRiskScore.html">CalculateActionRiskScore()</a></code> summarizes these same rows, so
 the two always agree. Passing them to
-<code>Report_KRI(dfRiskScoreDetail = ...)</code> adds:</p>
-<ul>
-<li>a small “▼N” marker on each Adjusted Risk Score that is lower than
-the Risk Score, and</li>
-<li>a breakdown that opens under the site’s row when its Adjusted Risk
-Score is clicked, listing each KRI’s flag, action state, ActionLog date,
-and points, with KRIs that no longer count shown struck through.</li>
-</ul>
+<code>Report_KRI(dfRiskScoreDetail = ...)</code> makes each Adjusted
+Risk Score clickable: a row opens under the site listing each weighted
+KRI’s flag, action state, ActionLog date, and whether it counts toward
+the score (Yes, Partly, or No). The Adjusted Risk Score is its own
+measure, so the report does not present it as a difference from the Risk
+Score.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">action_score_detail</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/MakeActionRiskScoreDetail.html">MakeActionRiskScoreDetail</a></span><span class="op">(</span></span>
 <span>  dfResults <span class="op">=</span> <span class="va">current_kri_results</span>,</span>

@@ -339,13 +339,11 @@ also retains `ActionExtractionDate`, sorted signal and action
 identifiers, and `ActionCount` for audit.
 [`CalculateActionRiskScore()`](https://gilead-public.github.io/gsm.kri/dev/reference/CalculateActionRiskScore.md)
 summarizes these same rows, so the two always agree. Passing them to
-`Report_KRI(dfRiskScoreDetail = ...)` adds:
-
-- a small “▼N” marker on each Adjusted Risk Score that is lower than the
-  Risk Score, and
-- a breakdown that opens under the site’s row when its Adjusted Risk
-  Score is clicked, listing each KRI’s flag, action state, ActionLog
-  date, and points, with KRIs that no longer count shown struck through.
+`Report_KRI(dfRiskScoreDetail = ...)` makes each Adjusted Risk Score
+clickable: a row opens under the site listing each weighted KRI’s flag,
+action state, ActionLog date, and whether it counts toward the score
+(Yes, Partly, or No). The Adjusted Risk Score is its own measure, so the
+report does not present it as a difference from the Risk Score.
 
 ``` r
 
