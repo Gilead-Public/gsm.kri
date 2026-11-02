@@ -57,10 +57,10 @@ Default: `"Adjusted Risk Score"`.}
 overview. `NULL` preserves the report default (`"red"` for site reports,
 `"all"` otherwise).}
 
-\item{dfRiskScoreDetail}{Optional per-KRI detail behind the comparison risk
-score, from [MakeActionRiskScoreDetail()]. When supplied, the site overview
-shows how far each comparison score is below the Site Risk Score and lists
-the KRIs responsible on click. Ignored when the comparison metric is absent
+\item{dfRiskScoreDetail}{Optional per-KRI detail behind the second risk
+score, from [MakeActionRiskScoreDetail()]. When supplied, clicking a score
+in that column of the site overview lists its KRIs, their action state, and
+whether each counts toward the score. Ignored when the metric is absent
 from `dfResults`. Default: `NULL`.}
 }
 \value{
