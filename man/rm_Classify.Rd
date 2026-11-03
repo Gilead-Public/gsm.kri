@@ -59,12 +59,13 @@ A `list`:
 \description{
 `r lifecycle::badge("experimental")`
 
-Windows every vital of every enrolled participant once, with the same
-logic as the `kri0020` / `cou0020` metrics, so every section of the report
-reads one frame. Summing `Numerator` and `Denominator` by site or country
-reproduces the metrics.
+Windows every vital of every enrolled participant once with
+[Detect_ConsecutiveRepeats()], the `kri0020` / `cou0020` metric function,
+so every section of the report reads one frame. Summing `Numerator` and
+`Denominator` by site or country reproduces the metrics.
 
-A participant's flag for a vital uses one of two rules:
+A participant's flag for a vital comes from [gsm.core::Flag()] with one of
+two rules:
 * `"count"` (default): repeating windows `Numerator` against
   `vFlagThresholds` (default Amber at 2, Red at 3 or more).
 * `"rate"`: `Numerator / Denominator` against `vFlagThresholds` (default

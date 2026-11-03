@@ -83,3 +83,46 @@ test_that("participant counts reconcile with the kri0020a-f workflows on the qua
   expect_gt(sum(df$Numerator), 0)
   expect_true(all(df$match))
 })
+
+test_that("report site flags match the kri0020 workflow flags for every KRI vital (#345)", {
+  TestAtLogLevel()
+  vSuffix <- c(weight = "a", pulse = "b", sysbp = "c", diabp = "d", resp = "e", temp = "f")
+  lClass <- rm_Classify(list(
+    Mapped_VS = mapped_data$Mapped_VS,
+    Mapped_SUBJ = mapped_data$Mapped_SUBJ
+  ))
+  lResults <- workr::RunWorkflows(kri_workflow(paste0("kri0020", vSuffix)), mapped_data)
+  # Without results every vital is flagged in the report.
+  df <- rm_SiteFlagRows(lClass)
+  for (strVital in names(vSuffix)) {
+    dfVital <- df[df$vital == strVital, ]
+    dfKRI <- lResults[[paste0("Analysis_kri0020", vSuffix[[strVital]])]]$Analysis_Flagged
+    vKRI <- as.integer(dfKRI$Flag[match(dfVital$invid, dfKRI$GroupID)])
+    expect_equal(dfVital$flag, vKRI, label = strVital)
+  }
+  expect_true(any(df$flag == 2L, na.rm = TRUE))
+})
+
+test_that("site flags handle no windows, the accrual boundary and equal thresholds quietly (#345)", {
+  lClass <- rm_Classify(rm_Fixture())
+  weight_flags <- function(dfMetrics) {
+    df <- rm_SiteFlagRows(lClass, dfMetrics = dfMetrics)
+    df$flag[df$vital == "weight"]
+  }
+  # No participant has a window for these vitals, so no site is evaluated.
+  lNone <- lClass
+  lNone$participants$Numerator <- 0
+  lNone$participants$Denominator <- 0
+  expect_silent(df <- rm_SiteFlagRows(lNone))
+  expect_true(all(is.na(df$flag)))
+
+  # S1 and S3 weight have exactly 4 windows: evaluated at an accrual of 4, not 5.
+  dfMetrics <- data.frame(ID = "kri0020a", Threshold = "0.2,0.3", AccrualThreshold = 4)
+  expect_equal(weight_flags(dfMetrics), c(2L, NA, 1L))
+  dfMetrics$AccrualThreshold <- 5
+  expect_equal(weight_flags(dfMetrics), c(NA_integer_, NA, NA))
+
+  # Equal Amber and Red thresholds leave no Amber: S3 (25%) is Red at 25%.
+  dfMetrics <- data.frame(ID = "kri0020a", Threshold = "0.25,0.25", AccrualThreshold = 3)
+  expect_equal(weight_flags(dfMetrics), c(2L, NA, 2L))
+})

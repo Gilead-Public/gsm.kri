@@ -26,9 +26,11 @@ A `tibble` with `vital`, `country`, `invid`, `Numerator`,
 One flag per site and vital. A KRI vital with `kri0020a`–`f` site results
 takes the latest KRI flag (`source = "KRI"`). Every other
 vital (height, BSA, paired BP, or a KRI vital without results) is flagged
-in the report like the KRI (`source = "report"`): the site's repeating
-windows over its windows (summed over its participants) against the site
-rule of [rm_SiteRule()]. A site is not evaluated (`flag` `NA`) below the
-accrual threshold or without a KRI result.
+in the report with the `kri0020` workflow steps (`source = "report"`):
+[gsm.core::Input_Rate()], [gsm.core::Transform_Rate()],
+[gsm.core::Analyze_Identity()] and [gsm.core::Flag()] on the participants'
+windows, with the site rule of [rm_SiteRule()]. A site is not evaluated
+(`flag` `NA`) without windows, below the accrual threshold or without a
+KRI result.
 }
 \keyword{internal}

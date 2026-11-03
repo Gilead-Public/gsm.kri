@@ -262,3 +262,23 @@ test_that("a site with participants in two countries warns and keeps each partic
   expect_equal(df$country, c("US", "US", "JP"))
   expect_equal(rm_Classify(rm_Fixture())$meta$split_sites, character(0))
 })
+
+test_that("participant N and D are the Detect_ConsecutiveRepeats() output and flags use gsm.core::Flag() (#342, #343)", {
+  dfVS <- mapped_data$Mapped_VS
+  dfSubj <- mapped_data$Mapped_SUBJ
+  lClass <- rm_Classify(list(Mapped_VS = dfVS, Mapped_SUBJ = dfSubj))
+  dfVS <- dfVS[dfVS$subjid %in% dfSubj$subjid, ]
+  dfVS$bp <- ifelse(is.na(dfVS$sysbp) | is.na(dfVS$diabp), NA, paste0(dfVS$sysbp, "/", dfVS$diabp))
+  for (strVital in lClass$vitals$vital) {
+    dfDetect <- Detect_ConsecutiveRepeats(dfVS, strVital, strOrderCol = "visit")
+    df <- lClass$participants[lClass$participants$vital == strVital, ]
+    df <- df[match(dfDetect$subjid, df$subjid), ]
+    expect_equal(df$Numerator, dfDetect$Numerator, label = strVital)
+    expect_equal(df$Denominator, dfDetect$Denominator, label = strVital)
+  }
+
+  # Equal thresholds leave no Amber band: 2 or more repeating windows are Red.
+  lValues <- list(G = c(1, 1, 1, 2), A = c(1, 1, 1, 1, 2), R = c(1, 1, 1, 1, 1))
+  lClass <- rm_Classify(rm_listings(rm_vs(lValues)), rm_metrics(), vFlagThresholds = c(2, 2))
+  expect_equal(c(flag_of(lClass, "G"), flag_of(lClass, "A"), flag_of(lClass, "R")), c("Green", "Red", "Red"))
+})

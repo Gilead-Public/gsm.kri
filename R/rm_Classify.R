@@ -49,12 +49,13 @@ rm_FlagColors <- function() {
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' Windows every vital of every enrolled participant once, with the same
-#' logic as the `kri0020` / `cou0020` metrics, so every section of the report
-#' reads one frame. Summing `Numerator` and `Denominator` by site or country
-#' reproduces the metrics.
+#' Windows every vital of every enrolled participant once with
+#' [Detect_ConsecutiveRepeats()], the `kri0020` / `cou0020` metric function,
+#' so every section of the report reads one frame. Summing `Numerator` and
+#' `Denominator` by site or country reproduces the metrics.
 #'
-#' A participant's flag for a vital uses one of two rules:
+#' A participant's flag for a vital comes from [gsm.core::Flag()] with one of
+#' two rules:
 #' * `"count"` (default): repeating windows `Numerator` against
 #'   `vFlagThresholds` (default Amber at 2, Red at 3 or more).
 #' * `"rate"`: `Numerator / Denominator` against `vFlagThresholds` (default
@@ -217,22 +218,34 @@ rm_Classify <- function(
 
   dfCounts <- dfMeasurements %>%
     dplyr::group_by(.data$subjid, .data$vital) %>%
-    dplyr::summarise(
-      n_records = dplyr::n(),
-      Numerator = sum(.data$window_start),
-      .groups = "drop"
-    )
+    dplyr::summarise(n_records = dplyr::n(), .groups = "drop")
+  # Numerator and Denominator come from the kri0020 metric function itself,
+  # so the report reconciles with the KRI by construction.
+  dfMetric <- dplyr::bind_rows(
+    tibble::tibble(subjid = dfSubj$subjid[0], vital = character(), Numerator = numeric(), Denominator = numeric()),
+    lapply(unique(dfMeasurements$vital), function(strVital) {
+      dfOut <- Detect_ConsecutiveRepeats(
+        dfVS,
+        strVital,
+        strOrderCol = strOrderCol,
+        nWindowLength = nW
+      )
+      dfOut$vital <- rep(strVital, nrow(dfOut))
+      dfOut
+    })
+  )
   dfParticipants <- tidyr::crossing(
     dfSubj,
     tibble::tibble(vital = factor(dfVitals$vital, dfVitals$vital))
   ) %>%
     dplyr::mutate(vital = as.character(.data$vital)) %>%
     dplyr::left_join(dfCounts, by = c("subjid", "vital")) %>%
+    dplyr::left_join(dfMetric, by = c("subjid", "vital")) %>%
     dplyr::mutate(
       metric = dfVitals$metric[match(.data$vital, dfVitals$vital)],
       n_records = as.numeric(dplyr::coalesce(.data$n_records, 0L)),
-      Numerator = as.numeric(dplyr::coalesce(.data$Numerator, 0L)),
-      Denominator = pmax(0, .data$n_records - nW + 1),
+      Numerator = dplyr::coalesce(as.numeric(.data$Numerator), 0),
+      Denominator = dplyr::coalesce(as.numeric(.data$Denominator), 0),
       rate = dplyr::if_else(
         .data$Denominator > 0,
         .data$Numerator / .data$Denominator,
@@ -245,13 +258,18 @@ rm_Classify <- function(
     match(dfParticipants$vital, dfVitals$vital)
   ), ]
 
-  vScore <- if (strFlagRule == "count") dfParticipants$Numerator else dfParticipants$rate
-  flag <- dplyr::case_when(
-    dfParticipants$Denominator < nMinWindows ~ "Not evaluable",
-    vScore >= vThresholds[2] ~ "Red",
-    vScore >= vThresholds[1] ~ "Amber",
-    TRUE ~ "Green"
+  vFlag <- rm_Flag(
+    data.frame(
+      GroupID = dfParticipants$subjid,
+      Numerator = dfParticipants$Numerator,
+      Denominator = dfParticipants$Denominator,
+      Score = if (strFlagRule == "count") dfParticipants$Numerator else dfParticipants$rate
+    ),
+    vThresholds,
+    nMinWindows
   )
+  flag <- c("Green", "Amber", "Red")[vFlag + 1]
+  flag[is.na(flag)] <- "Not evaluable"
   dfParticipants$flag <- factor(flag, levels = names(rm_FlagColors()))
   dfParticipants <- dfParticipants[c(
     "studyid", "country", "invid", "subjid", "vital", "metric",
@@ -315,6 +333,43 @@ rm_FlagThresholds <- function(strFlagRule = c("count", "rate"), vFlagThresholds 
     message = "vFlagThresholds must be two non-negative numbers, Amber then Red, with Amber <= Red"
   )
   as.numeric(vFlagThresholds)
+}
+
+# Flags `Score` with gsm.core::Flag(), as the kri0020 workflow does: 0 below
+# Amber, 1 from Amber, 2 from Red, NA for a missing score or a `Denominator`
+# below `nAccrual`. `df` needs `GroupID`, `Numerator`, `Denominator` and
+# `Score`. Returns the flags in row order.
+rm_Flag <- function(df, vThresholds, nAccrual) {
+  vFlag <- c(0, 1, 2)
+  # Flag() cuts at the thresholds, which must differ; equal ones leave no Amber.
+  if (vThresholds[1] == vThresholds[2]) {
+    vThresholds <- vThresholds[2]
+    vFlag <- c(0, 2)
+  }
+  rm_Quietly(gsm.core::Flag(
+    df,
+    strColumn = "Score",
+    vThreshold = vThresholds,
+    vFlag = vFlag,
+    vFlagOrder = NULL,
+    nAccrualThreshold = nAccrual,
+    strAccrualMetric = "Denominator"
+  ))$Flag
+}
+
+# Mutes the gsm.core step logs, which would otherwise print once per vital
+# while the report renders, and the expected warning that sites without
+# windows are dropped. Other warnings still surface.
+rm_Quietly <- function(expr) {
+  withCallingHandlers(
+    expr,
+    message = function(m) invokeRestart("muffleMessage"),
+    warning = function(w) {
+      if (grepl("value of 0 removed", conditionMessage(w), fixed = TRUE)) {
+        invokeRestart("muffleWarning")
+      }
+    }
+  )
 }
 
 # The metric's window length wins so the report reconciles with the KRI.

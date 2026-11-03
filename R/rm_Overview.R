@@ -6,10 +6,12 @@
 #' One flag per site and vital. A KRI vital with `kri0020a`–`f` site results
 #' takes the latest KRI flag (`source = "KRI"`). Every other
 #' vital (height, BSA, paired BP, or a KRI vital without results) is flagged
-#' in the report like the KRI (`source = "report"`): the site's repeating
-#' windows over its windows (summed over its participants) against the site
-#' rule of [rm_SiteRule()]. A site is not evaluated (`flag` `NA`) below the
-#' accrual threshold or without a KRI result.
+#' in the report with the `kri0020` workflow steps (`source = "report"`):
+#' [gsm.core::Input_Rate()], [gsm.core::Transform_Rate()],
+#' [gsm.core::Analyze_Identity()] and [gsm.core::Flag()] on the participants'
+#' windows, with the site rule of [rm_SiteRule()]. A site is not evaluated
+#' (`flag` `NA`) without windows, below the accrual threshold or without a
+#' KRI result.
 #'
 #' @param lClass `list` Output of [rm_Classify()].
 #' @param dfResults `data.frame` Reporting results. Optional.
@@ -36,13 +38,13 @@ rm_SiteFlagRows <- function(lClass, dfResults = NULL, dfMetrics = NULL) {
     ) %>%
     dplyr::relocate("country", .before = "invid") %>%
     dplyr::arrange(match(.data$vital, lClass$vitals$vital), .data$invid)
-  vRate <- ifelse(df$Denominator > 0, df$Numerator / df$Denominator, NA_real_)
-  df$flag <- dplyr::case_when(
-    df$Denominator < lRule$accrual ~ NA_integer_,
-    vRate >= lRule$thresholds[2] ~ 2L,
-    vRate >= lRule$thresholds[1] ~ 1L,
-    TRUE ~ 0L
-  )
+  df$flag <- NA_integer_
+  for (strVital in setdiff(unique(df$vital), names(lKRI))) {
+    dfFlags <- rm_SiteFlagPipeline(lClass$participants[lClass$participants$vital == strVital, ], lRule)
+    if (is.null(dfFlags)) next
+    bRows <- df$vital == strVital
+    df$flag[bRows] <- as.integer(dfFlags$Flag[match(df$invid[bRows], dfFlags$GroupID)])
+  }
   df$source <- ifelse(df$vital %in% names(lKRI), "KRI", "report")
   for (strVital in intersect(names(lKRI), df$vital)) {
     bRows <- df$vital == strVital
@@ -51,6 +53,33 @@ rm_SiteFlagRows <- function(lClass, dfResults = NULL, dfMetrics = NULL) {
     df$flag[bRows] <- abs(as.integer(unname(vFlag)))
   }
   df
+}
+
+# Site flags for one vital through the kri0020 workflow steps (Input_Rate,
+# Transform_Rate, Analyze_Identity, Flag), using the participants' windows as
+# the subject-level numerator and denominator. Returns `GroupID` (site) and
+# `Flag`; a site without windows has no row. NULL when no participant has a
+# window, which Input_Rate() rejects.
+rm_SiteFlagPipeline <- function(dfParticipants, lRule) {
+  if (!nrow(dfParticipants) || sum(dfParticipants$Denominator) == 0) {
+    return(NULL)
+  }
+  dfAnalyzed <- rm_Quietly(gsm.core::Input_Rate(
+    dfSubjects = dfParticipants,
+    dfNumerator = dfParticipants,
+    dfDenominator = dfParticipants,
+    strSubjectCol = "subjid",
+    strGroupCol = "invid",
+    strGroupLevel = "Site",
+    strNumeratorMethod = "Sum",
+    strDenominatorMethod = "Sum",
+    strNumeratorCol = "Numerator",
+    strDenominatorCol = "Denominator"
+  ) %>%
+    gsm.core::Transform_Rate() %>%
+    gsm.core::Analyze_Identity())
+  dfAnalyzed$Flag <- rm_Flag(dfAnalyzed, lRule$thresholds, lRule$accrual)
+  dfAnalyzed[c("GroupID", "Flag")]
 }
 
 #' Site flag rule for the Repeat Measurements report
