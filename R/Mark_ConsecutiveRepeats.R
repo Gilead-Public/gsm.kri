@@ -1,4 +1,4 @@
-#' Mark measurements inside consecutive repeat windows
+#' Mark measurements inside consecutive repeating windows
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`
@@ -12,7 +12,8 @@
 #'
 #' @inheritParams Detect_ConsecutiveRepeats
 #'
-#' @return `df` without rows whose value is missing, ordered by subject, then
+#' @return `df` without rows whose value is missing (filtered to
+#'   `strMeasureVal` when `strMeasureCol` is supplied), ordered by subject, then
 #'   `strDateCol`, then `strOrderCol`, with three columns added:
 #'   * `seq`: position of the measurement within its subject.
 #'   * `in_repeat_window`: `TRUE` when the measurement belongs to at least one
@@ -27,7 +28,9 @@
 #'   weight = c(10, 10, 5, 3, 10, 10, 10, 10, 10, 10)
 #' )
 #' Mark_ConsecutiveRepeats(df, "weight")
-#' @export
+#' @seealso [Detect_ConsecutiveRepeats()], which counts the windows per
+#'   subject; [rm_Classify()], which uses the marks.
+#' @noRd
 Mark_ConsecutiveRepeats <- function(
   df,
   strValueCol,

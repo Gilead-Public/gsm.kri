@@ -1,27 +1,3 @@
-test_that("study overview has one row per vital with site and participant counts for the whole study (#344)", {
-  lClass <- rm_Classify(rm_Fixture(), strFlagRule = "rate")
-  df <- rm_OverviewRows(lClass, rm_SiteFlagRows(lClass, rm_FixtureResults()))
-  row <- function(strVital, vCols) as.list(df[df$vital == strVital, vCols])
-  vP <- c("enrolled", "evaluable", "amber", "red")
-  vS <- c("site_source", "sites", "sites_evaluated", "site_amber", "site_red")
-  # Every vital in the data, KRI or not.
-  expect_equal(df$vital, c("weight", "pulse", "sysbp", "diabp", "resp", "temp", "height"))
-  expect_equal(df$metric[df$vital == "height"], NA_character_)
-  expect_equal(row("weight", vP), list(enrolled = 5L, evaluable = 3L, amber = 1L, red = 1L))
-  expect_equal(row("pulse", vP), list(enrolled = 5L, evaluable = 2L, amber = 0L, red = 1L))
-  expect_equal(row("height", vP), list(enrolled = 5L, evaluable = 1L, amber = 0L, red = 1L))
-  # Weight takes the latest KRI flags: S1 Red, S2 Green, S3 Amber.
-  expect_equal(
-    row("weight", vS),
-    list(site_source = "KRI", sites = 3L, sites_evaluated = 3L, site_amber = 1L, site_red = 1L)
-  )
-  # Height has no KRI and no site reaches the accrual threshold of 3 windows.
-  expect_equal(
-    row("height", vS),
-    list(site_source = "report", sites = 3L, sites_evaluated = 0L, site_amber = 0L, site_red = 0L)
-  )
-})
-
 test_that("site flags come from the KRI where it has results and from the site rule otherwise (#344, #345)", {
   lClass <- rm_Classify(rm_Fixture())
   # Without results every vital uses the rule: S1 weight 2/4 = 50%, S3 1/4 = 25%,
@@ -57,9 +33,6 @@ test_that("a site that spans countries is one site row, counted once in the stud
   expect_equal(dfW$Denominator, c(2, 5))
   # S1 is below the accrual of 3 windows; S2 is 3/5 = 60%, Red.
   expect_equal(dfW$flag, c(NA, 2L))
-  dfOV <- rm_OverviewRows(lClass, df)
-  dfOV <- dfOV[dfOV$vital == "weight", ]
-  expect_equal(c(dfOV$sites, dfOV$sites_evaluated, dfOV$site_red), c(2L, 1L, 1L))
 })
 
 test_that("the site rule reads the kri0020 thresholds and accrual from the metrics (#344)", {

@@ -20,7 +20,7 @@ test_that("Report_RepeatMeasurements renders the filter strip and study overview
   expect_match(html, '<h1 class="toc-ignore">Repeat Measurements</h1>', fixed = TRUE)
   expect_match(flat, '<span class="rm-pill"> <b>Study</b> STUDY1 </span>', fixed = TRUE)
   expect_match(flat, '<span class="rm-pill"> <b>Snapshot</b> 2024-03-01 </span>', fixed = TRUE)
-  expect_match(flat, '<span class="rm-pill"> <b>Window</b> W = 3 </span>', fixed = TRUE)
+  expect_match(flat, '<span class="rm-pill"> <b>Window</b> 3 measurements </span>', fixed = TRUE)
   expect_match(html, 'id="rm-how-toggle" type="button" class="rm-btn" aria-expanded="false" aria-controls="rm-how"', fixed = TRUE)
   expect_match(html, '<div id="rm-how" class="rm-how" hidden>', fixed = TRUE)
   expect_false(grepl('class="rm-ctx"', html, fixed = TRUE))
@@ -40,7 +40,8 @@ test_that("Report_RepeatMeasurements renders the filter strip and study overview
   expect_match(html, 'id="rm-ov-counts" type="button" data-rm-ov="counts" aria-pressed="false"', fixed = TRUE)
   expect_match(html, "WT 3/8 <span class=\"ok\">= kri0020a", fixed = TRUE)
   expect_match(html, "HR 1/3 <span class=\"ok\">= kri0020b", fixed = TRUE)
-  expect_match(html, "W = 3 (from the kri0020 metrics)", fixed = TRUE)
+  expect_match(html, "Repeating windows / windows compared with the KRI", fixed = TRUE)
+  expect_false(grepl("W = 3", html, fixed = TRUE))
   expect_false(grepl("not in this study's metrics", html, fixed = TRUE))
 
   data <- rm_DataBlock(html)
@@ -131,12 +132,12 @@ test_that("flag and blood pressure arguments reach the report settings and paire
   expect_error(Report_RepeatMeasurements(lListings = f, strBPMode = "paired"), "should be one of")
 })
 
-test_that("the Site/Country Distribution is one table of flags by measure for each country or site (#345)", {
+test_that("the Site/country distribution is one table of flags by measure for each country or site (#345)", {
   html <- rm_default_html()
   # rmFilters.js draws the table; the report has no distribution charts.
   vChartIDs <- unlist(lapply(rm_WidgetPayloads(html), function(x) x$metadata$chartId))
   expect_false(any(grepl("^rm-(study|country|site)", vChartIDs)))
-  expect_match(html, "<h2>Site/Country Distribution</h2>", fixed = TRUE)
+  expect_match(html, "<h2>Site/country distribution</h2>", fixed = TRUE)
   expect_false(grepl("Participant distribution", html, fixed = TRUE))
   expect_match(html, '<div id="rm-dist" class="rm-dist-wrap"></div>', fixed = TRUE)
   expect_match(html, 'id="rm-dist-country" type="button" data-rm-dist="level" value="country" aria-pressed="true"', fixed = TRUE)
@@ -179,7 +180,7 @@ test_that("the participant listing is the in-repo tiles widget with label, sort,
   expect_match(html, "Click a participant or tile to filter the report", fixed = TRUE)
 })
 
-test_that("the vitals listing is one level and the data table offers Long and Wide (#346)", {
+test_that("the measure listing is one level and the data table offers Wide and a browser-built Long (#346)", {
   html <- rm_default_html()
   for (id in c("rm-vitals-view", "rm-vitals", "rm-show-values", "rm-only-repeat", "rm-shape-long", "rm-shape-wide", "rm-dt-only", "rm-dt-long", "rm-dt-wide")) {
     expect_match(html, paste0('id="', id, '"'), fixed = TRUE)
@@ -188,15 +189,16 @@ test_that("the vitals listing is one level and the data table offers Long and Wi
     expect_false(grepl(paste0('id="', id, '"'), html, fixed = TRUE), label = id)
   }
   expect_match(html, 'data-rm-shape="wide" aria-pressed="true"', fixed = TRUE)
+  expect_match(html, "<h2>Measure listing</h2>", fixed = TRUE)
+  expect_match(html, "<h2>Participant listing</h2>", fixed = TRUE)
+  # Wide comes first; rmFilters.js builds Long from the Wide data on first use.
+  expect_lt(regexpr('id="rm-shape-wide"', html), regexpr('id="rm-shape-long"', html))
   lPayloads <- rm_WidgetPayloads(html)
   expect_equal(length(lPayloads[["rm-vitals"]]$data[[1]]), 35)
   dfVS <- rm_Fixture()$Mapped_VS
   expect_equal(length(lPayloads[["rm-dt-wide"]]$data[[1]]), nrow(dfVS))
-  expect_equal(
-    length(lPayloads[["rm-dt-long"]]$data[[1]]),
-    sum(!is.na(unlist(dfVS[c("weight", "pulse", "height")])))
-  )
-  for (id in c("rm-vitals", "rm-dt-long", "rm-dt-wide")) {
+  expect_null(lPayloads[["rm-dt-long"]])
+  for (id in c("rm-vitals", "rm-dt-wide")) {
     expect_equal(lPayloads[[id]]$options$buttons[[1]]$extend, "csv", label = id)
   }
 })
@@ -214,15 +216,15 @@ test_that("the report explains missing vital signs and a study without the repea
   html <- render_rm(rm_listings(f$Mapped_VS[0, ], f$Mapped_SUBJ))
   expect_match(html, "No vital signs recorded.", fixed = TRUE)
   expect_match(html, "not in this study", fixed = TRUE)
-  expect_match(gsub("\\s+", " ", html), "W = 3 (default) and flags sites at Amber \u2265 20%, Red \u2265 30% of windows, with at least 3 windows.", fixed = TRUE)
+  expect_match(gsub("\\s+", " ", html), "a window of 3 measurements (default) and flags sites at Amber \u2265 20%, Red \u2265 30% of windows, with at least 3 windows.", fixed = TRUE)
 
-  # No participant has 7 measurements of a vital.
+  # No participant has 7 measurements of a measure.
   html <- render_rm(nWindowLength = 7)
-  expect_match(gsub("\\s+", " ", html), "none has the 7 measurements of a vital needed for 1 window of 7.", fixed = TRUE)
-  expect_match(html, "W = 7 (report argument)", fixed = TRUE)
+  expect_match(gsub("\\s+", " ", html), "none has the 7 measurements of a measure needed for 1 window of 7.", fixed = TRUE)
+  expect_match(gsub("\\s+", " ", html), "a window of 7 measurements (report argument)", fixed = TRUE)
   # The minimum windows add to the measurements needed (W + 5 - 1).
   html <- render_rm(nMinWindows = 5)
-  expect_match(gsub("\\s+", " ", html), "none has the 7 measurements of a vital needed for 5 windows of 3.", fixed = TRUE)
+  expect_match(gsub("\\s+", " ", html), "none has the 7 measurements of a measure needed for 5 windows of 3.", fixed = TRUE)
 })
 
 test_that("Report_RepeatMeasurements requires subject listings (#344)", {

@@ -4,9 +4,9 @@
 #' `r lifecycle::badge("experimental")`
 #'
 #' Generates the Repeat Measurements report for the repeat-measure KRIs
-#' (`kri0020a`–`f`, `cou0020a`–`f`): consecutive identical vital sign values
-#' at study, country, site and participant level, with a participant listing,
-#' a vitals listing and a data table.
+#' (`kri0020a`–`f`, `cou0020a`–`f`): consecutive identical vital sign values,
+#' in five sections: study overview, site/country distribution, participant
+#' listing, measure listing and data table.
 #'
 #' The flag rule, thresholds, minimum windows and blood pressure view set the
 #' report's starting settings; reviewers can change them in the report's
@@ -16,16 +16,19 @@
 #'   report reconciles with the KRI and colours sites by their KRI flag.
 #' @param dfMetrics `data.frame` Reporting metrics. The window length and
 #'   thresholds come from the `kri0020` rows when present.
-#' @param lListings `list` with `Mapped_VS` and `Mapped_SUBJ`.
-#' @param dSnapshotDate `Date` Shown in the subtitle. Default: the latest
+#' @param lListings `list` with `Mapped_SUBJ` (`subjid`, `invid`, `country`;
+#'   `studyid` optional) and `Mapped_VS` (`subjid`, `vs_dt`, optional `visit`
+#'   and `vsperf_std`, and one numeric column per measure).
+#' @param dSnapshotDate `Date` Shown in the report header. Default: the latest
 #'   `dfResults$SnapshotDate`, if any.
 #' @param nWindowLength `integer` Window length when `dfMetrics` has none.
 #'   See [rm_Classify()].
 #' @param strFlagRule `character` Participant flag rule, `"count"` (default)
 #'   or `"rate"`. See [rm_Classify()].
 #' @param vFlagThresholds `numeric` Amber and Red thresholds for
-#'   `strFlagRule`. Default `NULL`: 2 and 3 repeating windows, or the
-#'   `kri0020` rate thresholds. See [rm_Classify()].
+#'   `strFlagRule`: window counts for `"count"`, proportions such as
+#'   `c(0.2, 0.3)` for `"rate"`. Default `NULL`: 2 and 3 repeating windows, or
+#'   the `kri0020` rate thresholds. See [rm_Classify()].
 #' @param nMinWindows `numeric` Windows a participant needs for a flag.
 #'   Default 1.
 #' @param strBPMode `character` Blood pressure view: `"separate"` (default,

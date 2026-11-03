@@ -3,60 +3,21 @@
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' The two shapes of the Data table (§5). Participants follow the Participant
-#' Listing order: worst flag, then most repeating windows, then participant.
-#'
-#' * `rm_DataTableData()` (Long): one row per participant, vital and
-#'   non-missing value, in measurement order. `has_repeat` marks the
-#'   participant's vitals with at least one repeat window.
-#' * `rm_DataTableWide()` (Wide): one row per `Mapped_VS` record with one
-#'   column per vital (blank when not measured) and a
-#'   `<vital>_in_repeat_window` column (`"Y"`, `"N"` or `""`) per vital.
-#'   `repeat_vitals` lists the participant's vitals with at least one repeat
-#'   window.
+#' The Wide data table: one row per `Mapped_VS` record with one column per
+#' measure (blank when not measured) and a `<vital>_in_repeat_window` column
+#' (`"Y"`, `"N"` or `""`) per measure. `repeat_vitals` lists the
+#' participant's measures with at least one repeating window. Participants
+#' follow the Participant listing order (worst flag, then most repeating
+#' windows, then participant); each participant's records are in measurement
+#' order (date, visit, record). The report builds the Long table in the
+#' browser from these rows, so the data are embedded once.
 #'
 #' @param lClass `list` Output of [rm_Classify()].
 #'
-#' @return A `tibble`. Long: `country`, `invid`, `subjid`, `label`, `metric`,
-#'   `seq`, `visit`, `vs_dt`, `value`, `in_repeat_window` (`"Yes"`/`"No"`),
-#'   and the hidden `vital` and `has_repeat` columns. Wide: `country`,
-#'   `invid`, `subjid`, `visit`, `vs_dt`, `performed` (`"Y"`/`"N"`), one
-#'   column per vital, one `<vital>_in_repeat_window` column per vital and
-#'   the hidden `repeat_vitals` column.
-#' @keywords internal
-#' @export
-rm_DataTableData <- function(lClass) {
-  dfVitals <- lClass$vitals
-  dfM <- lClass$measurements
-  vOrder <- rm_ParticipantOrder(lClass)
-  dfRepeat <- rm_RepeatVitals(lClass)
-  dfM <- dfM[order(
-    match(dfM$subjid, vOrder),
-    match(dfM$vital, dfVitals$vital),
-    dfM$seq,
-    method = "radix"
-  ), ]
-  tibble::tibble(
-    country = as.character(dfM$country),
-    invid = as.character(dfM$invid),
-    subjid = dfM$subjid,
-    label = dfVitals$label[match(dfM$vital, dfVitals$vital)],
-    metric = dplyr::coalesce(dfVitals$metric[match(dfM$vital, dfVitals$vital)], ""),
-    seq = as.integer(dfM$seq),
-    visit = as.character(dfM$visit),
-    vs_dt = dfM$vs_dt,
-    value = dfM$value_text,
-    in_repeat_window = ifelse(dfM$in_repeat_window, "Yes", "No"),
-    vital = dfM$vital,
-    has_repeat = ifelse(
-      paste(dfM$subjid, dfM$vital) %in% paste(dfRepeat$subjid, dfRepeat$vital),
-      "Y",
-      "N"
-    )
-  )
-}
-
-#' @rdname rm_DataTableData
+#' @return A `tibble` with `country`, `invid`, `subjid`, `visit`, `vs_dt`,
+#'   `performed` (`"Y"`/`"N"`), one column per measure, one
+#'   `<vital>_in_repeat_window` column per measure and the hidden
+#'   `repeat_vitals` column.
 #' @keywords internal
 #' @export
 rm_DataTableWide <- function(lClass) {
@@ -110,93 +71,30 @@ rm_DataTableWide <- function(lClass) {
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' The two `DT` tables of the Data table (§5): `rm-dt-long` and `rm-dt-wide`.
-#' Values in a repeat window are red. To fit without horizontal scrolling,
-#' Long shows the metric as a KRI badge on the vital (metric ID on hover);
-#' Wide abbreviates the vital headers (name and metric on hover), shows the
-#' country on hover over the site and greys the records not performed. The
-#' CSVs keep the full headers and the country, metric and performed columns.
-#' The report's filter script switches
-#' between them, filters the named `vital`, `country`, `invid`, `subjid`,
-#' `has_repeat` and `repeat_vitals` columns, hides the Wide vital columns
-#' outside the selected group, and turns a row click into the participant
-#' filter. Each CSV holds the rows the filters show: Long with every column,
-#' Wide with the shown vitals and their `<vital>_in_repeat_window` columns.
+#' The Wide `DT` table of the Data table, `rm-dt-wide`. Values in a repeating
+#' window are dark red. To fit without horizontal scrolling, it abbreviates
+#' the measure headers (name and metric on hover), shows the country on hover
+#' over the site and greys the records not performed; the CSV keeps the full
+#' headers and the country and performed columns. Every column is named so
+#' the report's filter script can find it: the script filters `country`,
+#' `invid`, `subjid` and `repeat_vitals`, hides the measure columns that are
+#' not selected, turns a row click into the participant filter and builds the
+#' Long table from these rows. The CSV holds the rows the filters show, with
+#' the shown measures and their `<vital>_in_repeat_window` columns.
 #'
-#' @param dfLong `data.frame` Output of [rm_DataTableData()].
 #' @param dfWide `data.frame` Output of [rm_DataTableWide()].
 #' @param dfVitals `data.frame` `vitals` from [rm_Classify()].
-#' @param bExport `logical` Show the CSV buttons.
+#' @param bExport `logical` Show the CSV button.
 #'
-#' @return A named `list` of two `DT` htmlwidgets, `long` and `wide`.
+#' @return A `DT` htmlwidget.
 #' @keywords internal
 #' @export
-rm_DataTable <- function(dfLong, dfWide, dfVitals, bExport = TRUE) {
+rm_DataTable <- function(dfWide, dfVitals, bExport = TRUE) {
   idx <- function(df, col) match(col, names(df)) - 1L
   dom <- if (isTRUE(bExport)) "Bfrtip" else "frtip"
-  rowTitle <- DT::JS(
-    "function (row) { row.title = 'Click to filter the report to this participant; click again to clear'; }"
-  )
   named <- function(df, cols, ...) {
     lapply(cols, function(col) list(targets = idx(df, col), name = col, ...))
   }
-
-  vLong <- c(
-    country = "Country", invid = "Site", subjid = "Participant", label = "Vital",
-    metric = "Metric", seq = "#", visit = "Visit", vs_dt = "Date", value = "Value",
-    in_repeat_window = "Repeat", vital = "vital", has_repeat = "has_repeat"
-  )
-  # Every column but the hidden filter columns.
-  vLongExport <- idx(dfLong, setdiff(names(dfLong), c("vital", "has_repeat")))
-  long <- DT::datatable(
-    dfLong,
-    elementId = "rm-dt-long",
-    rownames = FALSE,
-    colnames = unname(vLong[names(dfLong)]),
-    extensions = "Buttons",
-    selection = "none",
-    class = "compact hover nowrap",
-    options = list(
-      dom = dom,
-      pageLength = 25,
-      deferRender = TRUE,
-      order = list(),
-      buttons = rm_CsvButton(
-        bExport,
-        "repeat-measurements-data-long",
-        vLongExport,
-        stats::setNames(list("In repeat window"), idx(dfLong, "in_repeat_window"))
-      ),
-      createdRow = rowTitle,
-      columnDefs = c(
-        named(dfLong, c("country", "invid", "subjid")),
-        list(list(
-          targets = idx(dfLong, "label"),
-          render = DT::JS(sprintf(
-            "function (data, type, row) {
-              var m = row[%d];
-              if (type !== 'display' || !m) return data;
-              return data + '<span class=\"rm-kri\" title=\"' + String(m).replace(/\"/g, '&quot;') + '\">KRI</span>';
-            }",
-            idx(dfLong, "metric")
-          ))
-        )),
-        list(list(targets = idx(dfLong, "metric"), visible = FALSE)),
-        list(list(targets = idx(dfLong, "in_repeat_window"), title = "<span title=\"In a repeat window\">Repeat</span>")),
-        list(list(
-          targets = idx(dfLong, "value"),
-          render = DT::JS(sprintf(
-            "function (data, type, row) {
-              if (type !== 'display' || row[%d] !== 'Yes') return data;
-              return '<b class=\"rm-rw\" title=\"In a repeat window\">' + data + '</b>';
-            }",
-            idx(dfLong, "in_repeat_window")
-          ))
-        )),
-        named(dfLong, c("vital", "has_repeat"), visible = FALSE)
-      )
-    )
-  )
 
   vVitals <- intersect(dfVitals$vital, names(dfWide))
   vRW <- sprintf("%s_in_repeat_window", vVitals)
@@ -220,11 +118,11 @@ rm_DataTable <- function(dfLong, dfWide, dfVitals, bExport = TRUE) {
       htmltools::tags$th(title = if (col %in% vVitals) vTitle[[col]], vWide[[col]])
     })))
   )
-  # A <vital>_in_repeat_window column exports only while its vital is shown;
+  # A <vital>_in_repeat_window column exports only while its measure is shown;
   # the country and performed columns always export.
   lPairs <- stats::setNames(as.list(idx(dfWide, vVitals)), idx(dfWide, vRW))
   vAlways <- idx(dfWide, c("country", "performed"))
-  wide <- DT::datatable(
+  DT::datatable(
     dfWide,
     elementId = "rm-dt-wide",
     rownames = FALSE,
@@ -276,7 +174,7 @@ rm_DataTable <- function(dfLong, dfWide, dfVitals, bExport = TRUE) {
             idx(dfWide, "country")
           ))
         )),
-        named(dfWide, "subjid"),
+        named(dfWide, c("subjid", "visit", "vs_dt")),
         lapply(vVitals, function(strVital) {
           list(
             targets = idx(dfWide, strVital),
@@ -284,18 +182,17 @@ rm_DataTable <- function(dfLong, dfWide, dfVitals, bExport = TRUE) {
             className = "dt-right",
             createdCell = DT::JS(sprintf(
               "function (td, cellData, rowData) {
-                if (rowData[%d] === 'Y') { td.classList.add('rm-rw'); td.title = 'In a repeat window'; }
+                if (rowData[%d] === 'Y') { td.classList.add('rm-rw'); td.title = 'In a repeating window'; }
               }",
               idx(dfWide, sprintf("%s_in_repeat_window", strVital))
             ))
           )
         }),
-        list(list(targets = idx(dfWide, vRW), visible = FALSE)),
+        named(dfWide, vRW, visible = FALSE),
         named(dfWide, "repeat_vitals", visible = FALSE)
       )
     )
   )
-  list(long = long, wide = wide)
 }
 
 # Participants in Participant Listing order: worst flag, then most repeating
@@ -314,7 +211,7 @@ rm_ParticipantOrder <- function(lClass) {
   df$subjid
 }
 
-# Participant x vital pairs with at least one repeat window.
+# Participant x vital pairs with at least one repeating window.
 rm_RepeatVitals <- function(lClass) {
   vVitals <- lClass$vitals$vital
   df <- lClass$participants[lClass$participants$Numerator > 0, c("subjid", "vital")]

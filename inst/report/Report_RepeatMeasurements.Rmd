@@ -51,7 +51,7 @@ lClass <- rm_Classify(
   vFlagThresholds = param(params$vFlagThresholds),
   nMinWindows = param(params$nMinWindows, 1)
 )
-# Every vital: the six KRI vitals, paired BP, height, BSA and any other.
+# Every measure: the six KRI vitals, paired BP, height, BSA and any other.
 dfVitals <- lClass$vitals
 nW <- lClass$meta$window_length
 has_participants <- nrow(lClass$participants) > 0
@@ -75,12 +75,7 @@ lSiteRule <- rm_SiteRule(dfMetrics)
 
 tiles <- rm_ParticipantTiles(lClass)
 listing <- rm_VitalsListing(rm_VitalRows(lClass), nWindowLength = nW, bExport = bExport)
-data_table <- rm_DataTable(
-  rm_DataTableData(lClass),
-  rm_DataTableWide(lClass),
-  lClass$vitals,
-  bExport = bExport
-)
+data_table <- rm_DataTable(rm_DataTableWide(lClass), lClass$vitals, bExport = bExport)
 
 # rmFilters.js rewrites .rm-rule-text when the reviewer changes the settings.
 th <- lClass$meta$thresholds
@@ -119,7 +114,7 @@ htmltools::tags$header(
     class = "rm-meta",
     pill("Study", paste(unique(lListings$Mapped_SUBJ$studyid), collapse = ", ")),
     if (!is.null(dSnapshotDate)) pill("Snapshot", format(dSnapshotDate)),
-    pill("Window", paste("W =", nW)),
+    pill("Window", paste(nW, "measurements")),
     pill("Participant flag", htmltools::HTML(rule_text), class = "rm-pill-rule")
   ),
   htmltools::tags$div(
@@ -127,11 +122,11 @@ htmltools::tags$header(
     class = "rm-how",
     hidden = NA,
     htmltools::HTML(sprintf('<ul>
-<li>A <strong>window</strong> is %1$s consecutive measurements of one vital for one participant, in date order (visit breaks ties; missing values skipped). A window <strong>repeats</strong> when all %1$s values are identical. Each participant and vital has <strong>N</strong> repeating windows of <strong>D</strong> windows; the KRIs <code>kri0020a</code>&ndash;<code>f</code> sum N and D by site.</li>
-<li>Participants are <strong>evaluable</strong> for a vital once they have enough windows. Flag rule: %2$s. Change the rule, thresholds and minimum windows under <strong>Settings</strong> in the bar below; participant flags in every section follow, while site flags keep the KRI rule.</li>
+<li>A <strong>window</strong> is %1$s consecutive measurements of one measure for one participant, in date order (visit breaks ties; missing values skipped). A window <strong>repeats</strong> when all %1$s values are identical. Each participant and measure has <strong>N</strong> repeating windows of <strong>D</strong> windows; the KRIs <code>kri0020a</code>&ndash;<code>f</code> sum N and D by site.</li>
+<li>Participants are <strong>evaluable</strong> for a measure once they have enough windows. Flag rule: %2$s. Change the rule, thresholds and minimum windows under <strong>Settings</strong> in the bar below; participant flags in every section follow, while site flags keep the KRI rule.</li>
 <li><strong>Blood pressure</strong> (Settings): <em>Separate</em> shows systolic and diastolic BP (the KRIs); <em>Combined</em> shows paired BP, where a window repeats only when both readings repeat over the same visits (no KRI); <em>Both</em> shows all three.</li>
 <li>Pick measures under <strong>Measures</strong> in the bar below, or click a measure in the Study overview, to focus every section except the Study overview, which always covers the whole study. Click a country or site to filter; remove a filter with its &times; or all of them with <strong>Reset filters</strong>.</li>
-<li>The last three sections drill down from one row per participant (Participant Listing) to one per participant and vital (Vitals listing) to one per value or visit record (Data table). Click a participant, tile or row in any of them to filter the whole report to that participant; click it again to clear.</li>
+<li>The last three sections drill down from one row per participant (Participant listing) to one per participant and measure (Measure listing) to one per visit record or value (Data table). Click a participant, tile or row in any of them to filter the whole report to that participant; click it again to clear.</li>
 </ul>', nW, rule_text))
   )
 )
@@ -154,7 +149,7 @@ cat('
 .rm-how { margin-top: 10px; border-top: 1px solid #e6ebf1; padding-top: 6px; }
 .rm-how[hidden] { display: none; }
 .rm-how ul { margin: 4px 0 0; padding-left: 20px; }
-.rm-filter-strip { position: sticky; top: 4px; z-index: 1029; display: flex; align-items: center; gap: 10px; background-color: #f1f7fe; border: 1px solid #cfe3fb; border-radius: 8px; padding: 6px 10px; margin: 12px 0 16px; box-shadow: 0 2px 6px rgba(60, 88, 127, 0.08); }
+.rm-filter-strip { position: sticky; top: 0; z-index: 1029; display: flex; align-items: center; gap: 10px; background-color: #f1f7fe; border: 1px solid #cfe3fb; border-radius: 8px; padding: 6px 10px; margin: 12px 0 16px; box-shadow: 0 2px 6px rgba(60, 88, 127, 0.08); }
 @media (max-width: 767px) { .rm-filter-strip { flex-wrap: wrap; } }
 /* Chips wrap rather than scroll, so every active filter stays visible. */
 .rm-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; flex: 1; min-width: 0; }
@@ -171,7 +166,7 @@ cat('
 .rm-seg button[aria-pressed="true"] { background-color: #3C587F; color: #ffffff; }
 .rm-seg button:focus-visible, .rm-chip button:focus-visible { outline: 2px solid #3C587F; outline-offset: 2px; }
 .rm-chip { flex: none; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; background-color: #ffffff; border: 1px solid #3C587F; border-radius: 16px; padding: 3px 6px 3px 12px; font-size: 13px; color: #3C587F; }
-.rm-chip-value { font-weight: 600; }
+.rm-chip-value { font-weight: 600; display: inline-block; max-width: 22ch; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; }
 .rm-count { font-size: 13px; color: #3C587F; white-space: nowrap; }
 .rm-chip button { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; padding: 0; border: none; border-radius: 50%; background-color: transparent; color: #3C587F; font-size: 13px; line-height: 1; cursor: pointer; }
 .rm-chip button:hover { background-color: #3C587F; color: #ffffff; }
@@ -217,8 +212,8 @@ cat('
 #rm-dist thead th.rm-cnt { vertical-align: bottom; }
 .rm-controls .rm-grp { display: inline-flex; align-items: center; gap: 6px; color: #57606a; }
 .rm-controls input[type=search] { font-size: 13px; padding: 3px 8px; border: 1px solid #d0d7de; border-radius: 4px; width: 200px; }
-.rm-seg button:disabled { color: #aab4c0; cursor: not-allowed; }
-.rm-seg button[aria-pressed="true"]:disabled { background-color: #aab4c0; color: #ffffff; }
+.rm-seg button:disabled { color: #6e7781; background-color: #f0f2f5; cursor: not-allowed; }
+.rm-seg button[aria-pressed="true"]:disabled { background-color: #6e7781; color: #ffffff; }
 .rm-tip { position: fixed; z-index: 1040; pointer-events: none; background: #24292f; color: #ffffff; font-size: 12px; line-height: 1.45; padding: 7px 10px; border-radius: 6px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18); max-width: 320px; white-space: normal; text-align: left; }
 .rm-tip[hidden] { display: none; }
 .rm-tip .h, .rm-tip .sub { color: #c9d1d9; }
@@ -234,22 +229,25 @@ cat('
 .rm-bar > span { display: inline-block; height: 100%; font-size: 11px; line-height: 18px; text-align: center; overflow: hidden; }
 .rm-seg-none { background-color: #d0d7de; color: #24292f; }
 .rm-seg-amber { background-color: #FEAA02; color: #24292f; }
-.rm-seg-red { background-color: #FF5859; color: #ffffff; }
+.rm-seg-red { background-color: #FF5859; color: #24292f; }
 .rm-bar-n { display: inline-block; min-width: 3em; margin-left: 6px; color: #57606a; font-size: 12px; vertical-align: middle; }
-.rm-ne { color: #8c959f; font-style: italic; }
+.rm-ne { color: #6e7781; font-style: italic; }
+/* Hatched, so not evaluated differs from the grey of not flagged. */
+.rm-bar-ne { align-items: center; padding: 0 6px; background: repeating-linear-gradient(135deg, #ffffff 0 4px, #eaeef2 4px 6px); border: 1px solid #d0d7de; cursor: default; }
+.rm-bar.rm-bar-ne > span { height: auto; line-height: 1; background-color: #ffffff; padding: 0 3px; }
 .rm-fl { display: inline-block; min-width: 3em; text-align: left; }
 .rm-info { display: inline-block; width: 15px; height: 15px; margin-left: 4px; border-radius: 50%; border: 1px solid #3C587F; color: #3C587F; font-size: 10px; font-weight: 700; line-height: 13px; text-align: center; font-style: normal; cursor: help; vertical-align: 1px; }
-.rm-kri { display: inline-block; margin-left: 4px; padding: 0 4px; border-radius: 3px; background-color: #3C587F; color: #ffffff; font-size: 9px; font-weight: 700; letter-spacing: 0.04em; line-height: 14px; vertical-align: 1px; cursor: help; }
+.rm-kri { display: inline-block; margin-left: 4px; padding: 0 4px; border-radius: 3px; background-color: #3C587F; color: #ffffff; font-size: 10px; font-weight: 700; letter-spacing: 0.04em; line-height: 14px; vertical-align: 1px; cursor: help; }
 .rm-dot.rm-o { background-color: transparent !important; border-width: 2px; }
 .rm-ms { position: relative; display: inline-block; }
-.rm-ms-btn { border: 1px solid #3C587F; background: #ffffff; color: #3C587F; border-radius: 16px; padding: 3px 12px; font-size: 13px; cursor: pointer; }
+.rm-ms-btn { white-space: nowrap; border: 1px solid #3C587F; background: #ffffff; color: #3C587F; border-radius: 16px; padding: 3px 12px; font-size: 13px; cursor: pointer; }
 .rm-ms-btn[aria-expanded="true"] { background: #3C587F; color: #ffffff; }
 .rm-ms-menu { position: absolute; top: calc(100% + 4px); left: 0; z-index: 1031; min-width: 230px; max-height: 360px; overflow-y: auto; background: #ffffff; border: 1px solid #3C587F; border-radius: 6px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); padding: 6px 0; }
 .rm-ms-menu[hidden] { display: none; }
 .rm-ms-menu label { display: flex; align-items: center; gap: 6px; margin: 0; padding: 3px 12px; font-size: 13px; font-weight: normal; white-space: nowrap; cursor: pointer; }
 .rm-ms-menu label:hover { background: #f1f7fe; }
 .rm-ms-menu .rm-ms-all { border-bottom: 1px solid #cfe3fb; font-weight: 600; margin-bottom: 4px; padding-bottom: 6px; }
-#rm-dt-wide tr.rm-np td { color: #8c959f; font-style: italic; }
+#rm-dt-wide tr.rm-np td { color: #6e7781; font-style: italic; }
 .rm-recon { font-size: 13px; color: #57606a; margin: 6px 0; }
 .rm-recon .ok { color: #1a7f37; }
 .rm-recon .bad { color: #cf222e; }
@@ -261,7 +259,7 @@ cat('
 .rm-compact .rm-vals b.rw { background: #B5462F; }
 #rm-vitals tbody tr, #rm-dt-long tbody tr, #rm-dt-wide tbody tr { cursor: pointer; }
 .rm-fr { white-space: nowrap; }
-.rm-nk { color: #8c959f; }
+.rm-nk { color: #6e7781; }
 .rm-rw, #rm-dt-wide td.rm-rw { color: #B5462F; font-weight: 700; }
 .rm-legend { font-size: 13px; color: #57606a; margin: 4px 0 8px; }
 .rm-desc { max-width: 880px; margin: -2px 0 12px; font-size: 14px; line-height: 1.55; color: #57606a; }
@@ -272,7 +270,7 @@ cat('
 .rm-desc b, .rm-desc strong { color: #24292f; font-weight: 600; }
 .rm-legend .rm-vals b { min-width: 0; }
 .rm-btn[aria-expanded="true"], .rm-btn.rm-pri { background: #3C587F; color: #ffffff; }
-.rm-settings { position: absolute; right: 10px; top: calc(100% + 8px); z-index: 1032; width: 560px; max-width: calc(100vw - 40px); background-color: #ffffff; border: 1px solid #3C587F; border-radius: 10px; box-shadow: 0 14px 34px rgba(23, 38, 61, 0.24); padding: 12px 16px; font-size: 13px; }
+.rm-settings { position: absolute; right: 10px; top: calc(100% + 8px); z-index: 1032; width: 560px; max-width: calc(100vw - 16px); background-color: #ffffff; border: 1px solid #3C587F; border-radius: 10px; box-shadow: 0 14px 34px rgba(23, 38, 61, 0.24); padding: 12px 16px; font-size: 13px; }
 .rm-settings::before { content: ""; position: absolute; top: -7px; right: var(--rm-caret, 170px); width: 12px; height: 12px; background-color: #ffffff; border-left: 1px solid #3C587F; border-top: 1px solid #3C587F; transform: rotate(45deg); }
 .rm-settings[hidden] { display: none; }
 .rm-settings label { font-weight: normal; margin: 0; }
@@ -291,8 +289,8 @@ cat('
 .rm-unit:empty { display: none; }
 /* A slim "On this page" list beside the report; rmFilters.js adds the classes. */
 #TOC.rm-toc { border: 0; border-left: 2px solid #e1e4e8; border-radius: 0; margin-left: 0; }
-#TOC.rm-toc .rm-toc-head { display: flex; align-items: center; justify-content: space-between; margin: 4px 0 6px 12px; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #8c959f; }
-#TOC.rm-toc .rm-toc-hide { border: 1px solid transparent; border-radius: 4px; background: transparent; color: #8c959f; font-size: 14px; line-height: 1; padding: 1px 6px 3px; cursor: pointer; }
+#TOC.rm-toc .rm-toc-head { display: flex; align-items: center; justify-content: space-between; margin: 4px 0 6px 12px; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #6e7781; }
+#TOC.rm-toc .rm-toc-hide { border: 1px solid transparent; border-radius: 4px; background: transparent; color: #6e7781; font-size: 14px; line-height: 1; padding: 1px 6px 3px; cursor: pointer; }
 #TOC.rm-toc .rm-toc-hide:hover, #TOC.rm-toc .rm-toc-hide:focus-visible { border-color: #d0d7de; background: #f6f8fa; color: #3C587F; }
 #TOC.rm-toc .list-group-item { border: 0; border-left: 2px solid transparent; margin-left: -2px; padding: 4px 10px; background: transparent; color: #57606a; font-size: 13px; line-height: 1.3; }
 #TOC.rm-toc .list-group-item:hover { color: #3C587F; }
@@ -303,6 +301,11 @@ cat('
   div.tocify.rm-toc { width: 175px; max-width: 175px; }
 }
 body.rm-toc-hidden .toc-content { width: 100%; }
+/* Below 992px the contents list would squeeze the report, so it is hidden. */
+@media (max-width: 991px) {
+  .rm-toc-col, #rm-toc-toggle { display: none !important; }
+  .rm-toc-col + .toc-content { width: 100%; }
+}
 /* Clears the sticky strip when a contents link jumps to a section. */
 .section.level2, .section.level3 { scroll-margin-top: 64px; }
 #rm-overview, #rm-vitals, #rm-dt-long, #rm-dt-wide { overflow-x: auto; }
@@ -363,11 +366,11 @@ rm_SettingsPanel <- function() {
     set_row(
       "Blood pressure",
       seg("Blood pressure", "bp", c(separate = "Separate", combined = "Combined", both = "Both"), lSettings$bp),
-      "Separate: systolic and diastolic BP (the KRIs). Combined: paired BP, where a window repeats only when both readings repeat."
+      "Separate: systolic and diastolic BP (the KRIs). Combined: paired BP, where a window repeats only when both readings repeat. Both: all three."
     ),
     set_row(
       "Participant flag",
-      seg("Flag rule", "rule", c(count = "# windows", rate = "% of windows"), lSettings$rule),
+      seg("Flag rule", "rule", c(count = "# repeating", rate = "% repeating"), lSettings$rule),
       "Count repeating windows, or their share of the participant\u2019s windows."
     ),
     set_row(
@@ -382,7 +385,7 @@ rm_SettingsPanel <- function() {
       htmltools::tagList(
         htmltools::tags$input(id = "rm-min-windows", type = "number", min = 1, step = 1),
         htmltools::tags$span(class = "rm-unit", `data-rm-unit` = "rm-min-windows"),
-        htmltools::tags$span(class = "rm-unit", "per participant and vital")
+        htmltools::tags$span(class = "rm-unit", "per participant and measure")
       ),
       "Participants with fewer windows are not evaluable.",
       `for` = "rm-min-windows"
@@ -458,7 +461,7 @@ htmltools::tags$div(
     chip("subj", "Participant")
   ),
   htmltools::tags$span(id = "rm-count", class = "rm-count", title = "Filters apply to every section except the Study overview."),
-  htmltools::tags$button(id = "rm-reset", type = "button", class = "rm-ghost", title = "Clear the vitals, country, site and participant filters", "Reset filters"),
+  htmltools::tags$button(id = "rm-reset", type = "button", class = "rm-ghost", title = "Clear the measure, country, site and participant filters", "Reset filters"),
   htmltools::tags$span(class = "rm-vr"),
   htmltools::tags$button(id = "rm-settings-toggle", type = "button", class = "rm-btn", `aria-expanded` = "false", `aria-controls` = "rm-settings", "Settings"),
   htmltools::tags$button(id = "rm-toc-toggle", type = "button", class = "rm-ghost", `aria-pressed` = "false", style = "display:none;", "Hide contents"),
@@ -474,7 +477,7 @@ if (!has_participants) {
 } else if (!has_evaluable) {
   nNeeded <- nW + lClass$meta$min_windows - 1
   cat(sprintf(
-    "\n> **No evaluable participants** at the initial settings: none has the %s measurements of a vital needed for %s window%s of %s.\n",
+    "\n> **No evaluable participants** at the initial settings: none has the %s measurements of a measure needed for %s window%s of %s.\n",
     nNeeded, lClass$meta$min_windows, if (lClass$meta$min_windows == 1) "" else "s", nW
   ))
 }
@@ -489,7 +492,7 @@ if (length(lClass$meta$split_sites) > 0) {
 }
 if (!in_cmp) {
   cat(sprintf(
-    "\n> The repeat-measure KRIs (`kri0020a`&ndash;`f`) are not in this study's metrics. The report uses W = %s (%s) and flags sites at Amber \u2265 %s%%, Red \u2265 %s%% of windows, with at least %s windows.\n",
+    "\n> The repeat-measure KRIs (`kri0020a`&ndash;`f`) are not in this study's metrics. The report uses a window of %s measurements (%s) and flags sites at Amber \u2265 %s%%, Red \u2265 %s%% of windows, with at least %s windows.\n",
     nW,
     if (lClass$meta$window_source == "argument") "report argument" else "default",
     format(100 * lSiteRule$thresholds[1]), format(100 * lSiteRule$thresholds[2]), lSiteRule$accrual
@@ -499,6 +502,10 @@ if (!in_cmp) {
 
 ## Study overview
 
+```{r overview-note, echo=FALSE, results='asis'}
+desc("Every measure for the whole study; the filters do not apply. Bars show the share of sites evaluated and of evaluable participants flagged Amber or Red. Click a measure to show only it in the report; click again to show all.")
+```
+
 ```{r overview-controls, echo=FALSE}
 htmltools::div(
   class = "rm-controls",
@@ -506,7 +513,7 @@ htmltools::div(
     class = "rm-seg",
     role = "group",
     `aria-label` = "Overview view",
-    htmltools::tags$button(id = "rm-ov-distribution", type = "button", `data-rm-ov` = "distribution", `aria-pressed` = "true", "Distribution"),
+    htmltools::tags$button(id = "rm-ov-distribution", type = "button", `data-rm-ov` = "distribution", `aria-pressed` = "true", "% flagged"),
     htmltools::tags$button(id = "rm-ov-counts", type = "button", `data-rm-ov` = "counts", `aria-pressed` = "false", "Counts")
   )
 )
@@ -519,7 +526,7 @@ if (is.null(dfRecon)) {
   cat("<p class=\"rm-recon\">No <code>kri0020</code> results to reconcile with.</p>\n")
 } else {
   cat(
-    "<p class=\"rm-recon\">Reconciliation with the KRI (all enrolled participants, latest snapshot): ",
+    "<p class=\"rm-recon\">Repeating windows / windows compared with the KRI (all enrolled participants, latest snapshot): ",
     paste(vapply(seq_len(nrow(dfRecon)), function(i) {
       r <- dfRecon[i, ]
       short <- rm_Vitals()$short[match(r$vital, rm_Vitals()$vital)]
@@ -536,18 +543,12 @@ if (is.null(dfRecon)) {
     sep = ""
   )
 }
-cat(sprintf(
-  "<p class=\"rm-recon\">W = %s (%s) &middot; Flag rule: %s.</p>\n",
-  nW,
-  switch(lClass$meta$window_source, metrics = "from the kri0020 metrics", argument = "report argument", default = "default"),
-  rule_text
-))
 ```
 
-## Site/Country Distribution
+## Site/country distribution
 
 ```{r dist-note, echo=FALSE, results='asis'}
-desc("Flags by measure for each country or site, with its enrolled participants (and sites, by country). **Flags** keeps the rows with an Amber or Red (or only Red) flag in any shown measure. Click a column to sort; click a row to filter the report to that country or site.")
+desc("One row per country or site and one column per measure; each bar is the share of evaluable participants (or, by country, of sites) flagged Amber or Red. Use **Flags** to keep only rows with any flag or a Red flag. Click a column header to sort; click a row to filter the report to that country or site.")
 ```
 
 ```{r dist-controls, echo=FALSE, eval=has_participants}
@@ -578,7 +579,7 @@ htmltools::tagList(
       "Cells",
       dist_seg("Cells", "unit", c(participants = "Participant flags", sites = "Site flags"), "participants")
     ),
-    htmltools::tags$span(class = "rm-grp", "Flags", dist_seg("Flags", "flag", c(all = "All rows", any = "Any flag", red = "Red"), "all")),
+    htmltools::tags$span(class = "rm-grp", "Flags", dist_seg("Flags", "flag", c(all = "All", any = "Any flag", red = "Red only"), "all")),
     htmltools::tags$input(id = "rm-dist-search", type = "search", placeholder = "Search site or country", hidden = NA),
     htmltools::tags$span(id = "rm-dist-count", class = "rm-unit")
   ),
@@ -588,10 +589,10 @@ htmltools::tagList(
 )
 ```
 
-## Participant Listing
+## Participant listing
 
 ```{r tiles-note, echo=FALSE, results='asis'}
-desc("One row per participant and one tile per vital, coloured by the participant's flag: N/D is repeating windows of all windows, NE is not evaluable. Click a participant or tile to filter the report; click again to clear.")
+desc("One row per participant and one tile per measure, coloured by the participant's flag: N/D is repeating windows of all windows, NE is not evaluable. Click a participant or tile to filter the report; click again to clear.")
 ```
 
 ```{r tiles-controls, echo=FALSE, eval=has_participants}
@@ -632,14 +633,14 @@ htmltools::div(
 Widget_RepeatMeasurementsTiles(tiles, strId = "rm-tiles")
 ```
 
-## Vitals listing
+## Measure listing
 
 ```{r vitals-note, echo=FALSE, results='asis'}
 desc(
-  "- One row per participant and vital, for every vital in the vital signs data. Height, BSA and paired BP have no KRI; the report flags them with the same rule.\n",
-  "- Hover a vital for its metric ID (* = not a KRI) and the flag and rate for measured, N and D. Sort the flag column for worst first.\n",
-  "- **Measures** are the distinct values of all non-missing values; few distinct values among many suggest copied measurements.\n",
-  "- **Measurements in order** are the values the windows run over; dark red blocks or values are in a repeat window. Hover one for its position, visit and date. Tick **Show values** to show the numbers.\n",
+  "- One row per participant and measure, for every measure in the vital signs data. Height, BSA and paired BP have no KRI; the report flags them with the same rule.\n",
+  "- Hover a measure for its metric ID (* = no KRI). Hover a flag for the values measured and N of D windows repeating. Sort the Flag column to see the worst first.\n",
+  "- **Distinct** is the number of distinct values out of all non-missing values; few distinct values among many suggest copied measurements.\n",
+  "- **Measurements in order** are the values the windows run over. Dark red blocks are values in a repeating window, not a flag. Hover one for its position, visit and date. Tick **Show values** to show the numbers.\n",
   "- Click a row to filter the report to that participant; click again to clear."
 )
 ```
@@ -650,7 +651,7 @@ htmltools::div(
   htmltools::div(
     class = "rm-controls",
     htmltools::tags$label(htmltools::tags$input(id = "rm-show-values", type = "checkbox"), " Show values"),
-    htmltools::tags$label(htmltools::tags$input(id = "rm-only-repeat", type = "checkbox", checked = NA), " Only rows with a repeat window")
+    htmltools::tags$label(htmltools::tags$input(id = "rm-only-repeat", type = "checkbox", checked = NA), " Only rows with a repeating window")
   ),
   htmltools::div(id = "rm-vitals-wrap", listing)
 )
@@ -660,8 +661,8 @@ htmltools::div(
 
 ```{r data-note, echo=FALSE, results='asis'}
 desc(
-  "- **Wide** (default): one row per participant and visit record, one column per vital, as in the vital signs data. Hover a vital header for its name and KRI, and a site for its country; grey rows were not performed. **Long:** one row per participant, vital and non-missing value, in measurement order (# is the position).\n",
-  "- Dark red values are in a repeat window. Click a row to filter the report to that participant; click again to clear."
+  "- **Wide** (default): one row per participant and visit record, one column per measure, as in the vital signs data. Hover a measure header for its name and KRI, and a site for its country; grey rows were not performed. **Long**: one row per participant, measure and non-missing value, in measurement order (# is the position).\n",
+  "- Dark red values are in a repeating window, not a flag. Click a row to filter the report to that participant; click again to clear."
 )
 ```
 
@@ -672,23 +673,31 @@ htmltools::div(
     class = "rm-seg",
     role = "group",
     `aria-label` = "Table shape",
-    htmltools::tags$button(id = "rm-shape-long", type = "button", `data-rm-shape` = "long", `aria-pressed` = "false", "Long"),
-    htmltools::tags$button(id = "rm-shape-wide", type = "button", `data-rm-shape` = "wide", `aria-pressed` = "true", "Wide")
+    htmltools::tags$button(id = "rm-shape-wide", type = "button", `data-rm-shape` = "wide", `aria-pressed` = "true", "Wide"),
+    htmltools::tags$button(id = "rm-shape-long", type = "button", `data-rm-shape` = "long", `aria-pressed` = "false", "Long")
   ),
   htmltools::tags$label(
     htmltools::tags$input(id = "rm-dt-only", type = "checkbox", checked = NA),
     " ",
-    htmltools::tags$span(id = "rm-dt-only-label", "Only participants with a repeat window")
+    htmltools::tags$span(id = "rm-dt-only-label", "Only participants with a repeating window")
   )
 )
 ```
 
 ```{r data-table, echo=FALSE, eval=has_participants}
-# Both shapes render visible: DT does not draw a table inside a hidden
-# container. rmFilters.js shows the selected shape on load.
+# rmFilters.js builds Long from the Wide rows the first time it is shown, so
+# the data are embedded once.
 htmltools::tagList(
-  htmltools::div(id = "rm-dt-wide-view", `data-rm-shape-view` = "wide", data_table$wide),
-  htmltools::div(id = "rm-dt-long-view", `data-rm-shape-view` = "long", data_table$long)
+  htmltools::div(id = "rm-dt-wide-view", `data-rm-shape-view` = "wide", data_table),
+  htmltools::div(
+    id = "rm-dt-long-view",
+    `data-rm-shape-view` = "long",
+    style = "display:none",
+    htmltools::div(
+      id = "rm-dt-long",
+      htmltools::tags$table(class = "display compact hover nowrap", style = "width:100%")
+    )
+  )
 )
 ```
 
@@ -705,7 +714,7 @@ lData <- list(
     minWindows = jsonlite::unbox(lSettings$minWindows),
     bp = jsonlite::unbox(lSettings$bp)
   ),
-  export = bExport
+  export = jsonlite::unbox(bExport)
 )
 # 17 significant digits round-trip every double, so the browser compares
 # windows with exactly R's thresholds (15 can flip a flag at the boundary).

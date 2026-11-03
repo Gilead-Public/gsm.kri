@@ -23,6 +23,8 @@ the defaults. Rates are fractions.}
 A `numeric` vector: Amber, then Red.
 }
 \description{
+`r lifecycle::badge("experimental")`
+
 Amber and Red thresholds for a participant flag rule. Count thresholds
 default to 2 and 3 repeating windows. Rate thresholds default to the
 `kri0020` metric thresholds so that the participant flag matches the site

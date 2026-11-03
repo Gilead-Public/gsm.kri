@@ -2,7 +2,7 @@
 % Please edit documentation in R/rm_VitalsListing.R
 \name{rm_VitalsListing}
 \alias{rm_VitalsListing}
-\title{Vitals listing table for the Repeat Measurements report}
+\title{Measure listing table for the Repeat Measurements report}
 \usage{
 rm_VitalsListing(dfVitalRows, nWindowLength = NULL, bExport = TRUE)
 }
@@ -20,11 +20,11 @@ A `DT` htmlwidget.
 \description{
 `r lifecycle::badge("experimental")`
 
-The `rm-vitals` `DT` table (§4): one row per participant and vital with the
-vital name (metric ID on hover, `*` for a vital with no KRI), the measures
-(distinct / non-missing values), a single "Flag and rate" column
+The `rm-vitals` `DT` table: one row per participant and measure with the
+measure name (metric ID on hover, `*` for a measure with no KRI), the
+distinct / non-missing values, a single "Flag and rate" column
 (measured, N and D on hover; sorts by flag, then rate) and the
-measurements in order with repeat-window values highlighted and each
+measurements in order with values in a repeating window highlighted and each
 value's position, visit and date on hover.
 The report's filter script toggles the numbers, filters the named `vital`,
 `country`, `invid`, `subjid` and `has_repeat` columns, and turns a row

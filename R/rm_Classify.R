@@ -34,8 +34,7 @@ rm_Vitals <- function() {
 #' `r lifecycle::badge("experimental")`
 #'
 #' @return A named `character` vector of hex colors, in severity order.
-#' @keywords internal
-#' @export
+#' @noRd
 rm_FlagColors <- function() {
   c(
     Red = "#FF5859",
@@ -86,12 +85,13 @@ rm_FlagColors <- function() {
 #'   * `participants`: one row per participant and vital with `studyid`,
 #'     `country`, `invid`, `subjid`, `vital`, `metric`, `n_records`
 #'     (non-missing measurements), `Numerator`, `Denominator`, `rate` and
-#'     `flag` (a factor with the levels of [rm_FlagColors()]).
+#'     `flag` (a factor with levels `Red`, `Amber`, `Green` and
+#'     `Not evaluable`).
 #'   * `measurements`: one row per non-missing measurement with `studyid`,
 #'     `country`, `invid`, `subjid`, `record`, `visit`, `vs_dt`, `vital`,
 #'     `value` (`NA` for paired BP), `value_text` (the displayed value),
-#'     `seq`, `in_repeat_window` and `window_start` (see
-#'     [Mark_ConsecutiveRepeats()]).
+#'     `seq`, `in_repeat_window` and `window_start` (the repeat-window
+#'     marks used by [Detect_ConsecutiveRepeats()]).
 #'   * `records`: the enrolled participants' `Mapped_VS` rows, with `country`
 #'     and `invid` from `Mapped_SUBJ` and a `record` key that `measurements`
 #'     refers to.
@@ -273,6 +273,9 @@ rm_Classify <- function(
 
 #' Repeat Measurements participant flag thresholds
 #'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#'
 #' Amber and Red thresholds for a participant flag rule. Count thresholds
 #' default to 2 and 3 repeating windows. Rate thresholds default to the
 #' `kri0020` metric thresholds so that the participant flag matches the site
@@ -314,7 +317,7 @@ rm_FlagThresholds <- function(strFlagRule = c("count", "rate"), vFlagThresholds 
   as.numeric(vFlagThresholds)
 }
 
-# D4: the metric's window length wins so the report reconciles with the KRI.
+# The metric's window length wins so the report reconciles with the KRI.
 rm_WindowLength <- function(dfMetrics, nWindowLength = NULL) {
   vMetricW <- if (!is.null(dfMetrics$WindowLength)) {
     stats::na.omit(as.numeric(dfMetrics$WindowLength[grepl("^(kri|cou)0020", dfMetrics$ID)]))

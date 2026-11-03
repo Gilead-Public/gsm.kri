@@ -2,7 +2,7 @@
 % Please edit documentation in R/Widget_RepeatMeasurementsTiles.R
 \name{Widget_RepeatMeasurementsTiles}
 \alias{Widget_RepeatMeasurementsTiles}
-\title{Participant Listing widget for the Repeat Measurements report}
+\title{Participant listing widget for the Repeat Measurements report}
 \usage{
 Widget_RepeatMeasurementsTiles(
   dfTiles,
@@ -26,8 +26,8 @@ An htmlwidget.
 \description{
 `r lifecycle::badge("experimental")`
 
-A participant x vital tile grid: one row per participant, one tile per KRI
-vital, filled by the participant's flag and labelled with the rate, N/D or
+A participant x measure tile grid: one row per participant, one tile per
+measure, filled by the participant's flag and labelled with the rate, N/D or
 both. Clicking a participant or any of their tiles (or pressing Enter or
 Space on one) dispatches a bubbling `rm-tiles-select` event whose `detail`
 holds `chartId` and `subjid`; the report's filter script uses it to toggle

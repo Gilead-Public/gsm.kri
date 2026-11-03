@@ -66,8 +66,9 @@ test_that("vitals listing is one compact level with flag and rate in one column 
     c("metric", "measured", "Numerator", "Denominator", "rate", "in_repeat_window", "visits")
   )
   expect_true("n_unique" %in% vNames)
-  expect_match(w$x$container, "Measures")
-  expect_match(w$x$container, "Measurements in order \\(W = 3\\)")
+  expect_match(w$x$container, "Distinct")
+  expect_match(w$x$container, "Measurements in order \\(window 3\\)")
+  expect_true(isTRUE(opts$deferRender))
   expect_match(w$x$container, "Flag \u00b7 rate")
 
   wOff <- rm_VitalsListing(dfRows, bExport = FALSE)

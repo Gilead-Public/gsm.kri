@@ -57,7 +57,7 @@ const dist = (page) => page.evaluate(() => {
   };
 });
 
-// Shows only the given vitals through the Vitals multi-select.
+// Shows only the given measures through the Measures multi-select.
 async function pickVitals(page, vitals) {
   await page.click('#rm-vital-btn');
   await page.uncheck('#rm-vital-all');
@@ -138,7 +138,7 @@ test.describe('Repeat Measurements report', () => {
   });
   test.afterEach(() => expect(errors).toEqual([]));
 
-  test('opens on the study with repeating vitals listed and the Wide data table (#344, #346, #347)', async ({ page }) => {
+  test('opens on the study with repeating measures listed and the Wide data table (#344, #346, #347)', async ({ page }) => {
     const s = await state(page);
     expect(s.vitalSummary).toBe('All');
     expect(s.count).toBe('5 / 5 participants selected');
@@ -152,7 +152,7 @@ test.describe('Repeat Measurements report', () => {
     expect(s.wide).toHaveLength(14);
     expect(s.wideVitals).toEqual(['weight', 'pulse', 'height']);
     expect(s.dtOnly).toBe(true);
-    expect(s.dtOnlyLabel).toBe('Only participants with a repeat window');
+    expect(s.dtOnlyLabel).toBe('Only participants with a repeating window');
     await expect(page.locator('#rm-dt-wide tbody td.rm-rw')).not.toHaveCount(0);
     // The in-repo widget replaces the provisional gsm.viz 2.5.0 tiles bundle.
     expect(await page.evaluate(() => document.documentElement.outerHTML.includes('2.5.0-615'))).toBe(false);
@@ -261,7 +261,7 @@ test.describe('Repeat Measurements report', () => {
     expect(s.wideVitals).toEqual(['pulse']);
     expect([...new Set(s.wide)]).toEqual(['B']);
     expect((await dist(page)).measures).toEqual(['pulse']);
-    // A vital without a KRI can be picked like any other.
+    // A measure without a KRI can be picked like any other.
     await page.click('#rm-vital-btn');
     await page.check('[data-rm-vital-cb][value="height"]');
     await page.click('h1');
@@ -274,10 +274,10 @@ test.describe('Repeat Measurements report', () => {
     await page.click('#rm-vital-btn');
     await page.uncheck('[data-rm-vital-cb][value="pulse"]');
     await page.uncheck('[data-rm-vital-cb][value="height"]');
-    await expect(page.locator('#rm-dist')).toHaveText('No vitals selected.');
+    await expect(page.locator('#rm-dist')).toHaveText('No measures selected. Pick one under Measures.');
   });
 
-  test('the Site/Country Distribution shows participant flags by measure for each country, with a Study row matching the overview (#345)', async ({ page }) => {
+  test('the site/country distribution shows participant flags by measure for each country, with a Study row matching the overview (#345)', async ({ page }) => {
     let d = await dist(page);
     expect([d.level, d.unit]).toEqual(['country', 'participants']);
     expect(d.measures).toEqual(['weight', 'pulse', 'sysbp', 'diabp', 'resp', 'temp', 'height']);
@@ -300,6 +300,11 @@ test.describe('Repeat Measurements report', () => {
     }
     await expect(page.locator('#rm-dist tr[data-rm-dist-key="US"] td[data-rm-dist-vital="weight"] [data-rm-part]')).toHaveCount(2);
     await expect(page.locator('#rm-dist tr[data-rm-dist-key="JP"] td[data-rm-dist-vital="pulse"]')).toHaveText('Not evaluated');
+    await expect(page.locator('#rm-dist tr[data-rm-dist-key="JP"] td[data-rm-dist-vital="pulse"] .rm-bar-ne')).toHaveCount(1);
+    // The overview and distribution share one colour key.
+    expect(await page.locator('#rm-dist-legend').textContent()).toContain('Not flagged \u00b7 Amber \u00b7 Red \u00b7 Not evaluated.');
+    await page.click('#rm-ov-distribution');
+    expect(await page.locator('#rm-overview .rm-legend').textContent()).toContain('Not flagged \u00b7 Amber \u00b7 Red \u00b7 Not evaluated.');
     await expect(page.locator('#rm-dist thead th.rm-stick .rm-info')).toHaveAttribute('title', /Participant flag: repeating windows, Amber \u2265 2, Red \u2265 3/);
     // The hover card has the counts.
     await page.hover('#rm-dist tr[data-rm-dist-key="US"] td[data-rm-dist-vital="weight"]');
@@ -326,7 +331,7 @@ test.describe('Repeat Measurements report', () => {
     await expect(tip).toContainText('Sites evaluated: 2 / 2 (100%)');
   });
 
-  test('the Site/Country Distribution by site shows each site flag, searches and disables site-flag cells (#345)', async ({ page }) => {
+  test('the site/country distribution by site shows each site flag, searches and disables site-flag cells (#345)', async ({ page }) => {
     await page.click('#rm-dist-sites');
     await page.click('#rm-dist-site');
     await expect(page.locator('#rm-dist-sites')).toBeDisabled();
@@ -344,9 +349,12 @@ test.describe('Repeat Measurements report', () => {
     expect(d.cells['S3 weight'].dot).toBe('Amber KRI');
     expect(d.cells['S2 weight'].dot).toBe('Green KRI');
     expect(d.cells['S1 height'].dot).toBe('Not evaluated calculated');
+    // Not evaluated is hatched, unlike the grey of not flagged.
+    expect(await page.locator('#rm-dist tr[data-rm-dist-key="S1"] td[data-rm-dist-vital="height"] .rm-sf')
+      .evaluate((el) => getComputedStyle(el).backgroundImage)).toContain('repeating-linear-gradient');
     expect(d.cells['Study weight'].dot).toBe(null);
     await page.hover('#rm-dist tr[data-rm-dist-key="S1"] td[data-rm-dist-vital="weight"]');
-    await expect(page.locator('#rm-dist-tip')).toContainText('Site flag: Red \u00b7 2 of 4 windows repeat (50%) \u00b7 kri0020a');
+    await expect(page.locator('#rm-dist-tip')).toContainText('Site flag: Red \u00b7 2 of 4 windows repeating (50%) \u00b7 kri0020a');
 
     await page.fill('#rm-dist-search', 's2');
     d = await dist(page);
@@ -360,7 +368,7 @@ test.describe('Repeat Measurements report', () => {
     await expect(page.locator('#rm-dist-search')).toBeHidden();
   });
 
-  test('clicking a measure sorts the distribution rows by % flagged (#345)', async ({ page }) => {
+  test('clicking a measure, Participants or Sites sorts the distribution rows (#345)', async ({ page }) => {
     const weight = page.locator('#rm-dist th[data-rm-dist-sort="weight"]');
     await weight.click();
     let d = await dist(page);
@@ -377,14 +385,13 @@ test.describe('Repeat Measurements report', () => {
     await page.click('#rm-dist-site');
     await weight.click();
     expect((await dist(page)).rows).toEqual(['S1', 'S3', 'S2']);
-  });
+    await page.click('#rm-dist-country');
 
-  test('clicking Participants or Sites sorts the distribution rows by count (#345)', async ({ page }) => {
     const np = page.locator('#rm-dist th[data-rm-dist-sort="_np"]');
     const ns = page.locator('#rm-dist th[data-rm-dist-sort="_ns"]');
     // US: 3 participants at 2 sites; JP: 2 at 1. Default order is by name.
     await np.click();
-    let d = await dist(page);
+    d = await dist(page);
     expect([d.rows, d.sort, d.count]).toEqual([['US', 'JP'], ['_np descending'], '2 countries \u00b7 sorted by participants']);
     await np.click();
     expect((await dist(page)).rows).toEqual(['JP', 'US']);
@@ -498,7 +505,7 @@ test.describe('Repeat Measurements report', () => {
     expect(lines).toHaveLength(1 + 2 * 7);
   });
 
-  test('a participant label or tile click filters the report and a second click clears it (#346, #347)', async ({ page }) => {
+  test('a participant label or tile click or key press filters the report and a second clears it (#346, #347)', async ({ page }) => {
     await page.locator('#rm-tiles td.rm-tiles-c[data-subjid="A"]').first().click();
     let s = await state(page);
     expect(s.chips).toEqual(['A']);
@@ -520,9 +527,8 @@ test.describe('Repeat Measurements report', () => {
     expect(s.compact).toBe(true);
     expect(s.dtOnly).toBe(true);
     expect(s.wide).toHaveLength(14);
-  });
 
-  test('the keyboard selects and clears a participant from the listing (#347)', async ({ page }) => {
+    // The keyboard selects and clears too.
     await page.locator('#rm-tiles th[data-subjid="B"]').focus();
     await page.keyboard.press('Enter');
     expect((await state(page)).chips).toEqual(['B']);
@@ -532,50 +538,43 @@ test.describe('Repeat Measurements report', () => {
     expect((await state(page)).chips).toEqual([]);
   });
 
-  test('a vitals listing row filters to its participant and a second click clears it (#346)', async ({ page }) => {
-    const row = page.locator('#rm-vitals tbody tr').first().locator('td').nth(2);
-    await expect(row).toHaveText('A');
-    await row.click();
-    let s = await state(page);
-    expect(s.chips).toEqual(['A']);
-    expect(s.vitals).toHaveLength(7);
-    await page.locator('#rm-vitals tbody tr').first().locator('td').nth(2).click();
-    s = await state(page);
-    expect(s.chips).toEqual([]);
-    expect(s.vitals).toHaveLength(4);
-    // No second level.
-    expect(await page.locator('#rm-records, #rm-back, #rm-all-records').count()).toBe(0);
-  });
-
-  test('the vitals listing shows the vital, measures and flag rate with details on hover (#346)', async ({ page }) => {
+  test('the measure listing shows the measure, distinct values and flag, and a row click filters to its participant (#346)', async ({ page }) => {
     const headers = await page.locator('#rm-vitals thead th').allTextContents();
-    expect(headers).toEqual(['Country', 'Site', 'Participant', 'Vital', 'Measures', 'Flag \u00b7 rate', 'Measurements in order (W = 3)']);
+    expect(headers).toEqual(['Country', 'Site', 'Participant', 'Measure', 'Distinct', 'Flag \u00b7 rate', 'Measurements in order (window 3)']);
     const first = page.locator('#rm-vitals tbody tr').first();
     await expect(first.locator('td').nth(3).locator('span').first()).toHaveAttribute('title', 'kri0020a');
-    // A weight: 70 70 70 70 is 1 unique value of 4.
+    // A weight: 70 70 70 70 is 1 distinct value of 4.
     await expect(first.locator('td').nth(4)).toHaveText('1 / 4');
-    await expect(first.locator('td').nth(5)).toHaveText('100%');
-    await expect(first.locator('.rm-fr')).toHaveAttribute('title', /kri0020a · Amber · measured 4 · N 2 of D 2/);
-    // Each value, including the compact blocks, has its visit on hover.
-    const firstValue = first.locator('.rm-vals b').first();
-    await expect(firstValue).toHaveAttribute('title', '#1 · V1 · 2024-01-01 · in a repeat window');
+    await expect(first.locator('td').nth(5)).toHaveText('Amber \u00b7 100%');
+    await expect(first.locator('.rm-fr')).toHaveAttribute('title', /kri0020a · Amber · measured 4 · N 2 of D 2 windows repeating/);
+    // Values are hidden by default; each, including the compact blocks, has its visit on hover.
+    await expect(page.locator('#rm-show-values')).not.toBeChecked();
+    expect((await state(page)).compact).toBe(true);
+    await expect(first.locator('.rm-vals b').first()).toHaveAttribute('title', '#1 · V1 · 2024-01-01 · in a repeating window');
     await page.check('#rm-show-values');
+    expect((await state(page)).compact).toBe(false);
     await expect(page.locator('#rm-vitals tbody tr').first().locator('.rm-vals b').nth(3))
-      .toHaveAttribute('title', '#4 · V4 · 2024-01-04 · in a repeat window');
+      .toHaveAttribute('title', '#4 · V4 · 2024-01-04 · in a repeating window');
     const csv = await downloadCsv(page, '#rm-vitals .buttons-csv');
-    expect(csv[0]).toContain('"Measures"');
-    expect(csv[0]).toContain('"Metric"');
-    expect(csv[0]).toContain('"Numerator"');
-    expect(csv[0]).toContain('"Denominator"');
-    expect(csv[0]).toContain('"Rate"');
+    for (const h of ['"Distinct"', '"Metric"', '"Numerator"', '"Denominator"', '"Rate"', '"In repeating window"']) expect(csv[0]).toContain(h);
     expect(csv).toHaveLength(1 + 4);
+
+    // A row click filters to its participant; a second click clears it.
+    await first.locator('td').nth(2).click();
+    let s = await state(page);
+    expect([s.chips, s.vitals.length]).toEqual([['A'], 7]);
+    await page.locator('#rm-vitals tbody tr').first().locator('td').nth(2).click();
+    s = await state(page);
+    expect([s.chips, s.vitals.length]).toEqual([[], 4]);
+    await page.uncheck('#rm-only-repeat');
+    expect((await state(page)).vitals).toHaveLength(35);
   });
 
   test('the data table switches between Wide and Long and filters to a clicked participant (#346)', async ({ page }) => {
     await page.click('[data-rm-shape="long"]');
     let s = await state(page);
     expect(s.shape).toBe('long');
-    expect(s.dtOnlyLabel).toBe('Only vitals with a repeat window');
+    expect(s.dtOnlyLabel).toBe('Only measures with a repeating window');
     // A weight 4, B pulse 4, D weight 6, D height 3.
     expect(s.long).toHaveLength(17);
     await page.uncheck('#rm-dt-only');
@@ -583,12 +582,12 @@ test.describe('Repeat Measurements report', () => {
     await page.check('#rm-dt-only');
 
     const longCsv = await downloadCsv(page, '#rm-dt-long .buttons-csv');
-    expect(longCsv[0]).toBe('"Country","Site","Participant","Vital","Metric","#","Visit","Date","Value","In repeat window"');
+    expect(longCsv[0]).toBe('"Country","Site","Participant","Measure","Metric","#","Visit","Date","Value","In repeating window"');
     expect(longCsv).toHaveLength(1 + 17);
     expect(longCsv[1]).toMatch(/^"US","S1","A","Weight","kri0020a",/);
     // Long shows the metric as a KRI badge and shortens the repeat header.
     const longHead = await page.locator('#rm-dt-long thead th').allTextContents();
-    expect(longHead).toEqual(['Country', 'Site', 'Participant', 'Vital', '#', 'Visit', 'Date', 'Value', 'Repeat']);
+    expect(longHead).toEqual(['Country', 'Site', 'Participant', 'Measure', '#', 'Visit', 'Date', 'Value', 'Repeat']);
     await expect(page.locator('#rm-dt-long tbody tr').first().locator('.rm-kri')).toHaveAttribute('title', 'kri0020a');
 
     await page.locator('#rm-dt-long tbody tr').first().locator('td').nth(2).click();
@@ -602,8 +601,8 @@ test.describe('Repeat Measurements report', () => {
     await page.locator('#rm-dt-wide tbody tr').first().locator('td').nth(2).click();
     expect((await state(page)).chips).toEqual([]);
 
-    // Wide abbreviates vital headers, folds country into the site and greys
-    // records not performed. Vitals without values in the rows are hidden.
+    // Wide abbreviates measure headers, folds country into the site and greys
+    // records not performed. Measures without values in the rows are hidden.
     const wideHead = await page.locator('#rm-dt-wide thead th').evaluateAll((ths) => ths.map((th) => [th.textContent, th.title]));
     expect(wideHead.map((h) => h[0])).toEqual(['Site', 'Participant', 'Visit', 'Date', 'WT', 'HR', 'Ht']);
     expect(wideHead[4][1]).toBe('Weight (kri0020a)');
@@ -637,17 +636,7 @@ test.describe('Repeat Measurements report', () => {
     await expect(page.locator('#rm-count')).toHaveText(/1 \/ 5 participants selected/);
   });
 
-  test('values are hidden by default and can be shown in the vitals listing (#346)', async ({ page }) => {
-    await expect(page.locator('#rm-show-values')).not.toBeChecked();
-    await page.check('#rm-show-values');
-    expect((await state(page)).compact).toBe(false);
-    await page.uncheck('#rm-show-values');
-    expect((await state(page)).compact).toBe(true);
-    await page.uncheck('#rm-only-repeat');
-    expect((await state(page)).vitals).toHaveLength(35);
-  });
-
-  test('reset filters clears the vitals, country, site and participant (#344)', async ({ page }) => {
+  test('reset filters clears the measures, country, site and participant (#344)', async ({ page }) => {
     await pickVitals(page, ['weight']);
     await clickDistRow(page, 'site', 'S1');
     await page.locator('#rm-tiles th[data-subjid="A"]').click();

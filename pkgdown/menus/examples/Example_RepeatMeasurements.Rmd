@@ -92,9 +92,19 @@ cat(report_repeat_measurements, sep = "\n")
 <details>
 <summary>Show the code</summary>
 
-This page provides a sample repeat measurements report for the repeat-measure vital sign KRIs (`kri0020a`-`f`, `cou0020a`-`f`), generated using the `gsm.kri` package. The code below generates the report shown on this page.
+This page provides a sample repeat measurements report for the repeat-measure vital sign KRIs (`kri0020a`-`f`, `cou0020a`-`f`), generated using the `gsm.kri` package. The code below prepares the inputs and writes the report; this page embeds the same report.
 
 ```{r, ref.label="example-code", eval=FALSE}
+```
+
+```{r, eval=FALSE}
+# --- Step 4: Write the report -------------------------------------------------
+Report_RepeatMeasurements(
+  dfResults = dfResults,
+  dfMetrics = dfMetrics,
+  lListings = lListings,
+  dSnapshotDate = dSnapshotDate
+)
 ```
 
 </details>

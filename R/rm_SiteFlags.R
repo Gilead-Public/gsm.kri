@@ -11,8 +11,7 @@
 #'
 #' @return A named `list` (vital to a named list of site flags); empty when
 #'   `dfResults` has no `kri0020` site results.
-#' @keywords internal
-#' @export
+#' @noRd
 rm_SiteFlags <- function(dfResults) {
   vNeeded <- c("MetricID", "GroupLevel", "GroupID", "Flag")
   if (is.null(dfResults) || !all(vNeeded %in% names(dfResults))) {

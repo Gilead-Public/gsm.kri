@@ -8,7 +8,7 @@
   var RAG = ['Red', 'Amber', 'Green'];
   var SEVERITY = { Red: 3, Amber: 2, Green: 1, 'Not evaluable': 0 };
   var state = {
-    // Vitals the reviewer unticked; new options start ticked.
+    // Measures the reviewer unticked; new options start ticked.
     hidden: {},
     country: null,
     site: null,
@@ -19,17 +19,17 @@
     // Values are hidden by default; the compact blocks keep the pattern.
     showValues: false,
     onlyRepeat: true,
-    // Data table shape and its "only ... with a repeat window" toggle.
+    // Data table shape and its "only ... with a repeating window" toggle.
     shape: 'wide',
     // Study overview view: 'counts' table or 'distribution' bars.
     overview: 'distribution',
-    // §2: rows by country or site; cells participant or (by country) site flags.
+    // Distribution: rows by country or site; cells participant or (by country) site flags.
     distLevel: 'country',
     distUnit: 'participants',
     distSort: null,
     distDir: -1,
     distSearch: '',
-    // §2 rows: 'all', 'any' (an Amber or Red cell) or 'red' (a Red cell).
+    // Distribution rows: 'all', 'any' (an Amber or Red cell) or 'red' (a Red cell).
     distFlag: 'all',
     dtOnly: true,
     // Listing settings to restore when the participant filter is cleared.
@@ -84,7 +84,7 @@
     return true;
   }
 
-  // Vitals the BP view shows, in report order: the Vitals options and the
+  // Measures the BP view shows, in report order: the Measures options and the
   // Study overview rows.
   function bpVitals() {
     return rmData().vitals.filter(function (v) {
@@ -92,7 +92,7 @@
     });
   }
 
-  // Vitals the BP view and the Vitals selection show.
+  // Measures the BP view and the Measures selection show.
   function shownVitals() {
     return bpVitals().filter(function (v) {
       return !state.hidden[v.vital];
@@ -144,11 +144,14 @@
     var api = dtApi('rm-vitals');
     if (!api) return;
     var ci = colIndex(api);
+    // Only rows whose flag changed are re-rendered.
     api.rows().every(function () {
       var d = this.data();
-      d[ci.flag] = flagOf(d[ci.Numerator], d[ci.Denominator]);
+      var f = flagOf(d[ci.Numerator], d[ci.Denominator]);
+      if (d[ci.flag] === f) return;
+      d[ci.flag] = f;
+      this.invalidate('data');
     });
-    api.rows().invalidate('data');
     // Keep worst first unless the reviewer sorted by another column.
     var order = api.order();
     if (!order.length || order[0][0] === ci.flag) api.order([[ci.flag, 'desc']]);
@@ -218,9 +221,13 @@
     panel.hidden = !open;
     btn.setAttribute('aria-expanded', String(open));
     if (!open) return;
-    var strip = panel.parentElement.getBoundingClientRect();
+    // On narrow screens, shift the popover right so its left edge stays on screen.
+    panel.style.right = '';
+    var left = panel.getBoundingClientRect().left;
+    if (left < 8) panel.style.right = (10 - (8 - left)) + 'px';
+    var p = panel.getBoundingClientRect();
     var b = btn.getBoundingClientRect();
-    panel.style.setProperty('--rm-caret', Math.max(12, strip.right - b.right + b.width / 2 - 16) + 'px');
+    panel.style.setProperty('--rm-caret', Math.max(12, p.right - b.right + b.width / 2 - 6) + 'px');
   }
 
   // Hides the floating table of contents so the sections use the full width.
@@ -255,7 +262,7 @@
     );
   }
 
-  // ---- §1 overview --------------------------------------------------------
+  // ---- study overview -----------------------------------------------------
   // The whole study whatever the filters; it follows only the settings.
   function overviewCounts() {
     var counts = {};
@@ -310,8 +317,8 @@
   }
 
   // A 100% stacked bar of not flagged / Amber / Red; labels only where they fit.
-  function stackBar(n, amber, red, noun, source) {
-    if (!n) return '<span class="rm-ne">Not evaluated</span>';
+  function stackBar(n, amber, red, noun, source, none) {
+    if (!n) return neBar(none);
     var parts = [
       ['none', n - amber - red, 'Not flagged'],
       ['amber', amber, 'Amber'],
@@ -329,19 +336,27 @@
       }).join('') + '</span><span class="rm-bar-n">' + n.toLocaleString() + '</span>';
   }
 
-  function siteInfo() {
-    return info(
-      'Site flag: ' + siteRuleText() + '. N: sites evaluated / sites with enrolled participants. ' +
-      'Filled circles: the KRI site flags (kri0020a\u2013f, latest snapshot). ' +
-      'Empty circles: calculated in the report with the same rule, for measures without KRI results.'
-    );
+  // The bar views have no circles or N column, so their notes say so.
+  function siteInfo(bars) {
+    return info('Site flag: ' + siteRuleText() + '. ' + (bars
+      ? 'Bars use the KRI site flags (kri0020a\u2013f, latest snapshot), or flags calculated in the report with the same rule for measures without KRI results. The number after a bar is the sites evaluated.'
+      : 'N: sites evaluated / sites with enrolled participants. Filled circles: the KRI site flags (kri0020a\u2013f, latest snapshot). ' +
+        'Empty circles: calculated in the report with the same rule, for measures without KRI results.'));
   }
 
-  function participantInfo() {
-    return info(
-      'Participant flag: ' + ruleText() + '. N: evaluable / enrolled participants. ' +
-      'Empty circles: calculated in the report; change the rule under Settings.'
-    );
+  function participantInfo(bars) {
+    return info('Participant flag: ' + ruleText() + '. Calculated in the report; change the rule under Settings. ' + (bars
+      ? 'The number after a bar is the evaluable participants.'
+      : 'N: evaluable / enrolled participants.'));
+  }
+
+  // The colour key the overview and distribution share.
+  function flagKey() {
+    var key = function (bg, border, label) {
+      return '<span class="rm-dot" style="background:' + bg + ';border-color:' + border + '"></span>' + label;
+    };
+    return key('#d0d7de', '#d0d7de', 'Not flagged') + ' \u00b7 ' + key(FLAG_COLORS[1], FLAG_COLORS[1], 'Amber') + ' \u00b7 ' +
+      key(FLAG_COLORS[2], FLAG_COLORS[2], 'Red') + ' \u00b7 ' + key(NE_BG, NE_BORDER, 'Not evaluated') + '.';
   }
 
   // A row click picks its measure in the Measures select; the selected rows stand out.
@@ -372,29 +387,25 @@
     if (state.overview === 'distribution') {
       h = '<table class="table table-condensed rm-ov-dist" data-rm-ov-view="distribution"><thead><tr>' +
         '<th class="rm-l">Measure</th>' +
-        '<th class="rm-l rm-sep">Sites' + siteInfo() + ' <span class="b">% of sites evaluated</span></th>' +
-        '<th class="rm-l rm-sep">Participants' + participantInfo() + ' <span class="b">% of evaluable participants</span></th>' +
+        '<th class="rm-l rm-sep">Sites' + siteInfo(true) + ' <span class="b">% of sites evaluated</span></th>' +
+        '<th class="rm-l rm-sep">Participants' + participantInfo(true) + ' <span class="b">% of evaluable participants</span></th>' +
         '</tr></thead><tbody>';
       rows.forEach(function (o) {
         h += ovRow(o.v.vital) + measureCell(o.v) +
           '<td class="rm-l rm-sep" data-rm-col="site-dist" data-rm-source="' + (o.kri ? 'KRI' : 'report') + '">' +
           stackBar(o.site.evaluated, o.site.amber, o.site.red, 'sites evaluated', o.kri ? 'from ' + o.v.metric : 'calculated in the report') + '</td>' +
           '<td class="rm-l rm-sep" data-rm-col="participant-dist">' +
-          stackBar(o.part.evaluable, o.part.amber, o.part.red, 'evaluable participants', 'calculated in the report') + '</td></tr>';
+          stackBar(o.part.evaluable, o.part.amber, o.part.red, 'evaluable participants', 'calculated in the report', 'No evaluable participants') + '</td></tr>';
       });
       el.innerHTML = h + '</tbody></table>' +
-        '<p class="rm-legend">The whole study: the filters do not change this chart. Click a measure to show only it in the report. ' +
-        '<span class="rm-dot" style="background:#d0d7de;border-color:#d0d7de"></span>Not flagged \u00b7 ' +
-        '<span class="rm-dot" style="background:' + FLAG_COLORS[1] + ';border-color:' + FLAG_COLORS[1] + '"></span>Amber \u00b7 ' +
-        '<span class="rm-dot" style="background:' + FLAG_COLORS[2] + ';border-color:' + FLAG_COLORS[2] + '"></span>Red. ' +
-        'The number after a bar is the sites evaluated or participants evaluable. Hover a bar for counts.</p>';
+        '<p class="rm-legend">' + flagKey() + ' The number after a bar is the sites evaluated or participants evaluable. Hover a bar for counts.</p>';
       return;
     }
     h =
       '<table class="table table-condensed" data-rm-ov-view="counts"><thead>' +
       '<tr><th rowspan="2" class="rm-l">Measure</th>' +
-      '<th colspan="2" class="rm-grp rm-sep">Sites' + siteInfo() + '</th>' +
-      '<th colspan="2" class="rm-grp rm-sep">Participants' + participantInfo() + '</th></tr>' +
+      '<th colspan="2" class="rm-grp rm-sep">Sites' + siteInfo(false) + '</th>' +
+      '<th colspan="2" class="rm-grp rm-sep">Participants' + participantInfo(false) + '</th></tr>' +
       '<tr><th class="rm-sep">N</th><th>Flags</th><th class="rm-sep">N</th><th>Flags</th></tr></thead><tbody>';
     rows.forEach(function (o) {
       var v = o.v;
@@ -410,21 +421,29 @@
         '<td data-rm-col="participant-flags">' + dots(r.amber, r.red, false, 'Amber / Red participants (' + pct(r.amber + r.red, r.evaluable) + ' of evaluable)') + '</td></tr>';
     });
     el.innerHTML = h + '</tbody></table>' +
-      '<p class="rm-legend">The whole study: the filters do not change this table. Click a measure to show only it in the report. ' +
-      '<span class="rm-dot" style="background:#8c959f;border-color:#8c959f"></span>KRI flag \u00b7 ' +
-      '<span class="rm-dot rm-o" style="border-color:#8c959f"></span>calculated in the report. Hover <i class="rm-info" aria-hidden="true">i</i> for the flag rules.</p>';
+      '<p class="rm-legend"><span class="rm-dot" style="background:#6e7781;border-color:#6e7781"></span>KRI flag \u00b7 ' +
+      '<span class="rm-dot rm-o" style="border-color:#6e7781"></span>calculated in the report. Hover <i class="rm-info" aria-hidden="true">i</i> for the flag rules.</p>';
   }
 
   function pct(n, d) {
     return d ? Math.round((100 * n) / d) + '%' : '\u2013';
   }
 
-  // ---- §2 distribution ----------------------------------------------------
+  // ---- site/country distribution ------------------------------------------
   // One row per country or site, one column per shown measure. Cells are a
   // 100% bar of evaluable participants (or, by country, sites evaluated) by
   // flag; the hover card has the counts.
-  var NE_COLOR = '#CACACA';
+  // Not evaluated is hatched, so it cannot be mistaken for the grey of not flagged.
+  var NE_BG = 'repeating-linear-gradient(135deg,#ffffff 0 2px,#8c959f 2px 3px)';
+  var NE_BORDER = '#6e7781';
 
+  function neBar(text) {
+    return '<span class="rm-bar rm-bar-ne"><span class="rm-ne">' + (text || 'Not evaluated') + '</span></span>';
+  }
+
+  // Counts per measure: enr / ev / a / r are enrolled, evaluable, Amber and Red
+  // participants; sites / sev / sa / sr are sites, evaluated, Amber and Red
+  // (study and country rows); N / D are a site row's summed windows.
   function blank() {
     return { enr: 0, ev: 0, a: 0, r: 0, sites: 0, sev: 0, sa: 0, sr: 0, N: 0, D: 0 };
   }
@@ -522,6 +541,7 @@
   }
 
   function tipDot(color, hollow) {
+    if (color === NE_BG) return '<span class="d" style="background:' + NE_BG + ';border:1px solid ' + NE_BORDER + '"></span>';
     return '<span class="d" style="' + (hollow ? 'border:2px solid ' + color : 'background:' + color) + '"></span>';
   }
 
@@ -538,7 +558,7 @@
   }
 
   function distBar(n, a, r, label) {
-    if (!n) return '<span class="rm-ne">Not evaluated</span>';
+    if (!n) return neBar();
     var parts = [['none', n - a - r], ['amber', a], ['red', r]];
     return '<span class="rm-bar" role="img" aria-label="' + esc(label) + '">' +
       parts.map(function (x) {
@@ -568,11 +588,12 @@
       var extra = '';
       if (state.distLevel === 'site' && !isStudy) {
         var f = x.flag;
-        var color = f === null || f === undefined ? NE_COLOR : FLAG_COLORS[f];
-        var name = f === null || f === undefined ? 'Not evaluated' : ['Green', 'Amber', 'Red'][f];
-        sf = '<span class="rm-sf rm-dot' + (kri ? '' : ' rm-o') + '" data-rm-site-flag="' + name + '" title="Site flag: ' + name + (kri ? ' (' + esc(v.metric) + ')' : ' (calculated)') + '" style="background:' + color + ';border-color:' + color + '"></span>';
+        var ne = f === null || f === undefined;
+        var color = ne ? NE_BG : FLAG_COLORS[f];
+        var name = ne ? 'Not evaluated' : ['Green', 'Amber', 'Red'][f];
+        sf = '<span class="rm-sf rm-dot' + (kri ? '' : ' rm-o') + '" data-rm-site-flag="' + name + '" title="Site flag: ' + name + (kri ? ' (' + esc(v.metric) + ')' : ' (calculated)') + '" style="background:' + color + ';border-color:' + (ne ? NE_BORDER : color) + '"></span>';
         extra = '<div style="margin-bottom:3px">Site flag: ' + tipDot(color, !kri) + '<b>' + name + '</b>' +
-          (x.D ? ' \u00b7 ' + x.N + ' of ' + x.D + ' windows repeat (' + pct(x.N, x.D) + ')' : '') +
+          (x.D ? ' \u00b7 ' + x.N + ' of ' + x.D + ' windows repeating (' + pct(x.N, x.D) + ')' : '') +
           '<span style="color:#c9d1d9"> \u00b7 ' + (kri ? esc(v.metric) : 'calculated') + '</span></div>';
       }
       tip = tipHtml(head + ' \u00b7 participants', 'Evaluable', n, x.enr, a, r, true, extra);
@@ -691,13 +712,12 @@
     el.innerHTML = vitals.length
       ? '<table class="table table-condensed" data-rm-dist-level="' + state.distLevel + '" data-rm-dist-unit="' + (unitSites ? 'sites' : 'participants') + '"><thead>' +
         h1 + '</tr></thead><tbody>' + body + '</tbody></table>'
-      : '<p class="rm-ne">No vitals selected.</p>';
+      : '<p class="rm-ne">No measures selected. Pick one under <b>Measures</b>.</p>';
     var first = el.querySelector('thead th.rm-stick');
     if (first) {
       first.insertAdjacentHTML('beforeend', unitSites
-        ? info('Site flag: ' + siteRuleText() + '. N: sites evaluated / sites with enrolled participants. ' +
-          'Filled circles: the KRI site flags (kri0020a\u2013f, latest snapshot). Empty circles: calculated in the report with the same rule.')
-        : info('Participant flag: ' + ruleText() + '. N: evaluable / enrolled participants. Calculated in the report; change the rule under Settings.' +
+        ? info('Site flag: ' + siteRuleText() + '. Bars use the KRI site flags (kri0020a\u2013f, latest snapshot), or flags calculated in the report with the same rule for measures without KRI results.')
+        : info('Participant flag: ' + ruleText() + '. Calculated in the report; change the rule under Settings.' +
           (isSite ? ' The dot before a bar is the site\u2019s own flag: ' + siteRuleText() + '.' : '')));
       el.style.setProperty('--rm-c1', first.offsetWidth + 'px');
     }
@@ -711,11 +731,8 @@
     }
     var legend = byId('rm-dist-legend');
     if (legend) {
-      legend.innerHTML = '<span class="rm-dot" style="background:#d0d7de;border-color:#d0d7de"></span>Not flagged \u00b7 ' +
-        '<span class="rm-dot" style="background:' + FLAG_COLORS[1] + ';border-color:' + FLAG_COLORS[1] + '"></span>Amber \u00b7 ' +
-        '<span class="rm-dot" style="background:' + FLAG_COLORS[2] + ';border-color:' + FLAG_COLORS[2] + '"></span>Red. ' +
-        'The number after a bar is the ' + (unitSites ? 'sites evaluated' : 'participants evaluable') + '. Hover a cell for counts.' +
-        (isSite ? ' The dot before a bar is the site\u2019s own flag for the measure (filled: KRI; empty: calculated; grey: not evaluated).' : '') +
+      legend.innerHTML = flagKey() + ' The number after a bar is the ' + (unitSites ? 'sites evaluated' : 'participants evaluable') + '. Hover a cell for counts.' +
+        (isSite ? ' The dot before a bar is the site\u2019s own flag for the measure (filled: KRI; empty: calculated; hatched: not evaluated).' : '') +
         ' Hover <i class="rm-info" aria-hidden="true">i</i> for the flag rules.';
     }
   }
@@ -743,7 +760,7 @@
     tip.style.top = y + 'px';
   }
 
-  // ---- §3 participant listing (tiles) -------------------------------------
+  // ---- participant listing (tiles) ----------------------------------------
   function tileRows() {
     var q = state.search.trim().toUpperCase();
     var rows = allTiles.filter(function (t) {
@@ -756,7 +773,7 @@
     rows.forEach(function (t, i) {
       var k = key[t.subjid] || (key[t.subjid] = { i: i, rate: -1, worst: -1, most: -1 });
       if (rateVital && t.vital === rateVital && t.rate !== null) k.rate = t.rate;
-      // Worst flag over the vitals shown, as the flags may have changed.
+      // Worst flag over the measures shown, as the flags may have changed.
       k.worst = Math.max(k.worst, t.severity);
       k.most = Math.max(k.most, t.Numerator);
     });
@@ -775,7 +792,7 @@
       if (state.sort === 'invid' && x.invid !== y.invid) return x.invid < y.invid ? -1 : 1;
       return a.subjid < b.subjid ? -1 : 1;
     }
-    // Stable within a participant: keep their vitals in report order.
+    // Stable within a participant: keep their measures in report order.
     return rows
       .map(function (t, i) {
         return { t: t, i: i };
@@ -832,7 +849,7 @@
     }, 1000);
   }
 
-  // ---- §4 vitals listing --------------------------------------------------
+  // ---- measure listing ----------------------------------------------------
   function exact(value) {
     return value ? '^' + jQuery.fn.dataTable.util.escapeRegex(value) + '$' : '';
   }
@@ -861,14 +878,14 @@
     }
   }
 
-  // ---- §5 data table -------------------------------------------------------
+  // ---- data table ---------------------------------------------------------
   function vitalKeys() {
     return shownVitals().map(function (v) {
       return jQuery.fn.dataTable.util.escapeRegex(v.vital);
     });
   }
 
-  // Every vital row the Vitals selection and BP view show; matches nothing when none do.
+  // Every measure row the Measures selection and BP view show; matches nothing when none do.
   function vitalRegex() {
     var keys = vitalKeys();
     return keys.length ? '^(' + keys.join('|') + ')$' : '^\\b$';
@@ -882,6 +899,111 @@
     return ci;
   }
 
+  // Long rows from the Wide rows: one per participant, measure and
+  // non-missing value. Wide keeps each participant's records in measurement
+  // order (date, visit, record), so a value's position (#) is its count among
+  // the participant's non-missing values of that measure, as in rm_Classify().
+  function longRows(wide) {
+    var ci = colIndex(wide);
+    var vitals = rmData().vitals.filter(function (v) {
+      return v.vital in ci;
+    });
+    var first = {};
+    var seq = {};
+    var rows = [];
+    wide.rows({ order: 'index' }).data().toArray().forEach(function (r, i) {
+      var subj = r[ci.subjid];
+      if (!(subj in first)) first[subj] = i;
+      var repeats = ' ' + (r[ci.repeat_vitals] || '') + ' ';
+      vitals.forEach(function (v, j) {
+        var x = r[ci[v.vital]];
+        if (x === null || x === undefined || x === '') return;
+        var key = subj + '\u0001' + v.vital;
+        seq[key] = (seq[key] || 0) + 1;
+        rows.push({
+          p: first[subj],
+          j: j,
+          row: [
+            r[ci.country], r[ci.invid], subj, v.label, v.metric || '', seq[key],
+            r[ci.visit], r[ci.vs_dt], String(x),
+            r[ci[v.vital + '_in_repeat_window']] === 'Y' ? 'Yes' : 'No',
+            v.vital, repeats.indexOf(' ' + v.vital + ' ') >= 0 ? 'Y' : 'N'
+          ]
+        });
+      });
+    });
+    rows.sort(function (a, b) {
+      return a.p - b.p || a.j - b.j || a.row[5] - b.row[5];
+    });
+    return rows.map(function (x) {
+      return x.row;
+    });
+  }
+
+  // Builds the Long table the first time it is shown. It mirrors Wide: the
+  // metric is a KRI badge on the measure and the CSV keeps it as a column.
+  function initLong() {
+    var host = byId('rm-dt-long');
+    var wide = dtApi('rm-dt-wide');
+    if (!host || !wide || dtApi('rm-dt-long')) return;
+    var exp = rmData().export === true;
+    var REPEAT = 9;
+    jQuery(host.querySelector('table')).DataTable({
+      data: longRows(wide),
+      columns: [
+        { title: 'Country', name: 'country' },
+        { title: 'Site', name: 'invid' },
+        { title: 'Participant', name: 'subjid' },
+        {
+          title: 'Measure',
+          render: function (d, type, row) {
+            if (type !== 'display' || !row[4]) return d;
+            return esc(d) + '<span class="rm-kri" title="' + esc(row[4]) + '">KRI</span>';
+          }
+        },
+        { title: 'Metric', visible: false },
+        { title: '#' },
+        { title: 'Visit' },
+        { title: 'Date' },
+        {
+          title: 'Value',
+          render: function (d, type, row) {
+            if (type !== 'display' || row[REPEAT] !== 'Yes') return d;
+            return '<b class="rm-rw" title="In a repeating window">' + esc(d) + '</b>';
+          }
+        },
+        { title: '<span title="In a repeating window">Repeat</span>' },
+        { title: 'vital', name: 'vital', visible: false },
+        { title: 'has_repeat', name: 'has_repeat', visible: false }
+      ],
+      dom: exp ? 'Bfrtip' : 'frtip',
+      pageLength: 25,
+      deferRender: true,
+      autoWidth: false,
+      order: [],
+      buttons: exp
+        ? [{
+          extend: 'csv',
+          text: 'Download CSV',
+          filename: 'repeat-measurements-data-long',
+          exportOptions: {
+            columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, REPEAT],
+            orthogonal: 'export',
+            modifier: { search: 'applied' },
+            format: {
+              header: function (d, i) {
+                return i === REPEAT ? 'In repeating window' : d;
+              }
+            }
+          }
+        }]
+        : [],
+      createdRow: function (row) {
+        row.title = 'Click to filter the report to this participant; click again to clear';
+      }
+    });
+  }
+
   function syncDataTable() {
     document.querySelectorAll('[data-rm-shape]').forEach(function (b) {
       b.setAttribute('aria-pressed', String(b.getAttribute('data-rm-shape') === state.shape));
@@ -889,13 +1011,14 @@
     document.querySelectorAll('[data-rm-shape-view]').forEach(function (div) {
       div.style.display = div.getAttribute('data-rm-shape-view') === state.shape ? '' : 'none';
     });
+    if (state.shape === 'long') initLong();
     var only = byId('rm-dt-only');
     if (only) only.checked = state.dtOnly;
     var onlyLabel = byId('rm-dt-only-label');
     if (onlyLabel) {
       onlyLabel.textContent = state.shape === 'wide'
-        ? 'Only participants with a repeat window'
-        : 'Only vitals with a repeat window';
+        ? 'Only participants with a repeating window'
+        : 'Only measures with a repeating window';
     }
     var keys = vitalKeys();
     var scope = function (api) {
@@ -941,6 +1064,7 @@
     if (!chip) return;
     chip.style.display = value ? 'inline-flex' : 'none';
     chip.querySelector('.rm-chip-value').textContent = value || '';
+    chip.title = value || '';
   }
 
   // Selecting a participant shows all of their vital rows in the compact
@@ -971,7 +1095,7 @@
     el.innerHTML = '<b>' + n.toLocaleString() + '</b> / ' + all.length.toLocaleString() + ' participants selected';
   }
 
-  // The Vitals menu offers the vitals the BP view shows.
+  // The Measures menu offers the measures the BP view shows.
   function syncVitalMenu() {
     var opts = bpVitals();
     var keys = opts.map(function (v) {
@@ -1136,6 +1260,8 @@
       renderDist();
       return;
     } else if (t.closest('#rm-dist tbody tr[data-rm-dist-row]')) {
+      // A row click filters to its country or site; clicking the selected row clears it.
+      // A site spanning countries clears the country filter.
       var dr = t.closest('tr');
       var key2 = dr.getAttribute('data-rm-dist-key');
       if (dr.getAttribute('data-rm-dist-row') === 'country') {
@@ -1153,9 +1279,9 @@
       syncDataTable();
       return;
     } else {
-      // A §4 or §5 row click toggles the participant filter.
+      // A measure listing or data table row click toggles the participant filter.
       var tr = t.closest('#rm-vitals tbody tr, #rm-dt-long tbody tr, #rm-dt-wide tbody tr');
-      var host = tr && tr.closest('.datatables');
+      var host = tr && tr.closest('#rm-vitals, #rm-dt-long, #rm-dt-wide');
       var api = host && dtApi(host.id);
       var row = api && api.row(tr).data();
       if (!row) return;

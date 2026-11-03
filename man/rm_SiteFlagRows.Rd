@@ -24,7 +24,7 @@ A `tibble` with `vital`, `country`, `invid`, `Numerator`,
 `r lifecycle::badge("experimental")`
 
 One flag per site and vital. A KRI vital with `kri0020a`–`f` site results
-takes the latest KRI flag ([rm_SiteFlags()]; `source = "KRI"`). Every other
+takes the latest KRI flag (`source = "KRI"`). Every other
 vital (height, BSA, paired BP, or a KRI vital without results) is flagged
 in the report like the KRI (`source = "report"`): the site's repeating
 windows over its windows (summed over its participants) against the site

@@ -1,5 +1,5 @@
-// Participant Listing for the Repeat Measurements report: one row per
-// participant, one tile per KRI vital, filled by the participant's flag.
+// Participant listing for the Repeat Measurements report: one row per
+// participant, one tile per measure, filled by the participant's flag.
 // The widget only draws and reports clicks; the report's filter script owns
 // the participant filter and calls back through chart.helpers.
 function renderRepeatMeasurementsTiles(el, input) {
@@ -43,7 +43,7 @@ function renderRepeatMeasurementsTiles(el, input) {
     return order;
   }
 
-  // Columns follow the vitals in the current rows (the report's vital group).
+  // Columns follow the measures in the current rows (those the report shows).
   function visibleColumns() {
     var present = {};
     chart.data.forEach(function (t) {

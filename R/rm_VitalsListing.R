@@ -1,10 +1,10 @@
-#' Vitals listing rows for the Repeat Measurements report
+#' Measure listing rows for the Repeat Measurements report
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' The vitals listing (§4): one row per participant and vital, for
-#' every vital in `Mapped_VS`, with the measurements in order. `values` and
+#' The measure listing: one row per participant and measure, for
+#' every measure in `Mapped_VS`, with the measurements in order. `values` and
 #' `in_repeat_window` are space-separated and aligned: `"72 72 72 80"` and
 #' `"1 1 1 0"`; `visits` is aligned and `|`-separated: the measurement's
 #' position, visit and date, such as `"#1 · V1 · 2024-01-01"`.
@@ -69,16 +69,16 @@ rm_VitalRows <- function(lClass) {
     dplyr::select(-"severity")
 }
 
-#' Vitals listing table for the Repeat Measurements report
+#' Measure listing table for the Repeat Measurements report
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' The `rm-vitals` `DT` table (§4): one row per participant and vital with the
-#' vital name (metric ID on hover, `*` for a vital with no KRI), the measures
-#' (distinct / non-missing values), a single "Flag and rate" column
+#' The `rm-vitals` `DT` table: one row per participant and measure with the
+#' measure name (metric ID on hover, `*` for a measure with no KRI), the
+#' distinct / non-missing values, a single "Flag and rate" column
 #' (measured, N and D on hover; sorts by flag, then rate) and the
-#' measurements in order with repeat-window values highlighted and each
+#' measurements in order with values in a repeating window highlighted and each
 #' value's position, visit and date on hover.
 #' The report's filter script toggles the numbers, filters the named `vital`,
 #' `country`, `invid`, `subjid` and `has_repeat` columns, and turns a row
@@ -98,15 +98,15 @@ rm_VitalRows <- function(lClass) {
 rm_VitalsListing <- function(dfVitalRows, nWindowLength = NULL, bExport = TRUE) {
   idx <- function(col) match(col, names(dfVitalRows)) - 1L
   vLabels <- c(
-    country = "Country", invid = "Site", subjid = "Participant", label = "Vital",
-    metric = "Metric", n_unique = "Measures", flag = "Flag \u00b7 rate", measured = "Measured", Numerator = "Numerator",
+    country = "Country", invid = "Site", subjid = "Participant", label = "Measure",
+    metric = "Metric", n_unique = "Distinct", flag = "Flag \u00b7 rate", measured = "Measured", Numerator = "Numerator",
     Denominator = "Denominator", rate = "Rate",
     values = if (is.null(nWindowLength)) {
       "Measurements in order"
     } else {
-      paste0("Measurements in order (W = ", nWindowLength, ")")
+      paste0("Measurements in order (window ", nWindowLength, ")")
     },
-    in_repeat_window = "In repeat window", visits = "Visits",
+    in_repeat_window = "In repeating window", visits = "Visits",
     vital = "vital", has_repeat = "has_repeat"
   )
   DT::datatable(
@@ -120,6 +120,7 @@ rm_VitalsListing <- function(dfVitalRows, nWindowLength = NULL, bExport = TRUE) 
     options = list(
       dom = if (isTRUE(bExport)) "Bfrtip" else "frtip",
       pageLength = 25,
+      deferRender = TRUE,
       order = list(),
       buttons = rm_CsvButton(bExport, "repeat-measurements-vitals", ":visible, .rm-export"),
       createdRow = DT::JS(
@@ -149,7 +150,7 @@ rm_VitalsListing <- function(dfVitalRows, nWindowLength = NULL, bExport = TRUE) 
                 var total = row[%d];
                 if (type === 'sort' || type === 'type') return total ? data / total : 2;
                 if (type !== 'display') return data + ' / ' + total;
-                return '<span title=\"' + data + ' unique of ' + total + ' non-missing values\">' + data + ' / ' + total + '</span>';
+                return '<span title=\"' + data + ' distinct of ' + total + ' non-missing values\">' + data + ' / ' + total + '</span>';
               }",
               idx("measured")
             ))
@@ -169,8 +170,8 @@ rm_VitalsListing <- function(dfVitalRows, nWindowLength = NULL, bExport = TRUE) 
                 var c = %2$s[data] || '#FFFFFF';
                 var pct = rate === null ? '\u2013' : (100 * rate).toFixed(0) + '%%';
                 var tip = (row[%3$d] || 'Not a KRI') + ' \u00b7 ' + data + ' \u00b7 measured ' + row[%4$d] +
-                  ' \u00b7 N ' + row[%5$d] + ' of D ' + row[%6$d] + ' windows repeat';
-                return '<span class=\"rm-fr\" title=\"' + tip.replace(/\"/g, '&quot;') + '\"><span class=\"rm-dot\" style=\"background:' + c + '\"></span>' + pct + '</span>';
+                  ' \u00b7 N ' + row[%5$d] + ' of D ' + row[%6$d] + ' windows repeating';
+                return '<span class=\"rm-fr\" title=\"' + tip.replace(/\"/g, '&quot;') + '\"><span class=\"rm-dot\" style=\"background:' + c + '\"></span>' + (data === 'Not evaluable' ? data : data + ' \u00b7 ' + pct) + '</span>';
               }",
               idx("rate"),
               jsonlite::toJSON(as.list(rm_FlagColors()), auto_unbox = TRUE),
@@ -193,7 +194,7 @@ rm_VitalsListing <- function(dfVitalRows, nWindowLength = NULL, bExport = TRUE) 
                 };
                 return '<span class=\"rm-vals\">' + String(data).split(' ').map(function (v, i) {
                   var rw = mask[i] === '1';
-                  var tip = (visits[i] || '') + (rw ? ' \u00b7 in a repeat window' : '');
+                  var tip = (visits[i] || '') + (rw ? ' \u00b7 in a repeating window' : '');
                   return '<b' + (rw ? ' class=\"rw\"' : '') + ' title=\"' + esc(tip) + '\">' + esc(v) + '</b>';
                 }).join('') + '</span>';
               }",
