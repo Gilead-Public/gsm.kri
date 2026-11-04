@@ -65,7 +65,11 @@ test_that("strOrderCol breaks date ties independent of input order (#307)", {
   # 5,10,10,10 has a run of 3; ordering V2 before V1 would break it.
   for (idx in list(1:4, c(2, 1, 3, 4), 4:1)) {
     expect_equal(
-      Detect_ConsecutiveRepeats(df[idx, ], "weight", strOrderCol = "visit")$Numerator,
+      Detect_ConsecutiveRepeats(
+        df[idx, ],
+        "weight",
+        strOrderCol = "visit"
+      )$Numerator,
       1
     )
   }
@@ -111,10 +115,16 @@ test_that("long-format data is filtered to the requested measure (#307)", {
     value = c(70, 70, 70, 36, 37, 38)
   )
   pulse <- Detect_ConsecutiveRepeats(
-    df, "value", strMeasureCol = "measure", strMeasureVal = "pulse"
+    df,
+    "value",
+    strMeasureCol = "measure",
+    strMeasureVal = "pulse"
   )
   temp <- Detect_ConsecutiveRepeats(
-    df, "value", strMeasureCol = "measure", strMeasureVal = "temp"
+    df,
+    "value",
+    strMeasureCol = "measure",
+    strMeasureVal = "temp"
   )
   expect_equal(pulse$Numerator, 1)
   expect_equal(temp$Numerator, 0)
@@ -148,7 +158,10 @@ test_that("non-data-frame df gives an informative error (#307)", {
 test_that("non-character column arguments give an informative error (#307)", {
   expect_error(
     Detect_ConsecutiveRepeats(
-      make_vs(1:3), 3, strSubjectCol = 1, strDateCol = 2
+      make_vs(1:3),
+      3,
+      strSubjectCol = 1,
+      strDateCol = 2
     ),
     "must be a single non-missing character string"
   )
@@ -180,7 +193,10 @@ test_that("numeric column arguments are rejected even when mixed with character 
   )
   expect_error(
     Detect_ConsecutiveRepeats(
-      df, "weight", strMeasureCol = 3, strMeasureVal = "x"
+      df,
+      "weight",
+      strMeasureCol = 3,
+      strMeasureVal = "x"
     ),
     "strMeasureCol"
   )
@@ -204,7 +220,11 @@ test_that("fixture date tie is resolved by visit, not input order (#307)", {
   # V2 and V2U share a date; swapping them must not change the result.
   for (idx in list(1:5, c(1, 3, 2, 4, 5), 5:1)) {
     expect_equal(
-      Detect_ConsecutiveRepeats(dfS06[idx, ], "weight", strOrderCol = "visit")$Numerator,
+      Detect_ConsecutiveRepeats(
+        dfS06[idx, ],
+        "weight",
+        strOrderCol = "visit"
+      )$Numerator,
       1
     )
   }
