@@ -1,5 +1,7 @@
 # Changelog
 
+## gsm.kri (development version)
+
 ## gsm.kri v1.8.0
 
 This minor release adds the IP Monitoring report and metrics (IP
