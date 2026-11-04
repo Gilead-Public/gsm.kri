@@ -13,7 +13,10 @@ MakeActionRiskScoreDetail(
   strMissingState = c("error", "include", "exclude"),
   strMetricID = "Analysis_srs0002",
   dActionSnapshotDate = NULL,
-  dActionExtractionDate = NULL
+  dActionExtractionDate = NULL,
+  intActionWindowDays = NULL,
+  dActionAsOfDate = NULL,
+  bActionHistoryComplete = FALSE
 )
 }
 \arguments{
@@ -33,10 +36,12 @@ Multiple actions and signals at that snapshot are reduced using the
 largest configured factor. Identifiers must distinguish those rows.}
 
 \item{lActionFactors}{Named numeric state-factor mapping. Defaults to include
-open, closed, and awaiting-triage findings and exclude no-action findings.}
+open, closed, and awaiting-triage findings and exclude no-action findings.
+Used only when `intActionWindowDays` is NULL.}
 
 \item{strMissingState}{Policy for a missing action state on a nonzero KRI
-weight: stop with an error, include the weight, or exclude the weight.}
+weight: stop with an error, include the weight, or exclude the weight.
+Used only in legacy mode; date-window mode always includes unknown evidence.}
 
 \item{strMetricID}{Metric ID assigned to the action-weighted score.}
 
@@ -46,11 +51,24 @@ weight: stop with an error, include the weight, or exclude the weight.}
 
 \item{dActionExtractionDate}{`Date` or ISO `YYYY-MM-DD` cutoff for frozen
 ActionLog extractions.
-`NULL` uses the results snapshot date. The latest complete extraction on
+`NULL` uses the results snapshot date, or `dActionAsOfDate` in date-window
+mode. The latest complete extraction on
 or before this cutoff is selected, without filling gaps from older
 extractions. Set an explicit date when replaying a scoring run whose
 ActionLog was frozen after the data snapshot. Signal snapshot dates do
 not establish when action states became known.}
+
+\item{intActionWindowDays}{Optional nonnegative integer. When supplied,
+calculate review priority using [MakeActionSummary()] instead of legacy
+state factors. Recently addressed, covered KRIs contribute zero; all
+others retain their original contribution. NULL preserves state weighting.}
+
+\item{dActionAsOfDate}{Optional Date or ISO date for action age in date-window
+mode. Defaults to the results snapshot, not today's date.}
+
+\item{bActionHistoryComplete}{Whether the selected extraction contains the
+complete decision history. Default FALSE; incomplete evidence never
+excludes a contribution in date-window mode.}
 }
 \value{
 A data frame with one row per `GroupLevel`, `GroupID`, and
@@ -61,9 +79,13 @@ A data frame with one row per `GroupLevel`, `GroupID`, and
   `ActionFactor`, `EffectiveWeight`, `ActionExtractionDate`, `RiskSignalID`,
   `ActionID`, and `ActionCount`. States and identifiers from multiple rows
   are sorted and comma-separated; `ActionCount` counts distinct actions.
+  Date-window mode additionally includes the [MakeActionSummary()] fields,
+  including the last known event date, recency, coverage, and reason.
 }
 \description{
 Returns one row per weighted KRI result with the ActionLog entry applied to
 it, so a reader can see why an action-weighted score differs from the
 original Site Risk Score. [CalculateActionRiskScore()] summarizes these rows.
+Date-window mode retains every current KRI, including zero-weight and
+unweighted results; unweighted rows have missing contribution fields.
 }

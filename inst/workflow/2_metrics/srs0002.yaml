@@ -3,21 +3,18 @@ meta:
   Type: Analysis
   ID: srs0002
   GroupLevel: Site
-  Abbreviation: Action-weighted SRS
-  Metric: Action-weighted Site Risk Score
-  Numerator: Action-weighted KRI weights
+  Abbreviation: Review Priority
+  Metric: Site Review Priority Score
+  Numerator: KRI weights requiring review
   Denominator: Maximum Weights
   Model: Identity
-  Score: Normalized Action-weighted Risk Score
+  Score: Normalized Site Review Priority Score
   AnalysisType: identity
   Priority: 4
   GenerateRiskSignal: true
-  ActionFactors:
-    Open Action: 1
-    Closed Action: 1
-    Awaiting Triage: 1
-    No Action: 0
-  MissingActionState: include
+  ActionWindowDays: 90
+  ActionHistoryComplete: false
+  ActionAsOfDate: null
   ActionExtractionDate: null
 spec:
   Analysis_Summary:
@@ -49,17 +46,29 @@ steps:
     name: gsm.kri::MakeWeights
     params:
       dfMetrics: dfMetrics
+  - output: dfRiskScoreDetail
+    name: gsm.kri::MakeActionRiskScoreDetail
+    params:
+      dfResults: dfResults
+      dfWeights: dfWeights
+      dfActionLog: Reporting_ActionLog
+      intActionWindowDays: ActionWindowDays
+      dActionAsOfDate: ActionAsOfDate
+      dActionExtractionDate: ActionExtractionDate
+      bActionHistoryComplete: ActionHistoryComplete
   - output: dfRiskScore
     name: gsm.kri::CalculateActionRiskScore
     params:
       dfResults: dfResults
       dfWeights: dfWeights
       dfActionLog: Reporting_ActionLog
-      lActionFactors: ActionFactors
-      strMissingState: MissingActionState
+      intActionWindowDays: ActionWindowDays
+      dActionAsOfDate: ActionAsOfDate
       dActionExtractionDate: ActionExtractionDate
+      bActionHistoryComplete: ActionHistoryComplete
   - output: lAnalysis
     name: list
     params:
       ID: ID
       Analysis_Summary: dfRiskScore
+      Analysis_ActionRiskScoreDetail: dfRiskScoreDetail

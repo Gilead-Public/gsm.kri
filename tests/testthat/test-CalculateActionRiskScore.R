@@ -42,6 +42,201 @@ make_action_score_log <- function() {
   )
 }
 
+test_that("action recency spans signal snapshots and preserves every current KRI (#280)", {
+  results <- make_action_score_results()
+  history <- make_action_score_log()
+  history$SnapshotDate <- as.Date("2025-01-31")
+  history$RiskSignalID <- paste0("RS-", seq_len(nrow(history)))
+  history$ActionID <- paste0("ACT-", seq_len(nrow(history)))
+  history$ActionedDate <- as.Date("2025-02-08")
+  history$ActionedDateSource <- "Monitoring decision"
+  history$ActionedFlag <- 1
+  history$ActionScope <- "SiteMetric"
+  history$State <- "Closed Action"
+  newer <- history[1, ]
+  newer$SnapshotDate <- results$SnapshotDate[1]
+  newer$RiskSignalID <- "RS-newer"
+  newer$ActionID <- NA_character_
+  newer$State <- "Awaiting Triage"
+  newer$ActionedDate <- as.Date(NA)
+  summary <- MakeActionSummary(
+    results, rbind(history, newer), bActionHistoryComplete = TRUE
+  )
+
+  expect_equal(nrow(summary), nrow(results))
+  expect_equal(summary$LastActionedDate, rep(as.Date("2025-02-08"), 6))
+  expect_equal(summary$DaysSinceAction, rep(20L, 6))
+  expect_true(all(summary$RecentlyAddressed))
+  expect_true(all(summary$ActionRecency == "Recent"))
+  expect_equal(summary$ActionRiskSignalID[1], "RS-1")
+  expect_equal(summary$ActionID[1], "ACT-1")
+})
+
+make_dated_action_log <- function() {
+  history <- make_action_score_log()
+  history$SnapshotDate <- as.Date("2024-01-01")
+  history$RiskSignalID <- paste0("RS-", seq_len(nrow(history)))
+  history$ActionID <- paste0("ACT-", seq_len(nrow(history)))
+  history$State <- "Closed Action"
+  history$ActionedDate <- as.Date("2025-02-08")
+  history$ActionedDateSource <- "Monitoring decision"
+  history$ActionedFlag <- 1
+  history$ActionScope <- "SiteMetric"
+  history
+}
+
+test_that("awaiting triage dates are not qualifying monitoring decisions (#280)", {
+  history <- make_dated_action_log()
+  history$State <- "Awaiting Triage"
+  summary <- MakeActionSummary(
+    make_action_score_results(), history, bActionHistoryComplete = TRUE
+  )
+  expect_true(all(is.na(summary$LastActionedDate)))
+  expect_false(any(summary$RecentlyAddressed))
+  score <- CalculateActionRiskScore(
+    make_action_score_results(), make_action_score_weights(), history,
+    intActionWindowDays = 90, bActionHistoryComplete = TRUE
+  )
+  expect_equal(score$Numerator, c(16, 16))
+})
+
+test_that("action windows include day 90 and preserve expired and unknown dates (#280)", {
+  history <- make_dated_action_log()
+  history$ActionedDate <- as.Date("2025-02-28") - c(90, 91, 0, 20, 20, 20)
+  history$ActionedDate[4] <- as.Date(NA)
+  history$ActionedDateSource[5] <- NA_character_
+  history$ActionedFlag[6] <- NA_real_
+  summary <- MakeActionSummary(
+    make_action_score_results(), history, bActionHistoryComplete = TRUE
+  )
+  expect_equal(summary$ActionRecency, c("Recent", "Expired", "Recent", "Unknown", "Unknown", "Recent"))
+  expect_equal(summary$RecentlyAddressed, c(TRUE, FALSE, TRUE, FALSE, FALSE, FALSE))
+  expect_equal(summary$LastActionedDate[2], as.Date("2024-11-29"))
+  expect_equal(summary$ActionReason[6], "Reviewed severity unknown")
+  shorter <- MakeActionSummary(
+    make_action_score_results(), history, intActionWindowDays = 30,
+    bActionHistoryComplete = TRUE
+  )
+  expect_equal(shorter$LastActionedDate, summary$LastActionedDate)
+  expect_false(shorter$RecentlyAddressed[1])
+})
+
+test_that("recent actions do not suppress escalation, new episodes, or unknown coverage (#280)", {
+  history <- make_dated_action_log()
+  history$ActionedFlag[1] <- 0
+  history$ActionedFlag[2] <- -1
+  history$ActionScope[3] <- NA_character_
+  history$ActionReopened <- c(FALSE, FALSE, FALSE, TRUE, FALSE, FALSE)
+  history$ActionCriticality <- c(FALSE, FALSE, FALSE, FALSE, TRUE, FALSE)
+  history$RiskEpisodeID <- c(rep(NA_character_, 5), "earlier-episode")
+  results <- make_action_score_results()
+  results$RiskEpisodeID <- c(rep(NA_character_, 5), "new-episode")
+  summary <- MakeActionSummary(results, history, bActionHistoryComplete = TRUE)
+  expect_false(any(summary$RecentlyAddressed))
+  expect_equal(summary$ActionReason, c(
+    "Changed or increased severity", "Changed or increased severity",
+    "Decision coverage unknown", "Reopened finding", "Critical action",
+    "Different or unknown risk episode"
+  ))
+  incomplete <- MakeActionSummary(make_action_score_results(), make_dated_action_log())
+  expect_false(any(incomplete$RecentlyAddressed))
+  expect_true(all(incomplete$ActionReason == "Incomplete action history"))
+})
+
+test_that("conflicting same-day decisions cannot suppress a current finding (#280)", {
+  history <- make_dated_action_log()
+  conflict <- history[1, ]
+  conflict$ActionID <- "ACT-conflicting"
+  conflict$ActionedFlag <- 0
+  summary <- MakeActionSummary(
+    make_action_score_results(), rbind(history, conflict),
+    bActionHistoryComplete = TRUE
+  )
+  expect_equal(summary$LastActionedDate[1], as.Date("2025-02-08"))
+  expect_false(summary$RecentlyAddressed[1])
+  expect_equal(summary$ActionReason[1], "Conflicting latest decisions")
+  expect_equal(summary$ActionCount[1], 2L)
+  expect_equal(summary, MakeActionSummary(
+    make_action_score_results(), rbind(conflict, history),
+    bActionHistoryComplete = TRUE
+  ))
+})
+
+test_that("action summary selects a complete freeze without filling missing sites (#280)", {
+  history <- make_dated_action_log()
+  later <- history[-1, ]
+  later$ExtractionDate <- as.Date("2025-03-07")
+  summary <- MakeActionSummary(
+    make_action_score_results(), rbind(history, later),
+    dActionExtractionDate = "2025-03-07", bActionHistoryComplete = TRUE
+  )
+  expect_true(is.na(summary$LastActionedDate[1]))
+  expect_equal(summary$ActionRecency[1], "Never")
+  expect_equal(summary$ActionExtractionDate, rep(as.Date("2025-03-07"), 6))
+  frozen <- MakeActionSummary(
+    make_action_score_results(), history, bActionHistoryComplete = TRUE
+  )
+  expect_true(all(frozen$RecentlyAddressed))
+  empty <- MakeActionSummary(make_action_score_results(), history[0, ])
+  expect_equal(nrow(empty), 6)
+  expect_true(all(empty$ActionRecency == "Unknown"))
+})
+
+test_that("later decision events do not change an earlier action assessment (#280)", {
+  history <- make_dated_action_log()
+  history$ExtractionDate <- as.Date("2025-03-07")
+  future <- history[1, ]
+  future$ActionID <- "ACT-future"
+  future$ActionedDate <- as.Date("2025-03-01")
+  history$ActionReopened <- FALSE
+  history$ActionCriticality <- FALSE
+  future$ActionReopened <- TRUE
+  future$ActionCriticality <- TRUE
+  summary <- MakeActionSummary(
+    make_action_score_results(), rbind(history, future),
+    dActionExtractionDate = "2025-03-07", bActionHistoryComplete = TRUE
+  )
+  expect_true(all(summary$RecentlyAddressed))
+  expect_equal(summary$ActionCount[1], 1L)
+  expect_false(summary$HasReopenedAction[1])
+  expect_false(summary$HasCriticalAction[1])
+})
+
+test_that("date-window scoring preserves raw denominator and zero-weight history (#280)", {
+  results <- make_action_score_results()
+  history <- make_dated_action_log()
+  history$ActionedDate[2] <- as.Date("2024-01-01")
+  weights <- make_action_score_weights()
+  weights$Weight[3] <- 0
+  detail <- MakeActionRiskScoreDetail(
+    results, weights, history, intActionWindowDays = 90,
+    bActionHistoryComplete = TRUE
+  )
+  expect_equal(detail$EffectiveWeight, c(0, 4, 0, 0, 0, 0))
+  expect_equal(detail$LastActionedDate[3], as.Date("2025-02-08"))
+  score <- CalculateActionRiskScore(
+    results, weights, history, intActionWindowDays = 90,
+    bActionHistoryComplete = TRUE
+  )
+  expect_equal(score$Numerator, c(4, 0))
+  expect_equal(score$Denominator, c(16, 16))
+  expect_equal(score$Metric, c(25, 0))
+})
+
+test_that("action summary validates windows, dates, and repeated identities (#280)", {
+  for (invalid in list(-1, NA_real_, Inf, 0.5, c(30, 90), "90")) {
+    expect_error(MakeActionSummary(
+      make_action_score_results(), make_dated_action_log(), intActionWindowDays = invalid
+    ), "intActionWindowDays")
+  }
+  history <- make_dated_action_log()
+  expect_error(MakeActionSummary(
+    make_action_score_results(), rbind(history, history[1, ])
+  ), "unique")
+  history$ActionedDate <- as.character(history$ActionedDate)
+  expect_error(MakeActionSummary(make_action_score_results(), history), "ActionedDate")
+})
+
 test_that("multiple actions use the largest factor without duplicating a KRI (#280)", {
   action_log <- make_action_score_log()
   action_log$ExtractionDate <- make_action_score_results()$SnapshotDate

@@ -10,12 +10,11 @@ test_that("srs0002 workflow consumes persisted KRI and ActionLog domains (#280)"
 
   expect_true(all(c("Analysis_Summary", "Reporting_ActionLog") %in%
     names(workflow$spec)))
-  expect_equal(workflow$meta$MissingActionState, "include")
+  expect_equal(workflow$meta$ActionWindowDays, 90)
+  expect_identical(workflow$meta$ActionHistoryComplete, FALSE)
+  expect_true("ActionAsOfDate" %in% names(workflow$meta))
   expect_true("ActionExtractionDate" %in% names(workflow$meta))
-  expect_equal(workflow$meta$ActionFactors$`Open Action`, 1)
-  expect_equal(workflow$meta$ActionFactors$`Closed Action`, 1)
-  expect_equal(workflow$meta$ActionFactors$`Awaiting Triage`, 1)
-  expect_equal(workflow$meta$ActionFactors$`No Action`, 0)
+  expect_equal(workflow$meta$Metric, "Site Review Priority Score")
 })
 
 test_that("srs0002 workflow produces canonical action-weighted rows (#280)", {
@@ -44,6 +43,11 @@ test_that("srs0002 workflow produces canonical action-weighted rows (#280)", {
     ExtractionDate = results$SnapshotDate,
     stringsAsFactors = FALSE
   )
+  action_log$ActionedDate <- as.Date(c("2025-02-28", NA))
+  action_log$ActionedDateSource <- c("Monitoring decision", NA_character_)
+  action_log$ActionedFlag <- c(1, NA_real_)
+  action_log$ActionScope <- c("SiteMetric", NA_character_)
+  workflow$meta$ActionHistoryComplete <- TRUE
   metrics <- data.frame(
     MetricID = results$MetricID,
     Flag = "1",
@@ -75,6 +79,8 @@ test_that("srs0002 workflow produces canonical action-weighted rows (#280)", {
   expect_equal(output$Analysis_Summary$MetricID, "Analysis_srs0002")
   expect_equal(output$Analysis_Summary$Numerator, 8)
   expect_equal(output$Analysis_Summary$Denominator, 12)
+  expect_equal(nrow(output$Analysis_ActionRiskScoreDetail), 2)
+  expect_equal(output$Analysis_ActionRiskScoreDetail$RecentlyAddressed, c(TRUE, FALSE))
 
   workflow$meta$ActionExtractionDate <- "2025-03-07"
   action_log$ExtractionDate <- as.Date("2025-03-07")

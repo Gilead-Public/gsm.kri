@@ -18,9 +18,10 @@ output:
 
 This page provides a sample Site KRI Report generated using the standard KRIs included in the `gsm.kri` package. Expand the "Setup" section below to see the code used to generate the report. Or scroll down for the standard KRI report output.
 
-The example calculates `Analysis_srs0002` from the deterministic longitudinal
-`gsm.core::reportingActionLog` fixture. The existing Site Overview displays the
-adjusted score immediately after the original Site Risk Score.
+The example combines the `gsm.core` KRI results with synthetic monitoring
+decisions to demonstrate the 90-day Review Priority Score. These decision dates
+are demonstration data, not inferred dates from the ActionLog fixture. The
+original Site Risk Score and KRI flags remain unchanged.
 
 <details>
 <summary>Setup</summary>
@@ -57,23 +58,51 @@ current_kri_results <- gsm.core::reportingResults %>%
     grepl("^Analysis_kri", .data$MetricID),
     .data$MetricID %in% weights$MetricID
   )
+demo_action_log <- current_kri_results %>%
+  dplyr::mutate(
+    decision_group = match(.data$MetricID, unique(.data$MetricID)) %% 4L,
+    SnapshotDate = latest_snapshot - 100,
+    ExtractionDate = latest_snapshot,
+    RiskSignalID = paste0("DEMO-RS-", seq_len(dplyr::n())),
+    ActionID = paste0("DEMO-ACT-", seq_len(dplyr::n())),
+    State = c("Closed Action", "No Action", "Open Action", "Awaiting Triage")[.data$decision_group + 1L],
+    ActionedDate = latest_snapshot - c(20, 91, 10, NA_real_)[.data$decision_group + 1L],
+    ActionedDateSource = "Synthetic monitoring decision",
+    ActionedFlag = dplyr::if_else(.data$decision_group == 2L, 0, as.numeric(.data$Flag)),
+    ActionScope = "SiteMetric",
+    ActionCriticality = FALSE
+  )
+demo_current_signals <- demo_action_log %>%
+  dplyr::mutate(
+    SnapshotDate = latest_snapshot,
+    RiskSignalID = paste0("DEMO-CURRENT-RS-", seq_len(dplyr::n())),
+    ActionID = NA_character_,
+    State = "Awaiting Triage",
+    ActionedDate = as.Date(NA),
+    ActionedDateSource = NA_character_,
+    ActionedFlag = NA_real_,
+    ActionScope = NA_character_
+  )
+demo_action_log <- dplyr::bind_rows(demo_action_log, demo_current_signals)
 action_weighted_score <- gsm.kri::CalculateActionRiskScore(
   dfResults = current_kri_results,
   dfWeights = weights,
-  dfActionLog = gsm.core::reportingActionLog,
-  strMissingState = "error"
+  dfActionLog = demo_action_log,
+  intActionWindowDays = 90,
+  bActionHistoryComplete = TRUE
 ) %>%
   dplyr::mutate(
     StudyID = unique(current_kri_results$StudyID),
     SnapshotDate = latest_snapshot
   )
 
-# Per-KRI detail explains each adjusted score in the Site Overview.
+# Per-KRI detail explains the priority score without changing the original SRS.
 action_score_detail <- gsm.kri::MakeActionRiskScoreDetail(
   dfResults = current_kri_results,
   dfWeights = weights,
-  dfActionLog = gsm.core::reportingActionLog,
-  strMissingState = "error"
+  dfActionLog = demo_action_log,
+  intActionWindowDays = 90,
+  bActionHistoryComplete = TRUE
 )
 
 site_results <- dplyr::bind_rows(
@@ -104,7 +133,7 @@ child_env <- list2env(
       dfGroups = gsm.core::reportingGroups,
   dfMetrics = dfMetrics,
       strComparisonRiskMetric = "Analysis_srs0002",
-      strComparisonRiskLabel = "Adjusted Risk Score",
+      strComparisonRiskLabel = "Review Priority Score",
       dfRiskScoreDetail = action_score_detail
     )
   ),

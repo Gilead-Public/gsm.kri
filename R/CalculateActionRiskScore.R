@@ -1,6 +1,6 @@
-#' Calculate an action-status-weighted Site Risk Score
+#' Calculate an action-aware Site Risk or Review Priority Score
 #'
-#' Applies Central Monitoring ActionLog states to existing KRI flag weights.
+#' Applies dated monitoring decisions or legacy ActionLog state factors to KRI weights.
 #' Action factors affect only numerator contributions; the denominator remains
 #' the full maximum-risk denominator used by [CalculateRiskScore()]. The
 #' per-KRI contributions behind the score are available from
@@ -20,19 +20,31 @@
 #'   largest configured factor. Identifiers must distinguish those rows.
 #' @param lActionFactors Named numeric state-factor mapping. Defaults to include
 #'   open, closed, and awaiting-triage findings and exclude no-action findings.
+#'   Used only when `intActionWindowDays` is NULL.
 #' @param strMissingState Policy for a missing action state on a nonzero KRI
 #'   weight: stop with an error, include the weight, or exclude the weight.
+#'   Used only in legacy mode; date-window mode always includes unknown evidence.
 #' @param strMetricID Metric ID assigned to the action-weighted score.
 #' @param dActionSnapshotDate `Date` "As of" date for ActionLog entries. `NULL`
 #'   (default) uses the `dfResults` `SnapshotDate`. Must not be later than the
 #'   `dfResults` `SnapshotDate`.
 #' @param dActionExtractionDate `Date` or ISO `YYYY-MM-DD` cutoff for frozen
 #'   ActionLog extractions.
-#'   `NULL` uses the results snapshot date. The latest complete extraction on
+#'   `NULL` uses the results snapshot date, or `dActionAsOfDate` in date-window
+#'   mode. The latest complete extraction on
 #'   or before this cutoff is selected, without filling gaps from older
 #'   extractions. Set an explicit date when replaying a scoring run whose
 #'   ActionLog was frozen after the data snapshot. Signal snapshot dates do
 #'   not establish when action states became known.
+#' @param intActionWindowDays Optional nonnegative integer. When supplied,
+#'   calculate review priority using [MakeActionSummary()] instead of legacy
+#'   state factors. Recently addressed, covered KRIs contribute zero; all
+#'   others retain their original contribution. NULL preserves state weighting.
+#' @param dActionAsOfDate Optional Date or ISO date for action age in date-window
+#'   mode. Defaults to the results snapshot, not today's date.
+#' @param bActionHistoryComplete Whether the selected extraction contains the
+#'   complete decision history. Default FALSE; incomplete evidence never
+#'   excludes a contribution in date-window mode.
 #'
 #' @return A canonical risk score data frame with the same output schema as
 #'   [CalculateRiskScore()].
@@ -50,7 +62,10 @@ CalculateActionRiskScore <- function(
   strMissingState = c("error", "include", "exclude"),
   strMetricID = "Analysis_srs0002",
   dActionSnapshotDate = NULL,
-  dActionExtractionDate = NULL
+  dActionExtractionDate = NULL,
+  intActionWindowDays = NULL,
+  dActionAsOfDate = NULL,
+  bActionHistoryComplete = FALSE
 ) {
   dfDetail <- MakeActionRiskScoreDetail(
     dfResults = dfResults,
@@ -60,10 +75,16 @@ CalculateActionRiskScore <- function(
     strMissingState = strMissingState,
     strMetricID = strMetricID,
     dActionSnapshotDate = dActionSnapshotDate,
-    dActionExtractionDate = dActionExtractionDate
+    dActionExtractionDate = dActionExtractionDate,
+    intActionWindowDays = intActionWindowDays,
+    dActionAsOfDate = dActionAsOfDate,
+    bActionHistoryComplete = bActionHistoryComplete
   )
 
-  SummarizeRiskScore(dfDetail, "EffectiveWeight", strMetricID)
+  SummarizeRiskScore(
+    dplyr::filter(dfDetail, !is.na(.data$Weight), !is.na(.data$WeightMax)),
+    "EffectiveWeight", strMetricID
+  )
 }
 
 #' Per-KRI detail behind an action-status-weighted Site Risk Score
@@ -71,6 +92,8 @@ CalculateActionRiskScore <- function(
 #' Returns one row per weighted KRI result with the ActionLog entry applied to
 #' it, so a reader can see why an action-weighted score differs from the
 #' original Site Risk Score. [CalculateActionRiskScore()] summarizes these rows.
+#' Date-window mode retains every current KRI, including zero-weight and
+#' unweighted results; unweighted rows have missing contribution fields.
 #'
 #' @inheritParams CalculateActionRiskScore
 #'
@@ -82,6 +105,8 @@ CalculateActionRiskScore <- function(
 #'   `ActionFactor`, `EffectiveWeight`, `ActionExtractionDate`, `RiskSignalID`,
 #'   `ActionID`, and `ActionCount`. States and identifiers from multiple rows
 #'   are sorted and comma-separated; `ActionCount` counts distinct actions.
+#'   Date-window mode additionally includes the [MakeActionSummary()] fields,
+#'   including the last known event date, recency, coverage, and reason.
 #' @export
 MakeActionRiskScoreDetail <- function(
   dfResults,
@@ -96,9 +121,42 @@ MakeActionRiskScoreDetail <- function(
   strMissingState = c("error", "include", "exclude"),
   strMetricID = "Analysis_srs0002",
   dActionSnapshotDate = NULL,
-  dActionExtractionDate = NULL
+  dActionExtractionDate = NULL,
+  intActionWindowDays = NULL,
+  dActionAsOfDate = NULL,
+  bActionHistoryComplete = FALSE
 ) {
   strMissingState <- match.arg(strMissingState)
+  if (!is.null(intActionWindowDays)) {
+    if (!is.null(dActionSnapshotDate)) {
+      stop("dActionSnapshotDate is only available for legacy state weighting.", call. = FALSE)
+    }
+    summary <- MakeActionSummary(
+      dfResults, dfActionLog,
+      intActionWindowDays = intActionWindowDays,
+      dActionAsOfDate = dActionAsOfDate,
+      dActionExtractionDate = dActionExtractionDate,
+      bActionHistoryComplete = bActionHistoryComplete
+    )
+    weighted <- JoinRiskScoreWeights(dfResults, dfWeights, strMetricID) %>%
+      dplyr::select(dplyr::all_of(.risk_score_action_key), "Flag", "Weight", "WeightMax")
+    return(summary %>%
+      dplyr::left_join(
+        dplyr::select(weighted, -"Flag"),
+        by = .risk_score_action_key
+      ) %>%
+      dplyr::mutate(
+        RiskSignalID = .data$ActionRiskSignalID,
+        ActionSnapshotDate = .data$ActionSignalSnapshotDate,
+        ActionSource = dplyr::if_else(
+          is.na(.data$LastActionedDate), "Missing", "ActionHistory"
+        ),
+        ActionFactor = dplyr::if_else(
+          .data$RecentlyAddressed | .data$Weight == 0, 0, 1
+        ),
+        EffectiveWeight = .data$Weight * .data$ActionFactor
+      ))
+  }
   result_context <- .validate_single_study_snapshot(dfResults, "dfResults")
 
   required_action_columns <- c(

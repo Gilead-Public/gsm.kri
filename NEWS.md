@@ -1,5 +1,18 @@
 # gsm.kri (development version)
 
+- Added `MakeActionSummary()` for the latest documented monitoring decision
+  across all eligible signal snapshots per site/KRI, including zero-weight
+  results. Explicit event dates and provenance are required; signal creation
+  and extraction dates are never substituted. Recency and coverage are separate,
+  and incomplete, escalated, reopened, critical, or conflicting evidence cannot
+  suppress a contribution (#280).
+- The `srs0002` workflow now defaults to a configurable 90-day Review Priority
+  Score, keeps the full original denominator, and returns
+  `Analysis_ActionRiskScoreDetail` for the site report. Unknown dates retain
+  full contribution. Dated detail enables window, hide, and priority-preview
+  controls in the companion table; the original SRS and flags stay unchanged.
+  Direct callers retain legacy state weighting unless they specify
+  `intActionWindowDays` (#280).
 - Added `CalculateActionRiskScore()` and the `srs0002` workflow for an
   action-status-weighted Site Risk Score. Open, closed, and awaiting-triage
   findings are included by default; no-action findings are excluded; missing
@@ -10,7 +23,7 @@
   `dActionExtractionDate` selects the extraction cutoff; later-extracted
   decisions are not used by default. Multiple actions use the largest factor
   and retain character identifiers and extraction provenance in the detail.
-  The workflow conservatively includes missing states (#280).
+  Legacy state mode conservatively supports including missing states (#280).
 - Added `MakeActionRiskScoreDetail()`, which returns the per-KRI contributions
   behind the action-weighted score, and a `dfRiskScoreDetail` argument to
   `Report_KRI()` that shows them in the site overview (#280).

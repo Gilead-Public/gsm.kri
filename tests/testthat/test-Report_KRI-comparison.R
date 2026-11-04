@@ -86,6 +86,45 @@ test_that("Report_KRI forwards risk score detail (#280)", {
   expect_null(captured$lParams$dfRiskScoreDetail)
 })
 
+test_that("dated action detail selects priority labels and is optional in workflows (#280)", {
+  captured <- NULL
+  testthat::local_mocked_bindings(
+    RenderRmd = function(...) {
+      captured <<- list(...)
+      invisible("report.html")
+    },
+    MakeCharts = function(...) list(),
+    .package = "gsm.kri"
+  )
+  detail <- data.frame(
+    GroupID = "1001", MetricID = "Analysis_kri0001", ActionWindowDays = 90
+  )
+  Report_KRI(strOutputFile = "report.html", dfRiskScoreDetail = detail)
+  expect_equal(captured$lParams$strComparisonRiskLabel, "Review Priority Score")
+  Report_KRI(
+    strOutputFile = "report.html", dfRiskScoreDetail = detail,
+    strComparisonRiskLabel = "Custom priority"
+  )
+  expect_equal(captured$lParams$strComparisonRiskLabel, "Custom priority")
+
+  workflow <- yaml::read_yaml(system.file(
+    "workflow/4_modules/report_kri_site.yaml", package = "gsm.kri"
+  ))
+  workflow$steps[[length(workflow$steps)]]$params$strOutputFile <- "report.html"
+  domains <- list(
+    Reporting_Results = gsm.core::reportingResults,
+    Reporting_Metrics = gsm.core::reportingMetrics,
+    Reporting_Groups = gsm.core::reportingGroups,
+    Reporting_Bounds = gsm.core::reportingBounds
+  )
+  workr::RunWorkflow(workflow, lData = domains)
+  expect_null(captured$lParams$dfRiskScoreDetail)
+  domains$Analysis_ActionRiskScoreDetail <- detail
+  workr::RunWorkflow(workflow, lData = domains)
+  expect_equal(captured$lParams$dfRiskScoreDetail, detail)
+  expect_equal(captured$lParams$strComparisonRiskLabel, "Review Priority Score")
+})
+
 test_that("Report_KRI renders without an action-weighted score (#280)", {
   skip_if_not(rmarkdown::pandoc_available())
 

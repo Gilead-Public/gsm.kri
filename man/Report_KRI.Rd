@@ -15,7 +15,8 @@ Report_KRI(
   strComparisonRiskMetric = "Analysis_srs0002",
   strComparisonRiskLabel = "Adjusted Risk Score",
   strGroupSubset = NULL,
-  dfRiskScoreDetail = NULL
+  dfRiskScoreDetail = NULL,
+  lData = NULL
 )
 }
 \arguments{
@@ -51,17 +52,21 @@ the existing Site Risk Score in the site overview. The column is omitted
 when the metric is absent from `dfResults`. Default: `"Analysis_srs0002"`.}
 
 \item{strComparisonRiskLabel}{Column label for the comparison risk score.
-Default: `"Adjusted Risk Score"`.}
+Default: `"Review Priority Score"` for dated action detail, otherwise
+`"Adjusted Risk Score"`. An explicit label is always preserved.}
 
 \item{strGroupSubset}{Optional group subset passed to the report's group
 overview. `NULL` preserves the report default (`"red"` for site reports,
 `"all"` otherwise).}
 
 \item{dfRiskScoreDetail}{Optional per-KRI detail behind the comparison risk
-score, from [MakeActionRiskScoreDetail()]. When supplied, the site overview
-shows how far each comparison score is below the Site Risk Score and lists
-the KRIs responsible on click. Ignored when the comparison metric is absent
-from `dfResults`. Default: `NULL`.}
+score, from [MakeActionRiskScoreDetail()]. Clicking a score lists each
+KRI's action evidence and contribution. Dated detail enables configurable
+window, visibility, and priority-preview controls. Ignored when the
+comparison metric is absent from `dfResults`. Default: `NULL`.}
+
+\item{lData}{Optional workflow domain list. Used to obtain
+`Analysis_ActionRiskScoreDetail` when `dfRiskScoreDetail` is NULL.}
 }
 \value{
 File path of the saved report html is returned invisibly. Save to object to view absolute output path.
