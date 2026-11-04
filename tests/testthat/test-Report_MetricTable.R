@@ -42,7 +42,7 @@ test_that("output_label attribute is set even with no flags (Issue #107)", {
 
 test_that("Correct data structure when proper dataframe is passed", {
   reportingResults_filt <- gsm.core::reportingResults %>%
-    dplyr::filter(MetricID == unique(gsm.core::reportingResults$MetricID)[1])
+    dplyr::filter(MetricID == "Analysis_kri0001")
   result <- Report_MetricTable(reportingResults_filt, gsm.core::reportingGroups)
   expect_s3_class(result, "gt_tbl")
   expect_true(is.character(result$`_data`$Group))
@@ -51,7 +51,7 @@ test_that("Correct data structure when proper dataframe is passed", {
 
 test_that("Flag filtering works correctly", {
   reportingResults_filt <- gsm.core::reportingResults %>%
-    dplyr::filter(MetricID == unique(gsm.core::reportingResults$MetricID)[1])
+    dplyr::filter(MetricID == "Analysis_kri0001")
   result <- Report_MetricTable(reportingResults_filt, gsm.core::reportingGroups)
   expect_s3_class(result, "gt_tbl")
   expect_true(all(result$`_data`$Flag != 0))
@@ -59,7 +59,7 @@ test_that("Flag filtering works correctly", {
 
 test_that("Score rounding works correctly", {
   reportingResults_filt <- gsm.core::reportingResults %>%
-    dplyr::filter(MetricID == unique(gsm.core::reportingResults$MetricID)[1])
+    dplyr::filter(MetricID == "Analysis_kri0001")
   result <- Report_MetricTable(reportingResults_filt, gsm.core::reportingGroups)
   expect_true(any(grepl("0.05", result)))
 })
@@ -73,7 +73,7 @@ test_that("Errors out when multiple MetricIDs passed in", {
 
 test_that("Runs with just results with NULL group argument", {
   reportingResults_filt <- gsm.core::reportingResults %>%
-    dplyr::filter(MetricID == unique(gsm.core::reportingResults$MetricID)[1])
+    dplyr::filter(MetricID == "Analysis_kri0001")
   result <- Report_MetricTable(reportingResults_filt)
   expect_s3_class(result, "gt_tbl")
 })
@@ -86,7 +86,7 @@ test_that("Output is expected object (#107)", {
   reportingResults_filt <- gsm.core::reportingResults %>%
     FilterByLatestSnapshotDate() %>%
     dplyr::filter(
-      MetricID == unique(gsm.core::reportingResults$MetricID)[[1]],
+      MetricID == "Analysis_kri0001",
       GroupID %in% c(zero_flags, red_flags, amber_flags)
     ) %>%
     # Add an NA row back for representation.

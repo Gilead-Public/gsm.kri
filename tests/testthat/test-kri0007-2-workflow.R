@@ -36,7 +36,7 @@ test_that("cou0007-2 scores dosed subjects by country (#301)", {
   expect_equal(res$Flag, c(0, 0))
 })
 
-test_that("kri0007-2 excludes non-dosed subjects from numerator and denominator (#301)", {
+test_that("kri0007-2 excludes non-dosed subjects from numerator and denominator whatever their drv_drg_completion (#301, #331)", {
   input <- run_ptd("kri0007-2")$Analysis_Input
 
   expect_false(any(c("S61", "S62") %in% input$SubjectID))
@@ -48,11 +48,18 @@ test_that("kri0007-2 counts a discontinuation date with a null reason (#301)", {
   expect_equal(input$Numerator[input$SubjectID == "S01"], 1)
 })
 
-test_that("kri0007-2 does not count a reason without a discontinuation date (#301)", {
+test_that("kri0007-2 counts drv_drg_completion N without a discontinuation date (#331)", {
   input <- run_ptd("kri0007-2")$Analysis_Input
 
-  expect_equal(input$Numerator[input$SubjectID == "S09"], 0)
-  expect_equal(input$Denominator[input$SubjectID == "S09"], 1)
+  expect_equal(input$Numerator[input$SubjectID == "S09"], 1)
+})
+
+test_that("kri0007-2 does not count Potential No, Y, NA or blank, even with a discontinuation date (#331)", {
+  input <- run_ptd("kri0007-2")$Analysis_Input
+  ids <- c("S08", "S12", "S22", "S32")
+
+  expect_equal(input$Numerator[match(ids, input$SubjectID)], rep(0, 4))
+  expect_equal(input$Denominator[match(ids, input$SubjectID)], rep(1, 4))
 })
 
 test_that("kri0007-2 counts a discontinued subject who also completed the study (#301)", {
@@ -61,18 +68,20 @@ test_that("kri0007-2 counts a discontinued subject who also completed the study 
   expect_equal(input$Numerator[input$SubjectID == "S03"], 1)
 })
 
-test_that("kri0007-2/cou0007-2 read only Mapped_SUBJ and keep the PTDC calibration (#301)", {
+test_that("kri0007-2/cou0007-2 read only Mapped_SUBJ, count drv_drg_completion and keep the PTDC calibration (#301, #331)", {
   kri <- read_meta("kri0007-2")
   cou <- read_meta("cou0007-2")
 
   for (wf in list(kri, cou)) {
     expect_named(wf$spec, "Mapped_SUBJ")
     expect_false("phase" %in% names(wf$spec$Mapped_SUBJ))
+    expect_equal(wf$spec$Mapped_SUBJ$drv_drg_completion$type, "character")
+    expect_false("drv_treatment_discontinuation_dt" %in% names(wf$spec$Mapped_SUBJ))
     expect_equal(wf$meta$Abbreviation, "PTDC")
     expect_equal(wf$meta$Metric, "Premature Treatment Discontinuation Rate")
     expect_equal(
       wf$meta$Numerator,
-      "Enrolled and dosed participants who discontinue IP prematurely"
+      "Enrolled and dosed participants who did not complete study drug per protocol"
     )
     expect_equal(wf$meta$Denominator, "Enrolled & Dosed Subjects")
     expect_equal(wf$meta$Threshold, "2,3")

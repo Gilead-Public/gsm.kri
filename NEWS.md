@@ -1,14 +1,24 @@
 # gsm.kri (development version)
 
-- Add the IP monitoring report for IP non-starters and premature treatment discontinuations (#320).
+- The Premature Deaths report adds a Fatal AE Listing: one row per fatal adverse event
+  for premature-death participants, with the MedDRA term, outcome and relatedness,
+  filtered with the patient listing by country and site (`pd_FatalAEListing()`,
+  `pd_FatalAEListingData()`). Fatal AEs are now identified by outcome (`aeout`),
+  grade 5 (`aetoxgr`) or death flag (`aesdth`), with relatedness from `aereldrv`.
+  Treatment Related shows Unknown when a fatal AE lacks relatedness (#304).
+
+# gsm.kri v1.8.0
+
+This minor release adds the IP Monitoring report and metrics (IP non-starters and premature treatment discontinuation) and the repeat-measure vital-sign KRIs.
+
+- Refactored the Eligibility report workflow's module configuration and queries (#351).
+- Add the IP monitoring report for IP non-starters and premature treatment discontinuations. Dosed participants are shown by study drug completion, including potential premature treatment discontinuations, and the participant listing shows study completion (#320, #332).
 - Added the IP Non-Starters metric: `kri0019` (site) and `cou0019` (country) count
   participants who are Confirmed non-starters or Potential non-starters outside the
   window. One non-starter flags amber and two or more flag red (#258, #312).
 - Added the Premature Treatment Discontinuation Rate metric: `kri0007-2` (site) and
-  `cou0007-2` (country), counting dosed participants with a treatment discontinuation
-  date over dosed participants. It replaces `kri0007`/`cou0007` (Treatment
-  Discontinuation Rate) as the default; these stay available but inactive and no
-  longer generate risk signals (#301).
+  `cou0007-2` (country), that replaces `kri0007`/`cou0007` these stay
+  available but inactive and no longer generate risk signals (#301, #331).
 - The KRI report labels inactive metrics with an "Inactive" badge and lists them last
   (#325).
 - New `Detect_ConsecutiveRepeats()` counts, per subject, rolling windows of
@@ -17,12 +27,6 @@
 - New repeat-measure vital-sign metrics `kri0020a`-`f` (site) and
   `cou0020a`-`f` (country) for weight, heart rate, systolic/diastolic BP,
   respiratory rate, and temperature (#306).
-- The Premature Deaths report adds a Fatal AE Listing: one row per fatal adverse event
-  for premature-death participants, with the MedDRA term, outcome and relatedness,
-  filtered with the patient listing by country and site (`pd_FatalAEListing()`,
-  `pd_FatalAEListingData()`). Fatal AEs are now identified by outcome (`aeout`),
-  grade 5 (`aetoxgr`) or death flag (`aesdth`), with relatedness from `aereldrv`.
-  Treatment Related shows Unknown when a fatal AE lacks relatedness (#304).
 
 # gsm.kri v1.7.0
 

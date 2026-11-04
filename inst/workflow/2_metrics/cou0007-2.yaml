@@ -5,7 +5,7 @@ meta:
   GroupLevel: Country
   Abbreviation: PTDC
   Metric: Premature Treatment Discontinuation Rate
-  Numerator: Enrolled and dosed participants who discontinue IP prematurely
+  Numerator: Enrolled and dosed participants who did not complete study drug per protocol
   Denominator: Enrolled & Dosed Subjects
   Model: Normal Approximation
   Score: Adjusted Z-Score
@@ -23,8 +23,8 @@ spec:
       type: character
     drv_ip_dosed:
       type: character
-    drv_treatment_discontinuation_dt:
-      type: Date
+    drv_drg_completion:
+      type: character
 steps:
   - output: vThreshold
     name: gsm.core::ParseThreshold
@@ -44,7 +44,7 @@ steps:
     name: workr::RunQuery
     params:
       df: Mapped_SUBJ
-      strQuery: "SELECT * FROM df WHERE drv_ip_dosed = 'Y' AND drv_treatment_discontinuation_dt IS NOT NULL"
+      strQuery: "SELECT * FROM df WHERE drv_ip_dosed = 'Y' AND drv_drg_completion = 'N'"
   - output: Analysis_Input
     name: gsm.core::Input_Rate
     params:
