@@ -234,6 +234,9 @@ get_data <- function(lWorkflow, data) {
   )])
 
   # Return subset of cached mapped_data instead of re-running workflows
-  mapped_needed_data <- mapped_data[intersect(names(mapped_data), c(maps_needed_index, names(data)))]
+  mapped_needed_data <- mapped_data[intersect(
+    names(mapped_data),
+    c(maps_needed_index, names(data))
+  )]
   return(mapped_needed_data)
 }

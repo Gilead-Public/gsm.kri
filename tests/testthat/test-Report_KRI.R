@@ -25,9 +25,14 @@ dfMetrics <- tibble::tibble(
 test_that("Check default output path when strOutpath is NULL", {
   expect_output(
     Report_KRI(
-      lCharts = lCharts, dfSummary = dfSummary, dfStudy = dfStudy, dfSite = dfSite, dfMetrics = dfMetrics,
+      lCharts = lCharts,
+      dfSummary = dfSummary,
+      dfStudy = dfStudy,
+      dfSite = dfSite,
+      dfMetrics = dfMetrics,
       strOutpath = tempfile()
-    ) %>% grepl(getwd(), .),
+    ) %>%
+      grepl(getwd(), .),
     fixed = TRUE
   )
 })
@@ -36,7 +41,11 @@ test_that("Output path is correctly assigned", {
   withr::with_envvar(c("RSTUDIO_PANDOC" = ""), {
     expect_identical(
       Report_KRI(
-        lCharts = lCharts, dfSummary = dfSummary, dfStudy = dfStudy, dfSite = dfSite, dfMetrics = dfMetrics,
+        lCharts = lCharts,
+        dfSummary = dfSummary,
+        dfStudy = dfStudy,
+        dfSite = dfSite,
+        dfMetrics = dfMetrics,
         strOutpath = tempfile("custom_path")
       ) %>%
         grepl("custom_path", .),
@@ -62,7 +71,11 @@ test_that("Verifying rendering of RMarkdown file", {
   withr::with_envvar(c("RSTUDIO_PANDOC" = ""), {
     expect_message(
       Report_KRI(
-        lCharts = lCharts, dfSummary = dfSummary, dfStudy = dfStudy, dfSite = dfSite, dfMetrics = dfMetrics,
+        lCharts = lCharts,
+        dfSummary = dfSummary,
+        dfStudy = dfStudy,
+        dfSite = dfSite,
+        dfMetrics = dfMetrics,
         strOutpath = tempfile("test_Report")
       ),
       regexp = "Output created:.*test_Report"

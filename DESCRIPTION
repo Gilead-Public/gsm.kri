@@ -1,7 +1,7 @@
 Type: Package
 Package: gsm.kri
 Title: Good Statistical Monitoring KRIs
-Version: 1.7.0.9001
+Version: 1.8.0.9000
 Authors@R: c(
     person("Jeremy", "Wildfire", , "jwildfire@gmail.com", role = c("aut", "cre")),
     person("Laura", "Maxwell", , "laura.maxwell@atorusresearch.com", role = "aut"),
@@ -25,7 +25,7 @@ Imports:
     DT,
     ggplot2,
     glue,
-    gsm.core (>= 1.3.1.9000),
+    gsm.core (>= 1.3.2),
     gsm.vizr (>= 0.1.0),
     gt,
     htmltools,
@@ -42,9 +42,9 @@ Imports:
     workr
 Suggests: 
     fontawesome,
-    gsm.mapping (>= 1.1.6.9001),
-    gsm.reporting (>= 1.1.4),
+    gsm.mapping (>= 1.2.0),
     gsm.qtl (>= 1.4.0),
+    gsm.reporting (>= 1.1.4),
     here,
     knitr,
     lubridate,
@@ -62,7 +62,7 @@ Remotes:
     gsm.reporting=Gilead-Public/gsm.reporting@actionlog-report-fixture,
     gsm.vizr=Gilead-Public/gsm.vizr@issue-63-adjusted-risk-column,
     qcthat=Gilead-Public/qcthat@main
-Config/roxygen2/version: 8.1.0
+Config/roxygen2/version: 8.1.1
 Config/testthat/edition: 3
 Config/testthat/parallel: false
 Encoding: UTF-8

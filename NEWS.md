@@ -33,6 +33,12 @@
   Site Risk Score immediately after the original Risk Score when
   `Analysis_srs0002` is available. Direct `Widget_GroupOverview()` consumers
   retain the original single-score layout unless they opt in (#280).
+
+# gsm.kri v1.8.0
+
+This minor release adds the IP Monitoring report and metrics (IP non-starters and premature treatment discontinuation) and the repeat-measure vital-sign KRIs.
+
+- Refactored the Eligibility report workflow's module configuration and queries (#351).
 - Add the IP monitoring report for IP non-starters and premature treatment discontinuations. Dosed participants are shown by study drug completion, including potential premature treatment discontinuations, and the participant listing shows study completion (#320, #332).
 - Added the IP Non-Starters metric: `kri0019` (site) and `cou0019` (country) count
   participants who are Confirmed non-starters or Potential non-starters outside the
