@@ -21,9 +21,10 @@
 #' @param strGroupSubset Optional group subset passed to the report's group
 #'   overview. `NULL` preserves the report default (`"red"` for site reports,
 #'   `"all"` otherwise).
-#' @param dfRiskScoreDetail Optional per-KRI detail behind the comparison risk
-#'   score, from [MakeActionRiskScoreDetail()]. Clicking a score lists each
-#'   KRI's action evidence and contribution. Dated detail enables configurable
+#' @param dfRiskScoreDetail Optional per-KRI detail behind the second risk
+#'   score, from [MakeActionRiskScoreDetail()]. Clicking a score in that column
+#'   lists each KRI's action evidence and whether it counts toward the score.
+#'   Dated detail enables configurable
 #'   window, visibility, and priority-preview controls. Ignored when the
 #'   comparison metric is absent from `dfResults`. Default: `NULL`.
 #' @param lData Optional workflow domain list. Used to obtain

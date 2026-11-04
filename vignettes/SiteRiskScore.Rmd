@@ -374,11 +374,12 @@ existing **Risk Score** (`Analysis_srs0001`) column.
 KRI's weight, the ActionLog state and date applied, and the resulting effective
 weight. It also retains `ActionExtractionDate`, sorted signal and action
 identifiers, and `ActionCount` for audit. `CalculateActionRiskScore()` summarizes these same rows, so the two
-always agree. Passing them to `Report_KRI(dfRiskScoreDetail = ...)` adds:
-
-- a breakdown that opens under the site's row when its Adjusted Risk Score is
-  clicked, listing each weighted KRI's flag, action state, signal snapshot, and
-  whether it counts (Yes / Partly / No), with excluded KRIs shown in grey.
+always agree. Passing them to `Report_KRI(dfRiskScoreDetail = ...)` makes each
+Adjusted Risk Score clickable: a row opens under the site listing each weighted
+KRI's flag, action state, signal snapshot, and whether it counts toward the
+score (Yes, Partly, or No), with excluded KRIs shown in grey. The Adjusted Risk
+Score is its own measure, so the report does not present it as a difference
+from the Risk Score.
 
 ```{r, eval=FALSE}
 action_score_detail <- MakeActionRiskScoreDetail(

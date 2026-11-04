@@ -27,7 +27,7 @@ test('GroupOverview omits adjusted SRS when srs0002 is absent (#280)', async ({ 
   await expect(overview.locator('th', { hasText: 'Adjusted Risk Score' })).toHaveCount(0);
 });
 
-test('pkgdown site report calculates and displays exported ActionLog score (#280)', async ({ page }) => {
+test('pkgdown site report displays date-window review priority (#280)', async ({ page }) => {
   await page.goto(fixtureUrl('Example_SiteReport.html'));
 
   const overview = page.locator('.Widget_GroupOverview');
@@ -36,7 +36,8 @@ test('pkgdown site report calculates and displays exported ActionLog score (#280
   const headers = await overview.locator('th').allInnerTexts();
   const riskIndex = headers.indexOf('Risk Score');
   expect(riskIndex).toBeGreaterThan(-1);
-  expect(headers[riskIndex + 1]).toBe('Adjusted Risk Score');
+  expect(headers[riskIndex + 1]).toBe('Review Priority Score');
+  await expect(overview.getByRole('spinbutton', { name: 'Action window (days)' })).toHaveValue('90');
 
   const rows = overview.locator('tbody tr');
   expect(await rows.count()).toBeGreaterThan(0);
@@ -47,30 +48,43 @@ test('pkgdown site report calculates and displays exported ActionLog score (#280
   expect(differs).toBe(true);
 });
 
-test('adjusted score badge and click-through list the KRIs behind it (#280)', async ({ page }) => {
+test('clicking an adjusted score lists the KRIs behind it (#280)', async ({ page }) => {
   await page.goto(fixtureUrl('Example_SiteReport.html'));
 
   const overview = page.locator('.Widget_GroupOverview');
   await expect(overview).toBeVisible();
 
-  const badges = overview.locator('.group-overview--comparison-delta');
-  expect(await badges.count()).toBeGreaterThan(0);
-  const badgeCell = overview.locator(
-    'td.group-overview--comparisonRiskScore:has(.group-overview--comparison-delta)'
-  );
-
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
+
+  // The adjusted score is its own measure: no difference marker beside it.
+  const scoreCells = overview.locator('td.group-overview--comparisonRiskScore');
+  expect(await scoreCells.count()).toBeGreaterThan(0);
+  const scoreTexts = await scoreCells.allInnerTexts();
+  expect(scoreTexts.every((text) => /^\d+$/.test(text.trim()))).toBe(true);
 
   const detail = overview.locator('tr.group-overview--comparison-detail');
   await expect(detail).toHaveCount(0);
 
-  const clicked = badgeCell.first();
-  const groupID = await clicked.evaluate((td) => td.__data__.GroupID);
-  await clicked.click();
-  await expect(detail).toHaveCount(1);
-  await expect(detail).toContainText('No Action');
+  // Pick a site with a recent covered decision so the breakdown explains it.
+  const clickScore = (id) => scoreCells.evaluateAll(
+    (cells, groupID) => cells.find((td) => td.__data__.GroupID === groupID).click(),
+    id
+  );
+  const groupIDs = await scoreCells.evaluateAll((cells) => cells.map((td) => td.__data__.GroupID));
+  let groupID = null;
+  for (const id of groupIDs) {
+    await clickScore(id);
+    if ((await detail.innerText()).includes('Recently addressed')) {
+      groupID = id;
+      break;
+    }
+    await clickScore(id);
+  }
+  expect(groupID).not.toBeNull();
   await expect(detail).toContainText(groupID);
+  await expect(detail).toContainText('Counted');
+  await expect(detail).not.toContainText('Points');
 
   // The breakdown sits directly under the clicked group's row.
   const followsGroup = await detail.evaluate((row, id) => {
@@ -86,9 +100,7 @@ test('adjusted score badge and click-through list the KRIs behind it (#280)', as
   expect(errors).toEqual([]);
 
   // A second click on the same score closes the breakdown.
-  await overview.locator('td.group-overview--comparisonRiskScore')
-    .filter({ has: page.locator('.group-overview--comparison-delta') })
-    .evaluateAll((cells, id) => cells.find((td) => td.__data__.GroupID === id).click(), groupID);
+  await clickScore(groupID);
   await expect(detail).toHaveCount(0);
 });
 
@@ -97,6 +109,6 @@ test('site overview has no adjusted score detail when srs0002 is absent (#280)',
 
   const overview = page.locator('.Widget_GroupOverview');
   await expect(overview).toBeVisible();
-  await expect(overview.locator('.group-overview--comparison-delta')).toHaveCount(0);
+  await expect(overview.locator('td.group-overview--comparisonRiskScore')).toHaveCount(0);
   await expect(overview.locator('.group-overview--comparison-detail')).toHaveCount(0);
 });
