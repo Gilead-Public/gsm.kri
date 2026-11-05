@@ -591,15 +591,27 @@ days</strong> checkbox is on by default; turning it off removes only the
 borders. Its state survives sorting and redraws, and action dates,
 details, and reported scores stay unchanged. There are no window, hide,
 or score-exclusion controls.</p>
-<p>Clicking a priority score opens its site’s detail with last addressed
-date, age, decision state, review reason, contribution, and source IDs.
-Assessment date, extraction, and provenance are available on the detail
-row.</p>
-<p><strong>Download review data</strong> exports JSON for visible sites,
-including original risk scores, reported priority scores, and evidence
-for every KRI. The export keeps the fixed 90-day highlight window
-separate from the backend scoring window, which remains configurable for
-scripted runs. The widget never recalculates scores or writes back to
+<p>Clicking a priority score opens a compact six-column breakdown:
+<strong>KRI</strong>, <strong>Flag</strong>, <strong>Action
+state</strong>, <strong>Last Addressed</strong>, <strong>Days
+Ago</strong>, and <strong>Counted</strong>. It includes a KRI if it was
+<strong>flagged or actioned</strong> within the inclusive 90-day
+history, not only if it is flagged today. The report passes its full
+persisted snapshots through <code>dfResultsHistory</code>.
+Historical-only and now-green findings remain eligible; items with
+neither a recent flag nor a recent action are omitted. One row per KRI
+shows the latest flagged value in the window, or the reviewed flag for a
+recent action. The tooltip identifies the flagged snapshot and the
+current flag, which remains unchanged in the main matrix.
+<strong>Counted</strong> still reflects its reported score contribution;
+historical-only rows contribute nothing. Rows sort by <strong>Last
+Addressed</strong> newest first, then <strong>absolute Flag</strong>
+highest first, then <strong>KRI number</strong> ascending. Undated rows
+come last. Assessment date, extraction, and provenance are available in
+the detail row’s tooltip.</p>
+<p>The review-data download button is removed. Complete evidence stays
+in the widget’s supplied data. Backend scoring remains configurable for
+scripted runs; the widget never recalculates scores or writes back to
 the source system. Direct widget callers can supply the same detail
 through <code>dfComparisonRiskDetail</code> and should set
 <code>strComparisonRiskLabel = "Review Priority Score"</code>.</p>
