@@ -21,9 +21,10 @@ This page provides a sample Site KRI Report generated using the standard KRIs in
 The example combines the `gsm.core` KRI results with synthetic monitoring
 decisions to demonstrate the 90-day Review Priority Score. These decision dates
 are demonstration data, not inferred dates from the ActionLog fixture. The
-actions refer only to actual flagged snapshots for currently flagged, active
-site/KRI pairs. Open actions, closed actions, and signals awaiting triage vary
-across sites. A closed action does not change the underlying KRI flag. Dates
+actions refer only to actual flagged snapshots for active site/KRI pairs.
+Most belong to currently flagged cells; a small sample is now green after an
+earlier flag was reviewed. Open actions, closed actions, and signals awaiting
+triage vary across sites. A closed action does not change the underlying KRI flag. Dates
 remain inside the bundled reporting history rather than inventing older evidence.
 
 <details>
@@ -100,6 +101,37 @@ demo_action_log <- gsm.core::reportingResults %>%
     ActionResolvedDate = dplyr::if_else(.data$State == "Closed Action", .data$ActionedDate, as.Date(NA))
   ) %>%
   dplyr::select(-"decision_group")
+current_green <- current_kri_results %>%
+  dplyr::filter(!is.na(.data$Flag), .data$Flag == 0) %>%
+  dplyr::select("StudyID", "GroupLevel", "GroupID", "MetricID")
+demo_reviewed_green <- gsm.core::reportingResults %>%
+  dplyr::semi_join(current_green, by = c("StudyID", "GroupLevel", "GroupID", "MetricID")) %>%
+  dplyr::filter(.data$SnapshotDate < latest_snapshot, !is.na(.data$Flag), .data$Flag != 0) %>%
+  dplyr::group_by(.data$StudyID, .data$GroupLevel, .data$GroupID, .data$MetricID) %>%
+  dplyr::slice_max(.data$SnapshotDate, n = 1L, with_ties = FALSE) %>%
+  dplyr::ungroup() %>%
+  dplyr::arrange(.data$MetricID, .data$GroupID) %>%
+  dplyr::group_by(.data$MetricID) %>%
+  dplyr::mutate(review_order = dplyr::row_number()) %>%
+  dplyr::ungroup() %>%
+  dplyr::arrange(.data$review_order, .data$MetricID, .data$GroupID) %>%
+  dplyr::slice_head(n = 12L) %>%
+  dplyr::mutate(
+    ExtractionDate = latest_snapshot,
+    RiskSignalID = paste0("DEMO-GREEN-RS-", seq_len(dplyr::n())),
+    State = "Closed Action",
+    ActionID = paste0("DEMO-GREEN-ACT-", seq_len(dplyr::n())),
+    ActionedDate = pmin(.data$SnapshotDate + 7, latest_snapshot - 1),
+    ActionedDateSource = "Synthetic review of earlier flag",
+    ActionedFlag = as.numeric(.data$Flag),
+    ActionScope = "SiteMetric",
+    ActionCriticality = FALSE,
+    ActionState = "Closed Action",
+    ActionCreatedDate = pmin(.data$SnapshotDate + 1, .data$ActionedDate),
+    ActionResolvedDate = .data$ActionedDate
+  ) %>%
+  dplyr::select(-"review_order")
+demo_action_log <- dplyr::bind_rows(demo_action_log, demo_reviewed_green)
 weighted_kri_results <- current_kri_results %>%
   dplyr::semi_join(weights, by = c("MetricID", "Flag"))
 action_weighted_score <- gsm.kri::CalculateActionRiskScore(
@@ -149,6 +181,7 @@ action_score_detail <- action_score_detail %>%
     ActionReason = dplyr::case_when(
       .data$ActionState == "Awaiting Triage" ~ "Awaiting triage",
       is.na(.data$Flag) ~ "Not assessed",
+      .data$Flag == 0 & !is.na(.data$LastActionedDate) ~ "Previously flagged; reviewed",
       .data$Flag == 0 ~ "Not flagged",
       TRUE ~ .data$ActionReason
     )

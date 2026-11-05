@@ -168,21 +168,38 @@ test_that("site report demo actions match actual flagged snapshots (#280)", {
   current <- example$current_kri_results
   detail <- example$action_score_detail
   expect_equal(nrow(detail), nrow(current))
-  expect_false(any(detail$RecentlyAddressed[is.na(detail$Flag) | detail$Flag == 0]))
+  expect_false(any(detail$RecentlyAddressed[is.na(detail$Flag)]))
+  reviewed_green <- detail[!is.na(detail$Flag) & detail$Flag == 0 & !is.na(detail$LastActionedDate), ]
+  expect_gt(nrow(reviewed_green), 0L)
+  expect_lte(nrow(reviewed_green), 12L)
+  expect_true(all(reviewed_green$ActionState == "Closed Action"))
+  expect_true(all(reviewed_green$ActionedFlag != 0))
+  expect_true(all(reviewed_green$ActionSignalSnapshotDate < reviewed_green$SnapshotDate))
+  expect_true(all(reviewed_green$LastActionedDate < reviewed_green$SnapshotDate))
+  expect_true(all(reviewed_green$DaysSinceAction >= 0 & reviewed_green$DaysSinceAction <= 90))
+  expect_true(all(reviewed_green$ActionReason == "Previously flagged; reviewed"))
+  expect_true(all(is.na(reviewed_green$EffectiveWeight) | reviewed_green$EffectiveWeight == 0))
   expect_true(all(detail$ActionState[!is.na(detail$LastActionedDate)] %in% c("Open Action", "Closed Action")))
   expect_true(all(actions$ActionedDate >= min(gsm.core::reportingResults$SnapshotDate), na.rm = TRUE))
   expect_true(any(detail$RecentlyAddressed))
   expect_true(any(detail$ActionState == "Awaiting Triage"))
   expect_true(any(example$action_weighted_score$Numerator > 0))
   site_metric <- c("StudyID", "GroupLevel", "GroupID", "MetricID")
-  expect_true(all(vapply(split(actions$State, actions$MetricID), function(states) {
-    length(states) == 1L || length(unique(states)) > 1L
-  }, logical(1))))
   active <- gsm.core::reportingMetrics
   active <- active$MetricID[active$GroupLevel == "Site" & active$Active %in% TRUE]
   expect_true(all(actions$MetricID %in% active))
   current_flagged <- current[!is.na(current$Flag) & current$Flag != 0, site_metric]
   expect_equal(nrow(merge(unique(actions[site_metric]), current_flagged, by = site_metric)), nrow(current_flagged))
+  current_actions <- merge(actions, current_flagged, by = site_metric)
+  expect_true(all(vapply(split(current_actions$State, current_actions$MetricID), function(states) {
+    length(states) == 1L || length(unique(states)) > 1L
+  }, logical(1))))
+  without_green <- CalculateActionRiskScore(
+    example$weighted_kri_results, example$weights, current_actions,
+    intActionWindowDays = 90, bActionHistoryComplete = TRUE
+  )
+  score_columns <- c("GroupID", "Numerator", "Denominator", "Score")
+  expect_equal(example$action_weighted_score[score_columns], without_green[score_columns])
 })
 
 test_that("Report_KRI renders without an action-weighted score (#280)", {
