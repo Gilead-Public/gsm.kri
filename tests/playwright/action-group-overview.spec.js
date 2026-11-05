@@ -38,7 +38,8 @@ test('pkgdown site report displays date-window review priority (#280)', async ({
   expect(riskIndex).toBeGreaterThan(-1);
   expect(headers[riskIndex + 1]).toBe('Review Priority Score');
   await expect(overview.getByRole('spinbutton', { name: 'Action window (days)' })).toHaveCount(0);
-  await expect(overview.getByRole('checkbox')).toHaveCount(0);
+  await expect(overview.getByRole('checkbox')).toHaveCount(1);
+  await expect(overview.getByRole('checkbox', { name: 'Highlight actions within 90 days' })).toBeChecked();
   expect(await overview.locator('td.group-overview--recent-action').count()).toBeGreaterThan(0);
 
   const rows = overview.locator('tbody tr');
