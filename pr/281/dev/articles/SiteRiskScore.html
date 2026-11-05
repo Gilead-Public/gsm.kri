@@ -578,16 +578,19 @@ the selected extraction to reproduce a run.</p>
 <p>With dated detail, <code><a href="../reference/Report_KRI.html">Report_KRI()</a></code> labels the second
 measure <strong>Review Priority Score</strong> unless an explicit label
 is supplied. Each specific site/KRI cell with a documented action 0
-through 90 days before the assessment date receives a blue inset border.
-Other cells for the same site or metric are unaffected. The tooltip
-shows the recorded date and age. Missing and future dates, and actions
-older than 90 days, receive no border. Zero-weight and green KRIs can
-still have recent actions and are marked in the same way.</p>
+through 90 days before the assessment date receives a thin dark-grey
+inset border. Other cells for the same site or metric are unaffected.
+The tooltip shows the recorded date and age. Missing and future dates,
+and actions older than 90 days, receive no border. Zero-weight and green
+KRIs can still have recent actions and are marked in the same way.</p>
 <p>This is a recency indicator, independent of whether the decision
 covers the current finding. It does not imply risk resolution or alter
 either reported score. All KRI cells remain visible and retain their
-original flag colors. There are no window, hide, or score-exclusion
-controls.</p>
+original flag colors. The single <strong>Highlight actions within 90
+days</strong> checkbox is on by default; turning it off removes only the
+borders. Its state survives sorting and redraws, and action dates,
+details, and reported scores stay unchanged. There are no window, hide,
+or score-exclusion controls.</p>
 <p>Clicking a priority score opens its site’s detail with last addressed
 date, age, decision state, review reason, contribution, and source IDs.
 Assessment date, extraction, and provenance are available on the detail
