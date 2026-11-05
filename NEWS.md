@@ -1,5 +1,11 @@
 # gsm.kri (development version)
 
+- Added an explicit opt-in `strActionPolicy = "disposition"` draft. It keeps
+  original metric-specific flag weights and the full denominator, applying
+  state factors only while a documented decision is recent and applicable.
+  Defaults keep Open/Closed weights and temporarily exclude No Action only.
+  The site example previews this model as Adjusted Risk Score (Draft); existing
+  recent-review and legacy defaults remain unchanged (#280).
 - Added `MakeActionSummary()` for the latest documented monitoring decision
   across all eligible signal snapshots per site/KRI, including zero-weight
   results. Explicit event dates and provenance are required; signal creation

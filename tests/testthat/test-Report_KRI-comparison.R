@@ -152,10 +152,10 @@ test_that("site report demo actions match actual flagged snapshots (#280)", {
   matched <- merge(actions, actual, by = keys, suffixes = c("", "_actual"))
   expect_equal(nrow(matched), nrow(actions))
   expect_true(all(!is.na(matched$Flag_actual) & matched$Flag_actual != 0))
-  has_action <- !is.na(matched$ActionID)
-  expect_equal(matched$ActionedFlag[has_action], as.numeric(matched$Flag_actual[has_action]))
-  expect_true(all(actions$State %in% c("Open Action", "Closed Action", "Awaiting Triage")))
-  expect_true(all(c("Open Action", "Closed Action", "Awaiting Triage") %in% actions$State))
+  reviewed <- !is.na(matched$ActionedDate)
+  expect_equal(matched$ActionedFlag[reviewed], as.numeric(matched$Flag_actual[reviewed]))
+  expect_true(all(actions$State %in% c("Open Action", "Closed Action", "Awaiting Triage", "No Action")))
+  expect_true(all(c("Open Action", "Closed Action", "Awaiting Triage", "No Action") %in% actions$State))
   expect_true(all(actions$ActionedDate >= actions$SnapshotDate, na.rm = TRUE))
   expect_true(all(actions$ActionedDate <= example$latest_snapshot, na.rm = TRUE))
   expect_equal(anyDuplicated(stats::na.omit(actions$ActionID)), 0L)
@@ -179,7 +179,14 @@ test_that("site report demo actions match actual flagged snapshots (#280)", {
   expect_true(all(reviewed_green$DaysSinceAction >= 0 & reviewed_green$DaysSinceAction <= 90))
   expect_true(all(reviewed_green$ActionReason == "Previously flagged; reviewed"))
   expect_true(all(is.na(reviewed_green$EffectiveWeight) | reviewed_green$EffectiveWeight == 0))
-  expect_true(all(detail$ActionState[!is.na(detail$LastActionedDate)] %in% c("Open Action", "Closed Action")))
+  expect_true(all(detail$ActionState[!is.na(detail$LastActionedDate)] %in% c("Open Action", "Closed Action", "No Action")))
+  weighted_detail <- detail[!is.na(detail$Weight), ]
+  expect_true(all(weighted_detail$ActionPolicy == "disposition"))
+  retained <- weighted_detail$ActionState %in% c("Open Action", "Closed Action", "Awaiting Triage")
+  expect_equal(weighted_detail$EffectiveWeight[retained], weighted_detail$Weight[retained])
+  dismissed <- weighted_detail$ActionState == "No Action" & weighted_detail$RecentlyAddressed
+  expect_true(any(dismissed & weighted_detail$Weight > 0, na.rm = TRUE))
+  expect_true(all(weighted_detail$EffectiveWeight[dismissed] == 0))
   expect_true(all(actions$ActionedDate >= min(gsm.core::reportingResults$SnapshotDate), na.rm = TRUE))
   expect_true(any(detail$RecentlyAddressed))
   expect_true(any(detail$ActionState == "Awaiting Triage"))
@@ -196,7 +203,7 @@ test_that("site report demo actions match actual flagged snapshots (#280)", {
   }, logical(1))))
   without_green <- CalculateActionRiskScore(
     example$weighted_kri_results, example$weights, current_actions,
-    intActionWindowDays = 90, bActionHistoryComplete = TRUE
+    intActionWindowDays = 90, bActionHistoryComplete = TRUE, strActionPolicy = "disposition"
   )
   score_columns <- c("GroupID", "Numerator", "Denominator", "Score")
   expect_equal(example$action_weighted_score[score_columns], without_green[score_columns])

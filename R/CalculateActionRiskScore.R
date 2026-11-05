@@ -20,7 +20,8 @@
 #'   largest configured factor. Identifiers must distinguish those rows.
 #' @param lActionFactors Named numeric state-factor mapping. Defaults to include
 #'   open, closed, and awaiting-triage findings and exclude no-action findings.
-#'   Used only when `intActionWindowDays` is NULL.
+#'   Used by legacy mode and the opt-in `"disposition"` policy; ignored by
+#'   `"recent-review"`.
 #' @param strMissingState Policy for a missing action state on a nonzero KRI
 #'   weight: stop with an error, include the weight, or exclude the weight.
 #'   Used only in legacy mode; date-window mode always includes unknown evidence.
@@ -37,14 +38,21 @@
 #'   ActionLog was frozen after the data snapshot. Signal snapshot dates do
 #'   not establish when action states became known.
 #' @param intActionWindowDays Optional nonnegative integer. When supplied,
-#'   calculate review priority using [MakeActionSummary()] instead of legacy
-#'   state factors. Recently addressed, covered KRIs contribute zero; all
-#'   others retain their original contribution. NULL preserves state weighting.
+#'   use [MakeActionSummary()] to gate decisions by recency and applicability.
+#'   The default policy calculates review priority; `"disposition"` applies
+#'   the configured state factor only to eligible recent decisions. NULL
+#'   preserves legacy state weighting.
 #' @param dActionAsOfDate Optional Date or ISO date for action age in date-window
 #'   mode. Defaults to the results snapshot, not today's date.
 #' @param bActionHistoryComplete Whether the selected extraction contains the
 #'   complete decision history. Default FALSE; incomplete evidence never
 #'   excludes a contribution in date-window mode.
+#' @param strActionPolicy Date-window policy. `"recent-review"` preserves the
+#'   review-priority behavior: a recent applicable decision excludes its weight.
+#'   The opt-in `"disposition"` draft applies `lActionFactors` only while that
+#'   decision is recent and applicable. Defaults retain Open/Closed weights and
+#'   exclude only a documented No Action decision. Expired/unknown evidence
+#'   retains full weight. Neither policy changes the denominator or raw SRS.
 #'
 #' @return A canonical risk score data frame with the same output schema as
 #'   [CalculateRiskScore()].
@@ -65,7 +73,8 @@ CalculateActionRiskScore <- function(
   dActionExtractionDate = NULL,
   intActionWindowDays = NULL,
   dActionAsOfDate = NULL,
-  bActionHistoryComplete = FALSE
+  bActionHistoryComplete = FALSE,
+  strActionPolicy = c("recent-review", "disposition")
 ) {
   dfDetail <- MakeActionRiskScoreDetail(
     dfResults = dfResults,
@@ -78,7 +87,8 @@ CalculateActionRiskScore <- function(
     dActionExtractionDate = dActionExtractionDate,
     intActionWindowDays = intActionWindowDays,
     dActionAsOfDate = dActionAsOfDate,
-    bActionHistoryComplete = bActionHistoryComplete
+    bActionHistoryComplete = bActionHistoryComplete,
+    strActionPolicy = strActionPolicy
   )
 
   SummarizeRiskScore(
@@ -106,7 +116,8 @@ CalculateActionRiskScore <- function(
 #'   `ActionID`, and `ActionCount`. States and identifiers from multiple rows
 #'   are sorted and comma-separated; `ActionCount` counts distinct actions.
 #'   Date-window mode additionally includes the [MakeActionSummary()] fields,
-#'   including the last known event date, recency, coverage, and reason.
+#'   including the last known event date, recency, coverage, reason, and
+#'   `ActionPolicy`, identifying the chosen interpretation.
 #' @export
 MakeActionRiskScoreDetail <- function(
   dfResults,
@@ -124,9 +135,11 @@ MakeActionRiskScoreDetail <- function(
   dActionExtractionDate = NULL,
   intActionWindowDays = NULL,
   dActionAsOfDate = NULL,
-  bActionHistoryComplete = FALSE
+  bActionHistoryComplete = FALSE,
+  strActionPolicy = c("recent-review", "disposition")
 ) {
   strMissingState <- match.arg(strMissingState)
+  strActionPolicy <- match.arg(strActionPolicy)
   if (!is.null(intActionWindowDays)) {
     if (!is.null(dActionSnapshotDate)) {
       stop("dActionSnapshotDate is only available for legacy state weighting.", call. = FALSE)
@@ -140,6 +153,7 @@ MakeActionRiskScoreDetail <- function(
     )
     weighted <- JoinRiskScoreWeights(dfResults, dfWeights, strMetricID) %>%
       dplyr::select(dplyr::all_of(.risk_score_action_key), "Flag", "Weight", "WeightMax")
+    action_factors <- if (strActionPolicy == "disposition") .normalize_action_factors(lActionFactors) else NULL
     return(summary %>%
       dplyr::left_join(
         dplyr::select(weighted, -"Flag"),
@@ -151,8 +165,12 @@ MakeActionRiskScoreDetail <- function(
         ActionSource = dplyr::if_else(
           is.na(.data$LastActionedDate), "Missing", "ActionHistory"
         ),
-        ActionFactor = dplyr::if_else(
-          .data$RecentlyAddressed | .data$Weight == 0, 0, 1
+        ActionPolicy = strActionPolicy,
+        ActionFactor = dplyr::case_when(
+          .data$Weight == 0 ~ 0,
+          .data$RecentlyAddressed ~ if (strActionPolicy == "recent-review") 0 else
+            dplyr::coalesce(unname(action_factors[.data$ActionState]), 1),
+          TRUE ~ 1
         ),
         EffectiveWeight = .data$Weight * .data$ActionFactor
       ))

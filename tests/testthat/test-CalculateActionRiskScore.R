@@ -85,6 +85,45 @@ make_dated_action_log <- function() {
   history
 }
 
+test_that("disposition draft retains open and closed risk and expires no-action decisions (#280)", {
+  history <- make_dated_action_log()
+  history$State <- rep(c("No Action", "Open Action", "Closed Action"), 2)
+  history$ActionedDate <- as.Date("2025-02-28") - c(90, 20, 20, 91, 20, 20)
+  detail <- MakeActionRiskScoreDetail(
+    make_action_score_results(), make_action_score_weights(), history,
+    intActionWindowDays = 90, bActionHistoryComplete = TRUE,
+    strActionPolicy = "disposition"
+  )
+  expect_equal(detail$ActionFactor, c(0, 1, 1, 1, 1, 1))
+  expect_equal(detail$EffectiveWeight, c(0, 4, 8, 4, 4, 8))
+  expect_true(all(detail$ActionPolicy == "disposition"))
+  score <- CalculateActionRiskScore(
+    make_action_score_results(), make_action_score_weights(), history,
+    intActionWindowDays = 90, bActionHistoryComplete = TRUE,
+    strActionPolicy = "disposition"
+  )
+  expect_equal(score$Numerator, c(12, 16))
+  expect_equal(score$Denominator, c(16, 16))
+  expect_equal(score$Score, c(75, 100))
+  incomplete <- MakeActionRiskScoreDetail(
+    make_action_score_results(), make_action_score_weights(), history,
+    intActionWindowDays = 90, strActionPolicy = "disposition"
+  )
+  expect_equal(incomplete$EffectiveWeight, incomplete$Weight)
+  history$ActionedFlag[1] <- 0
+  escalated <- MakeActionRiskScoreDetail(
+    make_action_score_results(), make_action_score_weights(), history,
+    intActionWindowDays = 90, bActionHistoryComplete = TRUE,
+    strActionPolicy = "disposition"
+  )
+  expect_equal(escalated$ActionFactor[1], 1)
+  original <- MakeActionRiskScoreDetail(
+    make_action_score_results(), make_action_score_weights(), make_dated_action_log(),
+    intActionWindowDays = 90, bActionHistoryComplete = TRUE
+  )
+  expect_true(all(original$EffectiveWeight == 0))
+})
+
 test_that("awaiting triage dates are not qualifying monitoring decisions (#280)", {
   history <- make_dated_action_log()
   history$State <- "Awaiting Triage"

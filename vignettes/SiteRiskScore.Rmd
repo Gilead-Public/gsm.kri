@@ -156,6 +156,65 @@ The Site Risk Score is calculated automatically as part of the standard KRI work
 4. Returns the results as a new metric (`srs0001`) using the `gsm.kri::CalculateRiskScore()` function
 5. The standard KRI report produced by `Report_KRI()` includes a column showing the normalized site risk score for each site for a single study.
 
+## Draft: Weights And A 90-Day Decision Window
+
+Two interpretations must not be conflated. The existing date-window
+`"recent-review"` policy excludes a recently addressed, covered finding,
+including Open and Closed actions. It measures **review priority**, not
+underlying risk. It did not reverse the numeric scale or change metric weights,
+but it changed the numerator relative to the original state-weighted score.
+
+The Site KRI Report example now explicitly previews `strActionPolicy =
+"disposition"` as **Adjusted Risk Score (Draft)**. Existing direct-call and
+workflow defaults are unchanged pending review of this proposal.
+
+### Proposed Formula
+
+For current site/KRI flag $f_k$, use the existing metric-specific lookup
+$w_k(f_k)$, not the absolute flag number or the number of historic signals:
+
+$$
+\mathrm{AdjustedSRS}_{90} = 100\,
+\frac{\sum_k w_k(f_k)\,a_{k,90}}{\sum_k W_k^{\max}}
+$$
+
+With the original default action factors, $a_{k,90}=0$ only for a documented,
+applicable **No Action** decision aged 0 through 90 days. Otherwise it is 1.
+Open, Closed, Awaiting Triage, missing, expired, incomplete, reopened, escalated,
+or conflicting evidence therefore retains the current weight. Closing an action
+does not prove a still-flagged metric's risk has gone away. No Action means an
+explicit monitoring disposition, not simply the absence of an action record.
+
+The 90 days are a **decision-validity gate**, not a multiplier or gradual
+discount. On day 91 the current contribution counts again. The denominator is
+unchanged from the corresponding original SRS, keeping the scale comparable.
+
+For an illustrative three-metric site with maximum weights totaling 42:
+
+| Current finding | Weight | Recent disposition | Draft contribution |
+|---|---:|---|---:|
+| AE, flag -2 | 32 | Open Action | 32 |
+| Query rate, flag 2 | 2 | Closed Action | 2 |
+| SAE, flag 2 | 8 | No Action | 0 |
+
+Raw SRS is 100; draft adjusted SRS is $100\times34/42=80.95$.
+This illustrates why equal absolute flags need not contribute equal amounts:
+their metric weights differ. Absolute flag severity remains a drilldown sort
+key, not a substitute for the weight lookup.
+
+The historical drilldown and grey borders are separate audit views. A now-green
+KRI can retain a recent review border while contributing zero from its current
+flag. Repeated snapshots/actions never add the same metric's weight repeatedly.
+This draft deliberately avoids making historic red flags inflate today's score.
+
+```{r, eval=FALSE}
+draft_score <- CalculateActionRiskScore(
+  current_kri_results, MakeWeights(reporting_metrics), decision_enriched_action_log,
+  intActionWindowDays = 90, bActionHistoryComplete = TRUE,
+  strActionPolicy = "disposition"
+)
+```
+
 ## Review Priority Score
 
 The `srs0002` workflow now answers a different question from the original Site

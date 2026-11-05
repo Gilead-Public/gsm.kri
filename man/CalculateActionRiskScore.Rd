@@ -16,7 +16,8 @@ CalculateActionRiskScore(
   dActionExtractionDate = NULL,
   intActionWindowDays = NULL,
   dActionAsOfDate = NULL,
-  bActionHistoryComplete = FALSE
+  bActionHistoryComplete = FALSE,
+  strActionPolicy = c("recent-review", "disposition")
 )
 }
 \arguments{
@@ -37,7 +38,8 @@ largest configured factor. Identifiers must distinguish those rows.}
 
 \item{lActionFactors}{Named numeric state-factor mapping. Defaults to include
 open, closed, and awaiting-triage findings and exclude no-action findings.
-Used only when `intActionWindowDays` is NULL.}
+Used by legacy mode and the opt-in `"disposition"` policy; ignored by
+`"recent-review"`.}
 
 \item{strMissingState}{Policy for a missing action state on a nonzero KRI
 weight: stop with an error, include the weight, or exclude the weight.
@@ -59,9 +61,10 @@ ActionLog was frozen after the data snapshot. Signal snapshot dates do
 not establish when action states became known.}
 
 \item{intActionWindowDays}{Optional nonnegative integer. When supplied,
-calculate review priority using [MakeActionSummary()] instead of legacy
-state factors. Recently addressed, covered KRIs contribute zero; all
-others retain their original contribution. NULL preserves state weighting.}
+use [MakeActionSummary()] to gate decisions by recency and applicability.
+The default policy calculates review priority; `"disposition"` applies
+the configured state factor only to eligible recent decisions. NULL
+preserves legacy state weighting.}
 
 \item{dActionAsOfDate}{Optional Date or ISO date for action age in date-window
 mode. Defaults to the results snapshot, not today's date.}
@@ -69,6 +72,13 @@ mode. Defaults to the results snapshot, not today's date.}
 \item{bActionHistoryComplete}{Whether the selected extraction contains the
 complete decision history. Default FALSE; incomplete evidence never
 excludes a contribution in date-window mode.}
+
+\item{strActionPolicy}{Date-window policy. `"recent-review"` preserves the
+review-priority behavior: a recent applicable decision excludes its weight.
+The opt-in `"disposition"` draft applies `lActionFactors` only while that
+decision is recent and applicable. Defaults retain Open/Closed weights and
+exclude only a documented No Action decision. Expired/unknown evidence
+retains full weight. Neither policy changes the denominator or raw SRS.}
 }
 \value{
 A canonical risk score data frame with the same output schema as

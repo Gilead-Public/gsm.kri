@@ -27,7 +27,7 @@ test('GroupOverview omits adjusted SRS when srs0002 is absent (#280)', async ({ 
   await expect(overview.locator('th', { hasText: 'Adjusted Risk Score' })).toHaveCount(0);
 });
 
-test('pkgdown site report displays date-window review priority (#280)', async ({ page }) => {
+test('pkgdown site report displays the weighted disposition draft (#280)', async ({ page }) => {
   await page.goto(fixtureUrl('Example_SiteReport.html'));
 
   const overview = page.locator('.Widget_GroupOverview');
@@ -36,7 +36,7 @@ test('pkgdown site report displays date-window review priority (#280)', async ({
   const headers = await overview.locator('th').allInnerTexts();
   const riskIndex = headers.indexOf('Risk Score');
   expect(riskIndex).toBeGreaterThan(-1);
-  expect(headers[riskIndex + 1]).toBe('Review Priority Score');
+  expect(headers[riskIndex + 1]).toBe('Adjusted Risk Score (Draft)');
   await expect(overview.getByRole('spinbutton', { name: 'Action window (days)' })).toHaveCount(0);
   await expect(overview.getByRole('checkbox')).toHaveCount(1);
   await expect(overview.getByRole('checkbox', { name: 'Highlight actions within 90 days' })).toBeChecked();
