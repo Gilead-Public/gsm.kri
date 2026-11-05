@@ -21,7 +21,10 @@ This page provides a sample Site KRI Report generated using the standard KRIs in
 The example combines the `gsm.core` KRI results with synthetic monitoring
 decisions to demonstrate the 90-day Review Priority Score. These decision dates
 are demonstration data, not inferred dates from the ActionLog fixture. The
-original Site Risk Score and KRI flags remain unchanged.
+actions refer only to actual flagged snapshots for currently flagged, active
+site/KRI pairs. Open actions, closed actions, and signals awaiting triage vary
+across sites. A closed action does not change the underlying KRI flag. Dates
+remain inside the bundled reporting history rather than inventing older evidence.
 
 <details>
 <summary>Setup</summary>
@@ -51,41 +54,56 @@ dfResults <- gsm.core::reportingResults %>%
 
 latest_snapshot <- max(gsm.core::reportingResults$SnapshotDate)
 weights <- gsm.kri::MakeWeights(gsm.core::reportingMetrics)
+active_site_metrics <- gsm.core::reportingMetrics %>%
+  dplyr::filter(.data$GroupLevel == "Site", .data$Active %in% TRUE) %>%
+  dplyr::pull("MetricID")
 current_kri_results <- gsm.core::reportingResults %>%
   dplyr::filter(
     .data$SnapshotDate == latest_snapshot,
     .data$GroupLevel == "Site",
     grepl("^Analysis_kri", .data$MetricID),
-    .data$MetricID %in% weights$MetricID
+    .data$MetricID %in% active_site_metrics
   )
-demo_action_log <- current_kri_results %>%
+current_flagged <- current_kri_results %>%
+  dplyr::filter(!is.na(.data$Flag), .data$Flag != 0) %>%
+  dplyr::select("StudyID", "GroupLevel", "GroupID", "MetricID", "Flag")
+demo_action_log <- gsm.core::reportingResults %>%
+  dplyr::semi_join(
+    current_flagged,
+    by = c("StudyID", "GroupLevel", "GroupID", "MetricID", "Flag")
+  ) %>%
+  dplyr::filter(.data$SnapshotDate <= latest_snapshot) %>%
+  dplyr::group_by(.data$StudyID, .data$GroupLevel, .data$GroupID, .data$MetricID) %>%
+  dplyr::slice_min(.data$SnapshotDate, n = 1L, with_ties = FALSE) %>%
+  dplyr::ungroup() %>%
+  dplyr::arrange(.data$MetricID, .data$GroupID) %>%
+  dplyr::group_by(.data$MetricID) %>%
+  dplyr::mutate(decision_group = (dplyr::row_number() - 1L) %% 5L) %>%
+  dplyr::ungroup() %>%
   dplyr::mutate(
-    decision_group = match(.data$MetricID, unique(.data$MetricID)) %% 4L,
-    SnapshotDate = latest_snapshot - 100,
     ExtractionDate = latest_snapshot,
     RiskSignalID = paste0("DEMO-RS-", seq_len(dplyr::n())),
-    ActionID = paste0("DEMO-ACT-", seq_len(dplyr::n())),
-    State = c("Closed Action", "No Action", "Open Action", "Awaiting Triage")[.data$decision_group + 1L],
-    ActionedDate = latest_snapshot - c(20, 91, 10, NA_real_)[.data$decision_group + 1L],
-    ActionedDateSource = "Synthetic monitoring decision",
-    ActionedFlag = dplyr::if_else(.data$decision_group == 2L, 0, as.numeric(.data$Flag)),
-    ActionScope = "SiteMetric",
-    ActionCriticality = FALSE
-  )
-demo_current_signals <- demo_action_log %>%
-  dplyr::mutate(
-    SnapshotDate = latest_snapshot,
-    RiskSignalID = paste0("DEMO-CURRENT-RS-", seq_len(dplyr::n())),
-    ActionID = NA_character_,
-    State = "Awaiting Triage",
-    ActionedDate = as.Date(NA),
-    ActionedDateSource = NA_character_,
-    ActionedFlag = NA_real_,
-    ActionScope = NA_character_
-  )
-demo_action_log <- dplyr::bind_rows(demo_action_log, demo_current_signals)
+    State = c("Open Action", "Closed Action", "Awaiting Triage", "Open Action", "Closed Action")[.data$decision_group + 1L],
+    ActionID = dplyr::if_else(.data$State == "Awaiting Triage", NA_character_, paste0("DEMO-ACT-", seq_len(dplyr::n()))),
+    ActionedDate = latest_snapshot - pmin(
+      c(14, 35, NA_real_, 45, 59)[.data$decision_group + 1L],
+      as.integer(latest_snapshot - .data$SnapshotDate)
+    ),
+    ActionedDateSource = dplyr::if_else(!is.na(.data$ActionedDate), "Synthetic flag-matched monitoring decision", NA_character_),
+    ActionedFlag = dplyr::if_else(.data$State == "Awaiting Triage", NA_real_, as.numeric(.data$Flag)),
+    ActionScope = dplyr::if_else(.data$State == "Awaiting Triage", NA_character_, "SiteMetric"),
+    ActionCriticality = dplyr::if_else(.data$State == "Awaiting Triage", NA, FALSE),
+    ActionState = dplyr::if_else(!is.na(.data$ActionID), .data$State, NA_character_),
+    ActionCreatedDate = dplyr::if_else(
+      .data$State == "Closed Action", pmax(.data$SnapshotDate, .data$ActionedDate - 7), .data$ActionedDate
+    ),
+    ActionResolvedDate = dplyr::if_else(.data$State == "Closed Action", .data$ActionedDate, as.Date(NA))
+  ) %>%
+  dplyr::select(-"decision_group")
+weighted_kri_results <- current_kri_results %>%
+  dplyr::semi_join(weights, by = c("MetricID", "Flag"))
 action_weighted_score <- gsm.kri::CalculateActionRiskScore(
-  dfResults = current_kri_results,
+  dfResults = weighted_kri_results,
   dfWeights = weights,
   dfActionLog = demo_action_log,
   intActionWindowDays = 90,
@@ -98,12 +116,44 @@ action_weighted_score <- gsm.kri::CalculateActionRiskScore(
 
 # Per-KRI detail explains the priority score without changing the original SRS.
 action_score_detail <- gsm.kri::MakeActionRiskScoreDetail(
-  dfResults = current_kri_results,
+  dfResults = weighted_kri_results,
   dfWeights = weights,
   dfActionLog = demo_action_log,
   intActionWindowDays = 90,
   bActionHistoryComplete = TRUE
 )
+unweighted_kri_results <- current_kri_results %>%
+  dplyr::anti_join(
+    weighted_kri_results,
+    by = c("StudyID", "SnapshotDate", "GroupLevel", "GroupID", "MetricID")
+  )
+if (nrow(unweighted_kri_results) > 0L) {
+  unweighted_detail <- gsm.kri::MakeActionSummary(
+    dfResults = unweighted_kri_results,
+    dfActionLog = demo_action_log,
+    intActionWindowDays = 90,
+    bActionHistoryComplete = TRUE
+  ) %>%
+    dplyr::mutate(Weight = NA_real_, WeightMax = NA_real_, EffectiveWeight = NA_real_)
+  action_score_detail <- dplyr::bind_rows(action_score_detail, unweighted_detail)
+}
+demo_signal_states <- demo_action_log %>%
+  dplyr::select("StudyID", "GroupLevel", "GroupID", "MetricID", DemoSignalState = "State")
+action_score_detail <- action_score_detail %>%
+  dplyr::left_join(demo_signal_states, by = c("StudyID", "GroupLevel", "GroupID", "MetricID")) %>%
+  dplyr::mutate(
+    ActionState = dplyr::coalesce(
+      .data$ActionState, .data$DemoSignalState,
+      dplyr::if_else(is.na(.data$Flag), "Not assessed", "Not flagged")
+    ),
+    ActionReason = dplyr::case_when(
+      .data$ActionState == "Awaiting Triage" ~ "Awaiting triage",
+      is.na(.data$Flag) ~ "Not assessed",
+      .data$Flag == 0 ~ "Not flagged",
+      TRUE ~ .data$ActionReason
+    )
+  ) %>%
+  dplyr::select(-"DemoSignalState")
 
 site_results <- dplyr::bind_rows(
   dfResults,

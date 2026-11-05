@@ -125,6 +125,66 @@ test_that("dated action detail selects priority labels and is optional in workfl
   expect_equal(captured$lParams$strComparisonRiskLabel, "Review Priority Score")
 })
 
+test_that("site report demo actions match actual flagged snapshots (#280)", {
+  testthat::local_mocked_bindings(
+    MakeCharts = function(...) list(), .package = "gsm.kri"
+  )
+  testthat::local_mocked_bindings(
+    knit_child = function(...) character(), .package = "knitr"
+  )
+  source_path <- testthat::test_path("..", "..", "pkgdown", "menus", "examples", "Example_SiteReport.Rmd")
+  skip_if_not(file.exists(source_path), "Pkgdown examples are excluded from built packages")
+  script <- tempfile(fileext = ".R")
+  knitr::purl(source_path, output = script, quiet = TRUE)
+  example <- new.env(parent = asNamespace("gsm.kri"))
+  example_warnings <- character()
+  withCallingHandlers(
+    sys.source(script, envir = example),
+    warning = function(condition) {
+      example_warnings <<- c(example_warnings, conditionMessage(condition))
+      invokeRestart("muffleWarning")
+    }
+  )
+  expect_equal(example_warnings, character())
+  actions <- example$demo_action_log
+  keys <- c("StudyID", "SnapshotDate", "GroupLevel", "GroupID", "MetricID")
+  actual <- gsm.core::reportingResults[, c(keys, "Flag")]
+  matched <- merge(actions, actual, by = keys, suffixes = c("", "_actual"))
+  expect_equal(nrow(matched), nrow(actions))
+  expect_true(all(!is.na(matched$Flag_actual) & matched$Flag_actual != 0))
+  has_action <- !is.na(matched$ActionID)
+  expect_equal(matched$ActionedFlag[has_action], as.numeric(matched$Flag_actual[has_action]))
+  expect_true(all(actions$State %in% c("Open Action", "Closed Action", "Awaiting Triage")))
+  expect_true(all(c("Open Action", "Closed Action", "Awaiting Triage") %in% actions$State))
+  expect_true(all(actions$ActionedDate >= actions$SnapshotDate, na.rm = TRUE))
+  expect_true(all(actions$ActionedDate <= example$latest_snapshot, na.rm = TRUE))
+  expect_equal(anyDuplicated(stats::na.omit(actions$ActionID)), 0L)
+  pending <- actions$State == "Awaiting Triage"
+  expect_true(any(pending))
+  expect_true(all(is.na(actions$ActionID[pending]) & is.na(actions$ActionedDate[pending])))
+  expect_true(all(is.na(actions$ActionResolvedDate[actions$State == "Open Action"])))
+  closed <- actions$State == "Closed Action"
+  expect_true(all(actions$ActionResolvedDate[closed] >= actions$ActionCreatedDate[closed]))
+  current <- example$current_kri_results
+  detail <- example$action_score_detail
+  expect_equal(nrow(detail), nrow(current))
+  expect_false(any(detail$RecentlyAddressed[is.na(detail$Flag) | detail$Flag == 0]))
+  expect_true(all(detail$ActionState[!is.na(detail$LastActionedDate)] %in% c("Open Action", "Closed Action")))
+  expect_true(all(actions$ActionedDate >= min(gsm.core::reportingResults$SnapshotDate), na.rm = TRUE))
+  expect_true(any(detail$RecentlyAddressed))
+  expect_true(any(detail$ActionState == "Awaiting Triage"))
+  expect_true(any(example$action_weighted_score$Numerator > 0))
+  site_metric <- c("StudyID", "GroupLevel", "GroupID", "MetricID")
+  expect_true(all(vapply(split(actions$State, actions$MetricID), function(states) {
+    length(states) == 1L || length(unique(states)) > 1L
+  }, logical(1))))
+  active <- gsm.core::reportingMetrics
+  active <- active$MetricID[active$GroupLevel == "Site" & active$Active %in% TRUE]
+  expect_true(all(actions$MetricID %in% active))
+  current_flagged <- current[!is.na(current$Flag) & current$Flag != 0, site_metric]
+  expect_equal(nrow(merge(unique(actions[site_metric]), current_flagged, by = site_metric)), nrow(current_flagged))
+})
+
 test_that("Report_KRI renders without an action-weighted score (#280)", {
   skip_if_not(rmarkdown::pandoc_available())
 
