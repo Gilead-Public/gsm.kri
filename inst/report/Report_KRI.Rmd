@@ -89,7 +89,8 @@ GroupOverViz <- Widget_GroupOverview(
   ),
   strComparisonRiskMetric = params$strComparisonRiskMetric,
   strComparisonRiskLabel = params$strComparisonRiskLabel,
-  dfComparisonRiskDetail = params$dfRiskScoreDetail
+  dfComparisonRiskDetail = params$dfRiskScoreDetail,
+  dfResultsHistory = params$dfResults
 )
 
 overview_viz <- list(groupOverview = GroupOverViz)

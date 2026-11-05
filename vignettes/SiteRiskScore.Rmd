@@ -273,15 +273,25 @@ turning it off removes only the borders. Its state survives sorting and redraws,
 and action dates, details, and reported scores stay unchanged. There are no
 window, hide, or score-exclusion controls.
 
-Clicking a priority score opens its site's detail with
-last addressed date, age, decision state, review reason, contribution, and source
-IDs. Assessment date, extraction, and provenance are available on the detail row.
+Clicking a priority score opens a compact six-column breakdown: **KRI**,
+**Flag**, **Action state**, **Last Addressed**, **Days Ago**, and **Counted**.
+It includes a KRI if it was **flagged or actioned** within the inclusive
+90-day history, not only if it is flagged today. The report passes its full
+persisted snapshots through `dfResultsHistory`. Historical-only and now-green
+findings remain eligible; items with neither a recent flag nor a recent action
+are omitted. One row per KRI shows the latest flagged value in the window, or
+the reviewed flag for a recent action. The tooltip identifies the flagged
+snapshot and the current flag, which remains unchanged in the main matrix.
+**Counted** still reflects its reported score contribution; historical-only
+rows contribute nothing. Rows sort by **Last Addressed** newest first, then
+**absolute Flag** highest first, then **KRI number** ascending. Undated rows
+come last. Assessment date, extraction, and provenance are
+available in the detail row's tooltip.
 
-**Download review data** exports JSON for visible sites, including original
-risk scores, reported priority scores, and evidence for every KRI. The export
-keeps the fixed 90-day highlight window separate from the backend scoring
-window, which remains configurable for scripted runs. The widget never
-recalculates scores or writes back to the source system. Direct widget callers
+The review-data download button is removed. Complete evidence stays in the
+widget's supplied data. Backend scoring remains configurable for scripted
+runs; the widget never recalculates scores or writes back to the source system.
+Direct widget callers
 can supply the same detail through `dfComparisonRiskDetail` and should set
 `strComparisonRiskLabel = "Review Priority Score"`.
 
