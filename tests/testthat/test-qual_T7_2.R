@@ -63,7 +63,7 @@ testthat::test_that("Qual: Protocol Deviation Assessments can be done correctly 
   iwalk(
     test_custom,
     ~ expect_equal(
-      n_distinct(.x$Mapped_SUBJ[[tolower(kri_custom[[.y]]$meta$GroupLevel)]]),
+      CountTransformedGroups(.x$Analysis_Input),
       nrow(.x$Analysis_Transformed)
     )
   )

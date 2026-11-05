@@ -20,7 +20,11 @@ testthat::test_that("Widget_CrossStudyRiskScore creates an htmlwidget (#71)", {
   )
 
   testthat::local_mocked_bindings(
-    SummarizeCrossStudy = function(dfResults, strGroupLevel, dfGroups) {
+    SummarizeCrossStudy = function(
+        dfResults,
+        strGroupLevel,
+        dfGroups,
+        strRiskScoreMetric) {
       mock_summary
     }
   )
@@ -59,6 +63,58 @@ testthat::test_that("Widget_CrossStudyRiskScore errors if Analysis_srs0001 is mi
     ),
     "Analysis_srs0001"
   )
+})
+
+testthat::test_that("Widget_CrossStudyRiskScore supports an explicit SRS metric (#280)", {
+  dfResults <- data.frame(
+    MetricID = "Analysis_srs0002",
+    Value = 0.5
+  )
+  dfMetrics <- data.frame(
+    MetricID = "Analysis_srs0002",
+    MetricName = "Action-weighted Risk Score"
+  )
+  dfGroups <- data.frame(GroupID = "SiteA", Site = "SiteA")
+  captured_metric <- NULL
+
+  testthat::local_mocked_bindings(
+    SummarizeCrossStudy = function(
+        dfResults,
+        strGroupLevel,
+        dfGroups,
+        strRiskScoreMetric) {
+      captured_metric <<- strRiskScoreMetric
+      data.frame(GroupID = "SiteA", RiskScore = 0.5)
+    }
+  )
+  widget <- Widget_CrossStudyRiskScore(
+    dfResults,
+    dfMetrics,
+    dfGroups,
+    strRiskScoreMetric = "Analysis_srs0002"
+  )
+
+  expect_equal(captured_metric, "Analysis_srs0002")
+  expect_equal(
+    jsonlite::fromJSON(widget$x$strSiteRiskMetric),
+    "Analysis_srs0002"
+  )
+})
+
+test_that("Cross-study widget JavaScript uses the configured SRS metric (#280)", {
+  js <- readLines(system.file(
+    "htmlwidgets",
+    "lib",
+    "renderCrossStudyRiskScoreTable.js",
+    package = "gsm.kri"
+  ))
+
+  expect_true(any(grepl("input.strSiteRiskMetric", js, fixed = TRUE)))
+  expect_false(any(grepl(
+    "MetricID === 'Analysis_srs0001'",
+    js,
+    fixed = TRUE
+  )))
 })
 
 testthat::test_that("Widget_CrossStudyRiskScore validates inputs (#71)", {

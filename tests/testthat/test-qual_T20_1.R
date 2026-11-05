@@ -1,6 +1,3 @@
-# Double programming: the expected results are derived independently of
-# Detect_ConsecutiveRepeats() and the gsm.core rate pipeline, using a
-# pairwise-comparison definition of a repeat window rather than run lengths.
 independent_repeats <- function(dfVS, strCol, nWindow = 3) {
   dfVS <- dfVS[!is.na(dfVS[[strCol]]), ]
   dfVS <- dfVS[order(dfVS$subjid, dfVS$vs_dt, dfVS$visit), ]
@@ -9,15 +6,15 @@ independent_repeats <- function(dfVS, strCol, nWindow = 3) {
     subjid = names(lSubj),
     Numerator = vapply(
       lSubj,
-      function(x) {
-        n <- length(x)
-        if (n < nWindow) {
+      function(values) {
+        count <- length(values)
+        if (count < nWindow) {
           return(0)
         }
         sum(vapply(
-          seq_len(n - nWindow + 1),
-          function(i) {
-            all(x[i:(i + nWindow - 1)] == x[i])
+          seq_len(count - nWindow + 1),
+          function(index) {
+            all(values[index:(index + nWindow - 1)] == values[index])
           },
           logical(1)
         ))
@@ -26,7 +23,7 @@ independent_repeats <- function(dfVS, strCol, nWindow = 3) {
     ),
     Denominator = vapply(
       lSubj,
-      function(x) max(0, length(x) - nWindow + 1),
+      function(values) max(0, length(values) - nWindow + 1),
       numeric(1)
     )
   )

@@ -12,6 +12,23 @@
 #' @param strOutputFile The output file name for the generated report. If not provided,
 #'  the report will be named based on the study ID, Group Level and Date.
 #' @param strInputPath `string` or `fs_path` Path to the template `Rmd` file.
+#' @param strComparisonRiskMetric Optional metric ID displayed immediately after
+#'   the existing Site Risk Score in the site overview. The column is omitted
+#'   when the metric is absent from `dfResults`. Default: `"Analysis_srs0002"`.
+#' @param strComparisonRiskLabel Column label for the comparison risk score.
+#'   Default: `"Review Priority Score"` for dated action detail, otherwise
+#'   `"Adjusted Risk Score"`. An explicit label is always preserved.
+#' @param strGroupSubset Optional group subset passed to the report's group
+#'   overview. `NULL` preserves the report default (`"red"` for site reports,
+#'   `"all"` otherwise).
+#' @param dfRiskScoreDetail Optional per-KRI detail behind the second risk
+#'   score, from [MakeActionRiskScoreDetail()]. Clicking a score in that column
+#'   lists each KRI's action evidence and whether it counts toward the score.
+#'   Dated detail adds a border to each site/KRI cell with a recorded action
+#'   within 90 days, without changing scores or flag colors. Ignored when the
+#'   comparison metric is absent from `dfResults`. Default: `NULL`.
+#' @param lData Optional workflow domain list. Used to obtain
+#'   `Analysis_ActionRiskScoreDetail` when `dfRiskScoreDetail` is NULL.
 #'
 #' @return File path of the saved report html is returned invisibly. Save to object to view absolute output path.
 #' @examples
@@ -70,10 +87,45 @@ Report_KRI <- function(
   dfGroups = NULL,
   strOutputDir = getwd(),
   strOutputFile = NULL,
-  strInputPath = system.file("report", "Report_KRI.Rmd", package = "gsm.kri")
+  strInputPath = system.file("report", "Report_KRI.Rmd", package = "gsm.kri"),
+  strComparisonRiskMetric = "Analysis_srs0002",
+  strComparisonRiskLabel = "Adjusted Risk Score",
+  strGroupSubset = NULL,
+  dfRiskScoreDetail = NULL,
+  lData = NULL
 ) {
   rlang::check_installed("rmarkdown", reason = "to run `Report_KRI()`")
   rlang::check_installed("knitr", reason = "to run `Report_KRI()`")
+  if (!is.null(lData) && !is.list(lData)) {
+    cli::cli_abort("{.arg lData} must be NULL or a workflow domain list.")
+  }
+  if (is.null(dfRiskScoreDetail) && !is.null(lData)) {
+    dfRiskScoreDetail <- lData[["Analysis_ActionRiskScoreDetail"]]
+  }
+  if (missing(strComparisonRiskLabel) && is.data.frame(dfRiskScoreDetail) &&
+      "ActionWindowDays" %in% names(dfRiskScoreDetail)) {
+    strComparisonRiskLabel <- "Review Priority Score"
+  }
+  if (!is.null(strComparisonRiskMetric) &&
+    (!rlang::is_string(strComparisonRiskMetric) ||
+      !nzchar(strComparisonRiskMetric))) {
+    cli::cli_abort(
+      "{.arg strComparisonRiskMetric} must be NULL or a single non-missing string."
+    )
+  }
+  if (!rlang::is_string(strComparisonRiskLabel) ||
+      !nzchar(strComparisonRiskLabel)) {
+    cli::cli_abort(
+      "{.arg strComparisonRiskLabel} must be a single non-missing string."
+    )
+  }
+  if (!is.null(strGroupSubset) &&
+      (!rlang::is_string(strGroupSubset) ||
+        !strGroupSubset %in% c("all", "red", "red/amber", "amber"))) {
+    cli::cli_abort(
+      "{.arg strGroupSubset} must be NULL or one of {.or {c('all', 'red', 'red/amber', 'amber')}}."
+    )
+  }
 
   # set output path
   if (is.null(strOutputFile)) {
@@ -108,7 +160,11 @@ Report_KRI <- function(
       lCharts = lCharts,
       dfResults = dfResults,
       dfMetrics = dfMetrics,
-      dfGroups = dfGroups
+      dfGroups = dfGroups,
+      strComparisonRiskMetric = strComparisonRiskMetric,
+      strComparisonRiskLabel = strComparisonRiskLabel,
+      strGroupSubset = strGroupSubset,
+      dfRiskScoreDetail = dfRiskScoreDetail
     )
   )
 }

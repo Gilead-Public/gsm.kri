@@ -1,5 +1,46 @@
 # gsm.kri (development version)
 
+- Added an explicit opt-in `strActionPolicy = "disposition"` draft. It keeps
+  original metric-specific flag weights and the full denominator, applying
+  state factors only while a documented decision is recent and applicable.
+  Defaults keep Open/Closed weights and temporarily exclude No Action only.
+  The site example previews this model as Adjusted Risk Score (Draft); existing
+  recent-review and legacy defaults remain unchanged (#280).
+- Added `MakeActionSummary()` for the latest documented monitoring decision
+  across all eligible signal snapshots per site/KRI, including zero-weight
+  results. Explicit event dates and provenance are required; signal creation
+  and extraction dates are never substituted. Recency and coverage are separate,
+  and incomplete, escalated, reopened, critical, or conflicting evidence cannot
+  suppress a contribution (#280).
+- The `srs0002` workflow now defaults to a configurable 90-day Review Priority
+  Score, keeps the full original denominator, and returns
+  `Analysis_ActionRiskScoreDetail` for the site report. Unknown dates retain
+  full contribution. Dated detail adds a border to each site/KRI cell with a
+  recorded action within 90 days; the table has no hide or score-exclusion
+  controls and leaves reported scores and flag colors unchanged.
+  Direct callers retain legacy state weighting unless they specify
+  `intActionWindowDays` (#280).
+- Added `CalculateActionRiskScore()` and the `srs0002` workflow for an
+  action-status-weighted Site Risk Score. Open, closed, and awaiting-triage
+  findings are included by default; no-action findings are excluded; missing
+  nonzero action states fail unless an explicit fallback is configured. The
+  full raw SRS denominator is retained. For each site and metric, the latest
+  signal snapshot on or before the results snapshot (or
+  `dActionSnapshotDate`) is applied within a complete frozen extraction.
+  `dActionExtractionDate` selects the extraction cutoff; later-extracted
+  decisions are not used by default. Multiple actions use the largest factor
+  and retain character identifiers and extraction provenance in the detail.
+  Legacy state mode conservatively supports including missing states (#280).
+- Added `MakeActionRiskScoreDetail()`, which returns the per-KRI contributions
+  behind the action-weighted score, and a `dfRiskScoreDetail` argument to
+  `Report_KRI()` that shows them in the site overview (#280).
+- Added configurable risk-score MetricIDs to the cross-study summary and widget
+  APIs while retaining `Analysis_srs0001` as the default (#280).
+- Extended the existing site overview in `Report_KRI()` to display an adjusted
+  Site Risk Score immediately after the original Risk Score when
+  `Analysis_srs0002` is available. Direct `Widget_GroupOverview()` consumers
+  retain the original single-score layout unless they opt in (#280).
+
 # gsm.kri v1.8.0
 
 This minor release adds the IP Monitoring report and metrics (IP non-starters and premature treatment discontinuation) and the repeat-measure vital-sign KRIs.

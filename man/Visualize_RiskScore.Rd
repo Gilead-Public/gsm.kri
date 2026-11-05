@@ -4,7 +4,13 @@
 \alias{Visualize_RiskScore}
 \title{Visualize Risk Score}
 \usage{
-Visualize_RiskScore(dfResults, dfMetrics, dfGroups, strGroupLevel = "Site")
+Visualize_RiskScore(
+  dfResults,
+  dfMetrics,
+  dfGroups,
+  strGroupLevel = "Site",
+  strRiskScoreMetric = "Analysis_srs0001"
+)
 }
 \arguments{
 \item{dfResults}{`data.frame` Analysis results from CalculateRiskScore}
@@ -15,6 +21,9 @@ Visualize_RiskScore(dfResults, dfMetrics, dfGroups, strGroupLevel = "Site")
 
 \item{strGroupLevel}{`character` The group level to filter the risk score
 data. Default is 'Site'.}
+
+\item{strRiskScoreMetric}{`character` Risk score MetricID to display.
+Defaults to `"Analysis_srs0001"`.}
 }
 \description{
 Creates an interactive risk score widget for cross-study visualization.
