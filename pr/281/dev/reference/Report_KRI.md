@@ -18,7 +18,8 @@ Report_KRI(
   strComparisonRiskMetric = "Analysis_srs0002",
   strComparisonRiskLabel = "Adjusted Risk Score",
   strGroupSubset = NULL,
-  dfRiskScoreDetail = NULL
+  dfRiskScoreDetail = NULL,
+  lData = NULL
 )
 ```
 
@@ -73,8 +74,9 @@ Report_KRI(
 
 - strComparisonRiskLabel:
 
-  Column label for the comparison risk score. Default: \`"Adjusted Risk
-  Score"\`.
+  Column label for the comparison risk score. Default: \`"Review
+  Priority Score"\` for dated action detail, otherwise \`"Adjusted Risk
+  Score"\`. An explicit label is always preserved.
 
 - strGroupSubset:
 
@@ -85,10 +87,16 @@ Report_KRI(
 - dfRiskScoreDetail:
 
   Optional per-KRI detail behind the second risk score, from
-  \[MakeActionRiskScoreDetail()\]. When supplied, clicking a score in
-  that column of the site overview lists its KRIs, their action state,
-  and whether each counts toward the score. Ignored when the metric is
+  \[MakeActionRiskScoreDetail()\]. Clicking a score in that column lists
+  each KRI's action evidence and whether it counts toward the score.
+  Dated detail enables configurable window, visibility, and
+  priority-preview controls. Ignored when the comparison metric is
   absent from \`dfResults\`. Default: \`NULL\`.
+
+- lData:
+
+  Optional workflow domain list. Used to obtain
+  \`Analysis_ActionRiskScoreDetail\` when \`dfRiskScoreDetail\` is NULL.
 
 ## Value
 

@@ -3,6 +3,23 @@
 ## gsm.kri (development version)
 
 - Added
+  [`MakeActionSummary()`](https://gilead-public.github.io/gsm.kri/dev/reference/MakeActionSummary.md)
+  for the latest documented monitoring decision across all eligible
+  signal snapshots per site/KRI, including zero-weight results. Explicit
+  event dates and provenance are required; signal creation and
+  extraction dates are never substituted. Recency and coverage are
+  separate, and incomplete, escalated, reopened, critical, or
+  conflicting evidence cannot suppress a contribution
+  ([\#280](https://github.com/Gilead-Public/gsm.kri/issues/280)).
+- The `srs0002` workflow now defaults to a configurable 90-day Review
+  Priority Score, keeps the full original denominator, and returns
+  `Analysis_ActionRiskScoreDetail` for the site report. Unknown dates
+  retain full contribution. Dated detail enables window, hide, and
+  priority-preview controls in the companion table; the original SRS and
+  flags stay unchanged. Direct callers retain legacy state weighting
+  unless they specify `intActionWindowDays`
+  ([\#280](https://github.com/Gilead-Public/gsm.kri/issues/280)).
+- Added
   [`CalculateActionRiskScore()`](https://gilead-public.github.io/gsm.kri/dev/reference/CalculateActionRiskScore.md)
   and the `srs0002` workflow for an action-status-weighted Site Risk
   Score. Open, closed, and awaiting-triage findings are included by
@@ -14,7 +31,8 @@
   `dActionExtractionDate` selects the extraction cutoff; later-extracted
   decisions are not used by default. Multiple actions use the largest
   factor and retain character identifiers and extraction provenance in
-  the detail. The workflow conservatively includes missing states
+  the detail. Legacy state mode conservatively supports including
+  missing states
   ([\#280](https://github.com/Gilead-Public/gsm.kri/issues/280)).
 - Added
   [`MakeActionRiskScoreDetail()`](https://gilead-public.github.io/gsm.kri/dev/reference/MakeActionRiskScoreDetail.md),
@@ -33,6 +51,16 @@
   [`Widget_GroupOverview()`](https://gilead-public.github.io/gsm.vizr/reference/Widget_GroupOverview.html)
   consumers retain the original single-score layout unless they opt in
   ([\#280](https://github.com/Gilead-Public/gsm.kri/issues/280)).
+
+## gsm.kri v1.8.0
+
+This minor release adds the IP Monitoring report and metrics (IP
+non-starters and premature treatment discontinuation) and the
+repeat-measure vital-sign KRIs.
+
+- Refactored the Eligibility report workflow’s module configuration and
+  queries
+  ([\#351](https://github.com/Gilead-Public/gsm.kri/issues/351)).
 - Add the IP monitoring report for IP non-starters and premature
   treatment discontinuations. Dosed participants are shown by study drug
   completion, including potential premature treatment discontinuations,

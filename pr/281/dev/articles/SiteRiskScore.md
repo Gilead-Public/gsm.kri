@@ -216,14 +216,151 @@ KRI workflow using the `srs0001.yaml` workflow file located in
     includes a column showing the normalized site risk score for each
     site for a single study.
 
-### Action-status-weighted Site Risk Score
+### Review Priority Score
 
-The `srs0002` variant (**Adjusted Risk Score**) starts from the same KRI
-flag weights as `srs0001` and multiplies each KRI’s contribution by a
-factor taken from its Central Monitoring ActionLog state. The
-denominator is unchanged, so a finding triaged as needing no action
-stops counting toward the site’s score without shrinking the scale the
-score is measured on.
+The `srs0002` workflow now answers a different question from the
+original Site Risk Score: which KRI contributions still require
+monitoring review? The original `srs0001`, KRI flags, and full
+maximum-risk denominator are unchanged. A recent response is evidence of
+monitoring activity, not evidence that the underlying risk has
+disappeared.
+
+#### Last addressed date
+
+[`MakeActionSummary()`](https://gilead-public.github.io/gsm.kri/dev/reference/MakeActionSummary.md)
+returns one row per current study/site/KRI, including green,
+zero-weight, and unweighted results. It selects a complete frozen
+extraction first, then considers all eligible signal snapshots for that
+KRI. A new signal at a later snapshot does not discard an earlier dated
+decision. Multiple actions never multiply the current KRI contribution.
+
+The window defaults to 90 days and is inclusive: day 90 is Recent and
+day 91 is Expired. The last known date remains available after expiry.
+Age is measured against `dActionAsOfDate`, which defaults to the results
+snapshot rather than the computer’s current date. A later assessment
+date can be supplied for a subsequent monitoring review. The extraction
+cutoff defaults to that assessment date; an explicit
+`dActionExtractionDate` can select a later archived freeze. Signal
+snapshots after the results snapshot and decision events after the
+assessment date are not used. Never fill gaps from another extraction.
+
+#### Authoritative decision evidence
+
+An existing ActionLog state or work-item creation date cannot establish
+when a human addressed a finding. Supply these additive fields from a
+source-system decision record or audit trail, enriching the projected
+ActionLog before scoring:
+
+| Field | Meaning |
+|----|----|
+| `ActionedDate` | Date of the documented monitoring decision or substantive action |
+| `ActionedDateSource` | Nonempty provenance describing the source decision evidence |
+| `ActionedFlag` | Numeric KRI flag reviewed at that decision |
+| `ActionScope` | `SiteMetric` for the ongoing site/KRI finding, or `Signal` for its signal snapshot only |
+| `RiskEpisodeID` | Optional identity separating independent findings within one KRI |
+| `ActionReopened` | Optional logical indication that a finding was reopened |
+| `ActionCriticality` | Logical critical-action designation when available |
+| `ActionEventID` | Optional event identity distinguishing repeated decisions for one action |
+
+These are not fields produced by the existing upstream 33-column
+projection. Existing logs remain accepted, but their missing dates are
+Unknown and cannot justify exclusion. In particular, ADO’s
+`ActionCreatedDate` is the creation date of the shared signal/action
+work item, not necessarily its human triage date. Signal creation,
+resolution, extraction, and general edit dates are not silently
+substituted for `ActionedDate`.
+
+A documented Open Action, Closed Action, or No Action decision may
+qualify. Awaiting Triage never does. Including a dated No Action
+decision is why the table uses **Last addressed**, rather than implying
+completed mitigation. Set `bActionHistoryComplete = TRUE` only when the
+selected extraction contains the complete relevant decision history.
+Without that assertion, known dates can be displayed but cannot suppress
+contributions. Never requires complete history; undated decision
+evidence remains Unknown.
+
+#### Coverage and priority
+
+A recent date and a decision’s applicability are separate facts.
+SiteMetric scope explicitly certifies applicability to the ongoing
+finding across repeated snapshots; it must not be assigned merely
+because site and metric IDs match. Signal scope applies only at its
+originating snapshot. Increased severity, changed direction, different
+or unknown episodes, reopened or critical actions, undated decisions,
+conflicting latest-day coverage, and unknown reviewed severity retain
+the full contribution. Equal-date ties use deterministic ID ordering
+only for a representative audit row, not to resolve conflicting
+evidence.
+
+With `intActionWindowDays` supplied, the action factor is zero only for
+a recent, covered decision and one otherwise. Only the numerator is
+adjusted; the denominator remains the original full SRS denominator. A
+window of zero includes decisions on the assessment date only.
+
+``` r
+
+action_score_detail <- MakeActionRiskScoreDetail(
+  dfResults = current_kri_results,
+  dfWeights = MakeWeights(reporting_metrics),
+  dfActionLog = decision_enriched_action_log,
+  intActionWindowDays = 90,
+  bActionHistoryComplete = TRUE
+)
+
+priority_score <- CalculateActionRiskScore(
+  dfResults = current_kri_results,
+  dfWeights = MakeWeights(reporting_metrics),
+  dfActionLog = decision_enriched_action_log,
+  intActionWindowDays = 90,
+  bActionHistoryComplete = TRUE
+)
+```
+
+The workflow reads persisted `Analysis_Summary` and
+`Reporting_ActionLog`, keeping credentials outside this package.
+Configure `meta.ActionWindowDays`, `meta.ActionAsOfDate`,
+`meta.ActionExtractionDate`, and `meta.ActionHistoryComplete`. Defaults
+are 90, NULL, NULL, and FALSE. It returns both `Analysis_srs0002` and
+`Analysis_ActionRiskScoreDetail`; the site report module consumes detail
+when available. Persist these configuration values and the selected
+extraction to reproduce a run.
+
+#### Table controls
+
+With dated detail,
+[`Report_KRI()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_KRI.md)
+labels the second measure **Review Priority Score** unless an explicit
+label is supplied. Every KRI stays visible by default. Covered recent
+findings receive a subdued treatment while the original flags remain
+unchanged. Clicking a priority score opens its site’s detail with last
+addressed date, age, decision state, review reason, contribution, and
+source IDs. Assessment date, extraction, and provenance are available on
+the detail row.
+
+- **Action window (days)** changes the inclusive review window.
+- **Hide recently addressed** changes presentation only, not scores or
+  filtering by original flags.
+- **Exclude recently addressed from priority score** changes only the
+  priority numerator and reapplies the active sort.
+- **Download review data** exports JSON for the visible sites, including
+  original risk scores, persisted priority scores, active preview
+  scores/settings, and evidence for all their KRIs, including hidden
+  rows.
+
+Window and exclusion changes are marked **preview** and do not write
+back to the source system or replace the persisted report score. Direct
+widget callers can supply the same detail through
+`dfComparisonRiskDetail` and should set
+`strComparisonRiskLabel = "Review Priority Score"`.
+
+#### Legacy state weighting
+
+Direct calls with `intActionWindowDays = NULL` preserve the legacy
+**Adjusted Risk Score**. It starts from the same KRI flag weights as
+`srs0001` and multiplies each KRI’s contribution by a factor taken from
+its Central Monitoring ActionLog state. The denominator is unchanged, so
+a finding triaged as needing no action stops counting toward the site’s
+score without shrinking the scale the score is measured on.
 
 #### Formula
 
@@ -257,7 +394,7 @@ score of `75`.
 
 Including `Awaiting Triage` is a conservative default so that unreviewed
 findings do not understate site risk. Factors can be changed with
-`lActionFactors`, or `meta.ActionFactors` in `srs0002.yaml`.
+`lActionFactors` in legacy function calls, not the date-window workflow.
 
 ``` r
 
@@ -307,24 +444,13 @@ transitions.
 A KRI with a nonzero weight and no matching ActionLog entry is an error
 by default (`strMissingState = "error"`). Choose `"include"` to count
 its full weight until it is triaged, or `"exclude"` to drop it.
-Zero-weight KRIs never need an ActionLog entry. The workflow defaults to
-`"include"` because new or deliberately suppressed signals may have no
-source-system record; the function keeps its explicit `"error"` default
-for callers needing strict completeness.
+Zero-weight KRIs never need an ActionLog entry. Including missing states
+is conservative because new or deliberately suppressed signals may have
+no source-system record. These fallbacks apply only to legacy calls;
+date-window mode always includes unknown evidence regardless of
+`strMissingState`.
 
-#### Workflow
-
-The `srs0002.yaml` workflow reads the persisted `Analysis_Summary` and
-`Reporting_ActionLog` domains, which keeps ADO credentials and
-extraction timing outside
-[gsm.kri](https://github.com/Gilead-Public/gsm.kri), and returns
-`Analysis_srs0002` alongside `srs0001`. The original `srs0001` remains
-unchanged as the comparison and rollback baseline.
-`meta.ActionExtractionDate` is optional and defaults to the results
-snapshot; set it to a `Date` or an ISO `YYYY-MM-DD` string when a
-persisted scoring run used a later frozen extraction.
-
-#### Reporting
+#### Legacy reporting
 
 When both scores are present, the site-level
 [`Report_KRI()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_KRI.md)
@@ -341,9 +467,10 @@ identifiers, and `ActionCount` for audit.
 summarizes these same rows, so the two always agree. Passing them to
 `Report_KRI(dfRiskScoreDetail = ...)` makes each Adjusted Risk Score
 clickable: a row opens under the site listing each weighted KRI’s flag,
-action state, ActionLog date, and whether it counts toward the score
-(Yes, Partly, or No). The Adjusted Risk Score is its own measure, so the
-report does not present it as a difference from the Risk Score.
+action state, signal snapshot, and whether it counts toward the score
+(Yes, Partly, or No), with excluded KRIs shown in grey. The Adjusted
+Risk Score is its own measure, so the report does not present it as a
+difference from the Risk Score.
 
 ``` r
 

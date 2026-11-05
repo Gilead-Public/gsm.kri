@@ -1,7 +1,7 @@
-# Calculate an action-status-weighted Site Risk Score
+# Calculate an action-aware Site Risk or Review Priority Score
 
-Applies Central Monitoring ActionLog states to existing KRI flag
-weights. Action factors affect only numerator contributions; the
+Applies dated monitoring decisions or legacy ActionLog state factors to
+KRI weights. Action factors affect only numerator contributions; the
 denominator remains the full maximum-risk denominator used by
 \[CalculateRiskScore()\]. The per-KRI contributions behind the score are
 available from \[MakeActionRiskScoreDetail()\].
@@ -18,7 +18,10 @@ CalculateActionRiskScore(
   strMissingState = c("error", "include", "exclude"),
   strMetricID = "Analysis_srs0002",
   dActionSnapshotDate = NULL,
-  dActionExtractionDate = NULL
+  dActionExtractionDate = NULL,
+  intActionWindowDays = NULL,
+  dActionAsOfDate = NULL,
+  bActionHistoryComplete = FALSE
 )
 ```
 
@@ -49,12 +52,14 @@ CalculateActionRiskScore(
 - lActionFactors:
 
   Named numeric state-factor mapping. Defaults to include open, closed,
-  and awaiting-triage findings and exclude no-action findings.
+  and awaiting-triage findings and exclude no-action findings. Used only
+  when \`intActionWindowDays\` is NULL.
 
 - strMissingState:
 
   Policy for a missing action state on a nonzero KRI weight: stop with
-  an error, include the weight, or exclude the weight.
+  an error, include the weight, or exclude the weight. Used only in
+  legacy mode; date-window mode always includes unknown evidence.
 
 - strMetricID:
 
@@ -69,12 +74,30 @@ CalculateActionRiskScore(
 - dActionExtractionDate:
 
   \`Date\` or ISO \`YYYY-MM-DD\` cutoff for frozen ActionLog
-  extractions. \`NULL\` uses the results snapshot date. The latest
-  complete extraction on or before this cutoff is selected, without
-  filling gaps from older extractions. Set an explicit date when
-  replaying a scoring run whose ActionLog was frozen after the data
-  snapshot. Signal snapshot dates do not establish when action states
-  became known.
+  extractions. \`NULL\` uses the results snapshot date, or
+  \`dActionAsOfDate\` in date-window mode. The latest complete
+  extraction on or before this cutoff is selected, without filling gaps
+  from older extractions. Set an explicit date when replaying a scoring
+  run whose ActionLog was frozen after the data snapshot. Signal
+  snapshot dates do not establish when action states became known.
+
+- intActionWindowDays:
+
+  Optional nonnegative integer. When supplied, calculate review priority
+  using \[MakeActionSummary()\] instead of legacy state factors.
+  Recently addressed, covered KRIs contribute zero; all others retain
+  their original contribution. NULL preserves state weighting.
+
+- dActionAsOfDate:
+
+  Optional Date or ISO date for action age in date-window mode. Defaults
+  to the results snapshot, not today's date.
+
+- bActionHistoryComplete:
+
+  Whether the selected extraction contains the complete decision
+  history. Default FALSE; incomplete evidence never excludes a
+  contribution in date-window mode.
 
 ## Value
 

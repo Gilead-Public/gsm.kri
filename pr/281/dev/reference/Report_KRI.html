@@ -9,7 +9,7 @@ This function generates a KRI report based on the provided inputs."><meta name="
 
     <a class="navbar-brand me-2" href="../index.html">gsm.kri</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">1.7.0.9001</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">1.8.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,7 +69,8 @@ This function generates a KRI report based on the provided inputs."><meta name="
 <span>  strComparisonRiskMetric <span class="op">=</span> <span class="st">"Analysis_srs0002"</span>,</span>
 <span>  strComparisonRiskLabel <span class="op">=</span> <span class="st">"Adjusted Risk Score"</span>,</span>
 <span>  strGroupSubset <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  dfRiskScoreDetail <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  dfRiskScoreDetail <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  lData <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -126,7 +127,8 @@ when the metric is absent from `dfResults`. Default: `"Analysis_srs0002"`.</p></
 
 <dt id="arg-strcomparisonrisklabel">strComparisonRiskLabel<a class="anchor" aria-label="anchor" href="#arg-strcomparisonrisklabel"></a></dt>
 <dd><p>Column label for the comparison risk score.
-Default: `"Adjusted Risk Score"`.</p></dd>
+Default: `"Review Priority Score"` for dated action detail, otherwise
+`"Adjusted Risk Score"`. An explicit label is always preserved.</p></dd>
 
 
 <dt id="arg-strgroupsubset">strGroupSubset<a class="anchor" aria-label="anchor" href="#arg-strgroupsubset"></a></dt>
@@ -137,10 +139,16 @@ overview. `NULL` preserves the report default (`"red"` for site reports,
 
 <dt id="arg-dfriskscoredetail">dfRiskScoreDetail<a class="anchor" aria-label="anchor" href="#arg-dfriskscoredetail"></a></dt>
 <dd><p>Optional per-KRI detail behind the second risk
-score, from [MakeActionRiskScoreDetail()]. When supplied, clicking a score
-in that column of the site overview lists its KRIs, their action state, and
-whether each counts toward the score. Ignored when the metric is absent
-from `dfResults`. Default: `NULL`.</p></dd>
+score, from [MakeActionRiskScoreDetail()]. Clicking a score in that column
+lists each KRI's action evidence and whether it counts toward the score.
+Dated detail enables configurable
+window, visibility, and priority-preview controls. Ignored when the
+comparison metric is absent from `dfResults`. Default: `NULL`.</p></dd>
+
+
+<dt id="arg-ldata">lData<a class="anchor" aria-label="anchor" href="#arg-ldata"></a></dt>
+<dd><p>Optional workflow domain list. Used to obtain
+`Analysis_ActionRiskScoreDetail` when `dfRiskScoreDetail` is NULL.</p></dd>
 
 </dl></div>
     <div class="section level2">

@@ -3,7 +3,7 @@
 ## All functions
 
 - [`CalculateActionRiskScore()`](https://gilead-public.github.io/gsm.kri/dev/reference/CalculateActionRiskScore.md)
-  : Calculate an action-status-weighted Site Risk Score
+  : Calculate an action-aware Site Risk or Review Priority Score
 - [`CalculateRiskScore()`](https://gilead-public.github.io/gsm.kri/dev/reference/CalculateRiskScore.md)
   : Calculate Risk Score
 - [`Detect_ConsecutiveRepeats()`](https://gilead-public.github.io/gsm.kri/dev/reference/Detect_ConsecutiveRepeats.md)
@@ -16,6 +16,8 @@
   : Filter by Latest Snapshot Date
 - [`MakeActionRiskScoreDetail()`](https://gilead-public.github.io/gsm.kri/dev/reference/MakeActionRiskScoreDetail.md)
   : Per-KRI detail behind an action-status-weighted Site Risk Score
+- [`MakeActionSummary()`](https://gilead-public.github.io/gsm.kri/dev/reference/MakeActionSummary.md)
+  : Summarize dated monitoring decisions across KRI signal snapshots
 - [`MakeCharts()`](https://gilead-public.github.io/gsm.kri/dev/reference/MakeCharts.md)
   : Helper function to create charts for multiple metrics
 - [`MakeMetricTable()`](https://gilead-public.github.io/gsm.kri/dev/reference/MakeMetricTable.md)

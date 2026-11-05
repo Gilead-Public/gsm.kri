@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">gsm.kri</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">1.7.0.9001</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">1.8.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -426,15 +426,196 @@ for a single study.</li>
 </div>
 </div>
 <div class="section level3">
-<h3 id="action-status-weighted-site-risk-score">Action-status-weighted Site Risk Score<a class="anchor" aria-label="anchor" href="#action-status-weighted-site-risk-score"></a>
+<h3 id="review-priority-score">Review Priority Score<a class="anchor" aria-label="anchor" href="#review-priority-score"></a>
 </h3>
-<p>The <code>srs0002</code> variant (<strong>Adjusted Risk
-Score</strong>) starts from the same KRI flag weights as
-<code>srs0001</code> and multiplies each KRI’s contribution by a factor
-taken from its Central Monitoring ActionLog state. The denominator is
-unchanged, so a finding triaged as needing no action stops counting
-toward the site’s score without shrinking the scale the score is
-measured on.</p>
+<p>The <code>srs0002</code> workflow now answers a different question
+from the original Site Risk Score: which KRI contributions still require
+monitoring review? The original <code>srs0001</code>, KRI flags, and
+full maximum-risk denominator are unchanged. A recent response is
+evidence of monitoring activity, not evidence that the underlying risk
+has disappeared.</p>
+<div class="section level4">
+<h4 id="last-addressed-date">Last addressed date<a class="anchor" aria-label="anchor" href="#last-addressed-date"></a>
+</h4>
+<p><code><a href="../reference/MakeActionSummary.html">MakeActionSummary()</a></code> returns one row per current
+study/site/KRI, including green, zero-weight, and unweighted results. It
+selects a complete frozen extraction first, then considers all eligible
+signal snapshots for that KRI. A new signal at a later snapshot does not
+discard an earlier dated decision. Multiple actions never multiply the
+current KRI contribution.</p>
+<p>The window defaults to 90 days and is inclusive: day 90 is Recent and
+day 91 is Expired. The last known date remains available after expiry.
+Age is measured against <code>dActionAsOfDate</code>, which defaults to
+the results snapshot rather than the computer’s current date. A later
+assessment date can be supplied for a subsequent monitoring review. The
+extraction cutoff defaults to that assessment date; an explicit
+<code>dActionExtractionDate</code> can select a later archived freeze.
+Signal snapshots after the results snapshot and decision events after
+the assessment date are not used. Never fill gaps from another
+extraction.</p>
+</div>
+<div class="section level4">
+<h4 id="authoritative-decision-evidence">Authoritative decision evidence<a class="anchor" aria-label="anchor" href="#authoritative-decision-evidence"></a>
+</h4>
+<p>An existing ActionLog state or work-item creation date cannot
+establish when a human addressed a finding. Supply these additive fields
+from a source-system decision record or audit trail, enriching the
+projected ActionLog before scoring:</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>Field</th>
+<th>Meaning</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>ActionedDate</code></td>
+<td>Date of the documented monitoring decision or substantive
+action</td>
+</tr>
+<tr class="even">
+<td><code>ActionedDateSource</code></td>
+<td>Nonempty provenance describing the source decision evidence</td>
+</tr>
+<tr class="odd">
+<td><code>ActionedFlag</code></td>
+<td>Numeric KRI flag reviewed at that decision</td>
+</tr>
+<tr class="even">
+<td><code>ActionScope</code></td>
+<td>
+<code>SiteMetric</code> for the ongoing site/KRI finding, or
+<code>Signal</code> for its signal snapshot only</td>
+</tr>
+<tr class="odd">
+<td><code>RiskEpisodeID</code></td>
+<td>Optional identity separating independent findings within one
+KRI</td>
+</tr>
+<tr class="even">
+<td><code>ActionReopened</code></td>
+<td>Optional logical indication that a finding was reopened</td>
+</tr>
+<tr class="odd">
+<td><code>ActionCriticality</code></td>
+<td>Logical critical-action designation when available</td>
+</tr>
+<tr class="even">
+<td><code>ActionEventID</code></td>
+<td>Optional event identity distinguishing repeated decisions for one
+action</td>
+</tr>
+</tbody>
+</table>
+<p>These are not fields produced by the existing upstream 33-column
+projection. Existing logs remain accepted, but their missing dates are
+Unknown and cannot justify exclusion. In particular, ADO’s
+<code>ActionCreatedDate</code> is the creation date of the shared
+signal/action work item, not necessarily its human triage date. Signal
+creation, resolution, extraction, and general edit dates are not
+silently substituted for <code>ActionedDate</code>.</p>
+<p>A documented Open Action, Closed Action, or No Action decision may
+qualify. Awaiting Triage never does. Including a dated No Action
+decision is why the table uses <strong>Last addressed</strong>, rather
+than implying completed mitigation. Set
+<code>bActionHistoryComplete = TRUE</code> only when the selected
+extraction contains the complete relevant decision history. Without that
+assertion, known dates can be displayed but cannot suppress
+contributions. Never requires complete history; undated decision
+evidence remains Unknown.</p>
+</div>
+<div class="section level4">
+<h4 id="coverage-and-priority">Coverage and priority<a class="anchor" aria-label="anchor" href="#coverage-and-priority"></a>
+</h4>
+<p>A recent date and a decision’s applicability are separate facts.
+SiteMetric scope explicitly certifies applicability to the ongoing
+finding across repeated snapshots; it must not be assigned merely
+because site and metric IDs match. Signal scope applies only at its
+originating snapshot. Increased severity, changed direction, different
+or unknown episodes, reopened or critical actions, undated decisions,
+conflicting latest-day coverage, and unknown reviewed severity retain
+the full contribution. Equal-date ties use deterministic ID ordering
+only for a representative audit row, not to resolve conflicting
+evidence.</p>
+<p>With <code>intActionWindowDays</code> supplied, the action factor is
+zero only for a recent, covered decision and one otherwise. Only the
+numerator is adjusted; the denominator remains the original full SRS
+denominator. A window of zero includes decisions on the assessment date
+only.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">action_score_detail</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/MakeActionRiskScoreDetail.html">MakeActionRiskScoreDetail</a></span><span class="op">(</span></span>
+<span>  dfResults <span class="op">=</span> <span class="va">current_kri_results</span>,</span>
+<span>  dfWeights <span class="op">=</span> <span class="fu"><a href="../reference/MakeWeights.html">MakeWeights</a></span><span class="op">(</span><span class="va">reporting_metrics</span><span class="op">)</span>,</span>
+<span>  dfActionLog <span class="op">=</span> <span class="va">decision_enriched_action_log</span>,</span>
+<span>  intActionWindowDays <span class="op">=</span> <span class="fl">90</span>,</span>
+<span>  bActionHistoryComplete <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">priority_score</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/CalculateActionRiskScore.html">CalculateActionRiskScore</a></span><span class="op">(</span></span>
+<span>  dfResults <span class="op">=</span> <span class="va">current_kri_results</span>,</span>
+<span>  dfWeights <span class="op">=</span> <span class="fu"><a href="../reference/MakeWeights.html">MakeWeights</a></span><span class="op">(</span><span class="va">reporting_metrics</span><span class="op">)</span>,</span>
+<span>  dfActionLog <span class="op">=</span> <span class="va">decision_enriched_action_log</span>,</span>
+<span>  intActionWindowDays <span class="op">=</span> <span class="fl">90</span>,</span>
+<span>  bActionHistoryComplete <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>The workflow reads persisted <code>Analysis_Summary</code> and
+<code>Reporting_ActionLog</code>, keeping credentials outside this
+package. Configure <code>meta.ActionWindowDays</code>,
+<code>meta.ActionAsOfDate</code>,
+<code>meta.ActionExtractionDate</code>, and
+<code>meta.ActionHistoryComplete</code>. Defaults are 90, NULL, NULL,
+and FALSE. It returns both <code>Analysis_srs0002</code> and
+<code>Analysis_ActionRiskScoreDetail</code>; the site report module
+consumes detail when available. Persist these configuration values and
+the selected extraction to reproduce a run.</p>
+</div>
+<div class="section level4">
+<h4 id="table-controls">Table controls<a class="anchor" aria-label="anchor" href="#table-controls"></a>
+</h4>
+<p>With dated detail, <code><a href="../reference/Report_KRI.html">Report_KRI()</a></code> labels the second
+measure <strong>Review Priority Score</strong> unless an explicit label
+is supplied. Every KRI stays visible by default. Covered recent findings
+receive a subdued treatment while the original flags remain unchanged.
+Clicking a priority score opens its site’s detail with last addressed
+date, age, decision state, review reason, contribution, and source IDs.
+Assessment date, extraction, and provenance are available on the detail
+row.</p>
+<ul>
+<li>
+<strong>Action window (days)</strong> changes the inclusive review
+window.</li>
+<li>
+<strong>Hide recently addressed</strong> changes presentation only,
+not scores or filtering by original flags.</li>
+<li>
+<strong>Exclude recently addressed from priority score</strong>
+changes only the priority numerator and reapplies the active sort.</li>
+<li>
+<strong>Download review data</strong> exports JSON for the visible
+sites, including original risk scores, persisted priority scores, active
+preview scores/settings, and evidence for all their KRIs, including
+hidden rows.</li>
+</ul>
+<p>Window and exclusion changes are marked <strong>preview</strong> and
+do not write back to the source system or replace the persisted report
+score. Direct widget callers can supply the same detail through
+<code>dfComparisonRiskDetail</code> and should set
+<code>strComparisonRiskLabel = "Review Priority Score"</code>.</p>
+</div>
+<div class="section level4">
+<h4 id="legacy-state-weighting">Legacy state weighting<a class="anchor" aria-label="anchor" href="#legacy-state-weighting"></a>
+</h4>
+<p>Direct calls with <code>intActionWindowDays = NULL</code> preserve
+the legacy <strong>Adjusted Risk Score</strong>. It starts from the same
+KRI flag weights as <code>srs0001</code> and multiplies each KRI’s
+contribution by a factor taken from its Central Monitoring ActionLog
+state. The denominator is unchanged, so a finding triaged as needing no
+action stops counting toward the site’s score without shrinking the
+scale the score is measured on.</p>
+</div>
 <div class="section level4">
 <h4 id="formula">Formula<a class="anchor" aria-label="anchor" href="#formula"></a>
 </h4>
@@ -497,9 +678,9 @@ over the original denominator of <code>16</code>, a score of
 <code>75</code>.</p>
 <p>Including <code>Awaiting Triage</code> is a conservative default so
 that unreviewed findings do not understate site risk. Factors can be
-changed with <code>lActionFactors</code>, or
-<code>meta.ActionFactors</code> in <code>srs0002.yaml</code>.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+changed with <code>lActionFactors</code> in legacy function calls, not
+the date-window workflow.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">action_weighted_score</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/CalculateActionRiskScore.html">CalculateActionRiskScore</a></span><span class="op">(</span></span>
 <span>  dfResults <span class="op">=</span> <span class="va">current_kri_results</span>,</span>
 <span>  dfWeights <span class="op">=</span> <span class="fu"><a href="../reference/MakeWeights.html">MakeWeights</a></span><span class="op">(</span><span class="va">reporting_metrics</span><span class="op">)</span>,</span>
@@ -548,27 +729,13 @@ reconstruct arbitrary historical state transitions.</p>
 error by default (<code>strMissingState = "error"</code>). Choose
 <code>"include"</code> to count its full weight until it is triaged, or
 <code>"exclude"</code> to drop it. Zero-weight KRIs never need an
-ActionLog entry. The workflow defaults to <code>"include"</code> because
-new or deliberately suppressed signals may have no source-system record;
-the function keeps its explicit <code>"error"</code> default for callers
-needing strict completeness.</p>
+ActionLog entry. Including missing states is conservative because new or
+deliberately suppressed signals may have no source-system record. These
+fallbacks apply only to legacy calls; date-window mode always includes
+unknown evidence regardless of <code>strMissingState</code>.</p>
 </div>
 <div class="section level4">
-<h4 id="workflow">Workflow<a class="anchor" aria-label="anchor" href="#workflow"></a>
-</h4>
-<p>The <code>srs0002.yaml</code> workflow reads the persisted
-<code>Analysis_Summary</code> and <code>Reporting_ActionLog</code>
-domains, which keeps ADO credentials and extraction timing outside
-<a href="https://github.com/Gilead-Public/gsm.kri" class="external-link">gsm.kri</a>, and returns <code>Analysis_srs0002</code>
-alongside <code>srs0001</code>. The original <code>srs0001</code>
-remains unchanged as the comparison and rollback baseline.
-<code>meta.ActionExtractionDate</code> is optional and defaults to the
-results snapshot; set it to a <code>Date</code> or an ISO
-<code>YYYY-MM-DD</code> string when a persisted scoring run used a later
-frozen extraction.</p>
-</div>
-<div class="section level4">
-<h4 id="reporting">Reporting<a class="anchor" aria-label="anchor" href="#reporting"></a>
+<h4 id="legacy-reporting">Legacy reporting<a class="anchor" aria-label="anchor" href="#legacy-reporting"></a>
 </h4>
 <p>When both scores are present, the site-level
 <code><a href="../reference/Report_KRI.html">Report_KRI()</a></code> overview shows <code>Analysis_srs0002</code>
@@ -584,11 +751,11 @@ and <code>ActionCount</code> for audit.
 the two always agree. Passing them to
 <code>Report_KRI(dfRiskScoreDetail = ...)</code> makes each Adjusted
 Risk Score clickable: a row opens under the site listing each weighted
-KRI’s flag, action state, ActionLog date, and whether it counts toward
-the score (Yes, Partly, or No). The Adjusted Risk Score is its own
-measure, so the report does not present it as a difference from the Risk
-Score.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+KRI’s flag, action state, signal snapshot, and whether it counts toward
+the score (Yes, Partly, or No), with excluded KRIs shown in grey. The
+Adjusted Risk Score is its own measure, so the report does not present
+it as a difference from the Risk Score.</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">action_score_detail</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/MakeActionRiskScoreDetail.html">MakeActionRiskScoreDetail</a></span><span class="op">(</span></span>
 <span>  dfResults <span class="op">=</span> <span class="va">current_kri_results</span>,</span>
 <span>  dfWeights <span class="op">=</span> <span class="fu"><a href="../reference/MakeWeights.html">MakeWeights</a></span><span class="op">(</span><span class="va">reporting_metrics</span><span class="op">)</span>,</span>
@@ -646,7 +813,7 @@ studies</li>
 <strong>Widget creation</strong>: Pass results, metrics, and groups
 metadata to create the interactive visualization</li>
 </ol>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Example: Create cross-study risk score widget</span></span>
 <span><span class="va">cross_study_widget</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Widget_CrossStudyRiskScore.html">Widget_CrossStudyRiskScore</a></span><span class="op">(</span></span>
 <span>  dfResults <span class="op">=</span> <span class="va">multi_study_results</span>,  <span class="co"># Must include Analysis_srs0001</span></span>
