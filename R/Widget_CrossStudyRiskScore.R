@@ -44,12 +44,22 @@ Widget_CrossStudyRiskScore <- function(
     dfGroups = dfGroups,
     strRiskScoreMetric = strRiskScoreMetric
   )
+  strWeightingSummary <- NULL
+  if (all(c("MetricID", "Flag", "RiskScoreWeight") %in% names(dfMetrics))) {
+    strWeightingSummary <- Report_SRSWeighting(
+      dfMetrics = dfMetrics,
+      dfResults = dfResults
+    ) %>%
+      as.character()
+  }
+
   # Forward options using the same pattern as Widget_GroupOverview
   lInput <- list(
     dfResults = dfResults,
     dfMetrics = dfMetrics,
     dfGroups = dfGroups,
     dfSummary = dfCrossStudySummary,
+    strWeightingSummary = strWeightingSummary,
     strGroupLevel = strGroupLevel,
     strGroupLabelKey = "GroupID",
     strSiteRiskMetric = strRiskScoreMetric
