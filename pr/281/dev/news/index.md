@@ -2,6 +2,14 @@
 
 ## gsm.kri (development version)
 
+- Added an explicit opt-in `strActionPolicy = "disposition"` draft. It
+  keeps original metric-specific flag weights and the full denominator,
+  applying state factors only while a documented decision is recent and
+  applicable. Defaults keep Open/Closed weights and temporarily exclude
+  No Action only. The site example previews this model as Adjusted Risk
+  Score (Draft); existing recent-review and legacy defaults remain
+  unchanged
+  ([\#280](https://github.com/Gilead-Public/gsm.kri/issues/280)).
 - Added
   [`MakeActionSummary()`](https://gilead-public.github.io/gsm.kri/dev/reference/MakeActionSummary.md)
   for the latest documented monitoring decision across all eligible

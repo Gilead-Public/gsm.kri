@@ -426,6 +426,92 @@ for a single study.</li>
 </div>
 </div>
 <div class="section level3">
+<h3 id="draft-weights-and-a-90-day-decision-window">Draft: Weights And A 90-Day Decision Window<a class="anchor" aria-label="anchor" href="#draft-weights-and-a-90-day-decision-window"></a>
+</h3>
+<p>Two interpretations must not be conflated. The existing date-window
+<code>"recent-review"</code> policy excludes a recently addressed,
+covered finding, including Open and Closed actions. It measures
+<strong>review priority</strong>, not underlying risk. It did not
+reverse the numeric scale or change metric weights, but it changed the
+numerator relative to the original state-weighted score.</p>
+<p>The Site KRI Report example now explicitly previews
+<code>strActionPolicy = "disposition"</code> as <strong>Adjusted Risk
+Score (Draft)</strong>. Existing direct-call and workflow defaults are
+unchanged pending review of this proposal.</p>
+<div class="section level4">
+<h4 id="proposed-formula">Proposed Formula<a class="anchor" aria-label="anchor" href="#proposed-formula"></a>
+</h4>
+<p>For current site/KRI flag
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>f</mi><mi>k</mi></msub><annotation encoding="application/x-tex">f_k</annotation></semantics></math>,
+use the existing metric-specific lookup
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>w</mi><mi>k</mi></msub><mo stretchy="false" form="prefix">(</mo><msub><mi>f</mi><mi>k</mi></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">w_k(f_k)</annotation></semantics></math>,
+not the absolute flag number or the number of historic signals:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mrow><mi mathvariant="normal">A</mi><mi mathvariant="normal">d</mi><mi mathvariant="normal">j</mi><mi mathvariant="normal">u</mi><mi mathvariant="normal">s</mi><mi mathvariant="normal">t</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">d</mi><mi mathvariant="normal">S</mi><mi mathvariant="normal">R</mi><mi mathvariant="normal">S</mi></mrow><mn>90</mn></msub><mo>=</mo><mn>100</mn><mspace width="0.167em"></mspace><mfrac><mrow><munder><mo>∑</mo><mi>k</mi></munder><msub><mi>w</mi><mi>k</mi></msub><mo stretchy="false" form="prefix">(</mo><msub><mi>f</mi><mi>k</mi></msub><mo stretchy="false" form="postfix">)</mo><mspace width="0.167em"></mspace><msub><mi>a</mi><mrow><mi>k</mi><mo>,</mo><mn>90</mn></mrow></msub></mrow><mrow><munder><mo>∑</mo><mi>k</mi></munder><msubsup><mi>W</mi><mi>k</mi><mi mathvariant="normal">max</mi></msubsup></mrow></mfrac></mrow><annotation encoding="application/x-tex">
+\mathrm{AdjustedSRS}_{90} = 100\,
+\frac{\sum_k w_k(f_k)\,a_{k,90}}{\sum_k W_k^{\max}}
+</annotation></semantics></math></p>
+<p>With the original default action factors,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>a</mi><mrow><mi>k</mi><mo>,</mo><mn>90</mn></mrow></msub><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">a_{k,90}=0</annotation></semantics></math>
+only for a documented, applicable <strong>No Action</strong> decision
+aged 0 through 90 days. Otherwise it is 1. Open, Closed, Awaiting
+Triage, missing, expired, incomplete, reopened, escalated, or
+conflicting evidence therefore retains the current weight. Closing an
+action does not prove a still-flagged metric’s risk has gone away. No
+Action means an explicit monitoring disposition, not simply the absence
+of an action record.</p>
+<p>The 90 days are a <strong>decision-validity gate</strong>, not a
+multiplier or gradual discount. On day 91 the current contribution
+counts again. The denominator is unchanged from the corresponding
+original SRS, keeping the scale comparable.</p>
+<p>For an illustrative three-metric site with maximum weights totaling
+42:</p>
+<table class="table">
+<thead><tr class="header">
+<th>Current finding</th>
+<th align="right">Weight</th>
+<th>Recent disposition</th>
+<th align="right">Draft contribution</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>AE, flag -2</td>
+<td align="right">32</td>
+<td>Open Action</td>
+<td align="right">32</td>
+</tr>
+<tr class="even">
+<td>Query rate, flag 2</td>
+<td align="right">2</td>
+<td>Closed Action</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td>SAE, flag 2</td>
+<td align="right">8</td>
+<td>No Action</td>
+<td align="right">0</td>
+</tr>
+</tbody>
+</table>
+<p>Raw SRS is 100; draft adjusted SRS is
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>100</mn><mo>×</mo><mn>34</mn><mi>/</mi><mn>42</mn><mo>=</mo><mn>80.95</mn></mrow><annotation encoding="application/x-tex">100\times34/42=80.95</annotation></semantics></math>.
+This illustrates why equal absolute flags need not contribute equal
+amounts: their metric weights differ. Absolute flag severity remains a
+drilldown sort key, not a substitute for the weight lookup.</p>
+<p>The historical drilldown and grey borders are separate audit views. A
+now-green KRI can retain a recent review border while contributing zero
+from its current flag. Repeated snapshots/actions never add the same
+metric’s weight repeatedly. This draft deliberately avoids making
+historic red flags inflate today’s score.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">draft_score</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/CalculateActionRiskScore.html">CalculateActionRiskScore</a></span><span class="op">(</span></span>
+<span>  <span class="va">current_kri_results</span>, <span class="fu"><a href="../reference/MakeWeights.html">MakeWeights</a></span><span class="op">(</span><span class="va">reporting_metrics</span><span class="op">)</span>, <span class="va">decision_enriched_action_log</span>,</span>
+<span>  intActionWindowDays <span class="op">=</span> <span class="fl">90</span>, bActionHistoryComplete <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  strActionPolicy <span class="op">=</span> <span class="st">"disposition"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+</div>
+</div>
+<div class="section level3">
 <h3 id="review-priority-score">Review Priority Score<a class="anchor" aria-label="anchor" href="#review-priority-score"></a>
 </h3>
 <p>The <code>srs0002</code> workflow now answers a different question
@@ -545,7 +631,7 @@ zero only for a recent, covered decision and one otherwise. Only the
 numerator is adjusted; the denominator remains the original full SRS
 denominator. A window of zero includes decisions on the assessment date
 only.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">action_score_detail</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/MakeActionRiskScoreDetail.html">MakeActionRiskScoreDetail</a></span><span class="op">(</span></span>
 <span>  dfResults <span class="op">=</span> <span class="va">current_kri_results</span>,</span>
 <span>  dfWeights <span class="op">=</span> <span class="fu"><a href="../reference/MakeWeights.html">MakeWeights</a></span><span class="op">(</span><span class="va">reporting_metrics</span><span class="op">)</span>,</span>
@@ -691,7 +777,7 @@ over the original denominator of <code>16</code>, a score of
 that unreviewed findings do not understate site risk. Factors can be
 changed with <code>lActionFactors</code> in legacy function calls, not
 the date-window workflow.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">action_weighted_score</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/CalculateActionRiskScore.html">CalculateActionRiskScore</a></span><span class="op">(</span></span>
 <span>  dfResults <span class="op">=</span> <span class="va">current_kri_results</span>,</span>
 <span>  dfWeights <span class="op">=</span> <span class="fu"><a href="../reference/MakeWeights.html">MakeWeights</a></span><span class="op">(</span><span class="va">reporting_metrics</span><span class="op">)</span>,</span>
@@ -766,7 +852,7 @@ KRI’s flag, action state, signal snapshot, and whether it counts toward
 the score (Yes, Partly, or No), with excluded KRIs shown in grey. The
 Adjusted Risk Score is its own measure, so the report does not present
 it as a difference from the Risk Score.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">action_score_detail</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/MakeActionRiskScoreDetail.html">MakeActionRiskScoreDetail</a></span><span class="op">(</span></span>
 <span>  dfResults <span class="op">=</span> <span class="va">current_kri_results</span>,</span>
 <span>  dfWeights <span class="op">=</span> <span class="fu"><a href="../reference/MakeWeights.html">MakeWeights</a></span><span class="op">(</span><span class="va">reporting_metrics</span><span class="op">)</span>,</span>
@@ -824,7 +910,7 @@ studies</li>
 <strong>Widget creation</strong>: Pass results, metrics, and groups
 metadata to create the interactive visualization</li>
 </ol>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Example: Create cross-study risk score widget</span></span>
 <span><span class="va">cross_study_widget</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Widget_CrossStudyRiskScore.html">Widget_CrossStudyRiskScore</a></span><span class="op">(</span></span>
 <span>  dfResults <span class="op">=</span> <span class="va">multi_study_results</span>,  <span class="co"># Must include Analysis_srs0001</span></span>

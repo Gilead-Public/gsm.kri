@@ -21,7 +21,8 @@ CalculateActionRiskScore(
   dActionExtractionDate = NULL,
   intActionWindowDays = NULL,
   dActionAsOfDate = NULL,
-  bActionHistoryComplete = FALSE
+  bActionHistoryComplete = FALSE,
+  strActionPolicy = c("recent-review", "disposition")
 )
 ```
 
@@ -52,8 +53,9 @@ CalculateActionRiskScore(
 - lActionFactors:
 
   Named numeric state-factor mapping. Defaults to include open, closed,
-  and awaiting-triage findings and exclude no-action findings. Used only
-  when \`intActionWindowDays\` is NULL.
+  and awaiting-triage findings and exclude no-action findings. Used by
+  legacy mode and the opt-in \`"disposition"\` policy; ignored by
+  \`"recent-review"\`.
 
 - strMissingState:
 
@@ -83,10 +85,11 @@ CalculateActionRiskScore(
 
 - intActionWindowDays:
 
-  Optional nonnegative integer. When supplied, calculate review priority
-  using \[MakeActionSummary()\] instead of legacy state factors.
-  Recently addressed, covered KRIs contribute zero; all others retain
-  their original contribution. NULL preserves state weighting.
+  Optional nonnegative integer. When supplied, use
+  \[MakeActionSummary()\] to gate decisions by recency and
+  applicability. The default policy calculates review priority;
+  \`"disposition"\` applies the configured state factor only to eligible
+  recent decisions. NULL preserves legacy state weighting.
 
 - dActionAsOfDate:
 
@@ -98,6 +101,16 @@ CalculateActionRiskScore(
   Whether the selected extraction contains the complete decision
   history. Default FALSE; incomplete evidence never excludes a
   contribution in date-window mode.
+
+- strActionPolicy:
+
+  Date-window policy. \`"recent-review"\` preserves the review-priority
+  behavior: a recent applicable decision excludes its weight. The opt-in
+  \`"disposition"\` draft applies \`lActionFactors\` only while that
+  decision is recent and applicable. Defaults retain Open/Closed weights
+  and exclude only a documented No Action decision. Expired/unknown
+  evidence retains full weight. Neither policy changes the denominator
+  or raw SRS.
 
 ## Value
 

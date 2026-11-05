@@ -79,7 +79,8 @@ unweighted results; unweighted rows have missing contribution fields.</p>
 <span>  dActionExtractionDate <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  intActionWindowDays <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  dActionAsOfDate <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  bActionHistoryComplete <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  bActionHistoryComplete <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  strActionPolicy <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"recent-review"</span>, <span class="st">"disposition"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -111,7 +112,8 @@ largest configured factor. Identifiers must distinguish those rows.</p></dd>
 <dt id="arg-lactionfactors">lActionFactors<a class="anchor" aria-label="anchor" href="#arg-lactionfactors"></a></dt>
 <dd><p>Named numeric state-factor mapping. Defaults to include
 open, closed, and awaiting-triage findings and exclude no-action findings.
-Used only when `intActionWindowDays` is NULL.</p></dd>
+Used by legacy mode and the opt-in `"disposition"` policy; ignored by
+`"recent-review"`.</p></dd>
 
 
 <dt id="arg-strmissingstate">strMissingState<a class="anchor" aria-label="anchor" href="#arg-strmissingstate"></a></dt>
@@ -143,9 +145,10 @@ not establish when action states became known.</p></dd>
 
 <dt id="arg-intactionwindowdays">intActionWindowDays<a class="anchor" aria-label="anchor" href="#arg-intactionwindowdays"></a></dt>
 <dd><p>Optional nonnegative integer. When supplied,
-calculate review priority using [MakeActionSummary()] instead of legacy
-state factors. Recently addressed, covered KRIs contribute zero; all
-others retain their original contribution. NULL preserves state weighting.</p></dd>
+use [MakeActionSummary()] to gate decisions by recency and applicability.
+The default policy calculates review priority; `"disposition"` applies
+the configured state factor only to eligible recent decisions. NULL
+preserves legacy state weighting.</p></dd>
 
 
 <dt id="arg-dactionasofdate">dActionAsOfDate<a class="anchor" aria-label="anchor" href="#arg-dactionasofdate"></a></dt>
@@ -157,6 +160,15 @@ mode. Defaults to the results snapshot, not today's date.</p></dd>
 <dd><p>Whether the selected extraction contains the
 complete decision history. Default FALSE; incomplete evidence never
 excludes a contribution in date-window mode.</p></dd>
+
+
+<dt id="arg-stractionpolicy">strActionPolicy<a class="anchor" aria-label="anchor" href="#arg-stractionpolicy"></a></dt>
+<dd><p>Date-window policy. `"recent-review"` preserves the
+review-priority behavior: a recent applicable decision excludes its weight.
+The opt-in `"disposition"` draft applies `lActionFactors` only while that
+decision is recent and applicable. Defaults retain Open/Closed weights and
+exclude only a documented No Action decision. Expired/unknown evidence
+retains full weight. Neither policy changes the denominator or raw SRS.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -170,7 +182,8 @@ excludes a contribution in date-window mode.</p></dd>
   `ActionID`, and `ActionCount`. States and identifiers from multiple rows
   are sorted and comma-separated; `ActionCount` counts distinct actions.
   Date-window mode additionally includes the [MakeActionSummary()] fields,
-  including the last known event date, recency, coverage, and reason.</p>
+  including the last known event date, recency, coverage, reason, and
+  `ActionPolicy`, identifying the chosen interpretation.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
