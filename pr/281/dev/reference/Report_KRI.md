@@ -89,9 +89,10 @@ Report_KRI(
   Optional per-KRI detail behind the second risk score, from
   \[MakeActionRiskScoreDetail()\]. Clicking a score in that column lists
   each KRI's action evidence and whether it counts toward the score.
-  Dated detail enables configurable window, visibility, and
-  priority-preview controls. Ignored when the comparison metric is
-  absent from \`dfResults\`. Default: \`NULL\`.
+  Dated detail adds a border to each site/KRI cell with a recorded
+  action within 90 days, without changing scores or flag colors. Ignored
+  when the comparison metric is absent from \`dfResults\`. Default:
+  \`NULL\`.
 
 - lData:
 

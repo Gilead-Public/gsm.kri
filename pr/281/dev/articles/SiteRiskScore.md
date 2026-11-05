@@ -325,31 +325,34 @@ are 90, NULL, NULL, and FALSE. It returns both `Analysis_srs0002` and
 when available. Persist these configuration values and the selected
 extraction to reproduce a run.
 
-#### Table controls
+#### Action indicators
 
 With dated detail,
 [`Report_KRI()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_KRI.md)
 labels the second measure **Review Priority Score** unless an explicit
-label is supplied. Every KRI stays visible by default. Covered recent
-findings receive a subdued treatment while the original flags remain
-unchanged. Clicking a priority score opens its site’s detail with last
-addressed date, age, decision state, review reason, contribution, and
-source IDs. Assessment date, extraction, and provenance are available on
-the detail row.
+label is supplied. Each specific site/KRI cell with a documented action
+0 through 90 days before the assessment date receives a blue inset
+border. Other cells for the same site or metric are unaffected. The
+tooltip shows the recorded date and age. Missing and future dates, and
+actions older than 90 days, receive no border. Zero-weight and green
+KRIs can still have recent actions and are marked in the same way.
 
-- **Action window (days)** changes the inclusive review window.
-- **Hide recently addressed** changes presentation only, not scores or
-  filtering by original flags.
-- **Exclude recently addressed from priority score** changes only the
-  priority numerator and reapplies the active sort.
-- **Download review data** exports JSON for the visible sites, including
-  original risk scores, persisted priority scores, active preview
-  scores/settings, and evidence for all their KRIs, including hidden
-  rows.
+This is a recency indicator, independent of whether the decision covers
+the current finding. It does not imply risk resolution or alter either
+reported score. All KRI cells remain visible and retain their original
+flag colors. There are no window, hide, or score-exclusion controls.
 
-Window and exclusion changes are marked **preview** and do not write
-back to the source system or replace the persisted report score. Direct
-widget callers can supply the same detail through
+Clicking a priority score opens its site’s detail with last addressed
+date, age, decision state, review reason, contribution, and source IDs.
+Assessment date, extraction, and provenance are available on the detail
+row.
+
+**Download review data** exports JSON for visible sites, including
+original risk scores, reported priority scores, and evidence for every
+KRI. The export keeps the fixed 90-day highlight window separate from
+the backend scoring window, which remains configurable for scripted
+runs. The widget never recalculates scores or writes back to the source
+system. Direct widget callers can supply the same detail through
 `dfComparisonRiskDetail` and should set
 `strComparisonRiskLabel = "Review Priority Score"`.
 

@@ -14,10 +14,11 @@
 - The `srs0002` workflow now defaults to a configurable 90-day Review
   Priority Score, keeps the full original denominator, and returns
   `Analysis_ActionRiskScoreDetail` for the site report. Unknown dates
-  retain full contribution. Dated detail enables window, hide, and
-  priority-preview controls in the companion table; the original SRS and
-  flags stay unchanged. Direct callers retain legacy state weighting
-  unless they specify `intActionWindowDays`
+  retain full contribution. Dated detail adds a border to each site/KRI
+  cell with a recorded action within 90 days; the table has no hide or
+  score-exclusion controls and leaves reported scores and flag colors
+  unchanged. Direct callers retain legacy state weighting unless they
+  specify `intActionWindowDays`
   ([\#280](https://github.com/Gilead-Public/gsm.kri/issues/280)).
 - Added
   [`CalculateActionRiskScore()`](https://gilead-public.github.io/gsm.kri/dev/reference/CalculateActionRiskScore.md)
