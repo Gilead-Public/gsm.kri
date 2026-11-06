@@ -172,10 +172,21 @@ pd_CheckWindowConsistency(nWindowDays, nPremature, nFlagged)
 # block here is NOT front matter -- pandoc only honours the top header, so it would
 # render as a literal "title:" line + rule. The H1 above is the title; this chunk
 # renders in both the standalone report and the knit_child pkgdown embed.
+strStudyID <- paste(unique(Mapped_SUBJ$studyid), collapse = ", ")
+study_param <- function(param) {
+  dfGroups <- params$dfGroups
+  if (!is.data.frame(dfGroups) || !all(c("GroupLevel", "Param", "Value") %in% names(dfGroups))) return(NULL)
+  value <- dfGroups$Value[dfGroups$GroupLevel == "Study" & dfGroups$Param == param]
+  value <- value[!is.na(value) & nzchar(value)]
+  if (length(value) > 0) value[[1]]
+}
+study_details <- c(study_param("nickname"), study_param("therapeutic_area"))
 cat(sprintf(
-  "**Study:** %s  \n*Snapshot Date: %s*\n\n",
-  paste(unique(Mapped_SUBJ$studyid), collapse = ", "),
-  latest_snapshot
+  "**Study:** %s%s  \n*Snapshot Date: %s* &nbsp;|&nbsp; *Window: %s days from randomization*\n\n",
+  strStudyID,
+  if (length(study_details) > 0) sprintf(" (%s)", paste(study_details, collapse = ", ")) else "",
+  latest_snapshot,
+  nWindowDays
 ))
 ```
 
@@ -188,7 +199,24 @@ cat(sprintf(
 # tokens defined in styles.css aren't present in the embedded context.
 cat('
 <style>
-.pd-filter-strip { position: sticky; top: 48px; z-index: 1029; display: none; align-items: center; flex-wrap: wrap; gap: 10px; background-color: #f1f7fe; border-bottom: 1px solid #cfe3fb; padding: 8px 14px; margin: 0 0 16px; }
+/* Layout and overview cards follow the gsm.stratification report. */
+div.main-container { max-width: none; padding-left: 24px; padding-right: 24px; }
+@media (min-width: 992px) {
+  .main-container > .row > .col-md-3 { width: 290px; }
+  .main-container > .row > .toc-content.col-md-9 { width: calc(100% - 290px); }
+}
+#TOC #tocify-header0 { display: block; }
+#toc-toggle { z-index: 1030 !important; }
+.pd-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin: 12px 0 18px; }
+.pd-card { background: #fff; border: 1px solid #e3e8ef; border-radius: 6px; padding: 10px 14px; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+.pd-card-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: #5b7193; }
+.pd-card-value { font-size: 28px; font-weight: 700; color: #1f2d3d; line-height: 1.2; }
+.pd-card-sub { font-size: 12px; color: #6b7a90; }
+.pd-note, .toc-content blockquote { color: #5b7193; font-size: 13px; border-left: 3px solid #cfe3fb; padding: 4px 12px; margin: 8px 0 16px; }
+.toc-content blockquote p { font-size: 13px; }
+.pd-filter-strip { position: sticky; top: 48px; z-index: 1029; display: flex; align-items: center; flex-wrap: wrap; gap: 10px; background-color: #f1f7fe; border-bottom: 1px solid #cfe3fb; padding: 8px 14px; margin: 0 0 16px; }
+.pd-filter-hint { font-size: 13px; color: #5b7193; }
+.section.level2, .section.level3 { scroll-margin-top: 60px; }
 .pd-filter-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #5b7193; }
 .pd-filter-chip { display: inline-flex; align-items: center; gap: 6px; background-color: #ffffff; border: 1px solid #3C587F; border-radius: 16px; padding: 3px 6px 3px 12px; font-size: 13px; color: #3C587F; }
 .pd-chip-value { font-weight: 600; }
@@ -207,7 +235,11 @@ cat('
 # is active.
 htmltools::tags$div(
   id = "pd-filter-banner", class = "pd-filter-strip",
-  htmltools::tags$span(class = "pd-filter-eyebrow", "Filtering"),
+  htmltools::tags$span(class = "pd-filter-eyebrow", "Filters"),
+  htmltools::tags$span(
+    id = "pd-filter-hint", class = "pd-filter-hint",
+    "None. Click a country or site bar to filter."
+  ),
   htmltools::tags$span(
     id = "pd-filter-country-chip", class = "pd-filter-chip", style = "display:none;",
     htmltools::tags$span(
@@ -233,52 +265,33 @@ htmltools::tags$div(
 )
 ```
 
-## Overview
+## Study Overview
 
-Premature death analysis supports early identification of deaths occurring within ≤`r nWindowDays` days of randomization, enabling timely detection of potential eligibility concerns and emerging safety risks.
+<p class="pd-note">Premature death analysis supports early identification of deaths occurring within ≤`r nWindowDays` days of randomization, enabling timely detection of potential eligibility concerns and emerging safety risks.</p>
 
-```{r overview-table, echo=FALSE}
-# Ineligible needs eligibility data (Mapped_EXCLUSION); when it is absent we show
-# a dash rather than 0, which would falsely assert zero ineligible deaths.
-ineligible_cell <- if (stats$has_eligibility) {
-  sprintf("%d (%.1f%%)", stats$nIneligible, stats$nIneligibleRate)
-} else {
-  "—"
+```{r overview-cards, echo=FALSE}
+lv <- pd_CategoryLevels(nWindowDays)
+vColors <- pd_CategoryColors(nWindowDays)
+pd_card <- function(label, value, sub, color) {
+  htmltools::div(
+    class = "pd-card", style = sprintf("border-top: 4px solid %s;", color),
+    htmltools::div(class = "pd-card-label", label),
+    htmltools::div(class = "pd-card-value", value),
+    htmltools::div(class = "pd-card-sub", sub)
+  )
 }
-# Headline total over a severity-keyed ledger: the two windows stack as child
-# rows under the total, each led by its bucket colour (death30 =
-# colorScheme("red","dark") #FF5859, death3190 = colorScheme("amber","dark")
-# #FEAA02 -- the exact hues the bucket bars and scatter use), so the cell doubles
-# as their legend. The table's full-grid borders fence the cell and right-
-# aligned counts make 22 + 24 = 46 read as additive. Literal ≤/– glyphs (not
-# &le;/&ndash;) because pandoc's html4 output preserves entities verbatim;
-# swatches are styled <div>s, so no entities and no unimported font weights are
-# relied on. Counts come from the one classified cohort, so the split cannot
-# drift from the total.
-premature_cell <- sprintf(
-  paste0(
-    "<div style='font-size:1.1em'>%d <span style='color:#666;font-size:smaller'>(%.1f%%)</span></div>",
-    "<div style='display:inline-block;text-align:left;margin-top:3px;font-size:smaller'>",
-    "<div><span style='display:inline-block;width:9px;height:9px;background:#FF5859;margin-right:6px'></span>",
-    "<b style='display:inline-block;min-width:1.4em;text-align:right'>%d</b> ≤30 days</div>",
-    "<div><span style='display:inline-block;width:9px;height:9px;background:#FEAA02;margin-right:6px'></span>",
-    "<b style='display:inline-block;min-width:1.4em;text-align:right'>%d</b> 31–90 days</div>",
-    "</div>"
-  ),
-  stats$nPremature, stats$nPrematureRate, stats$nDeath30, stats$nDeath3190
-)
-knitr::kable(
-  data.frame(
-    "Total enrolled" = stats$nEnrolled,
-    "Total sites with enrolled participants" = stats$nSites,
-    "Premature Death(s)" = premature_cell,
-    "Participants Ineligible + Premature Death" = ineligible_cell,
-    check.names = FALSE
-  ),
-  format = "html",
-  escape = FALSE,
-  align = "r",
-  table.attr = "class=\"table table-bordered\""
+pct_of <- function(n, d, of) sprintf("%.1f%% of %s", if (d > 0) 100 * n / d else 0, of)
+htmltools::div(
+  class = "pd-cards",
+  pd_card("Total Enrolled", stats$nEnrolled, sprintf("Across %d site%s", stats$nSites, if (stats$nSites == 1) "" else "s"), "#5b7193"),
+  pd_card("Premature Deaths", stats$nPremature, sprintf("%.1f%% of enrolled, within %d days", stats$nPrematureRate, nWindowDays), "#1f2d3d"),
+  pd_card(lv[["death30"]], stats$nDeath30, pct_of(stats$nDeath30, stats$nEnrolled, "enrolled"), vColors[[lv[["death30"]]]]),
+  pd_card(lv[["death3190"]], stats$nDeath3190, pct_of(stats$nDeath3190, stats$nEnrolled, "enrolled"), vColors[[lv[["death3190"]]]]),
+  if (stats$has_eligibility) {
+    pd_card("Ineligible + Premature Death", stats$nIneligible, sprintf("%.1f%% of premature deaths", stats$nIneligibleRate), "#5b7193")
+  } else {
+    pd_card("Ineligible + Premature Death", "\u2014", "Eligibility data not available", "#9D9D9D")
+  }
 )
 ```
 
@@ -446,10 +459,10 @@ cat(paste0('
     return el;
   }
 
-  // Show/hide the banner container based on whether either filter is active.
+  // The strip is always shown; the hint stands in for the chips when no filter is active.
   function updateBannerVisibility() {
-    var banner = document.getElementById("pd-filter-banner");
-    banner.style.display = (pdBucketState.activeCountry || pdBucketState.activeSite) ? "flex" : "none";
+    var hint = document.getElementById("pd-filter-hint");
+    hint.style.display = (pdBucketState.activeCountry || pdBucketState.activeSite) ? "none" : "inline";
   }
 
   // Single owner of the listing column search. Only one search can be held on
