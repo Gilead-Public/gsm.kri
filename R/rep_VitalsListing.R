@@ -9,7 +9,7 @@
 #' `"1 1 1 0"`; `visits` is aligned and `|`-separated: the measurement's
 #' position, visit and date, such as `"#1 · V1 · 2024-01-01"`.
 #'
-#' @param lClass `list` Output of [rm_Classify()].
+#' @param lClass `list` Output of [rep_Classify()].
 #'
 #' @return A `tibble` in display order (worst flag, then most repeat
 #'   windows) with `country`, `invid`, `subjid`, `label`, `metric`,
@@ -18,7 +18,7 @@
 #'   hidden `vital` and `has_repeat` columns.
 #' @keywords internal
 #' @export
-rm_VitalRows <- function(lClass) {
+rep_VitalRows <- function(lClass) {
   dfVitals <- lClass$vitals
   dfValues <- lClass$measurements %>%
     dplyr::arrange(.data$subjid, .data$vital, .data$seq) %>%
@@ -57,10 +57,10 @@ rm_VitalRows <- function(lClass) {
     visits = dplyr::coalesce(df$visits, ""),
     vital = df$vital,
     has_repeat = ifelse(grepl("1", df$in_repeat_window), "Y", "N"),
-    severity = rm_FlagSeverity(df$flag)
+    severity = rep_FlagSeverity(df$flag)
   ) %>%
     # One row per participant and measure, so each row sorts by its own flag
-    # and windows rather than the participant's worst (rm_ParticipantOrder()).
+    # and windows rather than the participant's worst (rep_ParticipantOrder()).
     dplyr::arrange(
       -.data$severity,
       -.data$Numerator,
@@ -88,7 +88,7 @@ rm_VitalRows <- function(lClass) {
 #' visits. The filter script also rewrites the flag column when the
 #' reviewer changes the flag rule.
 #'
-#' @param dfVitalRows `data.frame` Output of [rm_VitalRows()].
+#' @param dfVitalRows `data.frame` Output of [rep_VitalRows()].
 #' @param nWindowLength `numeric` Window length, shown in the measurements
 #'   header. Optional.
 #' @param bExport `logical` Show the CSV button.
@@ -96,7 +96,7 @@ rm_VitalRows <- function(lClass) {
 #' @return A `DT` htmlwidget.
 #' @keywords internal
 #' @export
-rm_VitalsListing <- function(dfVitalRows, nWindowLength = NULL, bExport = TRUE) {
+rep_VitalsListing <- function(dfVitalRows, nWindowLength = NULL, bExport = TRUE) {
   idx <- function(col) match(col, names(dfVitalRows)) - 1L
   vLabels <- c(
     country = "Country", invid = "Site", subjid = "Participant", label = "Measure",
@@ -123,7 +123,7 @@ rm_VitalsListing <- function(dfVitalRows, nWindowLength = NULL, bExport = TRUE) 
       pageLength = 25,
       deferRender = TRUE,
       order = list(),
-      buttons = rm_CsvButton(bExport, "repeat-measurements-vitals", ":visible, .rm-export"),
+      buttons = rep_CsvButton(bExport, "repeat-measurements-vitals", ":visible, .rm-export"),
       createdRow = DT::JS(
         "function (row) { row.title = 'Click to filter the report to this participant; click again to clear'; }"
       ),
@@ -175,7 +175,7 @@ rm_VitalsListing <- function(dfVitalRows, nWindowLength = NULL, bExport = TRUE) 
                 return '<span class=\"rm-fr\" title=\"' + tip.replace(/\"/g, '&quot;') + '\"><span class=\"rm-dot\" style=\"background:' + c + '\"></span>' + (data === 'Not evaluable' ? data : data + ' \u00b7 ' + pct) + '</span>';
               }",
               idx("rate"),
-              jsonlite::toJSON(as.list(rm_FlagColors()), auto_unbox = TRUE),
+              jsonlite::toJSON(as.list(rep_FlagColors()), auto_unbox = TRUE),
               idx("metric"),
               idx("measured"),
               idx("Numerator"),

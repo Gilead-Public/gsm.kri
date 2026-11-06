@@ -37,16 +37,16 @@ and `vsperf_std`, and one numeric column per measure).}
 `dfResults$SnapshotDate`, if any.}
 
 \item{nWindowLength}{`integer` Window length when `dfMetrics` has none.
-See [rm_Classify()].}
+See [rep_Classify()].}
 
 \item{strFlagRule}{`character` Participant flag rule, `"count"` (default)
-or `"rate"`. See [rm_Classify()].}
+or `"rate"`. See [rep_Classify()].}
 
 \item{vFlagThresholds}{`numeric` Amber and Red thresholds for
 `strFlagRule`: window counts for `"count"`, proportions such as
 `c(0.2, 0.3)` for `"rate"`. Default `NULL`: 2 and 3 repeating windows, or
 the site-level `kri0020` / `cou0020` rate thresholds. See
-[rm_FlagThresholds()].}
+[rep_FlagThresholds()].}
 
 \item{nMinWindows}{`numeric` Windows a participant needs for a flag.
 Default 1.}

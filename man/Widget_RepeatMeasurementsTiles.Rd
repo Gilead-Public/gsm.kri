@@ -12,7 +12,7 @@ Widget_RepeatMeasurementsTiles(
 )
 }
 \arguments{
-\item{dfTiles}{`data.frame` Output of [rm_ParticipantTiles()].}
+\item{dfTiles}{`data.frame` Output of [rep_ParticipantTiles()].}
 
 \item{strLabel}{`character` Initial tile label: `"both"`, `"rate"` or `"nd"`.}
 

@@ -9,11 +9,11 @@
 #' in the report with the `kri0020` workflow steps (`source = "report"`):
 #' [gsm.core::Input_Rate()], [gsm.core::Transform_Rate()],
 #' [gsm.core::Analyze_Identity()] and [gsm.core::Flag()] on the participants'
-#' windows, with the site rule of [rm_SiteRule()]. A site is not evaluated
+#' windows, with the site rule of [rep_SiteRule()]. A site is not evaluated
 #' (`flag` `NA`) without windows, below the accrual threshold or without a
 #' KRI result.
 #'
-#' @param lClass `list` Output of [rm_Classify()].
+#' @param lClass `list` Output of [rep_Classify()].
 #' @param dfResults `data.frame` Reporting results. Optional.
 #' @param dfMetrics `data.frame` Reporting metrics. Optional.
 #'
@@ -24,9 +24,9 @@
 #'   `country`, comma-separated.
 #' @keywords internal
 #' @export
-rm_SiteFlagRows <- function(lClass, dfResults = NULL, dfMetrics = NULL) {
-  lRule <- rm_SiteRule(dfMetrics)
-  lKRI <- rm_SiteFlags(dfResults)
+rep_SiteFlagRows <- function(lClass, dfResults = NULL, dfMetrics = NULL) {
+  lRule <- rep_SiteRule(dfMetrics)
+  lKRI <- rep_SiteFlags(dfResults)
   df <- lClass$participants %>%
     dplyr::mutate(country = as.character(.data$country), invid = as.character(.data$invid)) %>%
     dplyr::group_by(.data$vital, .data$invid) %>%
@@ -40,7 +40,7 @@ rm_SiteFlagRows <- function(lClass, dfResults = NULL, dfMetrics = NULL) {
     dplyr::arrange(match(.data$vital, lClass$vitals$vital), .data$invid)
   df$flag <- NA_integer_
   for (strVital in setdiff(unique(df$vital), names(lKRI))) {
-    dfFlags <- rm_SiteFlagPipeline(lClass$participants[lClass$participants$vital == strVital, ], lRule)
+    dfFlags <- rep_SiteFlagPipeline(lClass$participants[lClass$participants$vital == strVital, ], lRule)
     if (is.null(dfFlags)) next
     bRows <- df$vital == strVital
     df$flag[bRows] <- as.integer(dfFlags$Flag[match(df$invid[bRows], dfFlags$GroupID)])
@@ -60,11 +60,11 @@ rm_SiteFlagRows <- function(lClass, dfResults = NULL, dfMetrics = NULL) {
 # the subject-level numerator and denominator. Returns `GroupID` (site) and
 # `Flag`; a site without windows has no row. NULL when no participant has a
 # window, which Input_Rate() rejects.
-rm_SiteFlagPipeline <- function(dfParticipants, lRule) {
+rep_SiteFlagPipeline <- function(dfParticipants, lRule) {
   if (!nrow(dfParticipants) || sum(dfParticipants$Denominator) == 0) {
     return(NULL)
   }
-  dfAnalyzed <- rm_Quietly(gsm.core::Input_Rate(
+  dfAnalyzed <- rep_Quietly(gsm.core::Input_Rate(
     dfSubjects = dfParticipants,
     dfNumerator = dfParticipants,
     dfDenominator = dfParticipants,
@@ -78,7 +78,7 @@ rm_SiteFlagPipeline <- function(dfParticipants, lRule) {
   ) %>%
     gsm.core::Transform_Rate() %>%
     gsm.core::Analyze_Identity())
-  dfAnalyzed$Flag <- rm_Flag(dfAnalyzed, lRule$thresholds, lRule$accrual)
+  dfAnalyzed$Flag <- rep_Flag(dfAnalyzed, lRule$thresholds, lRule$accrual)
   dfAnalyzed[c("GroupID", "Flag")]
 }
 
@@ -96,10 +96,10 @@ rm_SiteFlagPipeline <- function(dfParticipants, lRule) {
 #' @return A `list` with `thresholds` (Amber, Red; fractions) and `accrual`.
 #' @keywords internal
 #' @export
-rm_SiteRule <- function(dfMetrics = NULL) {
-  nAccrual <- rm_MetricMeta(dfMetrics, "AccrualThreshold")
+rep_SiteRule <- function(dfMetrics = NULL) {
+  nAccrual <- rep_MetricMeta(dfMetrics, "AccrualThreshold")
   list(
-    thresholds = rm_FlagThresholds("rate", dfMetrics = dfMetrics),
+    thresholds = rep_FlagThresholds("rate", dfMetrics = dfMetrics),
     accrual = if (is.null(nAccrual)) 3 else as.numeric(nAccrual)
   )
 }
@@ -118,7 +118,7 @@ rm_SiteRule <- function(dfMetrics = NULL) {
 #' @return A named `list` (measure to a named list of site flags); empty when
 #'   `dfResults` has no `kri0020` site results.
 #' @noRd
-rm_SiteFlags <- function(dfResults) {
+rep_SiteFlags <- function(dfResults) {
   vNeeded <- c("MetricID", "GroupLevel", "GroupID", "Flag")
   if (is.null(dfResults) || !all(vNeeded %in% names(dfResults))) {
     return(stats::setNames(list(), character(0)))
@@ -132,7 +132,7 @@ rm_SiteFlags <- function(dfResults) {
     bLatest <- vDate == stats::ave(vDate, df$MetricID, FUN = function(x) max(x, na.rm = TRUE))
     df <- df[bLatest %in% TRUE, ]
   }
-  dfVitals <- rm_Vitals()
+  dfVitals <- rep_Vitals()
   df$vital <- dfVitals$vital[match(sub("^Analysis_", "", df$MetricID), dfVitals$metric)]
   lapply(split(df, df$vital), function(d) {
     as.list(stats::setNames(as.integer(d$Flag), as.character(d$GroupID)))

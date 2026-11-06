@@ -78,7 +78,7 @@ Detect_ConsecutiveRepeats <- function(
 #' Mark measurements inside consecutive repeating windows
 #'
 #' The windowing engine behind [Detect_ConsecutiveRepeats()] and
-#' [rm_Classify()]. Returns every non-missing measurement in evaluation order,
+#' [rep_Classify()]. Returns every non-missing measurement in evaluation order,
 #' marked when it sits inside a rolling window of `nWindowLength` identical
 #' consecutive values. Records with a missing value or subject are dropped.
 #'
@@ -198,7 +198,7 @@ MarkConsecutiveRepeats <- function(
 #' Summarize marked measurements per subject
 #'
 #' The `Numerator` / `Denominator` step shared by
-#' [Detect_ConsecutiveRepeats()] and [rm_Classify()].
+#' [Detect_ConsecutiveRepeats()] and [rep_Classify()].
 #'
 #' @param dfMarked `data.frame` Output of `MarkConsecutiveRepeats()`.
 #' @param vSubjects Unique, non-missing subjects to report, in output order.

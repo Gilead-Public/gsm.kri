@@ -43,7 +43,7 @@ strContext <- param(params$strContext, "")
 bExport <- isTRUE(params$bExport)
 
 # One classification feeds every section.
-lClass <- rm_Classify(
+lClass <- rep_Classify(
   lListings,
   dfMetrics = dfMetrics,
   nWindowLength = param(params$nWindowLength),
@@ -62,19 +62,19 @@ has_evaluable <- any(lClass$participants$flag %in% c("Red", "Amber", "Green"))
 lSettings <- list(
   rule = lClass$meta$rule,
   thresholds = list(
-    count = if (lClass$meta$rule == "count") lClass$meta$thresholds else rm_FlagThresholds("count"),
-    rate = if (lClass$meta$rule == "rate") lClass$meta$thresholds else rm_FlagThresholds("rate", dfMetrics = dfMetrics)
+    count = if (lClass$meta$rule == "count") lClass$meta$thresholds else rep_FlagThresholds("count"),
+    rate = if (lClass$meta$rule == "rate") lClass$meta$thresholds else rep_FlagThresholds("rate", dfMetrics = dfMetrics)
   ),
   minWindows = lClass$meta$min_windows,
   bp = param(params$strBPMode, "separate")
 )
 in_cmp <- lClass$meta$window_source == "metrics"
-dfSites <- rm_SiteFlagRows(lClass, dfResults, dfMetrics)
-lSiteRule <- rm_SiteRule(dfMetrics)
+dfSites <- rep_SiteFlagRows(lClass, dfResults, dfMetrics)
+lSiteRule <- rep_SiteRule(dfMetrics)
 
-tiles <- rm_ParticipantTiles(lClass)
-listing <- rm_VitalsListing(rm_VitalRows(lClass), nWindowLength = nW, bExport = bExport)
-data_table <- rm_DataTable(rm_DataTableWide(lClass), lClass$vitals, bExport = bExport)
+tiles <- rep_ParticipantTiles(lClass)
+listing <- rep_VitalsListing(rep_VitalRows(lClass), nWindowLength = nW, bExport = bExport)
+data_table <- rep_DataTable(rep_DataTableWide(lClass), lClass$vitals, bExport = bExport)
 
 # A section description as a pandoc fenced div, so markdown (bold, lists)
 # still renders inside it.
@@ -82,7 +82,7 @@ desc <- function(...) cat("\n::: {.rm-desc}\n", ..., "\n:::\n\n", sep = "")
 ```
 
 ```{r header, echo=FALSE}
-rm_Header(
+rep_Header(
   lClass,
   strStudy = paste(unique(lListings$Mapped_SUBJ$studyid), collapse = ", "),
   dSnapshotDate = dSnapshotDate,
@@ -94,7 +94,7 @@ rm_Header(
 ```
 
 ```{r filter-strip, echo=FALSE}
-rm_Toolbar(dfVitals, lSettings)
+rep_Toolbar(dfVitals, lSettings)
 ```
 
 ```{r degraded, echo=FALSE, results='asis'}
@@ -137,7 +137,7 @@ desc("Every measure for the whole study; the filters do not apply. Bars show the
 ```{r overview-controls, echo=FALSE}
 htmltools::div(
   class = "rm-controls",
-  rm_Seg("Overview view", c(distribution = "% flagged", counts = "Counts"), "distribution", "data-rm-ov", strIdPrefix = "rm-ov-")
+  rep_Seg("Overview view", c(distribution = "% flagged", counts = "Counts"), "distribution", "data-rm-ov", strIdPrefix = "rm-ov-")
 )
 ```
 
@@ -151,7 +151,7 @@ desc("One row per country or site and one column per measure; each bar is the sh
 
 ```{r dist-controls, echo=FALSE, eval=has_participants}
 dist_seg <- function(label, attr, values, selected) {
-  rm_Seg(label, values, selected, "data-rm-dist", strGroup = attr, strIdPrefix = "rm-dist-")
+  rep_Seg(label, values, selected, "data-rm-dist", strGroup = attr, strIdPrefix = "rm-dist-")
 }
 # rmFilters.js draws the table from the tiles, #rm-data and the settings.
 htmltools::tagList(
@@ -182,7 +182,7 @@ desc("One row per participant and one tile per measure, coloured by the particip
 ```{r tiles-controls, echo=FALSE, eval=has_participants}
 htmltools::div(
   class = "rm-controls",
-  rm_Seg("Cell label", c(both = "Both", rate = "Rate", nd = "N/D"), "both", "data-rm-label", strIdPrefix = "rm-label-"),
+  rep_Seg("Cell label", c(both = "Both", rate = "Rate", nd = "N/D"), "both", "data-rm-label", strIdPrefix = "rm-label-"),
   htmltools::tags$label(
     "Sort ",
     htmltools::tags$select(
@@ -240,7 +240,7 @@ desc(
 ```{r data-controls, echo=FALSE, eval=has_participants}
 htmltools::div(
   class = "rm-controls",
-  rm_Seg("Table shape", c(wide = "Wide", long = "Long"), "wide", "data-rm-shape", strIdPrefix = "rm-shape-"),
+  rep_Seg("Table shape", c(wide = "Wide", long = "Long"), "wide", "data-rm-shape", strIdPrefix = "rm-shape-"),
   htmltools::tags$label(
     htmltools::tags$input(id = "rm-dt-only", type = "checkbox", checked = NA),
     " ",

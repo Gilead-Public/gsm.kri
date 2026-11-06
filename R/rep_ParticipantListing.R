@@ -6,7 +6,7 @@
 #' One tile per participant and measure, with the three tile labels the
 #' report switches between. [Widget_RepeatMeasurementsTiles()] draws them.
 #'
-#' @param lClass `list` Output of [rm_Classify()].
+#' @param lClass `list` Output of [rep_Classify()].
 #'
 #' @return A `tibble` with `subjid`, `invid`, `country`, `vital`, `column`,
 #'   `flag`, `severity`, `Numerator`, `Denominator`, `rate`, `n`,
@@ -14,7 +14,7 @@
 #'   worst flag, then most repeating windows, then participant.
 #' @keywords internal
 #' @export
-rm_ParticipantTiles <- function(lClass) {
+rep_ParticipantTiles <- function(lClass) {
   dfVitals <- lClass$vitals
   df <- lClass$participants
   strRate <- ifelse(
@@ -30,7 +30,7 @@ rm_ParticipantTiles <- function(lClass) {
     vital = df$vital,
     column = dfVitals$short[match(df$vital, dfVitals$vital)],
     flag = as.character(df$flag),
-    severity = rm_FlagSeverity(df$flag),
+    severity = rep_FlagSeverity(df$flag),
     Numerator = df$Numerator,
     Denominator = df$Denominator,
     rate = df$rate,
@@ -41,7 +41,7 @@ rm_ParticipantTiles <- function(lClass) {
   )
   dfTiles %>%
     dplyr::arrange(
-      match(.data$subjid, rm_ParticipantOrder(lClass)),
+      match(.data$subjid, rep_ParticipantOrder(lClass)),
       match(.data$vital, dfVitals$vital)
     )
 }

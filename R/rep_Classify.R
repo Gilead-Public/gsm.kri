@@ -14,13 +14,13 @@
 #'   `vFlagThresholds` (default Amber at 2, Red at 3 or more).
 #' * `"rate"`: `Numerator / Denominator` against `vFlagThresholds` (default
 #'   the site-level `kri0020` / `cou0020` `Threshold` in `dfMetrics`, else
-#'   20\% / 30\%; see [rm_FlagThresholds()]).
+#'   20\% / 30\%; see [rep_FlagThresholds()]).
 #'
 #' Amber is at or above the first threshold, Red at or above the second.
 #' Participants with fewer than `nMinWindows` windows are `Not evaluable`.
 #' Height, BSA and any other numeric `Mapped_VS` column are windowed and
 #' flagged the same way, although they have no KRI. With `sysbp` and
-#' `diabp`, paired blood pressure (`bp`, see [rm_Vitals()]) is added.
+#' `diabp`, paired blood pressure (`bp`, see [rep_Vitals()]) is added.
 #'
 #' @param lListings `list` with `Mapped_SUBJ` (enrolled participants with
 #'   `subjid`, `invid` and `country`; a missing `invid` or `country` is
@@ -51,7 +51,7 @@
 #'   * `records`: the enrolled participants' `Mapped_VS` rows, with `country`
 #'     and `invid` from `Mapped_SUBJ` and a `record` key that `measurements`
 #'     refers to.
-#'   * `vitals`: the rows of [rm_Vitals()] in the report, plus any other
+#'   * `vitals`: the rows of [rep_Vitals()] in the report, plus any other
 #'     numeric `Mapped_VS` column.
 #'   * `meta`: `window_length`, `window_source` (`"metrics"`, `"argument"` or
 #'     `"default"`), `rule`, `thresholds` (Amber, Red), `min_windows` and
@@ -59,7 +59,7 @@
 #'     a warning lists them).
 #' @keywords internal
 #' @export
-rm_Classify <- function(
+rep_Classify <- function(
   lListings,
   dfMetrics = NULL,
   nWindowLength = NULL,
@@ -68,7 +68,7 @@ rm_Classify <- function(
   nMinWindows = 1
 ) {
   strFlagRule <- match.arg(strFlagRule)
-  vThresholds <- rm_FlagThresholds(strFlagRule, vFlagThresholds, dfMetrics)
+  vThresholds <- rep_FlagThresholds(strFlagRule, vFlagThresholds, dfMetrics)
   gsm.core::stop_if(
     cnd = !is.numeric(nMinWindows) || length(nMinWindows) != 1 || !is.finite(nMinWindows) ||
       nMinWindows < 1 || nMinWindows != round(nMinWindows),
@@ -103,7 +103,7 @@ rm_Classify <- function(
     )
   }
 
-  dfVitals <- rm_Vitals()
+  dfVitals <- rep_Vitals()
   dfVS <- lListings$Mapped_VS
   vIDCols <- c("studyid", "subjid", "invid", "country", "visit", "vs_dt", "vsperf_std")
   vExtra <- if (is.null(dfVS)) {
@@ -125,7 +125,7 @@ rm_Classify <- function(
     tibble::tibble(vital = vExtra, label = vExtra, short = vExtra)
   )
 
-  lWindow <- rm_WindowLength(dfMetrics, nWindowLength)
+  lWindow <- rep_WindowLength(dfMetrics, nWindowLength)
   nW <- lWindow$window_length
 
   # Mapped_SUBJ is the source of truth for site and country.
@@ -161,7 +161,7 @@ rm_Classify <- function(
         vs_dt = dfMarked$vs_dt,
         vital = rep(strVital, nrow(dfMarked)),
         value = if (is.character(x)) rep(NA_real_, length(x)) else as.numeric(x),
-        value_text = if (is.character(x)) x else rm_FormatValue(as.numeric(x)),
+        value_text = if (is.character(x)) x else rep_FormatValue(as.numeric(x)),
         seq = dfMarked$seq,
         in_repeat_window = dfMarked$in_repeat_window,
         window_start = dfMarked$window_start
@@ -210,7 +210,7 @@ rm_Classify <- function(
     match(dfParticipants$vital, dfVitals$vital)
   ), ]
 
-  vFlag <- rm_Flag(
+  vFlag <- rep_Flag(
     data.frame(
       GroupID = dfParticipants$subjid,
       Numerator = dfParticipants$Numerator,
@@ -222,7 +222,7 @@ rm_Classify <- function(
   )
   flag <- c("Green", "Amber", "Red")[vFlag + 1]
   flag[is.na(flag)] <- "Not evaluable"
-  dfParticipants$flag <- factor(flag, levels = names(rm_FlagColors()))
+  dfParticipants$flag <- factor(flag, levels = names(rep_FlagColors()))
   dfParticipants <- dfParticipants[c(
     "studyid", "country", "invid", "subjid", "vital", "metric",
     "n_records", "Numerator", "Denominator", "rate", "flag"

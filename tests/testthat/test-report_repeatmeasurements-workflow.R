@@ -39,10 +39,10 @@ test_that("the report_repeatmeasurements module renders the report (#344)", {
     bExact = TRUE
   )
   lData <- c(
-    rm_Fixture(),
+    rep_Fixture(),
     list(
-      Reporting_Results = rm_FixtureResults(),
-      Reporting_Metrics = rm_FixtureMetrics()
+      Reporting_Results = rep_FixtureResults(),
+      Reporting_Metrics = rep_FixtureMetrics()
     )
   )
   strOut <- file.path(tempdir(), "Report_RepeatMeasurements.html")

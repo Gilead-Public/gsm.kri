@@ -16,7 +16,7 @@
 #'   and `metric` (the site workflow ID; `NA` without a KRI).
 #' @keywords internal
 #' @export
-rm_Vitals <- function() {
+rep_Vitals <- function() {
   tibble::tibble(
     vital = c("weight", "pulse", "sysbp", "diabp", "bp", "resp", "temp", "height", "bsa"),
     label = c(
@@ -35,7 +35,7 @@ rm_Vitals <- function() {
 #'
 #' @return A named `character` vector of hex colors, in severity order.
 #' @noRd
-rm_FlagColors <- function() {
+rep_FlagColors <- function() {
   c(
     Red = "#FF5859",
     Amber = "#FEAA02",
@@ -46,7 +46,7 @@ rm_FlagColors <- function() {
 
 # Severity of each flag (Red 3, Amber 2, Green 1, Not evaluable 0), the one
 # sort key every participant ordering uses.
-rm_FlagSeverity <- function(vFlag) {
+rep_FlagSeverity <- function(vFlag) {
   vSeverity <- c(Red = 3L, Amber = 2L, Green = 1L, `Not evaluable` = 0L)
   unname(vSeverity[as.character(vFlag)])
 }
@@ -79,13 +79,13 @@ rm_FlagSeverity <- function(vFlag) {
 #'
 #' @keywords internal
 #' @export
-rm_FlagThresholds <- function(strFlagRule = c("count", "rate"), vFlagThresholds = NULL, dfMetrics = NULL) {
+rep_FlagThresholds <- function(strFlagRule = c("count", "rate"), vFlagThresholds = NULL, dfMetrics = NULL) {
   strFlagRule <- match.arg(strFlagRule)
   if (is.null(vFlagThresholds)) {
     if (strFlagRule == "count") {
       return(c(2, 3))
     }
-    strMetric <- rm_MetricMeta(dfMetrics, "Threshold")
+    strMetric <- rep_MetricMeta(dfMetrics, "Threshold")
     if (is.null(strMetric)) {
       return(c(0.2, 0.3))
     }
@@ -104,14 +104,14 @@ rm_FlagThresholds <- function(strFlagRule = c("count", "rate"), vFlagThresholds 
 # Amber, 1 from Amber, 2 from Red, NA for a missing score or a `Denominator`
 # below `nAccrual`. `df` needs `GroupID`, `Numerator`, `Denominator` and
 # `Score`. Returns the flags in row order.
-rm_Flag <- function(df, vThresholds, nAccrual) {
+rep_Flag <- function(df, vThresholds, nAccrual) {
   vFlag <- c(0, 1, 2)
   # Flag() cuts at the thresholds, which must differ; equal ones leave no Amber.
   if (vThresholds[1] == vThresholds[2]) {
     vThresholds <- vThresholds[2]
     vFlag <- c(0, 2)
   }
-  rm_Quietly(gsm.core::Flag(
+  rep_Quietly(gsm.core::Flag(
     df,
     strColumn = "Score",
     vThreshold = vThresholds,
@@ -125,7 +125,7 @@ rm_Flag <- function(df, vThresholds, nAccrual) {
 # Mutes the gsm.core step logs, which would otherwise print once per vital
 # while the report renders, and the expected warning that sites without
 # windows are dropped. Other warnings still surface.
-rm_Quietly <- function(expr) {
+rep_Quietly <- function(expr) {
   withCallingHandlers(
     expr,
     message = function(m) invokeRestart("muffleMessage"),
@@ -140,7 +140,7 @@ rm_Quietly <- function(expr) {
 # One field of the kri0020/cou0020 metric metadata the report reads
 # (WindowLength, Threshold or AccrualThreshold): the first non-missing value,
 # with a warning when the metrics disagree. NULL when no metric sets it.
-rm_MetricMeta <- function(dfMetrics, strField) {
+rep_MetricMeta <- function(dfMetrics, strField) {
   if (is.null(dfMetrics) || !all(c("ID", strField) %in% names(dfMetrics))) {
     return(NULL)
   }
@@ -158,8 +158,8 @@ rm_MetricMeta <- function(dfMetrics, strField) {
 }
 
 # The metric's window length wins so the report reconciles with the KRI.
-rm_WindowLength <- function(dfMetrics, nWindowLength = NULL) {
-  nMetricW <- rm_MetricMeta(dfMetrics, "WindowLength")
+rep_WindowLength <- function(dfMetrics, nWindowLength = NULL) {
+  nMetricW <- rep_MetricMeta(dfMetrics, "WindowLength")
   if (!is.null(nMetricW)) {
     nMetricW <- as.numeric(nMetricW)
     if (!is.null(nWindowLength) && !isTRUE(nWindowLength == nMetricW)) {
@@ -180,7 +180,7 @@ rm_WindowLength <- function(dfMetrics, nWindowLength = NULL) {
 # column selector.
 # lHeaders: CSV headers by 0-based column index where the CSV should not use
 # the displayed header, such as an abbreviation.
-rm_CsvButton <- function(bExport, strFile, columns = ":visible", lHeaders = NULL) {
+rep_CsvButton <- function(bExport, strFile, columns = ":visible", lHeaders = NULL) {
   if (!isTRUE(bExport)) {
     return(list())
   }
@@ -203,6 +203,6 @@ rm_CsvButton <- function(bExport, strFile, columns = ":visible", lHeaders = NULL
   ))
 }
 
-rm_FormatValue <- function(x) {
+rep_FormatValue <- function(x) {
   format(x, trim = TRUE, drop0trailing = TRUE, scientific = FALSE, digits = 10)
 }

@@ -8,7 +8,7 @@
 #' collapsible "How to read" notes. `rmFilters.js` rewrites the rule text
 #' (`.rm-rule-text`) when the reviewer changes the settings.
 #'
-#' @param lClass `list` Output of [rm_Classify()].
+#' @param lClass `list` Output of [rep_Classify()].
 #' @param strStudy `character` Study ID(s) shown in the header.
 #' @param dSnapshotDate `Date` Snapshot date. Optional; omitted when `NULL`.
 #' @param strContext `character` HTML for a line above the title, such as a
@@ -17,9 +17,9 @@
 #' @return An `htmltools` tag.
 #' @keywords internal
 #' @export
-rm_Header <- function(lClass, strStudy, dSnapshotDate = NULL, strContext = "") {
+rep_Header <- function(lClass, strStudy, dSnapshotDate = NULL, strContext = "") {
   nW <- lClass$meta$window_length
-  rule_text <- rm_RuleText(lClass$meta)
+  rule_text <- rep_RuleText(lClass$meta)
   # The H1 is HTML rather than markdown and .toc-ignore, so the contents list
   # starts at the first section.
   htmltools::tags$header(
@@ -33,10 +33,10 @@ rm_Header <- function(lClass, strStudy, dSnapshotDate = NULL, strContext = "") {
     ),
     htmltools::tags$div(
       class = "rm-meta",
-      rm_Pill("Study", strStudy),
-      if (!is.null(dSnapshotDate)) rm_Pill("Snapshot", format(dSnapshotDate)),
-      rm_Pill("Window", paste(nW, "measurements")),
-      rm_Pill("Participant flag", htmltools::HTML(rule_text), class = "rm-pill-rule")
+      rep_Pill("Study", strStudy),
+      if (!is.null(dSnapshotDate)) rep_Pill("Snapshot", format(dSnapshotDate)),
+      rep_Pill("Window", paste(nW, "measurements")),
+      rep_Pill("Participant flag", htmltools::HTML(rule_text), class = "rm-pill-rule")
     ),
     htmltools::tags$div(
       id = "rm-how",
@@ -75,7 +75,7 @@ rm_Header <- function(lClass, strStudy, dSnapshotDate = NULL, strContext = "") {
 #' @return An `htmltools` tag.
 #' @keywords internal
 #' @export
-rm_Seg <- function(strLabel, vValues, strSelected, strAttr, strGroup = NULL, strIdPrefix = NULL) {
+rep_Seg <- function(strLabel, vValues, strSelected, strAttr, strGroup = NULL, strIdPrefix = NULL) {
   htmltools::tags$span(
     class = "rm-seg",
     role = "group",
@@ -101,36 +101,36 @@ rm_Seg <- function(strLabel, vValues, strSelected, strAttr, strGroup = NULL, str
 #' participant filter chips, Reset filters, and the Settings popover, which
 #' `rmFilters.js` fills from the settings in `#rm-data`.
 #'
-#' @param dfVitals `data.frame` The measures, `vitals` of [rm_Classify()].
+#' @param dfVitals `data.frame` The measures, `vitals` of [rep_Classify()].
 #' @param lSettings `list` The initial settings: `rule`, `thresholds`,
 #'   `minWindows` and `bp`.
 #'
 #' @return An `htmltools` tag.
 #' @keywords internal
 #' @export
-rm_Toolbar <- function(dfVitals, lSettings) {
+rep_Toolbar <- function(dfVitals, lSettings) {
   # htmltools, not raw HTML, so pandoc does not wrap the controls in a <p>.
   htmltools::tags$div(
     id = "rm-filter-strip",
     class = "rm-filter-strip",
     htmltools::tags$span(class = "rm-eyebrow", "Measures"),
-    rm_MeasureSelect(dfVitals),
+    rep_MeasureSelect(dfVitals),
     htmltools::tags$span(
       class = "rm-chips",
-      rm_Chip("country", "Country"),
-      rm_Chip("site", "Site"),
-      rm_Chip("subj", "Participant")
+      rep_Chip("country", "Country"),
+      rep_Chip("site", "Site"),
+      rep_Chip("subj", "Participant")
     ),
     htmltools::tags$span(id = "rm-count", class = "rm-count", title = "Filters apply to every section except the Study overview."),
     htmltools::tags$button(id = "rm-reset", type = "button", class = "rm-ghost", title = "Clear the measure, country, site and participant filters", "Reset filters"),
     htmltools::tags$span(class = "rm-vr"),
     htmltools::tags$button(id = "rm-settings-toggle", type = "button", class = "rm-btn", `aria-expanded` = "false", `aria-controls` = "rm-settings", "Settings"),
     htmltools::tags$button(id = "rm-toc-toggle", type = "button", class = "rm-ghost", `aria-pressed` = "false", style = "display:none;", "Hide contents"),
-    rm_SettingsPanel(lSettings)
+    rep_SettingsPanel(lSettings)
   )
 }
 
-rm_RuleText <- function(lMeta) {
+rep_RuleText <- function(lMeta) {
   th <- lMeta$thresholds
   sprintf(
     "<span class=\"rm-rule-text\">%s; participants need %s window%s for a flag</span>",
@@ -144,12 +144,12 @@ rm_RuleText <- function(lMeta) {
   )
 }
 
-rm_Pill <- function(label, ..., class = NULL) {
+rep_Pill <- function(label, ..., class = NULL) {
   htmltools::tags$span(class = paste(c("rm-pill", class), collapse = " "), htmltools::tags$b(label), ...)
 }
 
 # A popover under the Settings button.
-rm_SettingsPanel <- function(lSettings) {
+rep_SettingsPanel <- function(lSettings) {
   num <- function(id, label, min, step) {
     htmltools::tags$label(
       label,
@@ -181,12 +181,12 @@ rm_SettingsPanel <- function(lSettings) {
     ),
     set_row(
       "Blood pressure",
-      rm_Seg("Blood pressure", c(separate = "Separate", combined = "Combined", both = "Both"), lSettings$bp, "data-rm-set", strGroup = "bp"),
+      rep_Seg("Blood pressure", c(separate = "Separate", combined = "Combined", both = "Both"), lSettings$bp, "data-rm-set", strGroup = "bp"),
       "Separate: systolic and diastolic BP (the KRIs). Combined: paired BP, where a window repeats only when both readings repeat. Both: all three."
     ),
     set_row(
       "Participant flag",
-      rm_Seg("Flag rule", c(count = "# repeating", rate = "% repeating"), lSettings$rule, "data-rm-set", strGroup = "rule"),
+      rep_Seg("Flag rule", c(count = "# repeating", rate = "% repeating"), lSettings$rule, "data-rm-set", strGroup = "rule"),
       "Count repeating windows, or their share of the participant\u2019s windows."
     ),
     set_row(
@@ -215,7 +215,7 @@ rm_SettingsPanel <- function(lSettings) {
   )
 }
 
-rm_Chip <- function(key, label) {
+rep_Chip <- function(key, label) {
   htmltools::tags$span(
     id = paste0("rm-chip-", key),
     class = "rm-chip",
@@ -231,7 +231,7 @@ rm_Chip <- function(key, label) {
 }
 
 # rmFilters.js hides the BP options the Blood pressure setting does not show.
-rm_MeasureSelect <- function(dfVitals) {
+rep_MeasureSelect <- function(dfVitals) {
   kri_badge <- function(strMetric) {
     if (!is.na(strMetric)) htmltools::tags$span(class = "rm-kri", title = strMetric, "KRI")
   }

@@ -12,7 +12,7 @@
 #' order (date, visit, record). The report builds the Long table in the
 #' browser from these rows, so the data are embedded once.
 #'
-#' @param lClass `list` Output of [rm_Classify()].
+#' @param lClass `list` Output of [rep_Classify()].
 #'
 #' @return A `tibble` with `country`, `invid`, `subjid`, `visit`, `vs_dt`,
 #'   `performed` (`"Y"`/`"N"`), one column per measure, one
@@ -20,7 +20,7 @@
 #'   `repeat_vitals` column.
 #' @keywords internal
 #' @export
-rm_DataTableWide <- function(lClass) {
+rep_DataTableWide <- function(lClass) {
   vVitals <- lClass$vitals$vital
   dfRecords <- lClass$records
   if (is.null(dfRecords) || nrow(dfRecords) == 0) {
@@ -31,7 +31,7 @@ rm_DataTableWide <- function(lClass) {
     ))
   }
   vVitals <- intersect(vVitals, names(dfRecords))
-  vOrder <- rm_ParticipantOrder(lClass)
+  vOrder <- rep_ParticipantOrder(lClass)
   vRecordOrder <- intersect(c("vs_dt", "visit"), names(dfRecords))
   dfRecords <- dfRecords[do.call(order, c(
     list(match(dfRecords$subjid, vOrder)),
@@ -47,7 +47,7 @@ rm_DataTableWide <- function(lClass) {
   })
   names(lRepeat) <- sprintf("%s_in_repeat_window", vVitals)
 
-  dfRepeat <- rm_RepeatVitals(lClass)
+  dfRepeat <- rep_RepeatVitals(lClass)
   vRepeat <- vapply(split(dfRepeat$vital, dfRepeat$subjid), paste, character(1), collapse = " ")
 
   tibble::as_tibble(c(
@@ -57,7 +57,7 @@ rm_DataTableWide <- function(lClass) {
       subjid = dfRecords$subjid,
       visit = if ("visit" %in% names(dfRecords)) as.character(dfRecords$visit) else NA_character_,
       vs_dt = if ("vs_dt" %in% names(dfRecords)) dfRecords$vs_dt else as.Date(NA),
-      performed = rm_Performed(dfRecords$vsperf_std)
+      performed = rep_Performed(dfRecords$vsperf_std)
     ),
     # Paired BP stays text ("120/80").
     lapply(dfRecords[vVitals], function(x) if (is.character(x)) x else as.numeric(x)),
@@ -82,14 +82,14 @@ rm_DataTableWide <- function(lClass) {
 #' Long table from these rows. The CSV holds the rows the filters show, with
 #' the shown measures and their `<vital>_in_repeat_window` columns.
 #'
-#' @param dfWide `data.frame` Output of [rm_DataTableWide()].
-#' @param dfVitals `data.frame` `vitals` from [rm_Classify()].
+#' @param dfWide `data.frame` Output of [rep_DataTableWide()].
+#' @param dfVitals `data.frame` `vitals` from [rep_Classify()].
 #' @param bExport `logical` Show the CSV button.
 #'
 #' @return A `DT` htmlwidget.
 #' @keywords internal
 #' @export
-rm_DataTable <- function(dfWide, dfVitals, bExport = TRUE) {
+rep_DataTable <- function(dfWide, dfVitals, bExport = TRUE) {
   idx <- function(df, col) match(col, names(df)) - 1L
   dom <- if (isTRUE(bExport)) "Bfrtip" else "frtip"
   named <- function(df, cols, ...) {
@@ -135,7 +135,7 @@ rm_DataTable <- function(dfWide, dfVitals, bExport = TRUE) {
       pageLength = 25,
       deferRender = TRUE,
       order = list(),
-      buttons = rm_CsvButton(
+      buttons = rep_CsvButton(
         bExport,
         "repeat-measurements-data-wide",
         DT::JS(sprintf(
@@ -197,9 +197,9 @@ rm_DataTable <- function(dfWide, dfVitals, bExport = TRUE) {
 
 # Participants in Participant Listing order: worst flag, then most repeating
 # windows, then participant.
-rm_ParticipantOrder <- function(lClass) {
+rep_ParticipantOrder <- function(lClass) {
   df <- lClass$participants %>%
-    dplyr::mutate(severity = rm_FlagSeverity(.data$flag)) %>%
+    dplyr::mutate(severity = rep_FlagSeverity(.data$flag)) %>%
     dplyr::group_by(.data$subjid) %>%
     dplyr::summarise(
       worst = max(.data$severity),
@@ -211,13 +211,13 @@ rm_ParticipantOrder <- function(lClass) {
 }
 
 # Participant x vital pairs with at least one repeating window.
-rm_RepeatVitals <- function(lClass) {
+rep_RepeatVitals <- function(lClass) {
   vVitals <- lClass$vitals$vital
   df <- lClass$participants[lClass$participants$Numerator > 0, c("subjid", "vital")]
   df[order(df$subjid, match(df$vital, vVitals)), ]
 }
 
-rm_Performed <- function(x) {
+rep_Performed <- function(x) {
   if (is.null(x)) {
     return(NA_character_)
   }
