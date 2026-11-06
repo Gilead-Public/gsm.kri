@@ -282,3 +282,96 @@ test_that("participant N and D are the Detect_ConsecutiveRepeats() output and fl
   lClass <- rep_Classify(rep_listings(rep_vs(lValues)), rep_metrics(), vFlagThresholds = c(2, 2))
   expect_equal(c(flag_of(lClass, "G"), flag_of(lClass, "A"), flag_of(lClass, "R")), c("Green", "Red", "Red"))
 })
+
+test_that("a Mapped_SUBJ without studyid gives a missing studyid (#343)", {
+  lListings <- rep_Fixture()
+  lListings$Mapped_SUBJ$studyid <- NULL
+  lClass <- rep_Classify(lListings)
+  expect_equal(nrow(lClass$participants), 5 * nrow(lClass$vitals))
+  expect_true(all(is.na(lClass$participants$studyid)))
+  expect_true(all(is.na(lClass$measurements$studyid)))
+})
+
+test_that("a zero-row Mapped_SUBJ classifies no participants or measurements (#343)", {
+  f <- rep_Fixture()
+  lClass <- rep_Classify(rep_listings(f$Mapped_VS, f$Mapped_SUBJ[0, ]))
+  expect_equal(nrow(lClass$participants), 0)
+  expect_equal(nrow(lClass$measurements), 0)
+  expect_equal(levels(lClass$participants$flag), names(rep_FlagColors()))
+  expect_equal(lClass$meta$split_sites, character(0))
+})
+
+test_that("an extra numeric Mapped_VS column is windowed and flagged without a KRI (#343)", {
+  lListings <- rep_Fixture()
+  lListings$Mapped_VS$spo2 <- c(98, 98, 98, 97, 1:4, 5, 6, 99, 99, 99, 99, 99, 99)
+  lClass <- rep_Classify(lListings)
+  dfV <- lClass$vitals[lClass$vitals$vital == "spo2", ]
+  expect_equal(nrow(dfV), 1)
+  expect_equal(dfV$label, "spo2")
+  expect_equal(dfV$short, "spo2")
+  expect_true(is.na(dfV$metric))
+  expect_equal(utils::tail(lClass$vitals$vital, 2), c("height", "spo2"))
+
+  df <- lClass$participants[lClass$participants$vital == "spo2", ]
+  expect_equal(df$subjid, c("A", "B", "C", "D", "E"))
+  expect_true(all(is.na(df$metric)))
+  expect_equal(df$Numerator, c(1, 0, 0, 4, 0))
+  expect_equal(df$Denominator, c(2, 2, 0, 4, 0))
+  expect_equal(as.character(df$flag), c("Green", "Green", "Not evaluable", "Red", "Not evaluable"))
+  expect_equal(sum(lClass$measurements$vital == "spo2"), 16)
+
+  dt <- rep_DataTable(rep_DataTableWide(lClass), lClass$vitals)
+  expect_match(as.character(dt$x$container), 'title="spo2 (no KRI)"', fixed = TRUE)
+})
+
+test_that("a window length that matches the metrics does not warn (#343)", {
+  dfVS <- rep_vs(list(A = c(1, 1, 2, 2, 2)))
+  expect_no_warning(
+    lClass <- rep_Classify(rep_listings(dfVS), rep_metrics(nWindow = 3), nWindowLength = 3)
+  )
+  expect_equal(lClass$meta$window_length, 3)
+  expect_equal(lClass$meta$window_source, "metrics")
+})
+
+test_that("rep_Classify() rejects a NULL Mapped_SUBJ (#343)", {
+  dfVS <- rep_vs(list(A = c(1, 1, 1)))
+  expect_error(
+    rep_Classify(list(Mapped_VS = dfVS, Mapped_SUBJ = NULL)),
+    "Mapped_SUBJ needs subjid, invid, country"
+  )
+  expect_error(rep_Classify(list(Mapped_VS = dfVS)), "Mapped_SUBJ needs")
+})
+
+test_that("a participant listed twice in Mapped_SUBJ keeps the first row (#343)", {
+  lListings <- rep_Fixture()
+  lListings$Mapped_SUBJ <- rbind(
+    lListings$Mapped_SUBJ,
+    data.frame(studyid = "STUDY1", subjid = "A", invid = "S9", country = "FR")
+  )
+  lClass <- rep_Classify(lListings)
+  df <- unique(lClass$participants[c("subjid", "invid", "country")])
+  expect_equal(df$subjid, c("A", "B", "C", "D", "E"))
+  expect_equal(df$invid[df$subjid == "A"], "S1")
+  expect_equal(df$country[df$subjid == "A"], "US")
+  expect_equal(unique(lClass$measurements$invid[lClass$measurements$subjid == "A"]), "S1")
+  expect_false("S9" %in% lClass$participants$invid)
+})
+
+test_that("a Mapped_SUBJ row without subjid is listed but its records are dropped silently (#343)", {
+  # Current behaviour, pinned: unlike Detect_ConsecutiveRepeats(), which warns
+  # on records with a missing subject, rep_Classify() drops them silently.
+  lListings <- rep_Fixture()
+  lListings$Mapped_SUBJ$subjid[5] <- NA
+  dfOrphan <- lListings$Mapped_VS[lListings$Mapped_VS$subjid == "A", ]
+  dfOrphan$subjid <- NA
+  lListings$Mapped_VS <- rbind(lListings$Mapped_VS, dfOrphan)
+  expect_no_warning(lClass <- rep_Classify(lListings))
+  df <- unique(lClass$participants[c("subjid", "invid")])
+  expect_equal(df$subjid, c("A", "B", "C", "D", NA))
+  expect_equal(df$invid[is.na(df$subjid)], "S3")
+  dfNA <- lClass$participants[is.na(lClass$participants$subjid), ]
+  expect_true(all(dfNA$n_records == 0))
+  expect_true(all(dfNA$flag == "Not evaluable"))
+  expect_false(anyNA(lClass$measurements$subjid))
+  expect_equal(sum(is.na(lClass$records$subjid)), nrow(dfOrphan))
+})

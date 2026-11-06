@@ -9,7 +9,8 @@
 #' (`.rm-rule-text`) when the reviewer changes the settings.
 #'
 #' @param lClass `list` Output of [rep_Classify()].
-#' @param strStudy `character` Study ID(s) shown in the header.
+#' @param strStudy `character` Study ID(s) shown in the header. The Study pill
+#'   is omitted when `NULL`, `NA` or empty.
 #' @param dSnapshotDate `Date` Snapshot date. Optional; omitted when `NULL`.
 #' @param strContext `character` HTML for a line above the title, such as a
 #'   link back to the page that embeds the report. Omitted when empty.
@@ -33,7 +34,7 @@ rep_Header <- function(lClass, strStudy, dSnapshotDate = NULL, strContext = "") 
     ),
     htmltools::tags$div(
       class = "rm-meta",
-      rep_Pill("Study", strStudy),
+      if (length(strStudy) == 1 && !is.na(strStudy) && nzchar(strStudy)) rep_Pill("Study", strStudy),
       if (!is.null(dSnapshotDate)) rep_Pill("Snapshot", format(dSnapshotDate)),
       rep_Pill("Window", paste(nW, "measurements")),
       rep_Pill("Participant flag", htmltools::HTML(rule_text), class = "rm-pill-rule")

@@ -32,3 +32,13 @@ test_that("tiles widget rejects unknown labels and missing columns (#347)", {
   expect_error(Widget_RepeatMeasurementsTiles(dfTiles, strLabel = "pct"))
   expect_error(Widget_RepeatMeasurementsTiles(dfTiles[setdiff(names(dfTiles), "label_both")]), "label_both")
 })
+
+test_that("tiles widget names the allowed labels and needs a data frame (#347)", {
+  dfTiles <- rep_ParticipantTiles(rep_Classify(rep_Fixture()))
+  expect_error(
+    Widget_RepeatMeasurementsTiles(dfTiles, strLabel = "pct"),
+    "'arg' should be one of"
+  )
+  expect_error(Widget_RepeatMeasurementsTiles(as.list(dfTiles)), "dfTiles needs")
+  expect_error(Widget_RepeatMeasurementsTiles(NULL), "dfTiles needs subjid")
+})

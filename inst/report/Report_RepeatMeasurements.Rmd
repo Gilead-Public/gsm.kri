@@ -84,7 +84,7 @@ desc <- function(...) cat("\n::: {.rm-desc}\n", ..., "\n:::\n\n", sep = "")
 ```{r header, echo=FALSE}
 rep_Header(
   lClass,
-  strStudy = paste(unique(lListings$Mapped_SUBJ$studyid), collapse = ", "),
+  strStudy = paste(setdiff(unique(as.character(lListings$Mapped_SUBJ$studyid)), c(NA, "")), collapse = ", "),
   dSnapshotDate = dSnapshotDate,
   strContext = strContext
 )

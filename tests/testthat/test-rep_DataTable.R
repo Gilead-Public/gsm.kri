@@ -127,3 +127,11 @@ test_that("data table headers fit without horizontal scrolling and the CSV keeps
   expect_match(as.character(lCSV$columns), sprintf("always = [%d,%d]", idx(dfWide, "country"), idx(dfWide, "performed")), fixed = TRUE)
   expect_match(as.character(lCSV$format$header), '"6":"Weight"', fixed = TRUE)
 })
+
+test_that("Wide rows without vsperf_std leave performed missing, without a warning (#346)", {
+  lClass <- rep_Classify(rep_listings(rep_vs(list(A = c(1, 1, 1), B = c(2, 3, 4)))))
+  expect_false("vsperf_std" %in% names(lClass$records))
+  expect_no_warning(dfWide <- rep_DataTableWide(lClass))
+  expect_equal(nrow(dfWide), 6)
+  expect_true(all(is.na(dfWide$performed)))
+})

@@ -368,3 +368,73 @@ test_that("empty input returns an empty summary with the expected columns", {
   expect_equal(names(res), c("subjid", "Numerator", "Denominator"))
   expect_equal(nrow(res), 0)
 })
+
+test_that("input columns that the engine writes are rejected (#342)", {
+  for (strCol in c("seq", "in_repeat_window", "window_start")) {
+    df <- make_vs(c(1, 1, 1))
+    df[[strCol]] <- 1:3
+    expect_error(Detect_ConsecutiveRepeats(df, strCol), "reserved", label = strCol)
+    expect_error(
+      Detect_ConsecutiveRepeats(df, "weight", strOrderCol = strCol),
+      "reserved",
+      label = strCol
+    )
+  }
+  df <- data.frame(seq = "A", window_start = Sys.Date() + 0:2, weight = 1)
+  expect_error(
+    Detect_ConsecutiveRepeats(df, "weight", strSubjectCol = "seq", strDateCol = "window_start"),
+    "are reserved"
+  )
+  # A reserved name that is not one of the named columns is overwritten, not used.
+  df <- make_vs(c(1, 1, 1))
+  df$seq <- 9
+  expect_equal(MarkConsecutiveRepeats(df, "weight")$seq, 1:3)
+})
+
+test_that("results are identical to the v1.8.0 implementation on the six vitals (#342)", {
+  dfVS <- mapped_data$Mapped_VS
+  dfVS <- dfVS[!is.na(dfVS$subjid), ]
+  for (strCol in c("weight", "pulse", "sysbp", "diabp", "resp", "temp")) {
+    for (nW in 2:4) {
+      expect_identical(
+        Detect_ConsecutiveRepeats(dfVS, strCol, strOrderCol = "visit", nWindowLength = nW),
+        Detect_ConsecutiveRepeats_v1.8.0(dfVS, strCol, strOrderCol = "visit", nWindowLength = nW),
+        label = paste(strCol, nW)
+      )
+    }
+  }
+})
+
+test_that("results are identical to the v1.8.0 implementation on random data (#342)", {
+  withr::local_seed(20240307)
+  for (i in seq_len(300)) {
+    df <- detect_random_vs(
+      nSubjects = sample(0:8, 1),
+      nValues = sample(1:4, 1),
+      pNA = sample(c(0, 0.15, 0.5), 1)
+    )
+    if (i %% 3 == 0) {
+      # Paired-BP-like text values.
+      df$value <- ifelse(is.na(df$value), NA_character_, paste0(df$value, "/80"))
+    }
+    nW <- sample(2:5, 1)
+    strOrderCol <- if (i %% 2 == 0) "visit"
+    label <- paste0("run ", i, ", W = ", nW)
+    expect_identical(
+      Detect_ConsecutiveRepeats(df, "value", strOrderCol = strOrderCol, nWindowLength = nW),
+      Detect_ConsecutiveRepeats_v1.8.0(df, "value", strOrderCol = strOrderCol, nWindowLength = nW),
+      label = label
+    )
+    expect_identical(
+      Detect_ConsecutiveRepeats(
+        df, "value",
+        strMeasureCol = "measure", strMeasureVal = "HR", nWindowLength = nW
+      ),
+      Detect_ConsecutiveRepeats_v1.8.0(
+        df, "value",
+        strMeasureCol = "measure", strMeasureVal = "HR", nWindowLength = nW
+      ),
+      label = paste(label, "(long)")
+    )
+  }
+})
