@@ -55,7 +55,10 @@ test_that("Visualize_Score handles 'score' type correctly with thresholds", {
   expect_equal(plot_data$fill, c("#999999", "#FADB14", "#FF4D4F"))
 
   # Check for the presence of horizontal lines at thresholds
-  hline_yint <- c(ggplot_build(p)$data[[2]]$yintercept, ggplot_build(p)$data[[3]]$yintercept)
+  hline_yint <- c(
+    ggplot_build(p)$data[[2]]$yintercept,
+    ggplot_build(p)$data[[3]]$yintercept
+  )
   expect_equal(hline_yint, vThreshold)
 })
 

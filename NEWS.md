@@ -2,6 +2,12 @@
 
 - Add the Repeat Measurements report for the repeat-measure KRIs (`kri0020a`-`f`): a study overview, site/country distribution, participant and measure listings, and a data table, with filters and adjustable participant flag rules. `Report_RepeatMeasurements()` renders it (#340, #342-#348).
 - Add the `report_repeatmeasurements` workflow module (#340).
+
+# gsm.kri v1.8.0
+
+This minor release adds the IP Monitoring report and metrics (IP non-starters and premature treatment discontinuation) and the repeat-measure vital-sign KRIs.
+
+- Refactored the Eligibility report workflow's module configuration and queries (#351).
 - Add the IP monitoring report for IP non-starters and premature treatment discontinuations. Dosed participants are shown by study drug completion, including potential premature treatment discontinuations, and the participant listing shows study completion (#320, #332).
 - Added the IP Non-Starters metric: `kri0019` (site) and `cou0019` (country) count
   participants who are Confirmed non-starters or Potential non-starters outside the

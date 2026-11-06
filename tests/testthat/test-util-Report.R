@@ -28,7 +28,10 @@ test_that("[ FilterByFlags ] returns group/metric combinations with a flag at an
 })
 
 test_that("[ FilterByFlags ] returns group/metric combinations with a flag at most recent snapshot.", {
-  dfResultsFlaggedActual <- FilterByFlags(gsm.core::reportingResults, bCurrentlyFlagged = TRUE)
+  dfResultsFlaggedActual <- FilterByFlags(
+    gsm.core::reportingResults,
+    bCurrentlyFlagged = TRUE
+  )
 
   strRiskSignals <- gsm.core::reportingResults %>%
     FilterByLatestSnapshotDate() %>%

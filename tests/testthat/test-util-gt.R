@@ -79,8 +79,14 @@ test_that("gsm_gt passes additional arguments to gt::gt", {
 test_that("cols_label_month function exists and has documentation", {
   # Test that the function is properly documented and exported
   # This tests that the documentation structure is valid
-  expect_true(exists("cols_label_month", envir = asNamespace("gsm.kri"), inherits = FALSE) ||
-    "cols_label_month" %in% getNamespaceExports("gsm.kri"))
+  expect_true(
+    exists(
+      "cols_label_month",
+      envir = asNamespace("gsm.kri"),
+      inherits = FALSE
+    ) ||
+      "cols_label_month" %in% getNamespaceExports("gsm.kri")
+  )
 })
 
 test_that("gt functions handle edge cases", {
