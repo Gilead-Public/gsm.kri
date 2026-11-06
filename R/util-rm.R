@@ -44,6 +44,13 @@ rm_FlagColors <- function() {
   )
 }
 
+# Severity of each flag (Red 3, Amber 2, Green 1, Not evaluable 0), the one
+# sort key every participant ordering uses.
+rm_FlagSeverity <- function(vFlag) {
+  vSeverity <- c(Red = 3L, Amber = 2L, Green = 1L, `Not evaluable` = 0L)
+  unname(vSeverity[as.character(vFlag)])
+}
+
 #' Repeat Measurements participant flag thresholds
 #'
 #' @description

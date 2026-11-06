@@ -20,7 +20,6 @@
 #' @export
 rm_VitalRows <- function(lClass) {
   dfVitals <- lClass$vitals
-  vSeverity <- c(Red = 3, Amber = 2, Green = 1, `Not evaluable` = 0)
   dfValues <- lClass$measurements %>%
     dplyr::arrange(.data$subjid, .data$vital, .data$seq) %>%
     dplyr::group_by(.data$subjid, .data$vital) %>%
@@ -58,8 +57,10 @@ rm_VitalRows <- function(lClass) {
     visits = dplyr::coalesce(df$visits, ""),
     vital = df$vital,
     has_repeat = ifelse(grepl("1", df$in_repeat_window), "Y", "N"),
-    severity = unname(vSeverity[as.character(df$flag)])
+    severity = rm_FlagSeverity(df$flag)
   ) %>%
+    # One row per participant and measure, so each row sorts by its own flag
+    # and windows rather than the participant's worst (rm_ParticipantOrder()).
     dplyr::arrange(
       -.data$severity,
       -.data$Numerator,

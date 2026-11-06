@@ -198,9 +198,8 @@ rm_DataTable <- function(dfWide, dfVitals, bExport = TRUE) {
 # Participants in Participant Listing order: worst flag, then most repeating
 # windows, then participant.
 rm_ParticipantOrder <- function(lClass) {
-  vSeverity <- c(Red = 3, Amber = 2, Green = 1, `Not evaluable` = 0)
   df <- lClass$participants %>%
-    dplyr::mutate(severity = unname(vSeverity[as.character(.data$flag)])) %>%
+    dplyr::mutate(severity = rm_FlagSeverity(.data$flag)) %>%
     dplyr::group_by(.data$subjid) %>%
     dplyr::summarise(
       worst = max(.data$severity),
