@@ -1,0 +1,23 @@
+# Vital sign measures known to the Repeat Measurements report
+
+\`r lifecycle::badge("experimental")\`
+
+The six measures scored by \`kri0020a\`–\`f\` / \`cou0020a\`–\`f\`,
+paired blood pressure, then height and BSA. Every measure is flagged the
+same way; only the six have a KRI.
+
+Paired blood pressure (\`bp\`) is report-only: one value per visit
+record with both systolic and diastolic BP, so a window repeats only
+when both repeat over the same visits. It has no metric and does not
+reconcile with \`kri0020c\` / \`kri0020d\`.
+
+## Usage
+
+``` r
+rm_Vitals()
+```
+
+## Value
+
+A \`tibble\` with \`vital\` (the \`Mapped_VS\` column), \`label\`,
+\`short\` and \`metric\` (the site workflow ID; \`NA\` without a KRI).
