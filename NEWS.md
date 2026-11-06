@@ -1,6 +1,6 @@
 # gsm.kri (development version)
 
-- Add the Repeat Measurements report for the repeat-measure KRIs (`kri0020a`-`f`): a study overview, site/country distribution, participant and measure listings, and a data table, with filters and adjustable participant flag rules. `Report_RepeatMeasurements()` renders it (#340, #342-#348).
+- Add the Repeat Measurements report for the repeat-measure KRIs (`kri0020a`-`f`, `cou0020a`-`f`): a study overview, site/country distribution, participant and measure listings, and a data table, with filters and adjustable participant flag rules. It reconciles its participant counts with both the site and the country KRIs. `Report_RepeatMeasurements()` renders it, and its `strContext` argument adds a line above the title, such as a link back to an embedding page (#340, #342-#348).
 - Add the `report_repeatmeasurements` workflow module (#340).
 - `Detect_ConsecutiveRepeats()` and the Repeat Measurements report now share one windowing engine, so the report's participant counts are the KRI's by construction. Records with a missing subject are now dropped with a warning instead of failing with "arguments imply differing number of rows" (#340).
 
