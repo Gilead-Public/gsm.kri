@@ -39,7 +39,7 @@ Report_RepeatMeasurements(
 - dfResults:
 
   \`data.frame\` Reporting results. With \`kri0020\` results the report
-  reconciles with the KRI and colours sites by their KRI flag.
+  colours sites by their KRI flag.
 
 - dfMetrics:
 
@@ -61,12 +61,12 @@ Report_RepeatMeasurements(
 - nWindowLength:
 
   \`integer\` Window length when \`dfMetrics\` has none. See
-  \[rm_Classify()\].
+  \[rep_Classify()\].
 
 - strFlagRule:
 
   \`character\` Participant flag rule, \`"count"\` (default) or
-  \`"rate"\`. See \[rm_Classify()\].
+  \`"rate"\`. See \[rep_Classify()\].
 
 - vFlagThresholds:
 
@@ -74,7 +74,7 @@ Report_RepeatMeasurements(
   counts for \`"count"\`, proportions such as \`c(0.2, 0.3)\` for
   \`"rate"\`. Default \`NULL\`: 2 and 3 repeating windows, or the
   site-level \`kri0020\` / \`cou0020\` rate thresholds. See
-  \[rm_FlagThresholds()\].
+  \[rep_FlagThresholds()\].
 
 - nMinWindows:
 

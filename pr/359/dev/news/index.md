@@ -5,8 +5,7 @@
 - Add the Repeat Measurements report for the repeat-measure KRIs
   (`kri0020a`-`f`, `cou0020a`-`f`): a study overview, site/country
   distribution, participant and measure listings, and a data table, with
-  filters and adjustable participant flag rules. It reconciles its
-  participant counts with both the site and the country KRIs.
+  filters and adjustable participant flag rules.
   [`Report_RepeatMeasurements()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_RepeatMeasurements.md)
   renders it, and its `strContext` argument adds a line above the title,
   such as a link back to an embedding page

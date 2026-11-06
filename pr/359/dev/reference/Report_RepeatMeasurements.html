@@ -103,7 +103,7 @@ Settings panel, which recomputes every participant flag in the browser.</p>
 
 <dl><dt id="arg-dfresults">dfResults<a class="anchor" aria-label="anchor" href="#arg-dfresults"></a></dt>
 <dd><p>`data.frame` Reporting results. With `kri0020` results the
-report reconciles with the KRI and colours sites by their KRI flag.</p></dd>
+report colours sites by their KRI flag.</p></dd>
 
 
 <dt id="arg-dfmetrics">dfMetrics<a class="anchor" aria-label="anchor" href="#arg-dfmetrics"></a></dt>
@@ -124,12 +124,12 @@ and `vsperf_std`, and one numeric column per measure).</p></dd>
 
 <dt id="arg-nwindowlength">nWindowLength<a class="anchor" aria-label="anchor" href="#arg-nwindowlength"></a></dt>
 <dd><p>`integer` Window length when `dfMetrics` has none.
-See [rm_Classify()].</p></dd>
+See [rep_Classify()].</p></dd>
 
 
 <dt id="arg-strflagrule">strFlagRule<a class="anchor" aria-label="anchor" href="#arg-strflagrule"></a></dt>
 <dd><p>`character` Participant flag rule, `"count"` (default)
-or `"rate"`. See [rm_Classify()].</p></dd>
+or `"rate"`. See [rep_Classify()].</p></dd>
 
 
 <dt id="arg-vflagthresholds">vFlagThresholds<a class="anchor" aria-label="anchor" href="#arg-vflagthresholds"></a></dt>
@@ -137,7 +137,7 @@ or `"rate"`. See [rm_Classify()].</p></dd>
 `strFlagRule`: window counts for `"count"`, proportions such as
 `c(0.2, 0.3)` for `"rate"`. Default `NULL`: 2 and 3 repeating windows, or
 the site-level `kri0020` / `cou0020` rate thresholds. See
-[rm_FlagThresholds()].</p></dd>
+[rep_FlagThresholds()].</p></dd>
 
 
 <dt id="arg-nminwindows">nMinWindows<a class="anchor" aria-label="anchor" href="#arg-nminwindows"></a></dt>
