@@ -26,6 +26,7 @@ Report_RepeatMeasurements(
   nMinWindows = 1,
   strBPMode = c("separate", "combined", "both"),
   bExport = TRUE,
+  strContext = "",
   strOutputDir = getwd(),
   strOutputFile = NULL,
   strInputPath = system.file("report", "Report_RepeatMeasurements.Rmd", package =
@@ -38,7 +39,7 @@ Report_RepeatMeasurements(
 - dfResults:
 
   \`data.frame\` Reporting results. With \`kri0020\` results the report
-  reconciles with the KRI and colours sites by their KRI flag.
+  colours sites by their KRI flag.
 
 - dfMetrics:
 
@@ -60,19 +61,20 @@ Report_RepeatMeasurements(
 - nWindowLength:
 
   \`integer\` Window length when \`dfMetrics\` has none. See
-  \[rm_Classify()\].
+  \[rep_Classify()\].
 
 - strFlagRule:
 
   \`character\` Participant flag rule, \`"count"\` (default) or
-  \`"rate"\`. See \[rm_Classify()\].
+  \`"rate"\`. See \[rep_Classify()\].
 
 - vFlagThresholds:
 
   \`numeric\` Amber and Red thresholds for \`strFlagRule\`: window
   counts for \`"count"\`, proportions such as \`c(0.2, 0.3)\` for
   \`"rate"\`. Default \`NULL\`: 2 and 3 repeating windows, or the
-  \`kri0020\` rate thresholds. See \[rm_Classify()\].
+  site-level \`kri0020\` / \`cou0020\` rate thresholds. See
+  \[rep_FlagThresholds()\].
 
 - nMinWindows:
 
@@ -86,6 +88,12 @@ Report_RepeatMeasurements(
 - bExport:
 
   \`logical\` Show the CSV download buttons. Default: \`TRUE\`.
+
+- strContext:
+
+  \`character\` HTML shown above the report title, such as a link back
+  to a study page. Inserted as is, so it must be trusted HTML. Default:
+  \`""\` (none).
 
 - strOutputDir:
 

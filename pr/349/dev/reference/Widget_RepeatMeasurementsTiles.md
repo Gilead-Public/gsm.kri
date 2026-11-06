@@ -28,7 +28,7 @@ Widget_RepeatMeasurementsTiles(
 
 - dfTiles:
 
-  \`data.frame\` Output of \[rm_ParticipantTiles()\].
+  \`data.frame\` Output of \[rep_ParticipantTiles()\].
 
 - strLabel:
 

@@ -89,6 +89,7 @@ Settings panel, which recomputes every participant flag in the browser.</p>
 <span>  nMinWindows <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  strBPMode <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"separate"</span>, <span class="st">"combined"</span>, <span class="st">"both"</span><span class="op">)</span>,</span>
 <span>  bExport <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  strContext <span class="op">=</span> <span class="st">""</span>,</span>
 <span>  strOutputDir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/getwd.html" class="external-link">getwd</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  strOutputFile <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  strInputPath <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"report"</span>, <span class="st">"Report_RepeatMeasurements.Rmd"</span>, package <span class="op">=</span></span>
@@ -102,7 +103,7 @@ Settings panel, which recomputes every participant flag in the browser.</p>
 
 <dl><dt id="arg-dfresults">dfResults<a class="anchor" aria-label="anchor" href="#arg-dfresults"></a></dt>
 <dd><p>`data.frame` Reporting results. With `kri0020` results the
-report reconciles with the KRI and colours sites by their KRI flag.</p></dd>
+report colours sites by their KRI flag.</p></dd>
 
 
 <dt id="arg-dfmetrics">dfMetrics<a class="anchor" aria-label="anchor" href="#arg-dfmetrics"></a></dt>
@@ -123,19 +124,20 @@ and `vsperf_std`, and one numeric column per measure).</p></dd>
 
 <dt id="arg-nwindowlength">nWindowLength<a class="anchor" aria-label="anchor" href="#arg-nwindowlength"></a></dt>
 <dd><p>`integer` Window length when `dfMetrics` has none.
-See [rm_Classify()].</p></dd>
+See [rep_Classify()].</p></dd>
 
 
 <dt id="arg-strflagrule">strFlagRule<a class="anchor" aria-label="anchor" href="#arg-strflagrule"></a></dt>
 <dd><p>`character` Participant flag rule, `"count"` (default)
-or `"rate"`. See [rm_Classify()].</p></dd>
+or `"rate"`. See [rep_Classify()].</p></dd>
 
 
 <dt id="arg-vflagthresholds">vFlagThresholds<a class="anchor" aria-label="anchor" href="#arg-vflagthresholds"></a></dt>
 <dd><p>`numeric` Amber and Red thresholds for
 `strFlagRule`: window counts for `"count"`, proportions such as
 `c(0.2, 0.3)` for `"rate"`. Default `NULL`: 2 and 3 repeating windows, or
-the `kri0020` rate thresholds. See [rm_Classify()].</p></dd>
+the site-level `kri0020` / `cou0020` rate thresholds. See
+[rep_FlagThresholds()].</p></dd>
 
 
 <dt id="arg-nminwindows">nMinWindows<a class="anchor" aria-label="anchor" href="#arg-nminwindows"></a></dt>
@@ -150,6 +152,12 @@ systolic and diastolic BP), `"combined"` (paired BP only) or `"both"`.</p></dd>
 
 <dt id="arg-bexport">bExport<a class="anchor" aria-label="anchor" href="#arg-bexport"></a></dt>
 <dd><p>`logical` Show the CSV download buttons. Default: `TRUE`.</p></dd>
+
+
+<dt id="arg-strcontext">strContext<a class="anchor" aria-label="anchor" href="#arg-strcontext"></a></dt>
+<dd><p>`character` HTML shown above the report title, such as a
+link back to a study page. Inserted as is, so it must be trusted HTML.
+Default: `""` (none).</p></dd>
 
 
 <dt id="arg-stroutputdir">strOutputDir<a class="anchor" aria-label="anchor" href="#arg-stroutputdir"></a></dt>

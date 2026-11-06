@@ -3,14 +3,21 @@
 ## gsm.kri (development version)
 
 - Add the Repeat Measurements report for the repeat-measure KRIs
-  (`kri0020a`-`f`): a study overview, site/country distribution,
-  participant and measure listings, and a data table, with filters and
-  adjustable participant flag rules.
+  (`kri0020a`-`f`, `cou0020a`-`f`): a study overview, site/country
+  distribution, participant and measure listings, and a data table, with
+  filters and adjustable participant flag rules.
   [`Report_RepeatMeasurements()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_RepeatMeasurements.md)
-  renders it
+  renders it, and its `strContext` argument adds a line above the title,
+  such as a link back to an embedding page
   ([\#340](https://github.com/Gilead-Public/gsm.kri/issues/340),
   [\#342](https://github.com/Gilead-Public/gsm.kri/issues/342)-#348).
 - Add the `report_repeatmeasurements` workflow module
+  ([\#340](https://github.com/Gilead-Public/gsm.kri/issues/340)).
+- [`Detect_ConsecutiveRepeats()`](https://gilead-public.github.io/gsm.kri/dev/reference/Detect_ConsecutiveRepeats.md)
+  and the Repeat Measurements report now share one windowing engine, so
+  the report’s participant counts are the KRI’s by construction. Records
+  with a missing subject are now dropped with a warning instead of
+  failing with “arguments imply differing number of rows”
   ([\#340](https://github.com/Gilead-Public/gsm.kri/issues/340)).
 
 ## gsm.kri v1.8.0
@@ -68,8 +75,7 @@ Premature Deaths randomization-to-death scatters stay on Plotly
   Plotly bucket bar, left without a caller once the Premature Deaths
   report moved to gsm.viz. Use
   [`pd_BucketBarSpec()`](https://gilead-public.github.io/gsm.kri/dev/reference/pd_BucketBarSpec.md)
-  with
-  [`gsm.vizr::bars()`](https://gilead-public.github.io/gsm.vizr/reference/bars.html).
+  with [`gsm.vizr::bars()`](https://rdrr.io/pkg/gsm.vizr/man/bars.html).
   Its aggregation is now the new exported
   [`pd_BucketCounts()`](https://gilead-public.github.io/gsm.kri/dev/reference/pd_BucketCounts.md),
   which emits only the (group, category) pairs that occur
@@ -88,16 +94,16 @@ Premature Deaths randomization-to-death scatters stay on Plotly
   ([\#258](https://github.com/Gilead-Public/gsm.kri/issues/258)).
 - The legacy widget wrappers (`Widget_BarChart`, `Widget_ScatterPlot`,
   `Widget_TimeSeries`, `Widget_GroupOverview`), their Shiny bindings,
-  [`MakeChartConfig()`](https://gilead-public.github.io/gsm.vizr/reference/MakeChartConfig.html),
+  [`MakeChartConfig()`](https://rdrr.io/pkg/gsm.vizr/man/MakeChartConfig.html),
   and the shared widget-control JS/CSS moved to gsm.vizr
   ([\#291](https://github.com/Gilead-Public/gsm.kri/issues/291)).
   gsm.kri re-exports every name, so existing callers are unaffected. The
   vendored `gsm.viz-2.4.1` bundle is retired;
   `Widget_CrossStudyRiskScore` now takes the bundle from
-  [`gsm.vizr::html_dependency_gsm_viz()`](https://gilead-public.github.io/gsm.vizr/reference/html_dependency_gsm_viz.html).
+  [`gsm.vizr::html_dependency_gsm_viz()`](https://rdrr.io/pkg/gsm.vizr/man/html_dependency_gsm_viz.html).
 - The Premature Deaths bucket and reason barcharts render through
-  [`gsm.vizr::bars()`](https://gilead-public.github.io/gsm.vizr/reference/bars.html)
-  via the new
+  [`gsm.vizr::bars()`](https://rdrr.io/pkg/gsm.vizr/man/bars.html) via
+  the new
   [`pd_BucketBarSpec()`](https://gilead-public.github.io/gsm.kri/dev/reference/pd_BucketBarSpec.md)
   /
   [`pd_BucketRows()`](https://gilead-public.github.io/gsm.kri/dev/reference/pd_BucketRows.md)
