@@ -3,9 +3,9 @@
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' Windows every vital of every enrolled participant once with
-#' [Detect_ConsecutiveRepeats()], the `kri0020` / `cou0020` metric function,
-#' so every section of the report reads one frame. Summing `Numerator` and
+#' Windows every vital of every enrolled participant once with the engine
+#' behind [Detect_ConsecutiveRepeats()], the `kri0020` / `cou0020` metric
+#' function, so every section of the report reads one frame. Summing `Numerator` and
 #' `Denominator` by site or country reproduces the metrics.
 #'
 #' A participant's flag for a vital comes from [gsm.core::Flag()] with one of
@@ -134,7 +134,11 @@ rm_Classify <- function(
     dfVS$record <- seq_len(nrow(dfVS))
   }
   strOrderCol <- if ("visit" %in% names(dfVS)) "visit"
-  dfMeasurements <- dplyr::bind_rows(lapply(
+  # Each measure is windowed once; its marks feed the listings and its
+  # Numerator and Denominator come from the summary step of
+  # Detect_ConsecutiveRepeats(), the kri0020 metric function, so the report
+  # reconciles with the KRI by construction.
+  lWindowed <- lapply(
     dfVitals$vital[dfVitals$vital %in% names(dfVS)],
     function(strVital) {
       dfMarked <- MarkConsecutiveRepeats(
@@ -143,8 +147,10 @@ rm_Classify <- function(
         strOrderCol = strOrderCol,
         nWindowLength = nW
       )
+      dfMetric <- SummarizeConsecutiveRepeats(dfMarked, unique(dfMarked$subjid), "subjid", nW)
+      dfMetric$vital <- rep(strVital, nrow(dfMetric))
       x <- dfMarked[[strVital]]
-      tibble::tibble(
+      dfMeasurements <- tibble::tibble(
         studyid = dfMarked$studyid,
         country = dfMarked$country,
         invid = dfMarked$invid,
@@ -159,8 +165,10 @@ rm_Classify <- function(
         in_repeat_window = dfMarked$in_repeat_window,
         window_start = dfMarked$window_start
       )
+      list(measurements = dfMeasurements, metric = dfMetric)
     }
-  ))
+  )
+  dfMeasurements <- dplyr::bind_rows(lapply(lWindowed, `[[`, "measurements"))
   if (nrow(dfMeasurements) == 0) {
     dfMeasurements <- tibble::tibble(
       studyid = character(), country = character(), invid = character(),
@@ -173,20 +181,9 @@ rm_Classify <- function(
   dfCounts <- dfMeasurements %>%
     dplyr::group_by(.data$subjid, .data$vital) %>%
     dplyr::summarise(n_records = dplyr::n(), .groups = "drop")
-  # Numerator and Denominator come from the kri0020 metric function itself,
-  # so the report reconciles with the KRI by construction.
   dfMetric <- dplyr::bind_rows(
     tibble::tibble(subjid = dfSubj$subjid[0], vital = character(), Numerator = numeric(), Denominator = numeric()),
-    lapply(unique(dfMeasurements$vital), function(strVital) {
-      dfOut <- Detect_ConsecutiveRepeats(
-        dfVS,
-        strVital,
-        strOrderCol = strOrderCol,
-        nWindowLength = nW
-      )
-      dfOut$vital <- rep(strVital, nrow(dfOut))
-      dfOut
-    })
+    lapply(lWindowed, `[[`, "metric")
   )
   dfParticipants <- tidyr::crossing(
     dfSubj,
