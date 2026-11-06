@@ -15,7 +15,7 @@ A `list` with `thresholds` (Amber, Red; fractions) and `accrual`.
 \description{
 `r lifecycle::badge("experimental")`
 
-The `kri0020` site rule: Amber and Red at the metric `Threshold` (default
+The `kri0020` / `cou0020` site rule: Amber and Red at the metric `Threshold` (default
 20\% and 30\% of windows repeat) for sites with at least the metric
 `AccrualThreshold` windows (default 3).
 }

@@ -16,16 +16,16 @@ rm_SiteFlagRows(lClass, dfResults = NULL, dfMetrics = NULL)
 \value{
 A `tibble` with `vital`, `country`, `invid`, `Numerator`,
   `Denominator`, `flag` (`0` Green, `1` Amber, `2` Red, `NA` not evaluated)
-  and `source`, one row per vital and site with enrolled participants. A
+  and `source`, one row per measure and site with enrolled participants. A
   site whose participants have more than one country lists them in
   `country`, comma-separated.
 }
 \description{
 `r lifecycle::badge("experimental")`
 
-One flag per site and vital. A KRI vital with `kri0020a`–`f` site results
+One flag per site and measure. A KRI measure with `kri0020a`–`f` site results
 takes the latest KRI flag (`source = "KRI"`). Every other
-vital (height, BSA, paired BP, or a KRI vital without results) is flagged
+measure (height, BSA, paired BP, or a KRI measure without results) is flagged
 in the report with the `kri0020` workflow steps (`source = "report"`):
 [gsm.core::Input_Rate()], [gsm.core::Transform_Rate()],
 [gsm.core::Analyze_Identity()] and [gsm.core::Flag()] on the participants'

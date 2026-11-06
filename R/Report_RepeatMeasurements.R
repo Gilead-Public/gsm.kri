@@ -28,7 +28,8 @@
 #' @param vFlagThresholds `numeric` Amber and Red thresholds for
 #'   `strFlagRule`: window counts for `"count"`, proportions such as
 #'   `c(0.2, 0.3)` for `"rate"`. Default `NULL`: 2 and 3 repeating windows, or
-#'   the `kri0020` rate thresholds. See [rm_Classify()].
+#'   the site-level `kri0020` / `cou0020` rate thresholds. See
+#'   [rm_FlagThresholds()].
 #' @param nMinWindows `numeric` Windows a participant needs for a flag.
 #'   Default 1.
 #' @param strBPMode `character` Blood pressure view: `"separate"` (default,

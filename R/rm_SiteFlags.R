@@ -3,9 +3,9 @@
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' One flag per site and vital. A KRI vital with `kri0020a`–`f` site results
+#' One flag per site and measure. A KRI measure with `kri0020a`–`f` site results
 #' takes the latest KRI flag (`source = "KRI"`). Every other
-#' vital (height, BSA, paired BP, or a KRI vital without results) is flagged
+#' measure (height, BSA, paired BP, or a KRI measure without results) is flagged
 #' in the report with the `kri0020` workflow steps (`source = "report"`):
 #' [gsm.core::Input_Rate()], [gsm.core::Transform_Rate()],
 #' [gsm.core::Analyze_Identity()] and [gsm.core::Flag()] on the participants'
@@ -19,7 +19,7 @@
 #'
 #' @return A `tibble` with `vital`, `country`, `invid`, `Numerator`,
 #'   `Denominator`, `flag` (`0` Green, `1` Amber, `2` Red, `NA` not evaluated)
-#'   and `source`, one row per vital and site with enrolled participants. A
+#'   and `source`, one row per measure and site with enrolled participants. A
 #'   site whose participants have more than one country lists them in
 #'   `country`, comma-separated.
 #' @keywords internal
@@ -87,7 +87,7 @@ rm_SiteFlagPipeline <- function(dfParticipants, lRule) {
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' The `kri0020` site rule: Amber and Red at the metric `Threshold` (default
+#' The `kri0020` / `cou0020` site rule: Amber and Red at the metric `Threshold` (default
 #' 20\% and 30\% of windows repeat) for sites with at least the metric
 #' `AccrualThreshold` windows (default 3).
 #'
@@ -110,12 +110,12 @@ rm_SiteRule <- function(dfMetrics = NULL) {
 #' `r lifecycle::badge("experimental")`
 #'
 #' The site-level `kri0020a`–`f` flags from each metric's latest snapshot,
-#' keyed by vital. A site without a flag in that snapshot is `NA` (not
+#' keyed by measure (`vital`). A site without a flag in that snapshot is `NA` (not
 #' evaluated).
 #'
 #' @param dfResults `data.frame` Reporting results.
 #'
-#' @return A named `list` (vital to a named list of site flags); empty when
+#' @return A named `list` (measure to a named list of site flags); empty when
 #'   `dfResults` has no `kri0020` site results.
 #' @noRd
 rm_SiteFlags <- function(dfResults) {

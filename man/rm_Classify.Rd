@@ -2,7 +2,7 @@
 % Please edit documentation in R/rm_Classify.R
 \name{rm_Classify}
 \alias{rm_Classify}
-\title{Classify participants and vitals for the Repeat Measurements report}
+\title{Classify participants and measures for the Repeat Measurements report}
 \usage{
 rm_Classify(
   lListings,
@@ -59,17 +59,18 @@ A `list`:
 \description{
 `r lifecycle::badge("experimental")`
 
-Windows every vital of every enrolled participant once with the engine
+Windows every measure of every enrolled participant once with the engine
 behind [Detect_ConsecutiveRepeats()], the `kri0020` / `cou0020` metric
 function, so every section of the report reads one frame. Summing `Numerator` and
 `Denominator` by site or country reproduces the metrics.
 
-A participant's flag for a vital comes from [gsm.core::Flag()] with one of
+A participant's flag for a measure comes from [gsm.core::Flag()] with one of
 two rules:
 * `"count"` (default): repeating windows `Numerator` against
   `vFlagThresholds` (default Amber at 2, Red at 3 or more).
 * `"rate"`: `Numerator / Denominator` against `vFlagThresholds` (default
-  the `kri0020` `Threshold` in `dfMetrics`, else 20\% / 30\%).
+  the site-level `kri0020` / `cou0020` `Threshold` in `dfMetrics`, else
+  20\% / 30\%; see [rm_FlagThresholds()]).
 
 Amber is at or above the first threshold, Red at or above the second.
 Participants with fewer than `nMinWindows` windows are `Not evaluable`.

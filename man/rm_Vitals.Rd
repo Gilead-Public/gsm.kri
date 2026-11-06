@@ -2,7 +2,7 @@
 % Please edit documentation in R/util-rm.R
 \name{rm_Vitals}
 \alias{rm_Vitals}
-\title{Vital signs known to the Repeat Measurements report}
+\title{Vital sign measures known to the Repeat Measurements report}
 \usage{
 rm_Vitals()
 }
@@ -13,8 +13,8 @@ A `tibble` with `vital` (the `Mapped_VS` column), `label`, `short`
 \description{
 `r lifecycle::badge("experimental")`
 
-The six vitals scored by `kri0020a`–`f` / `cou0020a`–`f`, paired blood
-pressure, then height and BSA. Every vital is flagged the same way; only
+The six measures scored by `kri0020a`–`f` / `cou0020a`–`f`, paired blood
+pressure, then height and BSA. Every measure is flagged the same way; only
 the six have a KRI.
 
 Paired blood pressure (`bp`) is report-only: one value per visit record

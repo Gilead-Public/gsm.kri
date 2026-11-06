@@ -3,7 +3,7 @@
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' One tile per participant and vital, with the three tile labels the
+#' One tile per participant and measure, with the three tile labels the
 #' report switches between. [Widget_RepeatMeasurementsTiles()] draws them.
 #'
 #' @param lClass `list` Output of [rm_Classify()].
