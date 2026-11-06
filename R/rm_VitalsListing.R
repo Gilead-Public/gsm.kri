@@ -213,34 +213,3 @@ rm_VitalsListing <- function(dfVitalRows, nWindowLength = NULL, bExport = TRUE) 
     )
   )
 }
-
-# DT CSV button exporting the rows the filters show; `columns` is a DT
-# column selector.
-# lHeaders: CSV headers by 0-based column index where the CSV should not use
-# the displayed header, such as an abbreviation.
-rm_CsvButton <- function(bExport, strFile, columns = ":visible", lHeaders = NULL) {
-  if (!isTRUE(bExport)) {
-    return(list())
-  }
-  lOptions <- list(
-    columns = columns,
-    orthogonal = "export",
-    modifier = list(search = "applied")
-  )
-  if (length(lHeaders)) {
-    lOptions$format <- list(header = DT::JS(sprintf(
-      "function (data, idx) { var h = %s; return h[idx] !== undefined ? h[idx] : data; }",
-      jsonlite::toJSON(lHeaders, auto_unbox = TRUE)
-    )))
-  }
-  list(list(
-    extend = "csv",
-    text = "Download CSV",
-    filename = strFile,
-    exportOptions = lOptions
-  ))
-}
-
-format_value <- function(x) {
-  format(x, trim = TRUE, drop0trailing = TRUE, scientific = FALSE, digits = 10)
-}
