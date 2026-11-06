@@ -4282,7 +4282,7 @@ font-size: 0.95em;
 <!-- The report's own header card carries the title, so hide the page's. -->
 <style>#header { display: none; }</style>
 <header id="rm-header" class="rm-header">
-<div class="rm-ctx"><a href="https://gilead-public.github.io/gsm.kri">gsm.kri</a> example · rendered November 06, 2026 17:19 UTC · <a href="#example-code">Example code ↓</a></div>
+<div class="rm-ctx"><a href="https://gilead-public.github.io/gsm.kri">gsm.kri</a> example · rendered November 06, 2026 18:46 UTC · <a href="#example-code">Example code ↓</a></div>
 <div class="rm-title">
 <h1 class="toc-ignore">Repeat Measurements</h1>
 <button id="rm-how-toggle" type="button" class="rm-btn" aria-expanded="false" aria-controls="rm-how">How to read</button>
@@ -5014,8 +5014,8 @@ to filter the report to that participant; click again to clear.</li>
     var amber = parseFloat((byId('rm-th-amber') || {}).value);
     var red = parseFloat((byId('rm-th-red') || {}).value);
     var min = Number((byId('rm-min-windows') || {}).value);
-    if (!isFinite(amber) || !isFinite(red) || amber < 0 || red < 0) {
-      return settingsMsg('Enter Amber and Red thresholds of 0 or more.');
+    if (!isFinite(amber) || !isFinite(red) || amber <= 0 || red <= 0) {
+      return settingsMsg('Enter Amber and Red thresholds above 0.');
     }
     if (amber > red) return settingsMsg('Amber must not be above Red.');
     if (!(min >= 1) || Math.floor(min) !== min) return settingsMsg('Minimum windows must be a whole number of 1 or more.');

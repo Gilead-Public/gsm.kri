@@ -19,9 +19,16 @@ or more). \* \`"rate"\`: \`Numerator / Denominator\` against
 Amber is at or above the first threshold, Red at or above the second.
 Participants with fewer than \`nMinWindows\` windows are \`Not
 evaluable\`. Height, BSA and any other numeric \`Mapped_VS\` column are
-windowed and flagged the same way, although they have no KRI. With
-\`sysbp\` and \`diabp\`, paired blood pressure (\`bp\`, see
-\[rep_Vitals()\]) is added.
+windowed and flagged the same way, although they have no KRI. Numeric
+timing and ID columns are not measures and are skipped: \`studyid\`,
+\`subjid\`, \`invid\`, \`country\`, \`visit\`, \`vs_dt\`,
+\`vsperf_std\`, and any name (ignoring case) starting with \`visit\` or
+ending in \`dy\`, \`num\`, \`seq\` or \`id\` (e.g. \`vsdy\`,
+\`visitnum\`, \`vsseq\`, \`siteid\`). With \`sysbp\` and \`diabp\`,
+paired blood pressure (\`bp\`, see \[rep_Vitals()\]) is added.
+
+A character \`vs_dt\` must hold ISO dates and is converted to \`Date\`,
+as in \[Detect_ConsecutiveRepeats()\].
 
 ## Usage
 
@@ -84,8 +91,9 @@ marks used by \[Detect_ConsecutiveRepeats()\]). \* \`records\`: the
 enrolled participants' \`Mapped_VS\` rows, with \`country\` and
 \`invid\` from \`Mapped_SUBJ\` and a \`record\` key that
 \`measurements\` refers to. \* \`vitals\`: the rows of \[rep_Vitals()\]
-in the report, plus any other numeric \`Mapped_VS\` column. \* \`meta\`:
-\`window_length\`, \`window_source\` (\`"metrics"\`, \`"argument"\` or
-\`"default"\`), \`rule\`, \`thresholds\` (Amber, Red), \`min_windows\`
-and \`split_sites\` (sites whose participants have more than one
-country; a warning lists them).
+in the report, plus any other numeric \`Mapped_VS\` column that is not a
+timing or ID column. \* \`meta\`: \`window_length\`, \`window_source\`
+(\`"metrics"\`, \`"argument"\` or \`"default"\`), \`rule\`,
+\`thresholds\` (Amber, Red), \`min_windows\` and \`split_sites\` (sites
+whose participants have more than one country; a warning lists them;
+participants without a site are not a site).
