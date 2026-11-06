@@ -13,14 +13,18 @@
 #' @param strValueCol `character` Column holding the measurement value.
 #' @param strSubjectCol `character` Subject identifier column. Default
 #'   `"subjid"`.
-#' @param strDateCol `character` Date/ordering column. Default `"vs_dt"`.
+#' @param strDateCol `character` Date/ordering column. Default `"vs_dt"`. A
+#'   `Date` or `POSIXct` column is used as is. A character (or factor) column
+#'   must hold ISO dates (`"YYYY-MM-DD"`); it is converted to `Date` so that,
+#'   for example, `"2024-01-9"` sorts before `"2024-01-10"`. Any other value
+#'   is an error. Missing dates sort last within subject.
 #' @param strOrderCol `character` Optional column(s) used, in order, to break
 #'   ties on `strDateCol` (e.g. an intra-visit measurement time or `"visit"`).
 #'   Default `NULL`, in which case tied records keep their input order.
 #' @param strMeasureCol `character` Optional column identifying the measure,
 #'   for long-format data. When supplied, `df` is filtered to `strMeasureVal`.
-#' @param strMeasureVal `character` Value of `strMeasureCol` to keep. Required
-#'   when `strMeasureCol` is supplied.
+#' @param strMeasureVal `character` The single value of `strMeasureCol` to
+#'   keep. Required when `strMeasureCol` is supplied.
 #' @param nWindowLength `numeric` Window length; a whole number >= 2. Default
 #'   `3`.
 #'
@@ -124,6 +128,11 @@ MarkConsecutiveRepeats <- function(
       "{.arg strMeasureVal} is required when {.arg strMeasureCol} is supplied."
     )
   }
+  if (!is.null(strMeasureCol) && (length(strMeasureVal) != 1 || is.na(strMeasureVal))) {
+    cli::cli_abort(
+      "{.arg strMeasureVal} must be a single non-missing value, not {.val {strMeasureVal}}."
+    )
+  }
   # Validate each argument before c(), which would coerce numerics to strings
   # and silently drop NULLs.
   lScalarCols <- list(
@@ -166,6 +175,7 @@ MarkConsecutiveRepeats <- function(
     df <- df[df[[strMeasureCol]] %in% strMeasureVal, , drop = FALSE]
   }
   df <- df[!is.na(df[[strValueCol]]) & !is.na(df[[strSubjectCol]]), , drop = FALSE]
+  df[[strDateCol]] <- ParseDateColumn(df[[strDateCol]], strDateCol)
   # arrange() is stable and sorts in the C locale, so full ties keep input order.
   df <- dplyr::arrange(
     df,
@@ -195,6 +205,27 @@ MarkConsecutiveRepeats <- function(
   )
   rownames(df) <- NULL
   df
+}
+
+# Text dates sort as text ("2024-01-9" after "2024-01-10"), so a character
+# or factor date column must be ISO dates and is converted to Date. Other
+# types are returned unchanged.
+ParseDateColumn <- function(x, strDateCol) {
+  if (!is.character(x) && !is.factor(x)) {
+    return(x)
+  }
+  x <- trimws(as.character(x))
+  x[x %in% ""] <- NA
+  bISO <- grepl("^[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}$", x)
+  dOut <- as.Date(ifelse(bISO, x, NA_character_), format = "%Y-%m-%d")
+  bBad <- !is.na(x) & is.na(dOut)
+  if (any(bBad)) {
+    cli::cli_abort(c(
+      "{.field {strDateCol}} must be a Date, a POSIXct or ISO dates ({.val YYYY-MM-DD}).",
+      x = "{sum(bBad)} value{?s} can't be read as a date, e.g. {.val {utils::head(unique(x[bBad]), 3)}}."
+    ))
+  }
+  dOut
 }
 
 # Names of the marks MarkConsecutiveRepeats() adds: position, in a window and

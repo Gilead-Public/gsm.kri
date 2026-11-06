@@ -330,6 +330,18 @@ test_that("Detect_ConsecutiveRepeats() counts equal the marked window starts for
     )
     expect_gt(sum(dfMark$.rep_in_window), 0)
   }
+
+  # Known answers: the marked window starts reproduce the hand-derived
+  # fixture, not only Detect_ConsecutiveRepeats().
+  dfVS <- read_fixture("vs.csv")
+  dfExpected <- read_fixture("vs_expected_subject.csv")
+  for (strMeasure in unique(dfExpected$measure)) {
+    dfExp <- dfExpected[dfExpected$measure == strMeasure, ]
+    dfMark <- MarkConsecutiveRepeats(dfVS, strMeasure)
+    vN <- tapply(dfMark$.rep_window_start, factor(dfMark$subjid, dfExp$subjid), sum)
+    vN[is.na(vN)] <- 0
+    expect_equal(unname(as.numeric(vN)), dfExp$Numerator, label = strMeasure)
+  }
 })
 
 test_that("measure filtering applies to long data (#342)", {
@@ -473,6 +485,88 @@ test_that("results are identical to the v1.8.0 implementation on random data (#3
         strMeasureCol = "measure", strMeasureVal = "HR", nWindowLength = nW
       ),
       label = paste(label, "(long)")
+    )
+  }
+})
+
+test_that("character dates are read as ISO dates, not sorted as text", {
+  # As text "2024-01-10" sorts before "2024-01-8", giving 7, 7, 7, 5 (N = 1).
+  df <- data.frame(
+    subjid = "A",
+    vs_dt = c("2024-01-8", "2024-01-9", "2024-01-10", "2024-01-11"),
+    weight = c(7, 5, 7, 7)
+  )
+  res <- Detect_ConsecutiveRepeats(df, "weight")
+  expect_equal(c(res$Numerator, res$Denominator), c(0, 2))
+  expect_identical(
+    MarkConsecutiveRepeats(df, "weight")$vs_dt,
+    as.Date("2024-01-08") + 0:3
+  )
+
+  dfDate <- transform(df, vs_dt = as.Date(vs_dt))
+  expect_identical(Detect_ConsecutiveRepeats(dfDate, "weight"), res)
+  expect_identical(Detect_ConsecutiveRepeats(transform(df, vs_dt = factor(vs_dt)), "weight"), res)
+  expect_identical(Detect_ConsecutiveRepeats(transform(df, vs_dt = as.POSIXct(dfDate$vs_dt)), "weight"), res)
+  # Blank and missing text dates are missing dates, sorted last.
+  df$vs_dt[2] <- " "
+  expect_equal(Detect_ConsecutiveRepeats(df, "weight")$Numerator, 1)
+})
+
+test_that("character dates that are not ISO dates are an error", {
+  df <- make_vs(c(1, 1, 1))
+  for (strBad in c("2024-02-30", "01/02/2024", "2024-01-02 10:00", "soon")) {
+    df$vs_dt <- c("2024-01-01", strBad, "2024-01-03")
+    expect_error(
+      Detect_ConsecutiveRepeats(df, "weight"),
+      "1 value can't be read as a date",
+      label = strBad
+    )
+  }
+  df$vs_dt <- c("x", "y", "2024-01-03")
+  expect_error(MarkConsecutiveRepeats(df, "weight"), "must be a Date, a POSIXct or ISO dates")
+})
+
+test_that("zero-padded ISO text dates match Date input and v1.8.0 on random data", {
+  withr::local_seed(20240308)
+  for (i in seq_len(100)) {
+    df <- detect_random_vs(nSubjects = sample(1:6, 1), nValues = sample(1:3, 1))
+    dfText <- transform(df, vs_dt = format(vs_dt))
+    nW <- sample(2:4, 1)
+    res <- Detect_ConsecutiveRepeats(dfText, "value", strOrderCol = "visit", nWindowLength = nW)
+    expect_identical(res, Detect_ConsecutiveRepeats(df, "value", strOrderCol = "visit", nWindowLength = nW))
+    expect_identical(
+      res,
+      Detect_ConsecutiveRepeats_v1.8.0(dfText, "value", strOrderCol = "visit", nWindowLength = nW)
+    )
+  }
+})
+
+test_that("missing dates sort last and still join windows, as in v1.8.0", {
+  df <- data.frame(
+    subjid = "A",
+    vs_dt = as.Date(c("2024-01-01", NA, "2024-01-02", "2024-01-03")),
+    weight = c(5, 7, 7, 7)
+  )
+  # Ordered 5, 7, 7, 7(NA date): the last window repeats.
+  res <- Detect_ConsecutiveRepeats(df, "weight")
+  expect_equal(c(res$Numerator, res$Denominator), c(1, 2))
+  expect_identical(res, Detect_ConsecutiveRepeats_v1.8.0(df, "weight"))
+})
+
+test_that("strMeasureVal must be one value, and subjects without that measure are absent", {
+  df <- data.frame(
+    subjid = c("A", "A", "A", "B", "B", "B"),
+    vs_dt = as.Date("2024-01-01") + c(0:2, 0:2),
+    measure = c("HR", "HR", "HR", "WT", "WT", "WT"),
+    value = c(60, 60, 60, 70, 70, 70)
+  )
+  res <- Detect_ConsecutiveRepeats(df, "value", strMeasureCol = "measure", strMeasureVal = "HR")
+  expect_equal(res$subjid, "A")
+  expect_equal(res$Numerator, 1)
+  for (val in list(c("HR", "WT"), character(0), NA_character_)) {
+    expect_error(
+      Detect_ConsecutiveRepeats(df, "value", strMeasureCol = "measure", strMeasureVal = val),
+      "must be a single non-missing value"
     )
   }
 })

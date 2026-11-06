@@ -19,8 +19,15 @@
 #' Amber is at or above the first threshold, Red at or above the second.
 #' Participants with fewer than `nMinWindows` windows are `Not evaluable`.
 #' Height, BSA and any other numeric `Mapped_VS` column are windowed and
-#' flagged the same way, although they have no KRI. With `sysbp` and
-#' `diabp`, paired blood pressure (`bp`, see [rep_Vitals()]) is added.
+#' flagged the same way, although they have no KRI. Numeric timing and ID
+#' columns are not measures and are skipped: `studyid`, `subjid`, `invid`,
+#' `country`, `visit`, `vs_dt`, `vsperf_std`, and any name (ignoring case)
+#' starting with `visit` or ending in `dy`, `num`, `seq` or `id` (e.g.
+#' `vsdy`, `visitnum`, `vsseq`, `siteid`). With `sysbp` and `diabp`, paired
+#' blood pressure (`bp`, see [rep_Vitals()]) is added.
+#'
+#' A character `vs_dt` must hold ISO dates and is converted to `Date`, as in
+#' [Detect_ConsecutiveRepeats()].
 #'
 #' @param lListings `list` with `Mapped_SUBJ` (enrolled participants with
 #'   `subjid`, `invid` and `country`; a missing `invid` or `country` is
@@ -52,11 +59,11 @@
 #'     and `invid` from `Mapped_SUBJ` and a `record` key that `measurements`
 #'     refers to.
 #'   * `vitals`: the rows of [rep_Vitals()] in the report, plus any other
-#'     numeric `Mapped_VS` column.
+#'     numeric `Mapped_VS` column that is not a timing or ID column.
 #'   * `meta`: `window_length`, `window_source` (`"metrics"`, `"argument"` or
 #'     `"default"`), `rule`, `thresholds` (Amber, Red), `min_windows` and
 #'     `split_sites` (sites whose participants have more than one country;
-#'     a warning lists them).
+#'     a warning lists them; participants without a site are not a site).
 #' @keywords internal
 #' @export
 rep_Classify <- function(
@@ -94,7 +101,9 @@ rep_Classify <- function(
   }
   # Country comes from each participant (as in the cou0020 KRIs), so a site
   # whose participants carry different countries is counted in each of them.
-  nCountries <- tapply(dfSubj$country, dfSubj$invid, function(x) length(unique(x)))
+  # Participants without a site share "(missing)" but are not one site.
+  bSite <- dfSubj$invid != "(missing)"
+  nCountries <- tapply(dfSubj$country[bSite], dfSubj$invid[bSite], function(x) length(unique(x)))
   vSplitSites <- as.character(names(nCountries)[nCountries > 1])
   if (length(vSplitSites) > 0) {
     gsm.core::LogMessage(
@@ -109,7 +118,12 @@ rep_Classify <- function(
   vExtra <- if (is.null(dfVS)) {
     character(0)
   } else {
-    setdiff(names(dfVS)[vapply(dfVS, is.numeric, logical(1))], c(dfVitals$vital, vIDCols))
+    vNumeric <- setdiff(names(dfVS)[vapply(dfVS, is.numeric, logical(1))], c(dfVitals$vital, vIDCols))
+    # A constant study day or visit number would score as a repeating vital.
+    vNumeric[!grepl("^visit|(dy|num|seq|id)$", vNumeric, ignore.case = TRUE)]
+  }
+  if (!is.null(dfVS) && "vs_dt" %in% names(dfVS)) {
+    dfVS$vs_dt <- ParseDateColumn(dfVS$vs_dt, "vs_dt")
   }
   # Paired BP: one value per record with both readings, so a run breaks when
   # either changes.

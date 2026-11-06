@@ -40,6 +40,31 @@ test_that("measurements in order and their repeat-window mask match MarkConsecut
       expect_equal(row$has_repeat, if (any(d$.rep_in_window)) "Y" else "N", label = strLabel)
     }
   }
+
+  # Known answers (see rep_Fixture()).
+  mask <- function(id, strVital) df$in_repeat_window[df$subjid == id & df$vital == strVital]
+  expect_equal(mask("D", "weight"), "1 1 1 0 0 0")
+  expect_equal(mask("A", "weight"), "1 1 1 1")
+  expect_equal(mask("B", "pulse"), "1 1 1 0")
+  expect_equal(mask("A", "pulse"), "0 0 0")
+  expect_equal(df$values[df$subjid == "B" & df$vital == "pulse"], "60 60 60 61")
+})
+
+test_that("measurements past V9 follow V9 in the listing (#346)", {
+  lClass <- rep_Classify(rep_FixtureLong())
+  row <- rep_VitalRows(lClass)
+  row <- row[row$subjid == "A" & row$vital == "weight", ]
+  expect_equal(row$values, "60 61 62 63 64 65 66 67 80 80 80 90")
+  expect_equal(row$in_repeat_window, "0 0 0 0 0 0 0 0 1 1 1 0")
+  expect_equal(c(row$Numerator, row$Denominator), c(1, 10))
+  expect_equal(
+    strsplit(row$visits, "|", fixed = TRUE)[[1]][9:12],
+    c("#9 \u00b7 V9 \u00b7 2024-01-09", "#10 \u00b7 V10 \u00b7 2024-01-10", "#11 \u00b7 V11 \u00b7 2024-01-11", "#12 \u00b7 V12 \u00b7 2024-01-12")
+  )
+  # Visits sorted as text would put V10 to V12 after V1, not V9.
+  dfWide <- rep_DataTableWide(lClass)
+  expect_equal(dfWide$visit, paste0("V", 1:12))
+  expect_equal(dfWide$weight_in_repeat_window, rep(c("N", "Y", "N"), c(8, 3, 1)))
 })
 
 test_that("vitals listing is one compact level with flag and rate in one column and CSV only when export is enabled (#346)", {

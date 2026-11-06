@@ -35,10 +35,17 @@ test_that("all twelve repeat-measure workflows load with matching IDs (#306)", {
     expect_equal(meta$ValueCol, unname(vs_cols[substr(id, 8, 8)]))
     expect_equal(meta$Threshold, "0.2,0.3")
     expect_equal(meta$WindowLength, 3)
+    expect_equal(meta$AccrualThreshold, 3)
     expect_equal(
       meta$GroupLevel,
       if (startsWith(id, "kri")) "Site" else "Country"
     )
+    lDetect <- Filter(function(step) step$name == "gsm.kri::Detect_ConsecutiveRepeats", wf[[id]]$steps)
+    expect_length(lDetect, 1)
+    expect_equal(lDetect[[1]]$params$strOrderCol, "visit", label = id)
+    expect_equal(lDetect[[1]]$params$strDateCol, "vs_dt", label = id)
+    lFlag <- Filter(function(step) step$name == "gsm.core::Flag", wf[[id]]$steps)
+    expect_equal(lFlag[[1]]$params$nAccrualThreshold, "AccrualThreshold", label = id)
   }
 })
 

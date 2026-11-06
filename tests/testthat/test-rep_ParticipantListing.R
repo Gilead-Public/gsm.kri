@@ -18,3 +18,26 @@ test_that("tiles list participants worst flag first, then by most repeating wind
   expect_equal(unique(dfTiles$subjid), c("A", "B", "D", "C", "E"))
   expect_equal(dfTiles$column[dfTiles$subjid == "A"], c("WT", "HR", "SBP", "DBP", "RR", "Temp", "Ht"))
 })
+
+test_that("at the same worst flag more repeating windows come first, then participant (#347)", {
+  lClass <- rep_Classify(rep_FixtureTies())
+  expect_true(all(lClass$participants$flag[lClass$participants$vital == "weight"] == "Red"))
+  expect_equal(rep_ParticipantOrder(lClass), c("B", "A", "C", "D", "E"))
+  expect_equal(unique(rep_ParticipantTiles(lClass)$subjid), c("B", "A", "C", "D", "E"))
+  expect_equal(unique(rep_DataTableWide(lClass)$subjid), c("B", "A", "C", "D", "E"))
+})
+
+test_that("tile rates round to whole percents and 0/0 is a missing rate, not NaN (#347)", {
+  lClass <- rep_Classify(rep_listings(rep_vs(list(A = c(1, 1, 1, 2, 3), B = 1))), strFlagRule = "rate")
+  df <- rep_ParticipantTiles(lClass)
+  a <- df[df$subjid == "A" & df$vital == "weight", ]
+  # A: 1 of 3 windows.
+  expect_equal(c(a$label_rate, a$label_nd), c("33%", "1/3"))
+  lClass <- rep_Classify(rep_listings(rep_vs(list(A = c(1, 1, 1, 1, 2)))), strFlagRule = "rate")
+  a <- rep_ParticipantTiles(lClass)
+  expect_equal(a$label_rate[a$vital == "weight"], "67%")
+  b <- df[df$subjid == "B" & df$vital == "weight", ]
+  expect_equal(c(b$Numerator, b$Denominator), c(0, 0))
+  expect_identical(b$rate, NA_real_)
+  expect_identical(lClass$participants$rate[lClass$participants$vital == "pulse"], NA_real_)
+})

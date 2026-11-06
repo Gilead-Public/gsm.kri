@@ -4,7 +4,8 @@
 # with a missing country, a quoted country and a 2/3 threshold, fixture/RM_edge.html;
 # and a site that spans countries, fixture/RM_split.html; and under the rate
 # rule a Green participant with more repeat windows than a Red one,
-# fixture/RM_rate.html.
+# fixture/RM_rate.html; and IDs with HTML, a split site and a metric
+# Threshold of 25% / 40% under the rate rule, fixture/RM_html.html.
 # Run from the gsm.kri package root after devtools::load_all(".").
 source("tests/testthat/helper-rep.R")
 dir.create("tests/playwright/fixture", showWarnings = FALSE, recursive = TRUE)
@@ -57,3 +58,10 @@ Report_RepeatMeasurements(
   strOutputDir = out_dir,
   strOutputFile = "RM_rate.html"
 )
+suppressWarnings(Report_RepeatMeasurements(
+  dfMetrics = rep_FixtureMetrics(strThreshold = "0.25,0.4"),
+  lListings = rep_FixtureHTML(),
+  strFlagRule = "rate",
+  strOutputDir = out_dir,
+  strOutputFile = "RM_html.html"
+))

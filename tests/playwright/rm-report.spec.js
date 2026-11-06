@@ -8,6 +8,7 @@ const BP = 'file://' + path.resolve(__dirname, 'fixture', 'RM_bp.html');
 const EDGE = 'file://' + path.resolve(__dirname, 'fixture', 'RM_edge.html');
 const SPLIT = 'file://' + path.resolve(__dirname, 'fixture', 'RM_split.html');
 const RATE = 'file://' + path.resolve(__dirname, 'fixture', 'RM_rate.html');
+const HTML_IDS = 'file://' + path.resolve(__dirname, 'fixture', 'RM_html.html');
 
 // Facts of rep_Fixture() in tests/testthat/helper-rep.R (render-rm-fixture.R):
 // A, B (US/S1), C (US/S2), D, E (JP/S3); repeating windows in A weight (2/2),
@@ -698,6 +699,11 @@ test.describe('Repeat Measurements report', () => {
     await expect(page.locator('#rm-settings-msg')).toHaveText('Amber must not be above Red.');
     expect((await flags(page)).tiles['A weight']).toBe('Amber');
 
+    // A 0 threshold would flag participants without a repeating window.
+    await setInput(page, 'rm-th-amber', 0);
+    await expect(page.locator('#rm-settings-msg')).toHaveText('Enter Amber and Red thresholds above 0.');
+    expect((await flags(page)).tiles['B pulse']).toBe('Green');
+
     await setInput(page, 'rm-th-amber', 1);
     await setInput(page, 'rm-th-red', 2);
     await expect(page.locator('#rm-settings-msg')).toHaveText('');
@@ -955,5 +961,36 @@ test('the initial worst-flag sort ranks by flag, not repeat-window count, under 
   expect(f.tiles['P01 weight']).toBe('Green');
   expect(f.tiles['P02 weight']).toBe('Red');
   expect((await state(page)).tiles).toEqual(['P02', 'P01']);
+  expect(errors).toEqual([]);
+});
+
+// rep_FixtureHTML(): participants "</script><b>x" (US, weight 2/2 Red under
+// the rate rule) and "P&2" (JP) at site "S<b>", with a metric Threshold of
+// "0.25,0.4".
+test('IDs with HTML are shown as text everywhere, and the metric Threshold sets the rate rule (#344, #347)', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+  await page.goto(HTML_IDS);
+  await page.waitForFunction(() => document.querySelectorAll('#rm-tiles tbody tr').length > 0);
+  const injected = () => page.evaluate(() =>
+    Array.from(document.querySelectorAll('b')).filter((b) => b.textContent === 'x' || b.textContent === '').length);
+  expect(await injected()).toBe(0);
+  expect((await state(page)).tiles).toEqual(['</script><b>x', 'P&2']);
+  expect((await flags(page)).tiles['</script><b>x weight']).toBe('Red');
+  await expect(page.locator('#rm-tiles')).toContainText('</script><b>x');
+  await expect(page.locator('.rm-rule-text').first()).toContainText('Amber \u2265 25%, Red \u2265 40%');
+  await page.click('#rm-settings-toggle');
+  await expect(page.locator('#rm-th-amber')).toHaveValue('25');
+  await expect(page.locator('#rm-th-red')).toHaveValue('40');
+  await page.click('#rm-settings-toggle');
+
+  await page.click('#rm-dist-site');
+  expect((await dist(page)).rows).toEqual(['S<b>']);
+  await expect(page.locator('#rm-dist tbody tr[data-rm-dist-key="S<b>"] td.rm-stick')).toHaveText('S<b>');
+  await page.hover('#rm-dist tbody tr[data-rm-dist-key="S<b>"] td[data-rm-dist-vital="weight"]');
+  await clickDistRow(page, 'site', 'S<b>');
+  expect((await state(page)).chips).toEqual(['S<b>']);
+  expect(await injected()).toBe(0);
   expect(errors).toEqual([]);
 });

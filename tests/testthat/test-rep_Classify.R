@@ -47,7 +47,7 @@ test_that("rate thresholds come from the kri0020 metrics, or the argument (#343)
   expect_equal(lClass$meta$thresholds, c(0.2, 0.3))
   expect_equal(flag_of(lClass, "A"), "Green")
 
-  lClass <- rep_Classify(rep_listings(rep_vs(lValues)), strFlagRule = "rate", vFlagThresholds = c(0, 0.1))
+  lClass <- rep_Classify(rep_listings(rep_vs(lValues)), strFlagRule = "rate", vFlagThresholds = c(0.05, 0.1))
   expect_equal(flag_of(lClass, "A"), "Red")
 
   dfMetrics <- rep_metrics()
@@ -68,8 +68,12 @@ test_that("invalid flag settings are rejected (#343)", {
   dfL <- rep_listings(rep_vs(list(A = 1)))
   expect_error(rep_Classify(dfL, strFlagRule = "share"))
   expect_error(rep_Classify(dfL, vFlagThresholds = c(3, 2)), "Amber <= Red")
-  expect_error(rep_Classify(dfL, vFlagThresholds = 2), "two non-negative")
-  expect_error(rep_Classify(dfL, vFlagThresholds = c(-1, 2)), "two non-negative")
+  expect_error(rep_Classify(dfL, vFlagThresholds = 2), "two positive")
+  expect_error(rep_Classify(dfL, vFlagThresholds = c(-1, 2)), "two positive")
+  # 0 would flag participants without a repeating window, under either rule.
+  expect_error(rep_Classify(dfL, vFlagThresholds = c(0, 0)), "two positive")
+  expect_error(rep_Classify(dfL, strFlagRule = "rate", vFlagThresholds = c(0, 0)), "two positive")
+  expect_error(rep_Classify(dfL, vFlagThresholds = c(0, 1)), "two positive")
   expect_error(rep_Classify(dfL, nMinWindows = 0), "nMinWindows")
   expect_error(rep_Classify(dfL, nMinWindows = 1.5), "nMinWindows")
 })
@@ -201,6 +205,19 @@ test_that("site and country sums reconcile with all twelve repeat-measure workfl
       expect_equal(dfSum$Denominator, dfKRI$Denominator, label = strID)
     }
   }
+
+  # Known answers from the hand-derived fixture: weight at I1 is 1/5 (20%,
+  # the Amber boundary) and at I2 3/10 (30%, the Red boundary).
+  lClass <- rep_Classify(vs_fixture())
+  lResults <- workr::RunWorkflows(kri_workflow("kri0020a"), vs_fixture())
+  dfExpected <- read_fixture("vs_expected_group.csv")
+  dfExpected <- dfExpected[dfExpected$measure == "weight" & dfExpected$GroupID %in% c("I1", "I2"), ]
+  df <- lClass$participants[lClass$participants$vital == "weight", ]
+  expect_equal(as.numeric(tapply(df$Numerator, df$invid, sum)[c("I1", "I2")]), c(1, 3))
+  expect_equal(as.numeric(tapply(df$Denominator, df$invid, sum)[c("I1", "I2")]), c(5, 10))
+  dfKRI <- lResults$Analysis_kri0020a$Analysis_Flagged
+  expect_equal(dfKRI$Flag[match(c("I1", "I2"), dfKRI$GroupID)], c(1, 2))
+  expect_equal(dfExpected$Flag, c(1, 2))
 })
 
 test_that("Qual: participant N, D and flags match an independent derivation (#343)", {
@@ -263,6 +280,16 @@ test_that("a site with participants in two countries warns and keeps each partic
   expect_equal(rep_Classify(rep_Fixture())$meta$split_sites, character(0))
 })
 
+test_that("participants without a site in different countries are not a split site (#343)", {
+  lListings <- rep_FixtureSplit()
+  lListings$Mapped_SUBJ$invid <- c("S1", NA, "")
+  expect_no_warning(lClass <- rep_Classify(lListings))
+  expect_equal(lClass$meta$split_sites, character(0))
+  df <- lClass$participants[lClass$participants$vital == "weight", ]
+  expect_equal(df$invid, c("S1", "(missing)", "(missing)"))
+  expect_equal(df$country, c("US", "US", "JP"))
+})
+
 test_that("participant N and D are the Detect_ConsecutiveRepeats() output and flags use gsm.core::Flag() (#342, #343)", {
   dfVS <- mapped_data$Mapped_VS
   dfSubj <- mapped_data$Mapped_SUBJ
@@ -276,6 +303,18 @@ test_that("participant N and D are the Detect_ConsecutiveRepeats() output and fl
     expect_equal(df$Numerator, dfDetect$Numerator, label = strVital)
     expect_equal(df$Denominator, dfDetect$Denominator, label = strVital)
   }
+
+  # Known answers for rep_Fixture() at W = 3 (see helper-rep.R).
+  df <- rep_Classify(rep_Fixture())$participants
+  dfExpected <- data.frame(
+    subjid = c("A", "A", "B", "B", "D", "D"),
+    vital = c("weight", "pulse", "weight", "pulse", "weight", "height"),
+    Numerator = c(2, 0, 0, 1, 1, 1),
+    Denominator = c(2, 1, 2, 2, 4, 1)
+  )
+  df <- df[match(paste(dfExpected$subjid, dfExpected$vital), paste(df$subjid, df$vital)), ]
+  expect_equal(df$Numerator, dfExpected$Numerator)
+  expect_equal(df$Denominator, dfExpected$Denominator)
 
   # Equal thresholds leave no Amber band: 2 or more repeating windows are Red.
   lValues <- list(G = c(1, 1, 1, 2), A = c(1, 1, 1, 1, 2), R = c(1, 1, 1, 1, 1))
@@ -395,4 +434,40 @@ test_that("a Mapped_SUBJ row without subjid is listed but its records are droppe
   expect_true(all(dfNA$flag == "Not evaluable"))
   expect_false(anyNA(lClass$measurements$subjid))
   expect_equal(sum(is.na(lClass$records$subjid)), nrow(dfOrphan))
+})
+
+test_that("numeric timing and ID columns are not scored as extra measures (#343)", {
+  lListings <- rep_Fixture()
+  dfVS <- lListings$Mapped_VS
+  n <- nrow(dfVS)
+  # Constant columns that would be Red for every participant if scored.
+  dfVS$vsdy <- 1
+  dfVS$visitnum <- 1
+  dfVS$VISITDY <- 1
+  dfVS$vsseq <- 1
+  dfVS$siteid <- 1
+  dfVS$spo2 <- 99
+  lListings$Mapped_VS <- dfVS
+  lClass <- rep_Classify(lListings)
+  expect_false(any(c("vsdy", "visitnum", "VISITDY", "vsseq", "siteid") %in% lClass$vitals$vital))
+  expect_false(any(c("vsdy", "visitnum") %in% lClass$participants$vital))
+  expect_equal(utils::tail(lClass$vitals$vital, 1), "spo2")
+  # D's 6 records give 4 repeating windows.
+  expect_equal(flag_of(lClass, "D", "spo2"), "Red")
+})
+
+test_that("a character vs_dt is read as ISO dates (#343)", {
+  lListings <- rep_listings(rep_vs(list(A = c(7, 5, 7, 7))))
+  lListings$Mapped_VS$vs_dt <- c("2024-01-8", "2024-01-9", "2024-01-10", "2024-01-11")
+  # The visits run against the dates, so the order comes from the dates.
+  lListings$Mapped_VS$visit <- c("V4", "V3", "V2", "V1")
+  lClass <- rep_Classify(lListings)
+  df <- lClass$participants[lClass$participants$vital == "weight", ]
+  expect_equal(c(df$Numerator, df$Denominator), c(0, 2))
+  expect_s3_class(lClass$measurements$vs_dt, "Date")
+  expect_equal(lClass$measurements$value, c(7, 5, 7, 7))
+  expect_equal(rep_DataTableWide(lClass)$weight, c(7, 5, 7, 7))
+
+  lListings$Mapped_VS$vs_dt[1] <- "8 Jan 2024"
+  expect_error(rep_Classify(lListings), "can't be read as a date")
 })

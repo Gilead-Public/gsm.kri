@@ -111,7 +111,9 @@ rep_SiteRule <- function(dfMetrics = NULL) {
 #'
 #' The site-level `kri0020a`–`f` flags from each metric's latest snapshot,
 #' keyed by measure (`vital`). A site without a flag in that snapshot is `NA` (not
-#' evaluated).
+#' evaluated). When a metric and site still have several rows (e.g. several
+#' snapshots without a `SnapshotDate` column), a warning is raised and the
+#' last row is used.
 #'
 #' @param dfResults `data.frame` Reporting results.
 #'
@@ -131,6 +133,14 @@ rep_SiteFlags <- function(dfResults) {
     vDate <- as.Date(df$SnapshotDate)
     bLatest <- vDate == stats::ave(vDate, df$MetricID, FUN = function(x) max(x, na.rm = TRUE))
     df <- df[bLatest %in% TRUE, ]
+  }
+  bRepeated <- duplicated(df[c("MetricID", "GroupID")], fromLast = TRUE)
+  if (any(bRepeated)) {
+    cli::cli_warn(c(
+      "{sum(bRepeated)} kri0020 site result{?s} repeat{?s/} a metric and site{if (!'SnapshotDate' %in% names(df)) ' and dfResults has no SnapshotDate' else ''}.",
+      i = "The report uses the last row for each metric and site."
+    ))
+    df <- df[!bRepeated, ]
   }
   dfVitals <- rep_Vitals()
   df$vital <- dfVitals$vital[match(sub("^Analysis_", "", df$MetricID), dfVitals$metric)]

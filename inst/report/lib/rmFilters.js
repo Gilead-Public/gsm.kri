@@ -195,8 +195,8 @@
     var amber = parseFloat((byId('rm-th-amber') || {}).value);
     var red = parseFloat((byId('rm-th-red') || {}).value);
     var min = Number((byId('rm-min-windows') || {}).value);
-    if (!isFinite(amber) || !isFinite(red) || amber < 0 || red < 0) {
-      return settingsMsg('Enter Amber and Red thresholds of 0 or more.');
+    if (!isFinite(amber) || !isFinite(red) || amber <= 0 || red <= 0) {
+      return settingsMsg('Enter Amber and Red thresholds above 0.');
     }
     if (amber > red) return settingsMsg('Amber must not be above Red.');
     if (!(min >= 1) || Math.floor(min) !== min) return settingsMsg('Minimum windows must be a whole number of 1 or more.');
