@@ -15,6 +15,7 @@ Report_RepeatMeasurements(
   nMinWindows = 1,
   strBPMode = c("separate", "combined", "both"),
   bExport = TRUE,
+  strContext = "",
   strOutputDir = getwd(),
   strOutputFile = NULL,
   strInputPath = system.file("report", "Report_RepeatMeasurements.Rmd", package =
@@ -53,6 +54,10 @@ Default 1.}
 systolic and diastolic BP), `"combined"` (paired BP only) or `"both"`.}
 
 \item{bExport}{`logical` Show the CSV download buttons. Default: `TRUE`.}
+
+\item{strContext}{`character` HTML shown above the report title, such as a
+link back to a study page. Inserted as is, so it must be trusted HTML.
+Default: `""` (none).}
 
 \item{strOutputDir}{`string` Output directory. Default: working directory.}
 

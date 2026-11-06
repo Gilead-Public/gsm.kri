@@ -34,6 +34,9 @@
 #' @param strBPMode `character` Blood pressure view: `"separate"` (default,
 #'   systolic and diastolic BP), `"combined"` (paired BP only) or `"both"`.
 #' @param bExport `logical` Show the CSV download buttons. Default: `TRUE`.
+#' @param strContext `character` HTML shown above the report title, such as a
+#'   link back to a study page. Inserted as is, so it must be trusted HTML.
+#'   Default: `""` (none).
 #' @param strOutputDir `string` Output directory. Default: working directory.
 #' @param strOutputFile `string` Output filename. Default:
 #'   `Report_RepeatMeasurements.html`.
@@ -66,6 +69,7 @@ Report_RepeatMeasurements <- function(
   nMinWindows = 1,
   strBPMode = c("separate", "combined", "both"),
   bExport = TRUE,
+  strContext = "",
   strOutputDir = getwd(),
   strOutputFile = NULL,
   strInputPath = system.file(
@@ -79,6 +83,10 @@ Report_RepeatMeasurements <- function(
   rlang::check_installed("DT", reason = "to run `Report_RepeatMeasurements()`")
   strFlagRule <- match.arg(strFlagRule)
   strBPMode <- match.arg(strBPMode)
+  gsm.core::stop_if(
+    cnd = !is.character(strContext) || length(strContext) != 1 || is.na(strContext),
+    message = "strContext must be a single character string"
+  )
   gsm.core::stop_if(
     cnd = !is.list(lListings) || !is.data.frame(lListings$Mapped_SUBJ),
     message = "lListings must be a list with a Mapped_SUBJ data.frame"
@@ -105,7 +113,8 @@ Report_RepeatMeasurements <- function(
       vFlagThresholds = vFlagThresholds,
       nMinWindows = nMinWindows,
       strBPMode = strBPMode,
-      bExport = bExport
+      bExport = bExport,
+      strContext = strContext
     )
   )
 }

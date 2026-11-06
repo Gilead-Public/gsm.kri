@@ -208,7 +208,7 @@ test_that("turning off export removes every download control (#346, #347)", {
   expect_false(grepl('id="rm-tiles-csv"', html, fixed = TRUE))
   expect_false(grepl('"extend":"csv"', html, fixed = TRUE))
   expect_false(rm_DataBlock(html)$export)
-  expect_match(html, "No <code>kri0020</code> results to reconcile with.", fixed = TRUE)
+  expect_match(gsub("\\s+", " ", html), "No <code>kri0020</code> or <code>cou0020</code> results to reconcile with.", fixed = TRUE)
 })
 
 test_that("the report explains missing vital signs and a study without the repeat-measure KRIs (#344)", {
@@ -256,5 +256,27 @@ test_that("Repeat Measurements report example is accepted by a user (#348)", {
       "Repeated values are highlighted in the Vitals Listing and both Data table shapes.",
       "The Participant Listing, Vitals Listing and Data table can be downloaded as CSV."
     )
+  )
+})
+
+test_that("strContext is shown above the title, and country KRIs reconcile alongside site KRIs", {
+  dfResults <- rm_FixtureResults()
+  dfCountry <- transform(dfResults, MetricID = sub("kri", "cou", MetricID), GroupLevel = "Country", GroupID = "US")
+  html <- render_rm(
+    dfResults = rbind(dfResults, dfCountry),
+    dfMetrics = rm_FixtureMetrics(),
+    strContext = '<a href="study.html">Back to STUDY1</a>'
+  )
+  flat <- gsub("\\s+", " ", html)
+  expect_match(
+    flat,
+    '<div class="rm-ctx"><a href="study.html">Back to STUDY1</a></div> <div class="rm-title"> <h1 class="toc-ignore">Repeat Measurements</h1>',
+    fixed = TRUE
+  )
+  expect_match(flat, "WT 3/8 <span class=\"ok\">= kri0020a, cou0020a \u2713</span>", fixed = TRUE)
+  expect_match(flat, "HR 1/3 <span class=\"ok\">= kri0020b, cou0020b \u2713</span>", fixed = TRUE)
+  expect_error(
+    Report_RepeatMeasurements(lListings = rm_Fixture(), strContext = NA_character_),
+    "strContext"
   )
 })

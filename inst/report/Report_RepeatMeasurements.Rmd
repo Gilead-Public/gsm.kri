@@ -523,21 +523,24 @@ htmltools::div(
 
 ```{r reconcile, echo=FALSE, results='asis'}
 if (is.null(dfRecon)) {
-  cat("<p class=\"rm-recon\">No <code>kri0020</code> results to reconcile with.</p>\n")
+  cat("<p class=\"rm-recon\">No <code>kri0020</code> or <code>cou0020</code> results to reconcile with.</p>\n")
 } else {
+  # One entry per measure: its site and country metrics share the
+  # participant sums, so matching metrics are listed together.
   cat(
     "<p class=\"rm-recon\">Repeating windows / windows compared with the KRI (all enrolled participants, latest snapshot): ",
-    paste(vapply(seq_len(nrow(dfRecon)), function(i) {
-      r <- dfRecon[i, ]
-      short <- rm_Vitals()$short[match(r$vital, rm_Vitals()$vital)]
-      if (r$match) {
-        sprintf("%s %s/%s <span class=\"ok\">= %s &#10003;</span>", short, r$Numerator, r$Denominator, r$metric)
-      } else {
-        sprintf(
-          "%s %s/%s <span class=\"bad\">&ne; %s (%s/%s) &#10007;</span>",
-          short, r$Numerator, r$Denominator, r$metric, r$kri_Numerator, r$kri_Denominator
-        )
-      }
+    paste(vapply(split(dfRecon, factor(dfRecon$vital, unique(dfRecon$vital))), function(d) {
+      short <- rm_Vitals()$short[match(d$vital[1], rm_Vitals()$vital)]
+      ok <- d[d$match, ]
+      bad <- d[!d$match, ]
+      paste0(
+        sprintf("%s %s/%s", short, d$Numerator[1], d$Denominator[1]),
+        if (nrow(ok)) sprintf(" <span class=\"ok\">= %s &#10003;</span>", paste(ok$metric, collapse = ", ")),
+        paste(sprintf(
+          " <span class=\"bad\">&ne; %s (%s/%s) &#10007;</span>",
+          bad$metric, bad$kri_Numerator, bad$kri_Denominator
+        ), collapse = "")
+      )
     }, character(1)), collapse = " &middot; "),
     "</p>\n",
     sep = ""

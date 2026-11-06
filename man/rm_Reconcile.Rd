@@ -2,7 +2,7 @@
 % Please edit documentation in R/rm_Reconcile.R
 \name{rm_Reconcile}
 \alias{rm_Reconcile}
-\title{Reconcile the Repeat Measurements report with the kri0020 metrics}
+\title{Reconcile the Repeat Measurements report with the kri0020/cou0020 metrics}
 \usage{
 rm_Reconcile(dfParticipants, dfResults)
 }
@@ -12,14 +12,16 @@ rm_Reconcile(dfParticipants, dfResults)
 \item{dfResults}{`data.frame` Reporting results.}
 }
 \value{
-A `tibble` with `vital`, `metric`, `Numerator`, `Denominator`,
-  `kri_Numerator`, `kri_Denominator` and `match`, one row per KRI vital
-  with results; `NULL` when `dfResults` has no `kri0020` results.
+A `tibble` with `vital`, `metric` (`kri0020*` or `cou0020*`),
+  `Numerator`, `Denominator`, `kri_Numerator`, `kri_Denominator` and
+  `match`, one row per KRI measure and metric with results, site before
+  country; `NULL` when `dfResults` has no `kri0020` or `cou0020` results.
 }
 \description{
 `r lifecycle::badge("experimental")`
 
-Sums participant numerators and denominators per KRI vital and compares
-them with the site-level `kri0020a`–`f` results of the latest snapshot.
+Sums participant numerators and denominators per KRI measure and compares
+them with the site-level `kri0020a`–`f` and country-level `cou0020a`–`f`
+results of the latest snapshot.
 }
 \keyword{internal}
