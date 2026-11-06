@@ -97,12 +97,10 @@ rm_SiteFlagPipeline <- function(dfParticipants, lRule) {
 #' @keywords internal
 #' @export
 rm_SiteRule <- function(dfMetrics = NULL) {
-  nAccrual <- if (!is.null(dfMetrics$AccrualThreshold) && !is.null(dfMetrics$ID)) {
-    unique(stats::na.omit(as.numeric(dfMetrics$AccrualThreshold[grepl("^kri0020", dfMetrics$ID)])))
-  }
+  nAccrual <- rm_MetricMeta(dfMetrics, "AccrualThreshold")
   list(
     thresholds = rm_FlagThresholds("rate", dfMetrics = dfMetrics),
-    accrual = if (length(nAccrual)) nAccrual[1] else 3
+    accrual = if (is.null(nAccrual)) 3 else as.numeric(nAccrual)
   )
 }
 

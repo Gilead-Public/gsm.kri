@@ -77,16 +77,11 @@ rm_FlagThresholds <- function(strFlagRule = c("count", "rate"), vFlagThresholds 
     if (strFlagRule == "count") {
       return(c(2, 3))
     }
-    vMetric <- if (!is.null(dfMetrics$Threshold) && !is.null(dfMetrics$ID)) {
-      unique(stats::na.omit(as.character(dfMetrics$Threshold[grepl("^kri0020", dfMetrics$ID)])))
-    }
-    if (!length(vMetric)) {
+    strMetric <- rm_MetricMeta(dfMetrics, "Threshold")
+    if (is.null(strMetric)) {
       return(c(0.2, 0.3))
     }
-    if (length(vMetric) > 1) {
-      cli::cli_warn("The kri0020 metrics use different thresholds; the report uses {vMetric[1]}.")
-    }
-    vFlagThresholds <- as.numeric(strsplit(vMetric[1], ",")[[1]])
+    vFlagThresholds <- as.numeric(strsplit(as.character(strMetric), ",")[[1]])
   }
   gsm.core::stop_if(
     cnd = !is.numeric(vFlagThresholds) || length(vFlagThresholds) != 2 ||
@@ -134,21 +129,34 @@ rm_Quietly <- function(expr) {
   )
 }
 
+# One field of the kri0020/cou0020 metric metadata the report reads
+# (WindowLength, Threshold or AccrualThreshold): the first non-missing value,
+# with a warning when the metrics disagree. NULL when no metric sets it.
+rm_MetricMeta <- function(dfMetrics, strField) {
+  if (is.null(dfMetrics) || !all(c("ID", strField) %in% names(dfMetrics))) {
+    return(NULL)
+  }
+  vValue <- dfMetrics[[strField]][grepl("^(kri|cou)0020", dfMetrics$ID)]
+  vValue <- unique(vValue[!is.na(vValue)])
+  if (!length(vValue)) {
+    return(NULL)
+  }
+  if (length(vValue) > 1) {
+    cli::cli_warn(
+      "The kri0020/cou0020 metrics use different {strField} values ({.val {vValue}}); the report uses {.val {vValue[1]}}."
+    )
+  }
+  vValue[1]
+}
+
 # The metric's window length wins so the report reconciles with the KRI.
 rm_WindowLength <- function(dfMetrics, nWindowLength = NULL) {
-  vMetricW <- if (!is.null(dfMetrics$WindowLength)) {
-    stats::na.omit(as.numeric(dfMetrics$WindowLength[grepl("^(kri|cou)0020", dfMetrics$ID)]))
-  }
-  if (length(vMetricW)) {
-    nMetricW <- vMetricW[1]
-    if (length(unique(vMetricW)) > 1) {
-      cli::cli_warn(
-        "The kri0020/cou0020 metrics use different window lengths; the report uses {nMetricW}."
-      )
-    }
+  nMetricW <- rm_MetricMeta(dfMetrics, "WindowLength")
+  if (!is.null(nMetricW)) {
+    nMetricW <- as.numeric(nMetricW)
     if (!is.null(nWindowLength) && !isTRUE(nWindowLength == nMetricW)) {
       cli::cli_warn(c(
-        "{.arg nWindowLength} ({nWindowLength}) differs from the kri0020 metrics ({nMetricW}).",
+        "{.arg nWindowLength} ({nWindowLength}) differs from the kri0020/cou0020 metrics ({nMetricW}).",
         i = "The report uses {nMetricW} so it reconciles with the metrics."
       ))
     }

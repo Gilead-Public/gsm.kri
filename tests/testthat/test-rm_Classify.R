@@ -53,7 +53,7 @@ test_that("rate thresholds come from the kri0020 metrics, or the argument (#343)
   dfMetrics <- rm_metrics()
   dfMetrics$Threshold <- c("0.1,0.2", "0.2,0.3")
   dfMetrics$ID <- c("kri0020a", "kri0020b")
-  expect_warning(rm_FlagThresholds("rate", dfMetrics = dfMetrics), "different thresholds")
+  expect_warning(rm_FlagThresholds("rate", dfMetrics = dfMetrics), "different Threshold values")
 })
 
 test_that("participants with fewer windows than the minimum are Not evaluable (#343)", {
