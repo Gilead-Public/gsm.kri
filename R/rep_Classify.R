@@ -84,7 +84,7 @@ rep_Classify <- function(
     )
   )
   if (!"studyid" %in% names(dfSubj)) {
-    dfSubj$studyid <- NA_character_
+    dfSubj$studyid <- rep(NA_character_, nrow(dfSubj))
   }
   dfSubj <- dfSubj[!duplicated(dfSubj$subjid), c("studyid", "country", "invid", "subjid")]
   # A missing country or site becomes "(missing)" so the browser can filter it.
@@ -162,9 +162,9 @@ rep_Classify <- function(
         vital = rep(strVital, nrow(dfMarked)),
         value = if (is.character(x)) rep(NA_real_, length(x)) else as.numeric(x),
         value_text = if (is.character(x)) x else rep_FormatValue(as.numeric(x)),
-        seq = dfMarked$seq,
-        in_repeat_window = dfMarked$in_repeat_window,
-        window_start = dfMarked$window_start
+        seq = dfMarked$.rep_seq,
+        in_repeat_window = dfMarked$.rep_in_window,
+        window_start = dfMarked$.rep_window_start
       )
       list(measurements = dfMeasurements, metric = dfMetric)
     }

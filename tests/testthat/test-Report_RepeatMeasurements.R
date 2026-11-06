@@ -303,3 +303,11 @@ test_that("the report renders with no enrolled participants (#344)", {
   expect_no_match(html, 'id="rm-data"', fixed = TRUE)
   expect_no_match(html, 'id="rm-tiles"', fixed = TRUE)
 })
+
+test_that("the report renders with no enrolled participants and no studyid column (#344)", {
+  f <- rep_Fixture()
+  dfSubj <- f$Mapped_SUBJ[0, setdiff(names(f$Mapped_SUBJ), "studyid")]
+  html <- render_rm(rep_listings(f$Mapped_VS, dfSubj))
+  expect_match(html, "No enrolled participants", fixed = TRUE)
+  expect_no_match(html, "<b>Study</b>", fixed = TRUE)
+})

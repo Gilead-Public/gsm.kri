@@ -301,6 +301,27 @@ test_that("a zero-row Mapped_SUBJ classifies no participants or measurements (#3
   expect_equal(lClass$meta$split_sites, character(0))
 })
 
+test_that("a zero-row Mapped_SUBJ without studyid classifies no participants (#343)", {
+  f <- rep_Fixture()
+  dfSubj <- f$Mapped_SUBJ[0, setdiff(names(f$Mapped_SUBJ), "studyid")]
+  lClass <- rep_Classify(rep_listings(f$Mapped_VS, dfSubj))
+  expect_equal(nrow(lClass$participants), 0)
+  expect_equal(nrow(lClass$measurements), 0)
+  expect_type(lClass$participants$studyid, "character")
+})
+
+test_that("Mapped_VS columns named like the engine's marks are kept apart from them (#342)", {
+  lListings <- rep_Fixture()
+  lExpected <- rep_Classify(lListings)
+  lListings$Mapped_VS$seq <- "user seq"
+  lListings$Mapped_VS$in_repeat_window <- "user flag"
+  lListings$Mapped_VS$window_start <- "user start"
+  lClass <- rep_Classify(lListings)
+  expect_identical(lClass$measurements, lExpected$measurements)
+  expect_identical(lClass$participants, lExpected$participants)
+  expect_true(all(lClass$records$in_repeat_window == "user flag"))
+})
+
 test_that("an extra numeric Mapped_VS column is windowed and flagged without a KRI (#343)", {
   lListings <- rep_Fixture()
   lListings$Mapped_VS$spo2 <- c(98, 98, 98, 97, 1:4, 5, 6, 99, 99, 99, 99, 99, 99)

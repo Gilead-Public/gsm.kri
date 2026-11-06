@@ -7,6 +7,7 @@ const DEGRADED = 'file://' + path.resolve(__dirname, 'fixture', 'RM_degraded.htm
 const BP = 'file://' + path.resolve(__dirname, 'fixture', 'RM_bp.html');
 const EDGE = 'file://' + path.resolve(__dirname, 'fixture', 'RM_edge.html');
 const SPLIT = 'file://' + path.resolve(__dirname, 'fixture', 'RM_split.html');
+const RATE = 'file://' + path.resolve(__dirname, 'fixture', 'RM_rate.html');
 
 // Facts of rep_Fixture() in tests/testthat/helper-rep.R (render-rm-fixture.R):
 // A, B (US/S1), C (US/S2), D, E (JP/S3); repeating windows in A weight (2/2),
@@ -941,4 +942,18 @@ test.describe('a site that spans countries', () => {
     await page.click('#rm-dist-site');
     expect((await dist(page)).rows).toEqual(['S2']);
   });
+});
+
+// Rate rule: P01 is Green at 2/20 weight windows, P02 Red at 1/3.
+test('the initial worst-flag sort ranks by flag, not repeat-window count, under the rate rule (#347)', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+  await page.goto(RATE);
+  await page.waitForFunction(() => document.querySelectorAll('#rm-tiles tbody tr').length > 0);
+  const f = await flags(page);
+  expect(f.tiles['P01 weight']).toBe('Green');
+  expect(f.tiles['P02 weight']).toBe('Red');
+  expect((await state(page)).tiles).toEqual(['P02', 'P01']);
+  expect(errors).toEqual([]);
 });

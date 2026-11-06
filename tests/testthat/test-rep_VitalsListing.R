@@ -36,8 +36,8 @@ test_that("measurements in order and their repeat-window mask match MarkConsecut
       row <- df[df$subjid == id & df$vital == strVital, ]
       strLabel <- paste(id, strVital)
       expect_equal(row$values, paste(d[[strVital]], collapse = " "), label = strLabel)
-      expect_equal(row$in_repeat_window, paste(as.integer(d$in_repeat_window), collapse = " "), label = strLabel)
-      expect_equal(row$has_repeat, if (any(d$in_repeat_window)) "Y" else "N", label = strLabel)
+      expect_equal(row$in_repeat_window, paste(as.integer(d$.rep_in_window), collapse = " "), label = strLabel)
+      expect_equal(row$has_repeat, if (any(d$.rep_in_window)) "Y" else "N", label = strLabel)
     }
   }
 })

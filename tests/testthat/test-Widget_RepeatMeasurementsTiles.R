@@ -42,3 +42,16 @@ test_that("tiles widget names the allowed labels and needs a data frame (#347)",
   expect_error(Widget_RepeatMeasurementsTiles(as.list(dfTiles)), "dfTiles needs")
   expect_error(Widget_RepeatMeasurementsTiles(NULL), "dfTiles needs subjid")
 })
+
+test_that("tiles widget payload carries severity for the initial worst-flag sort (#347)", {
+  dfTiles <- rep_ParticipantTiles(rep_Classify(rep_Fixture()))
+  expect_true("severity" %in% names(dfTiles))
+  dfPayload <- jsonlite::fromJSON(Widget_RepeatMeasurementsTiles(dfTiles)$x$tiles)
+  expect_equal(dfPayload$severity, rep_FlagSeverity(dfPayload$flag))
+  expect_equal(dfPayload$severity, dfTiles$severity)
+
+  # Not required: an input without it gets it from flag.
+  dfNoSeverity <- dfTiles[setdiff(names(dfTiles), "severity")]
+  dfPayload <- jsonlite::fromJSON(Widget_RepeatMeasurementsTiles(dfNoSeverity)$x$tiles)
+  expect_equal(dfPayload$severity, dfTiles$severity)
+})
