@@ -38,9 +38,7 @@ test_that("Report_RepeatMeasurements renders the filter strip and study overview
   # The overview opens as distribution bars and can switch to counts.
   expect_match(html, 'id="rm-ov-distribution" type="button" data-rm-ov="distribution" aria-pressed="true"', fixed = TRUE)
   expect_match(html, 'id="rm-ov-counts" type="button" data-rm-ov="counts" aria-pressed="false"', fixed = TRUE)
-  expect_match(html, "WT 3/8 <span class=\"ok\">= kri0020a", fixed = TRUE)
-  expect_match(html, "HR 1/3 <span class=\"ok\">= kri0020b", fixed = TRUE)
-  expect_match(html, "Repeating windows / windows compared with the KRI", fixed = TRUE)
+  expect_false(grepl("rm-recon", html, fixed = TRUE))
   expect_false(grepl("W = 3", html, fixed = TRUE))
   expect_false(grepl("not in this study's metrics", html, fixed = TRUE))
 
@@ -208,7 +206,6 @@ test_that("turning off export removes every download control (#346, #347)", {
   expect_false(grepl('id="rm-tiles-csv"', html, fixed = TRUE))
   expect_false(grepl('"extend":"csv"', html, fixed = TRUE))
   expect_false(rm_DataBlock(html)$export)
-  expect_match(gsub("\\s+", " ", html), "No <code>kri0020</code> or <code>cou0020</code> results to reconcile with.", fixed = TRUE)
 })
 
 test_that("the report explains missing vital signs and a study without the repeat-measure KRIs (#344)", {
@@ -259,11 +256,8 @@ test_that("Repeat Measurements report example is accepted by a user (#348)", {
   )
 })
 
-test_that("strContext is shown above the title, and country KRIs reconcile alongside site KRIs", {
-  dfResults <- rm_FixtureResults()
-  dfCountry <- transform(dfResults, MetricID = sub("kri", "cou", MetricID), GroupLevel = "Country", GroupID = "US")
+test_that("strContext is shown above the title", {
   html <- render_rm(
-    dfResults = rbind(dfResults, dfCountry),
     dfMetrics = rm_FixtureMetrics(),
     strContext = '<a href="study.html">Back to STUDY1</a>'
   )
@@ -273,8 +267,6 @@ test_that("strContext is shown above the title, and country KRIs reconcile along
     '<div class="rm-ctx"><a href="study.html">Back to STUDY1</a></div> <div class="rm-title"> <h1 class="toc-ignore">Repeat Measurements</h1>',
     fixed = TRUE
   )
-  expect_match(flat, "WT 3/8 <span class=\"ok\">= kri0020a, cou0020a \u2713</span>", fixed = TRUE)
-  expect_match(flat, "HR 1/3 <span class=\"ok\">= kri0020b, cou0020b \u2713</span>", fixed = TRUE)
   expect_error(
     Report_RepeatMeasurements(lListings = rm_Fixture(), strContext = NA_character_),
     "strContext"

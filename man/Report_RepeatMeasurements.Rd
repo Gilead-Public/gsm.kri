@@ -24,7 +24,7 @@ Report_RepeatMeasurements(
 }
 \arguments{
 \item{dfResults}{`data.frame` Reporting results. With `kri0020` results the
-report reconciles with the KRI and colours sites by their KRI flag.}
+report colours sites by their KRI flag.}
 
 \item{dfMetrics}{`data.frame` Reporting metrics. The window length and
 thresholds come from the `kri0020` rows when present.}
