@@ -28,7 +28,8 @@ Widget_RepeatMeasurementsTiles(
 
 - dfTiles:
 
-  \`data.frame\` Output of \[rep_ParticipantTiles()\].
+  \`data.frame\` Output of \[rep_ParticipantTiles()\]. An absent
+  \`severity\` column is derived from \`flag\`.
 
 - strLabel:
 
