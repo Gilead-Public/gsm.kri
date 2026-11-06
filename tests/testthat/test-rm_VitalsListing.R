@@ -25,12 +25,12 @@ test_that("vital rows count unique values and carry visit details for each value
   expect_equal(c(e$n_unique, e$visits), c("0", ""))
 })
 
-test_that("measurements in order and their repeat-window mask match Mark_ConsecutiveRepeats (#346)", {
+test_that("measurements in order and their repeat-window mask match MarkConsecutiveRepeats (#346)", {
   lClass <- rm_Classify(rm_Fixture(), strFlagRule = "rate")
   df <- rm_VitalRows(lClass)
   dfVS <- rm_Fixture()$Mapped_VS
   for (strVital in c("weight", "pulse", "height")) {
-    dfMarked <- Mark_ConsecutiveRepeats(dfVS, strVital)
+    dfMarked <- MarkConsecutiveRepeats(dfVS, strVital)
     for (id in c("A", "B", "D")) {
       d <- dfMarked[dfMarked$subjid == id, ]
       row <- df[df$subjid == id & df$vital == strVital, ]

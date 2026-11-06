@@ -183,7 +183,7 @@ rm_Classify <- function(
   dfMeasurements <- dplyr::bind_rows(lapply(
     dfVitals$vital[dfVitals$vital %in% names(dfVS)],
     function(strVital) {
-      dfMarked <- Mark_ConsecutiveRepeats(
+      dfMarked <- MarkConsecutiveRepeats(
         dfVS,
         strVital,
         strOrderCol = strOrderCol,
