@@ -12,7 +12,8 @@ Widget_RepeatMeasurementsTiles(
 )
 }
 \arguments{
-\item{dfTiles}{`data.frame` Output of [rep_ParticipantTiles()].}
+\item{dfTiles}{`data.frame` Output of [rep_ParticipantTiles()]. An absent
+`severity` column is derived from `flag`.}
 
 \item{strLabel}{`character` Initial tile label: `"both"`, `"rate"` or `"nd"`.}
 

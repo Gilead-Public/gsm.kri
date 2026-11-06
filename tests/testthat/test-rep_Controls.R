@@ -37,3 +37,12 @@ test_that("rep_Toolbar lists every measure and starts the settings from lSetting
   expect_match(html, 'data-rm-set="bp" value="both" aria-pressed="true"', fixed = TRUE)
   expect_match(html, 'id="rm-settings"', fixed = TRUE)
 })
+
+test_that("rep_Header omits the Study pill without a study ID", {
+  lClass <- rep_Quietly(rep_Classify(rep_Fixture()))
+  for (strStudy in list("", NA_character_, NULL, character(0))) {
+    html <- as.character(rep_Header(lClass, strStudy))
+    expect_no_match(html, "<b>Study</b>", fixed = TRUE)
+    expect_match(html, "<b>Window</b>", fixed = TRUE)
+  }
+})

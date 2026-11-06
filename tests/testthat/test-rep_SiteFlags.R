@@ -114,3 +114,42 @@ test_that("each metric uses its own latest snapshot (#345)", {
   expect_equal(lFlags$weight$S1, -2L)
   expect_equal(lFlags$pulse$S1, 0L)
 })
+
+test_that("repeated site results without SnapshotDate warn and use the last row (#345)", {
+  df <- rep_FixtureResults()
+  df$SnapshotDate <- NULL
+  # The older snapshot comes first: its S1 weight flag is 0, the latest -2.
+  expect_warning(lFlags <- rep_SiteFlags(df), "6 kri0020 site results repeat a metric and site and dfResults has no SnapshotDate")
+  expect_equal(lFlags$weight, list(S1 = -2L, S2 = 0L, S3 = 1L))
+  expect_equal(lFlags$pulse$S1, 2L)
+
+  # Repeats within the latest snapshot also warn.
+  df <- rep_FixtureResults()
+  df <- rbind(df, transform(df[df$SnapshotDate == max(df$SnapshotDate) & df$GroupID == "S3", ][1, ], Flag = 2))
+  expect_warning(lFlags <- rep_SiteFlags(df), "1 kri0020 site result repeats a metric and site\\.")
+  expect_equal(lFlags$weight$S3, 2L)
+  expect_no_warning(rep_SiteFlags(rep_FixtureResults()))
+})
+
+test_that("a measured vital without repeats flags its sites Green, not unevaluated (#345)", {
+  dfVS <- rep_vs(list(A = 170:174, B = 160:164), "height")
+  dfSubj <- data.frame(studyid = "S", subjid = c("A", "B"), invid = c("S1", "S2"), country = "US")
+  lClass <- rep_Classify(rep_listings(dfVS, dfSubj))
+  df <- rep_SiteFlagRows(lClass)
+  df <- df[df$vital == "height", ]
+  expect_equal(df$Numerator, c(0, 0))
+  expect_equal(df$Denominator, c(3, 3))
+  expect_identical(df$flag, c(0L, 0L))
+  expect_equal(unique(df$source), "report")
+})
+
+test_that("site rows are ordered by vital, then site (#344)", {
+  dfVS <- rep_vs(list(A = c(1, 2, 3), B = c(1, 1, 1)))
+  dfVS$pulse <- dfVS$weight
+  dfSubj <- data.frame(studyid = "S", subjid = c("A", "B"), invid = c("S9", "S1"), country = "US")
+  lClass <- rep_Classify(rep_listings(dfVS, dfSubj))
+  df <- rep_SiteFlagRows(lClass)
+  expect_equal(utils::head(lClass$vitals$vital, 2), c("weight", "pulse"))
+  expect_equal(df$vital, rep(lClass$vitals$vital, each = 2))
+  expect_equal(df$invid, rep(c("S1", "S9"), nrow(lClass$vitals)))
+})

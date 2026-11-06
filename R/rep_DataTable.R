@@ -57,7 +57,8 @@ rep_DataTableWide <- function(lClass) {
       subjid = dfRecords$subjid,
       visit = if ("visit" %in% names(dfRecords)) as.character(dfRecords$visit) else NA_character_,
       vs_dt = if ("vs_dt" %in% names(dfRecords)) dfRecords$vs_dt else as.Date(NA),
-      performed = rep_Performed(dfRecords$vsperf_std)
+      # [[ ]], because $ on a tibble warns when the optional column is absent.
+      performed = rep_Performed(dfRecords[["vsperf_std"]])
     ),
     # Paired BP stays text ("120/80").
     lapply(dfRecords[vVitals], function(x) if (is.character(x)) x else as.numeric(x)),

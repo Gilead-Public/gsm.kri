@@ -122,15 +122,51 @@ rep_FixtureResults <- function() {
   rbind(older, latest)
 }
 
-# kri0020a-f and cou0020a-f metrics at W = 3 with the default thresholds.
-rep_FixtureMetrics <- function(nWindow = 3) {
+# kri0020a-f and cou0020a-f metrics at W = 3 with the default thresholds,
+# or another metric Threshold such as "0.25,0.4".
+rep_FixtureMetrics <- function(nWindow = 3, strThreshold = "0.2,0.3") {
   vIDs <- c(paste0("kri0020", letters[1:6]), paste0("cou0020", letters[1:6]))
   data.frame(
     ID = vIDs,
     MetricID = paste0("Analysis_", vIDs),
     WindowLength = nWindow,
-    Threshold = "0.2,0.3"
+    Threshold = strThreshold
   )
+}
+
+# Ties in the participant order under the default count rule: every
+# participant's weight is Red. B has 4 repeating windows, A, C, D and E 3, so
+# the order is B, then A, C, D, E by participant. Mapped_SUBJ lists them in
+# reverse.
+rep_FixtureTies <- function() {
+  dfVS <- rep_vs(list(
+    E = c(1, 1, 1, 1, 1), D = c(2, 2, 2, 2, 2), C = c(3, 3, 3, 3, 3),
+    B = c(4, 4, 4, 4, 4, 4), A = c(5, 5, 5, 5, 5)
+  ))
+  dfVS$vsperf_std <- "Y"
+  rep_listings(dfVS, data.frame(
+    studyid = "STUDY1", subjid = c("E", "D", "C", "B", "A"), invid = "S1", country = "US"
+  ))
+}
+
+# One participant with 12 visits, so V10 to V12 follow V9 (not V1). Weight
+# repeats only at V9 to V11: 1 of 10 windows.
+rep_FixtureLong <- function() {
+  dfVS <- rep_vs(list(A = c(60:67, 80, 80, 80, 90)))
+  dfVS$vsperf_std <- "Y"
+  rep_listings(dfVS)
+}
+
+# IDs with HTML: a participant ID that closes a script tag and a site that
+# spans two countries (the split-site banner). The first participant's
+# weight repeats.
+rep_FixtureHTML <- function() {
+  vIDs <- c("</script><b>x", "P&2")
+  dfVS <- rep_vs(stats::setNames(list(c(1, 1, 1, 1), c(5, 6, 7, 8)), vIDs))
+  dfVS$vsperf_std <- "Y"
+  rep_listings(dfVS, data.frame(
+    studyid = "STUDY1", subjid = vIDs, invid = "S<b>", country = c("US", "JP")
+  ))
 }
 
 render_rm <- function(lListings = rep_Fixture(), ...) {
