@@ -13,7 +13,7 @@
 #' Settings panel, which recomputes every participant flag in the browser.
 #'
 #' @param dfResults `data.frame` Reporting results. With `kri0020` results the
-#'   report reconciles with the KRI and colours sites by their KRI flag.
+#'   report colours sites by their KRI flag.
 #' @param dfMetrics `data.frame` Reporting metrics. The window length and
 #'   thresholds come from the `kri0020` rows when present.
 #' @param lListings `list` with `Mapped_SUBJ` (`subjid`, `invid`, `country`;
@@ -22,18 +22,22 @@
 #' @param dSnapshotDate `Date` Shown in the report header. Default: the latest
 #'   `dfResults$SnapshotDate`, if any.
 #' @param nWindowLength `integer` Window length when `dfMetrics` has none.
-#'   See [rm_Classify()].
+#'   See [rep_Classify()].
 #' @param strFlagRule `character` Participant flag rule, `"count"` (default)
-#'   or `"rate"`. See [rm_Classify()].
+#'   or `"rate"`. See [rep_Classify()].
 #' @param vFlagThresholds `numeric` Amber and Red thresholds for
 #'   `strFlagRule`: window counts for `"count"`, proportions such as
 #'   `c(0.2, 0.3)` for `"rate"`. Default `NULL`: 2 and 3 repeating windows, or
-#'   the `kri0020` rate thresholds. See [rm_Classify()].
+#'   the site-level `kri0020` / `cou0020` rate thresholds. See
+#'   [rep_FlagThresholds()].
 #' @param nMinWindows `numeric` Windows a participant needs for a flag.
 #'   Default 1.
 #' @param strBPMode `character` Blood pressure view: `"separate"` (default,
 #'   systolic and diastolic BP), `"combined"` (paired BP only) or `"both"`.
 #' @param bExport `logical` Show the CSV download buttons. Default: `TRUE`.
+#' @param strContext `character` HTML shown above the report title, such as a
+#'   link back to a study page. Inserted as is, so it must be trusted HTML.
+#'   Default: `""` (none).
 #' @param strOutputDir `string` Output directory. Default: working directory.
 #' @param strOutputFile `string` Output filename. Default:
 #'   `Report_RepeatMeasurements.html`.
@@ -66,6 +70,7 @@ Report_RepeatMeasurements <- function(
   nMinWindows = 1,
   strBPMode = c("separate", "combined", "both"),
   bExport = TRUE,
+  strContext = "",
   strOutputDir = getwd(),
   strOutputFile = NULL,
   strInputPath = system.file(
@@ -79,6 +84,10 @@ Report_RepeatMeasurements <- function(
   rlang::check_installed("DT", reason = "to run `Report_RepeatMeasurements()`")
   strFlagRule <- match.arg(strFlagRule)
   strBPMode <- match.arg(strBPMode)
+  gsm.core::stop_if(
+    cnd = !is.character(strContext) || length(strContext) != 1 || is.na(strContext),
+    message = "strContext must be a single character string"
+  )
   gsm.core::stop_if(
     cnd = !is.list(lListings) || !is.data.frame(lListings$Mapped_SUBJ),
     message = "lListings must be a list with a Mapped_SUBJ data.frame"
@@ -105,7 +114,8 @@ Report_RepeatMeasurements <- function(
       vFlagThresholds = vFlagThresholds,
       nMinWindows = nMinWindows,
       strBPMode = strBPMode,
-      bExport = bExport
+      bExport = bExport,
+      strContext = strContext
     )
   )
 }

@@ -1,5 +1,5 @@
 test_that("tiles widget is an in-repo htmlwidget with no gsm.viz bundle (#347)", {
-  dfTiles <- rm_ParticipantTiles(rm_Classify(rm_Fixture()))
+  dfTiles <- rep_ParticipantTiles(rep_Classify(rep_Fixture()))
   w <- Widget_RepeatMeasurementsTiles(dfTiles)
   expect_s3_class(w, "Widget_RepeatMeasurementsTiles")
   expect_s3_class(w, "htmlwidget")
@@ -12,7 +12,7 @@ test_that("tiles widget is an in-repo htmlwidget with no gsm.viz bundle (#347)",
 })
 
 test_that("tiles widget payload keeps the tile order, labels and KRI columns (#347)", {
-  dfTiles <- rm_ParticipantTiles(rm_Classify(rm_Fixture()))
+  dfTiles <- rep_ParticipantTiles(rep_Classify(rep_Fixture()))
   w <- Widget_RepeatMeasurementsTiles(dfTiles, strLabel = "nd", nPageSize = 10)
   x <- w$x
   dfPayload <- jsonlite::fromJSON(x$tiles)
@@ -24,11 +24,11 @@ test_that("tiles widget payload keeps the tile order, labels and KRI columns (#3
   expect_equal(dfColumns$metric, c(paste0("kri0020", letters[1:6]), NA))
   expect_equal(x$label, "nd")
   expect_equal(x$pageSize, 10)
-  expect_equal(x$colors$Red, rm_FlagColors()[["Red"]])
+  expect_equal(x$colors$Red, rep_FlagColors()[["Red"]])
 })
 
 test_that("tiles widget rejects unknown labels and missing columns (#347)", {
-  dfTiles <- rm_ParticipantTiles(rm_Classify(rm_Fixture()))
+  dfTiles <- rep_ParticipantTiles(rep_Classify(rep_Fixture()))
   expect_error(Widget_RepeatMeasurementsTiles(dfTiles, strLabel = "pct"))
   expect_error(Widget_RepeatMeasurementsTiles(dfTiles[setdiff(names(dfTiles), "label_both")]), "label_both")
 })

@@ -8,7 +8,7 @@ const BP = 'file://' + path.resolve(__dirname, 'fixture', 'RM_bp.html');
 const EDGE = 'file://' + path.resolve(__dirname, 'fixture', 'RM_edge.html');
 const SPLIT = 'file://' + path.resolve(__dirname, 'fixture', 'RM_split.html');
 
-// Facts of rm_Fixture() in tests/testthat/helper-rm.R (render-rm-fixture.R):
+// Facts of rep_Fixture() in tests/testthat/helper-rep.R (render-rm-fixture.R):
 // A, B (US/S1), C (US/S2), D, E (JP/S3); repeating windows in A weight (2/2),
 // B pulse (1/2), D weight (1/4) and D height (1/1). Under the default count
 // rule (Amber 2, Red 3) only A weight is flagged, Amber. Height has no KRI but
@@ -861,7 +861,7 @@ test('the degraded report explains what is missing and does not error (#344)', a
   expect(errors).toEqual([]);
 });
 
-// rm_FixtureEdge(): F (no country, S4) repeats in 2 of 3 weight windows; G's
+// rep_FixtureEdge(): F (no country, S4) repeats in 2 of 3 weight windows; G's
 // country (S5) holds quotes. Rate rule, Amber 0.5, Red 2/3.
 test.describe('Repeat Measurements edge cases', () => {
   let errors;
@@ -898,7 +898,7 @@ test.describe('Repeat Measurements edge cases', () => {
   });
 });
 
-// rm_FixtureSplit(): S1 (US) has A, Amber; S2 has B (US), Green, and C (JP),
+// rep_FixtureSplit(): S1 (US) has A, Amber; S2 has B (US), Green, and C (JP),
 // Red. S2's weight is 3/5 windows, a calculated Red site flag.
 test.describe('a site that spans countries', () => {
   let errors = [];

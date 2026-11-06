@@ -3,10 +3,10 @@
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' One tile per participant and vital, with the three tile labels the
+#' One tile per participant and measure, with the three tile labels the
 #' report switches between. [Widget_RepeatMeasurementsTiles()] draws them.
 #'
-#' @param lClass `list` Output of [rm_Classify()].
+#' @param lClass `list` Output of [rep_Classify()].
 #'
 #' @return A `tibble` with `subjid`, `invid`, `country`, `vital`, `column`,
 #'   `flag`, `severity`, `Numerator`, `Denominator`, `rate`, `n`,
@@ -14,9 +14,8 @@
 #'   worst flag, then most repeating windows, then participant.
 #' @keywords internal
 #' @export
-rm_ParticipantTiles <- function(lClass) {
+rep_ParticipantTiles <- function(lClass) {
   dfVitals <- lClass$vitals
-  vSeverity <- c(Red = 3L, Amber = 2L, Green = 1L, `Not evaluable` = 0L)
   df <- lClass$participants
   strRate <- ifelse(
     df$Denominator > 0,
@@ -31,7 +30,7 @@ rm_ParticipantTiles <- function(lClass) {
     vital = df$vital,
     column = dfVitals$short[match(df$vital, dfVitals$vital)],
     flag = as.character(df$flag),
-    severity = unname(vSeverity[as.character(df$flag)]),
+    severity = rep_FlagSeverity(df$flag),
     Numerator = df$Numerator,
     Denominator = df$Denominator,
     rate = df$rate,
@@ -40,20 +39,9 @@ rm_ParticipantTiles <- function(lClass) {
     label_nd = strND,
     label_both = ifelse(df$Denominator > 0, paste0(strND, "\n", strRate), "NE")
   )
-  dfWorst <- dfTiles %>%
-    dplyr::group_by(.data$subjid) %>%
-    dplyr::summarise(
-      worst = max(.data$severity),
-      most = max(.data$Numerator),
-      .groups = "drop"
-    )
-  dfTiles <- dfTiles %>%
-    dplyr::left_join(dfWorst, by = "subjid") %>%
+  dfTiles %>%
     dplyr::arrange(
-      -.data$worst,
-      -.data$most,
-      .data$subjid,
+      match(.data$subjid, rep_ParticipantOrder(lClass)),
       match(.data$vital, dfVitals$vital)
-    ) %>%
-    dplyr::select(-"worst", -"most")
+    )
 }

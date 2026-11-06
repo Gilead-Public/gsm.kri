@@ -13,7 +13,7 @@
 #' `helpers.selectRow()`, `helpers.clearSelection()` and
 #' `helpers.updateSpec()` for the label mode).
 #'
-#' @param dfTiles `data.frame` Output of [rm_ParticipantTiles()].
+#' @param dfTiles `data.frame` Output of [rep_ParticipantTiles()].
 #' @param strLabel `character` Initial tile label: `"both"`, `"rate"` or `"nd"`.
 #' @param strId `character` Element ID of the widget.
 #' @param nPageSize `integer` Participants per page.
@@ -37,7 +37,7 @@ Widget_RepeatMeasurementsTiles <- function(
     cnd = !is.data.frame(dfTiles) || length(vMissing) > 0,
     message = paste0("dfTiles needs ", paste(vMissing, collapse = ", "))
   )
-  dfVitals <- rm_Vitals()
+  dfVitals <- rep_Vitals()
   vVitals <- unique(dfTiles$vital)
   vVitals <- c(intersect(dfVitals$vital, vVitals), setdiff(vVitals, dfVitals$vital))
   dfColumns <- tibble::tibble(
@@ -46,7 +46,7 @@ Widget_RepeatMeasurementsTiles <- function(
     label = dplyr::coalesce(dfVitals$label[match(vVitals, dfVitals$vital)], vVitals),
     metric = dfVitals$metric[match(vVitals, dfVitals$vital)]
   )
-  vColors <- rm_FlagColors()
+  vColors <- rep_FlagColors()
   htmlwidgets::createWidget(
     name = "Widget_RepeatMeasurementsTiles",
     x = list(

@@ -1,11 +1,11 @@
 # Each render takes several seconds, so share the default render across tests.
-rm_default_html <- local({
+rep_default_html <- local({
   html <- NULL
   function() {
     if (is.null(html)) {
       html <<- render_rm(
-        dfResults = rm_FixtureResults(),
-        dfMetrics = rm_FixtureMetrics()
+        dfResults = rep_FixtureResults(),
+        dfMetrics = rep_FixtureMetrics()
       )
     }
     html
@@ -13,7 +13,7 @@ rm_default_html <- local({
 })
 
 test_that("Report_RepeatMeasurements renders the filter strip and study overview (#344)", {
-  html <- rm_default_html()
+  html <- rep_default_html()
   # The header card holds the title, outside the contents list, and the study facts.
   flat <- gsub("\\s+", " ", html)
   expect_match(html, '<header id="rm-header" class="rm-header">', fixed = TRUE)
@@ -38,13 +38,11 @@ test_that("Report_RepeatMeasurements renders the filter strip and study overview
   # The overview opens as distribution bars and can switch to counts.
   expect_match(html, 'id="rm-ov-distribution" type="button" data-rm-ov="distribution" aria-pressed="true"', fixed = TRUE)
   expect_match(html, 'id="rm-ov-counts" type="button" data-rm-ov="counts" aria-pressed="false"', fixed = TRUE)
-  expect_match(html, "WT 3/8 <span class=\"ok\">= kri0020a", fixed = TRUE)
-  expect_match(html, "HR 1/3 <span class=\"ok\">= kri0020b", fixed = TRUE)
-  expect_match(html, "Repeating windows / windows compared with the KRI", fixed = TRUE)
+  expect_false(grepl("rm-recon", html, fixed = TRUE))
   expect_false(grepl("W = 3", html, fixed = TRUE))
   expect_false(grepl("not in this study's metrics", html, fixed = TRUE))
 
-  data <- rm_DataBlock(html)
+  data <- rep_DataBlock(html)
   expect_setequal(names(data), c("sites", "siteRule", "vitals", "participants", "settings", "export"))
   expect_equal(data$participants$subjid, c("A", "B", "C", "D", "E"))
   expect_equal(data$participants$invid, c("S1", "S1", "S2", "S3", "S3"))
@@ -53,34 +51,34 @@ test_that("Report_RepeatMeasurements renders the filter strip and study overview
 
 test_that("thresholds reach the browser exactly, so R and the browser agree at a boundary (#343, #344)", {
   html <- render_rm(
-    lListings = rm_FixtureEdge(),
-    dfMetrics = rm_FixtureMetrics(),
+    lListings = rep_FixtureEdge(),
+    dfMetrics = rep_FixtureMetrics(),
     strFlagRule = "rate",
     vFlagThresholds = c(0.5, 2 / 3)
   )
-  lData <- rm_DataBlock(html)
+  lData <- rep_DataBlock(html)
   expect_identical(lData$settings$thresholds$rate[2], 2 / 3)
-  lTiles <- rm_WidgetPayloads(html)[["rm-tiles"]]$tiles
+  lTiles <- rep_WidgetPayloads(html)[["rm-tiles"]]$tiles
   lF <- Filter(function(t) t$subjid == "F" && t$vital == "weight", lTiles)
   expect_equal(lF[[1]]$flag, "Red")
   expect_true("(missing)" %in% lData$participants$country)
 })
 
 test_that("a site that spans countries is noted, and each participant keeps their own country (#344)", {
-  html <- render_rm(lListings = rm_FixtureSplit(), dfMetrics = rm_FixtureMetrics())
+  html <- render_rm(lListings = rep_FixtureSplit(), dfMetrics = rep_FixtureMetrics())
   expect_match(
     gsub("\\s+", " ", html),
     "1 site with participants in more than one country</strong> (S2). As in the country KRIs, each participant counts toward their own country, so the site is counted in each of its countries.",
     fixed = TRUE
   )
-  lData <- rm_DataBlock(html)
+  lData <- rep_DataBlock(html)
   expect_equal(lData$participants$country, c("US", "US", "JP"))
   expect_equal(sum(lData$sites$invid == "S2" & lData$sites$vital == "weight"), 1)
-  expect_false(grepl("more than one country", rm_default_html(), fixed = TRUE))
+  expect_false(grepl("more than one country", rep_default_html(), fixed = TRUE))
 })
 
 test_that("the strip has reset, settings and contents buttons, and settings default to 2 / 3 repeating windows (#344)", {
-  html <- rm_default_html()
+  html <- rep_default_html()
   for (id in c("rm-reset", "rm-settings-toggle", "rm-toc-toggle", "rm-settings", "rm-th-amber", "rm-th-red", "rm-min-windows", "rm-settings-defaults", "rm-settings-done")) {
     expect_match(html, paste0('id="', id, '"'), fixed = TRUE)
   }
@@ -92,7 +90,7 @@ test_that("the strip has reset, settings and contents buttons, and settings defa
   expect_match(html, 'data-rm-set="bp" value="separate" aria-pressed="true"', fixed = TRUE)
   expect_match(html, 'data-rm-set="rule" value="count" aria-pressed="true"', fixed = TRUE)
   expect_match(gsub("\\s+", " ", html), "repeating windows, Amber \u2265 2, Red \u2265 3; participants need 1 window for a flag", fixed = TRUE)
-  settings <- rm_DataBlock(html)$settings
+  settings <- rep_DataBlock(html)$settings
   expect_equal(settings$rule, "count")
   expect_equal(settings$thresholds$count, c(2, 3))
   expect_equal(settings$thresholds$rate, c(0.2, 0.3))
@@ -103,18 +101,18 @@ test_that("the strip has reset, settings and contents buttons, and settings defa
 })
 
 test_that("flag and blood pressure arguments reach the report settings and paired BP is listed (#343, #344)", {
-  f <- rm_Fixture()
+  f <- rep_Fixture()
   f$Mapped_VS$sysbp <- 120
   f$Mapped_VS$diabp <- 80
   html <- render_rm(
     f,
-    dfMetrics = rm_FixtureMetrics(),
+    dfMetrics = rep_FixtureMetrics(),
     strFlagRule = "rate",
     vFlagThresholds = c(0.1, 0.5),
     nMinWindows = 2,
     strBPMode = "both"
   )
-  data <- rm_DataBlock(html)
+  data <- rep_DataBlock(html)
   expect_equal(data$settings$rule, "rate")
   expect_equal(data$settings$thresholds$rate, c(0.1, 0.5))
   expect_equal(data$settings$thresholds$count, c(2, 3))
@@ -125,17 +123,17 @@ test_that("flag and blood pressure arguments reach the report settings and paire
   expect_true(is.na(data$vitals$metric[data$vitals$vital == "bp"]))
   expect_match(gsub("\\s+", " ", html), "% of windows that repeat, Amber \u2265 10%, Red \u2265 50%; participants need 2 windows for a flag", fixed = TRUE)
   expect_match(html, 'data-rm-vital-opt="bp"', fixed = TRUE)
-  x <- rm_WidgetPayloads(html)[["rm-tiles"]]
+  x <- rep_WidgetPayloads(html)[["rm-tiles"]]
   expect_true("bp" %in% vapply(x$tiles, `[[`, character(1), "vital"))
-  expect_true(any(grepl("120/80", unlist(rm_WidgetPayloads(html)[["rm-dt-wide"]]$data), fixed = TRUE)))
+  expect_true(any(grepl("120/80", unlist(rep_WidgetPayloads(html)[["rm-dt-wide"]]$data), fixed = TRUE)))
 
   expect_error(Report_RepeatMeasurements(lListings = f, strBPMode = "paired"), "should be one of")
 })
 
 test_that("the Site/country distribution is one table of flags by measure for each country or site (#345)", {
-  html <- rm_default_html()
+  html <- rep_default_html()
   # rmFilters.js draws the table; the report has no distribution charts.
-  vChartIDs <- unlist(lapply(rm_WidgetPayloads(html), function(x) x$metadata$chartId))
+  vChartIDs <- unlist(lapply(rep_WidgetPayloads(html), function(x) x$metadata$chartId))
   expect_false(any(grepl("^rm-(study|country|site)", vChartIDs)))
   expect_match(html, "<h2>Site/country distribution</h2>", fixed = TRUE)
   expect_false(grepl("Participant distribution", html, fixed = TRUE))
@@ -146,7 +144,7 @@ test_that("the Site/country distribution is one table of flags by measure for ea
   expect_match(html, 'id="rm-dist-sites" type="button" data-rm-dist="unit" value="sites" aria-pressed="false"', fixed = TRUE)
   expect_match(html, 'id="rm-dist-search"', fixed = TRUE)
   expect_match(html, 'id="rm-dist-tip"', fixed = TRUE)
-  data <- rm_DataBlock(html)
+  data <- rep_DataBlock(html)
   # Site flags: the latest KRI flag for weight and HR, the report's own
   # calculation (here below accrual) for the other vitals.
   dfW <- data$sites[data$sites$vital == "weight", ]
@@ -160,13 +158,13 @@ test_that("the Site/country distribution is one table of flags by measure for ea
   expect_equal(data$siteRule$accrual, 3)
   # rmFilters.js builds the table from the tiles, so every tile carries N, D
   # and its site and country.
-  x <- rm_WidgetPayloads(html)[["rm-tiles"]]
+  x <- rep_WidgetPayloads(html)[["rm-tiles"]]
   expect_true(all(c("country", "invid", "Numerator", "Denominator", "flag") %in% names(x$tiles[[1]])))
 })
 
 test_that("the participant listing is the in-repo tiles widget with label, sort, search and download controls (#347)", {
-  html <- rm_default_html()
-  x <- rm_WidgetPayloads(html)[["rm-tiles"]]
+  html <- rep_default_html()
+  x <- rep_WidgetPayloads(html)[["rm-tiles"]]
   expect_false(is.null(x))
   expect_equal(x$label, "both")
   expect_equal(x$pageSize, 50)
@@ -181,7 +179,7 @@ test_that("the participant listing is the in-repo tiles widget with label, sort,
 })
 
 test_that("the measure listing is one level and the data table offers Wide and a browser-built Long (#346)", {
-  html <- rm_default_html()
+  html <- rep_default_html()
   for (id in c("rm-vitals-view", "rm-vitals", "rm-show-values", "rm-only-repeat", "rm-shape-long", "rm-shape-wide", "rm-dt-only", "rm-dt-long", "rm-dt-wide")) {
     expect_match(html, paste0('id="', id, '"'), fixed = TRUE)
   }
@@ -193,9 +191,9 @@ test_that("the measure listing is one level and the data table offers Wide and a
   expect_match(html, "<h2>Participant listing</h2>", fixed = TRUE)
   # Wide comes first; rmFilters.js builds Long from the Wide data on first use.
   expect_lt(regexpr('id="rm-shape-wide"', html), regexpr('id="rm-shape-long"', html))
-  lPayloads <- rm_WidgetPayloads(html)
+  lPayloads <- rep_WidgetPayloads(html)
   expect_equal(length(lPayloads[["rm-vitals"]]$data[[1]]), 35)
-  dfVS <- rm_Fixture()$Mapped_VS
+  dfVS <- rep_Fixture()$Mapped_VS
   expect_equal(length(lPayloads[["rm-dt-wide"]]$data[[1]]), nrow(dfVS))
   expect_null(lPayloads[["rm-dt-long"]])
   for (id in c("rm-vitals", "rm-dt-wide")) {
@@ -204,16 +202,15 @@ test_that("the measure listing is one level and the data table offers Wide and a
 })
 
 test_that("turning off export removes every download control (#346, #347)", {
-  html <- render_rm(dfMetrics = rm_FixtureMetrics(), bExport = FALSE)
+  html <- render_rm(dfMetrics = rep_FixtureMetrics(), bExport = FALSE)
   expect_false(grepl('id="rm-tiles-csv"', html, fixed = TRUE))
   expect_false(grepl('"extend":"csv"', html, fixed = TRUE))
-  expect_false(rm_DataBlock(html)$export)
-  expect_match(html, "No <code>kri0020</code> results to reconcile with.", fixed = TRUE)
+  expect_false(rep_DataBlock(html)$export)
 })
 
 test_that("the report explains missing vital signs and a study without the repeat-measure KRIs (#344)", {
-  f <- rm_Fixture()
-  html <- render_rm(rm_listings(f$Mapped_VS[0, ], f$Mapped_SUBJ))
+  f <- rep_Fixture()
+  html <- render_rm(rep_listings(f$Mapped_VS[0, ], f$Mapped_SUBJ))
   expect_match(html, "No vital signs recorded.", fixed = TRUE)
   expect_match(html, "not in this study", fixed = TRUE)
   expect_match(gsub("\\s+", " ", html), "a window of 3 measurements (default) and flags sites at Amber \u2265 20%, Red \u2265 30% of windows, with at least 3 windows.", fixed = TRUE)
@@ -256,5 +253,22 @@ test_that("Repeat Measurements report example is accepted by a user (#348)", {
       "Repeated values are highlighted in the Vitals Listing and both Data table shapes.",
       "The Participant Listing, Vitals Listing and Data table can be downloaded as CSV."
     )
+  )
+})
+
+test_that("strContext is shown above the title", {
+  html <- render_rm(
+    dfMetrics = rep_FixtureMetrics(),
+    strContext = '<a href="study.html">Back to STUDY1</a>'
+  )
+  flat <- gsub("\\s+", " ", html)
+  expect_match(
+    flat,
+    '<div class="rm-ctx"><a href="study.html">Back to STUDY1</a></div> <div class="rm-title"> <h1 class="toc-ignore">Repeat Measurements</h1>',
+    fixed = TRUE
+  )
+  expect_error(
+    Report_RepeatMeasurements(lListings = rep_Fixture(), strContext = NA_character_),
+    "strContext"
   )
 })

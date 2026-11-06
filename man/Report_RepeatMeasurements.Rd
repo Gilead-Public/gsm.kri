@@ -15,6 +15,7 @@ Report_RepeatMeasurements(
   nMinWindows = 1,
   strBPMode = c("separate", "combined", "both"),
   bExport = TRUE,
+  strContext = "",
   strOutputDir = getwd(),
   strOutputFile = NULL,
   strInputPath = system.file("report", "Report_RepeatMeasurements.Rmd", package =
@@ -23,7 +24,7 @@ Report_RepeatMeasurements(
 }
 \arguments{
 \item{dfResults}{`data.frame` Reporting results. With `kri0020` results the
-report reconciles with the KRI and colours sites by their KRI flag.}
+report colours sites by their KRI flag.}
 
 \item{dfMetrics}{`data.frame` Reporting metrics. The window length and
 thresholds come from the `kri0020` rows when present.}
@@ -36,15 +37,16 @@ and `vsperf_std`, and one numeric column per measure).}
 `dfResults$SnapshotDate`, if any.}
 
 \item{nWindowLength}{`integer` Window length when `dfMetrics` has none.
-See [rm_Classify()].}
+See [rep_Classify()].}
 
 \item{strFlagRule}{`character` Participant flag rule, `"count"` (default)
-or `"rate"`. See [rm_Classify()].}
+or `"rate"`. See [rep_Classify()].}
 
 \item{vFlagThresholds}{`numeric` Amber and Red thresholds for
 `strFlagRule`: window counts for `"count"`, proportions such as
 `c(0.2, 0.3)` for `"rate"`. Default `NULL`: 2 and 3 repeating windows, or
-the `kri0020` rate thresholds. See [rm_Classify()].}
+the site-level `kri0020` / `cou0020` rate thresholds. See
+[rep_FlagThresholds()].}
 
 \item{nMinWindows}{`numeric` Windows a participant needs for a flag.
 Default 1.}
@@ -53,6 +55,10 @@ Default 1.}
 systolic and diastolic BP), `"combined"` (paired BP only) or `"both"`.}
 
 \item{bExport}{`logical` Show the CSV download buttons. Default: `TRUE`.}
+
+\item{strContext}{`character` HTML shown above the report title, such as a
+link back to a study page. Inserted as is, so it must be trusted HTML.
+Default: `""` (none).}
 
 \item{strOutputDir}{`string` Output directory. Default: working directory.}
 

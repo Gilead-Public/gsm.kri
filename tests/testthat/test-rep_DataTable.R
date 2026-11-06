@@ -1,6 +1,6 @@
 # Expands Wide as rmFilters.js longRows() does: one row per participant,
 # measure and non-missing value, # counting values in Wide row order.
-rm_WideToLong <- function(dfWide, vVitals) {
+rep_WideToLong <- function(dfWide, vVitals) {
   vVitals <- intersect(vVitals, names(dfWide))
   df <- dplyr::bind_rows(lapply(seq_along(vVitals), function(j) {
     v <- vVitals[[j]]
@@ -19,22 +19,22 @@ rm_WideToLong <- function(dfWide, vVitals) {
   dplyr::ungroup(df[order(df$p, df$j, df$seq), ])
 }
 
-test_that("Long rows built from Wide reproduce rm_Classify() measurements (#346)", {
-  fBP <- rm_Fixture()
+test_that("Long rows built from Wide reproduce rep_Classify() measurements (#346)", {
+  fBP <- rep_Fixture()
   fBP$Mapped_VS$sysbp <- ifelse(fBP$Mapped_VS$subjid == "A", 120, NA)
   fBP$Mapped_VS$diabp <- ifelse(fBP$Mapped_VS$subjid == "A", c(80, 80, 80, 81), NA)
   # Reversed input with a tied date, a missing date and decimals: Wide must
   # still follow measurement order.
-  fMessy <- rm_Fixture()
+  fMessy <- rep_Fixture()
   dfVS <- fMessy$Mapped_VS[rev(seq_len(nrow(fMessy$Mapped_VS))), ]
   dfVS$vs_dt[2] <- dfVS$vs_dt[1]
   dfVS$vs_dt[3] <- NA
   dfVS$weight <- dfVS$weight + 0.25
   fMessy$Mapped_VS <- dfVS
-  for (lListings in list(rm_Fixture(), rm_FixtureEdge(), rm_FixtureSplit(), fBP, fMessy)) {
-    # rm_FixtureSplit() warns about its split site.
-    lClass <- suppressWarnings(rm_Classify(lListings))
-    dfLong <- rm_WideToLong(rm_DataTableWide(lClass), lClass$vitals$vital)
+  for (lListings in list(rep_Fixture(), rep_FixtureEdge(), rep_FixtureSplit(), fBP, fMessy)) {
+    # rep_FixtureSplit() warns about its split site.
+    lClass <- suppressWarnings(rep_Classify(lListings))
+    dfLong <- rep_WideToLong(rep_DataTableWide(lClass), lClass$vitals$vital)
     dfM <- lClass$measurements
     dfM <- dfM[order(dfM$subjid, dfM$vital, dfM$seq), ]
     dfLong <- dfLong[order(dfLong$subjid, dfLong$vital, dfLong$seq), ]
@@ -43,15 +43,15 @@ test_that("Long rows built from Wide reproduce rm_Classify() measurements (#346)
     expect_equal(dfLong$in_repeat_window, dfM$in_repeat_window)
     expect_equal(dfLong$value, dfM$value_text)
   }
-  d <- rm_WideToLong(rm_DataTableWide(rm_Classify(rm_Fixture())), c("weight", "pulse", "height"))
+  d <- rep_WideToLong(rep_DataTableWide(rep_Classify(rep_Fixture())), c("weight", "pulse", "height"))
   expect_equal(unique(d$subjid), c("A", "B", "D", "C"))
   expect_equal(d$value[d$subjid == "D" & d$vital == "weight"], c("90", "90", "90", "91", "92", "93"))
 })
 
 test_that("wide data table has one row per record, a column per vital and repeat-window flags (#346)", {
-  lClass <- rm_Classify(rm_Fixture())
-  df <- rm_DataTableWide(lClass)
-  dfVS <- rm_Fixture()$Mapped_VS
+  lClass <- rep_Classify(rep_Fixture())
+  df <- rep_DataTableWide(lClass)
+  dfVS <- rep_Fixture()$Mapped_VS
   expect_equal(nrow(df), nrow(dfVS))
   expect_equal(
     names(df),
@@ -74,20 +74,20 @@ test_that("wide data table has one row per record, a column per vital and repeat
   nWide <- sum(unlist(df[grep("_in_repeat_window$", names(df))]) == "Y")
   expect_equal(nWide, sum(lClass$measurements$in_repeat_window))
 
-  lEmpty <- rm_Classify(rm_listings(NULL, rm_Fixture()$Mapped_SUBJ))
-  expect_equal(nrow(rm_DataTableWide(lEmpty)), 0)
+  lEmpty <- rep_Classify(rep_listings(NULL, rep_Fixture()$Mapped_SUBJ))
+  expect_equal(nrow(rep_DataTableWide(lEmpty)), 0)
 })
 
 test_that("performed maps numeric and text codes to Y / N (#346)", {
-  expect_equal(rm_Performed(c(1, 0, NA)), c("Y", "N", NA))
-  expect_equal(rm_Performed(c("Y", "n", "yes", "No", "U")), c("Y", "N", "Y", "N", "U"))
+  expect_equal(rep_Performed(c(1, 0, NA)), c("Y", "N", NA))
+  expect_equal(rep_Performed(c("Y", "n", "yes", "No", "U")), c("Y", "N", "Y", "N", "U"))
 })
 
 test_that("data table builds the Wide table with a CSV only when export is enabled (#346)", {
   skip_if_not_installed("DT")
-  lClass <- rm_Classify(rm_Fixture())
-  dfWide <- rm_DataTableWide(lClass)
-  w <- rm_DataTable(dfWide, lClass$vitals)
+  lClass <- rep_Classify(rep_Fixture())
+  dfWide <- rep_DataTableWide(lClass)
+  w <- rep_DataTable(dfWide, lClass$vitals)
   expect_equal(w$elementId, "rm-dt-wide")
   opts <- w$x$options
   expect_equal(opts$dom, "Bfrtip")
@@ -100,16 +100,16 @@ test_that("data table builds the Wide table with a CSV only when export is enabl
   # The wide CSV pairs each <vital>_in_repeat_window column with its measure.
   expect_match(as.character(opts$buttons[[1]]$exportOptions$columns), '"9":6')
 
-  wOff <- rm_DataTable(dfWide, lClass$vitals, bExport = FALSE)
+  wOff <- rep_DataTable(dfWide, lClass$vitals, bExport = FALSE)
   expect_equal(wOff$x$options$dom, "frtip")
   expect_length(wOff$x$options$buttons, 0)
 })
 
 test_that("data table headers fit without horizontal scrolling and the CSV keeps every column (#346)", {
   skip_if_not_installed("DT")
-  lClass <- rm_Classify(rm_Fixture())
-  dfWide <- rm_DataTableWide(lClass)
-  w <- rm_DataTable(dfWide, lClass$vitals)
+  lClass <- rep_Classify(rep_Fixture())
+  dfWide <- rep_DataTableWide(lClass)
+  w <- rep_DataTable(dfWide, lClass$vitals)
   defs <- w$x$options$columnDefs
   hidden <- unlist(lapply(Filter(function(d) isFALSE(d$visible), defs), `[[`, "targets"))
   idx <- function(df, col) match(col, names(df)) - 1L

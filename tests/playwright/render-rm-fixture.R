@@ -4,20 +4,20 @@
 # with a missing country, a quoted country and a 2/3 threshold, fixture/RM_edge.html;
 # and a site that spans countries, fixture/RM_split.html.
 # Run from the gsm.kri package root after devtools::load_all(".").
-source("tests/testthat/helper-rm.R")
+source("tests/testthat/helper-rep.R")
 dir.create("tests/playwright/fixture", showWarnings = FALSE, recursive = TRUE)
 # Absolute: rmarkdown resolves a relative output path against the template.
 out_dir <- normalizePath("tests/playwright/fixture")
-f <- rm_Fixture()
+f <- rep_Fixture()
 Report_RepeatMeasurements(
-  dfResults = rm_FixtureResults(),
-  dfMetrics = rm_FixtureMetrics(),
+  dfResults = rep_FixtureResults(),
+  dfMetrics = rep_FixtureMetrics(),
   lListings = f,
   strOutputDir = out_dir,
   strOutputFile = "RM.html"
 )
 Report_RepeatMeasurements(
-  lListings = rm_listings(f$Mapped_VS[0, ], f$Mapped_SUBJ),
+  lListings = rep_listings(f$Mapped_VS[0, ], f$Mapped_SUBJ),
   strOutputDir = out_dir,
   strOutputFile = "RM_degraded.html"
 )
@@ -26,22 +26,22 @@ fBP <- f
 fBP$Mapped_VS$sysbp <- ifelse(fBP$Mapped_VS$subjid == "A", 120, NA)
 fBP$Mapped_VS$diabp <- ifelse(fBP$Mapped_VS$subjid == "A", c(80, 80, 80, 81), NA)
 Report_RepeatMeasurements(
-  dfMetrics = rm_FixtureMetrics(),
+  dfMetrics = rep_FixtureMetrics(),
   lListings = fBP,
   strOutputDir = out_dir,
   strOutputFile = "RM_bp.html"
 )
 Report_RepeatMeasurements(
-  dfMetrics = rm_FixtureMetrics(),
-  lListings = rm_FixtureEdge(),
+  dfMetrics = rep_FixtureMetrics(),
+  lListings = rep_FixtureEdge(),
   strFlagRule = "rate",
   vFlagThresholds = c(0.5, 2 / 3),
   strOutputDir = out_dir,
   strOutputFile = "RM_edge.html"
 )
 suppressWarnings(Report_RepeatMeasurements(
-  dfMetrics = rm_FixtureMetrics(),
-  lListings = rm_FixtureSplit(),
+  dfMetrics = rep_FixtureMetrics(),
+  lListings = rep_FixtureSplit(),
   strOutputDir = out_dir,
   strOutputFile = "RM_split.html"
 ))

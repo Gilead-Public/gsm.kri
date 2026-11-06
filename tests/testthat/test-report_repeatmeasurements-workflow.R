@@ -39,10 +39,10 @@ test_that("the report_repeatmeasurements module renders the report (#344)", {
     bExact = TRUE
   )
   lData <- c(
-    rm_Fixture(),
+    rep_Fixture(),
     list(
-      Reporting_Results = rm_FixtureResults(),
-      Reporting_Metrics = rm_FixtureMetrics()
+      Reporting_Results = rep_FixtureResults(),
+      Reporting_Metrics = rep_FixtureMetrics()
     )
   )
   strOut <- file.path(tempdir(), "Report_RepeatMeasurements.html")
@@ -51,9 +51,7 @@ test_that("the report_repeatmeasurements module renders the report (#344)", {
     quiet_render(suppressWarnings(workr::RunWorkflows(wf, lData)))
   })
   expect_true(file.exists(strOut))
-  expect_match(
-    paste(readLines(strOut, warn = FALSE), collapse = "\n"),
-    "WT 3/8 <span class=\"ok\">= kri0020a",
-    fixed = TRUE
-  )
+  html <- paste(readLines(strOut, warn = FALSE), collapse = "\n")
+  expect_match(html, '<header id="rm-header" class="rm-header">', fixed = TRUE)
+  expect_match(html, 'id="rm-ov-distribution"', fixed = TRUE)
 })

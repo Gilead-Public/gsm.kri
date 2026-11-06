@@ -1,5 +1,5 @@
-# Builders for the Repeat Measurements tests (rm_* helpers and the report).
-rm_listings <- function(dfVS, dfSubj = NULL) {
+# Builders for the Repeat Measurements tests (rep_* helpers and the report).
+rep_listings <- function(dfVS, dfSubj = NULL) {
   if (is.null(dfSubj)) {
     dfSubj <- data.frame(
       studyid = "S1",
@@ -11,7 +11,7 @@ rm_listings <- function(dfVS, dfSubj = NULL) {
   list(Mapped_VS = dfVS, Mapped_SUBJ = dfSubj)
 }
 
-rm_vs <- function(lValues, strCol = "weight") {
+rep_vs <- function(lValues, strCol = "weight") {
   do.call(rbind, lapply(names(lValues), function(id) {
     x <- lValues[[id]]
     df <- data.frame(
@@ -24,7 +24,7 @@ rm_vs <- function(lValues, strCol = "weight") {
   }))
 }
 
-rm_metrics <- function(nWindow = 3, strThreshold = "0.2,0.3") {
+rep_metrics <- function(nWindow = 3, strThreshold = "0.2,0.3") {
   data.frame(
     ID = c("kri0020a", "cou0020a"),
     MetricID = c("Analysis_kri0020a", "Analysis_cou0020a"),
@@ -43,7 +43,7 @@ flag_of <- function(lClass, id, strVital = "weight") {
 # Amber):
 # weight: A 2/2 Red, B 0/2 Green, C 0/0 Not evaluable, D 1/4 Amber, E no VS.
 # pulse: A 0/1 Green, B 1/2 Red. height (no KRI): D 1/1.
-rm_Fixture <- function() {
+rep_Fixture <- function() {
   vs <- function(id, weight = NULL, pulse = NULL, height = NULL) {
     n <- max(length(weight), length(pulse), length(height))
     pad <- function(x) c(x, rep(NA_real_, n - length(x)))
@@ -74,7 +74,7 @@ rm_Fixture <- function() {
 
 # Edge cases: F has no country and repeats in 2 of 3 weight windows, which is
 # Red at the rate thresholds 0.5 and 2/3; G's country holds quotes.
-rm_FixtureEdge <- function() {
+rep_FixtureEdge <- function() {
   dfVS <- data.frame(
     subjid = rep(c("F", "G"), each = 5),
     visit = paste0("V", 1:5),
@@ -94,8 +94,8 @@ rm_FixtureEdge <- function() {
 # A site that spans countries: S1 (US) has A; S2 has B (US) and C (JP). Under
 # the default count rule A's weight is Amber (2/2), B's Green (0/2) and C's
 # Red (3/3); S2's weight is 3/5 windows.
-rm_FixtureSplit <- function() {
-  dfVS <- rm_vs(list(A = c(70, 70, 70, 70), B = c(80, 81, 82, 83), C = c(1, 1, 1, 1, 1)))
+rep_FixtureSplit <- function() {
+  dfVS <- rep_vs(list(A = c(70, 70, 70, 70), B = c(80, 81, 82, 83), C = c(1, 1, 1, 1, 1)))
   dfVS$vsperf_std <- "Y"
   dfSubj <- data.frame(
     studyid = "STUDY1",
@@ -106,9 +106,9 @@ rm_FixtureSplit <- function() {
   list(Mapped_VS = dfVS, Mapped_SUBJ = dfSubj)
 }
 
-# Site results for kri0020a/b that reconcile with rm_Fixture(), plus an older
+# Site results for kri0020a/b that reconcile with rep_Fixture(), plus an older
 # snapshot that does not.
-rm_FixtureResults <- function() {
+rep_FixtureResults <- function() {
   latest <- data.frame(
     MetricID = rep(c("Analysis_kri0020a", "Analysis_kri0020b"), each = 3),
     GroupLevel = "Site",
@@ -123,7 +123,7 @@ rm_FixtureResults <- function() {
 }
 
 # kri0020a-f and cou0020a-f metrics at W = 3 with the default thresholds.
-rm_FixtureMetrics <- function(nWindow = 3) {
+rep_FixtureMetrics <- function(nWindow = 3) {
   vIDs <- c(paste0("kri0020", letters[1:6]), paste0("cou0020", letters[1:6]))
   data.frame(
     ID = vIDs,
@@ -133,7 +133,7 @@ rm_FixtureMetrics <- function(nWindow = 3) {
   )
 }
 
-render_rm <- function(lListings = rm_Fixture(), ...) {
+render_rm <- function(lListings = rep_Fixture(), ...) {
   testthat::skip_if_not_installed("DT")
   out <- quiet_render(suppressWarnings(Report_RepeatMeasurements(
     lListings = lListings,
@@ -144,7 +144,7 @@ render_rm <- function(lListings = rm_Fixture(), ...) {
   paste(readLines(out, warn = FALSE), collapse = "\n")
 }
 
-rm_DataBlock <- function(html) {
+rep_DataBlock <- function(html) {
   jsonlite::fromJSON(sub(
     '.*<script type="application/json" id="rm-data">(.*?)</script>.*',
     "\\1",
@@ -154,7 +154,7 @@ rm_DataBlock <- function(html) {
 
 # htmlwidgets serializes each widget into a JSON <script data-for=...> block;
 # the payloads are named by element id.
-rm_WidgetPayloads <- function(html) {
+rep_WidgetPayloads <- function(html) {
   m <- stringr::str_match_all(
     html,
     '<script type="application/json" data-for="([^"]*)">(.*?)</script>'

@@ -1,6 +1,6 @@
 test_that("vital rows cover every vital for every participant, flagged rows first (#346)", {
-  lClass <- rm_Classify(rm_Fixture(), strFlagRule = "rate")
-  df <- rm_VitalRows(lClass)
+  lClass <- rep_Classify(rep_Fixture(), strFlagRule = "rate")
+  df <- rep_VitalRows(lClass)
   # Five participants x (six KRI vitals + height).
   expect_equal(nrow(df), 35)
   expect_equal(df$subjid[1:4], c("A", "B", "D", "D"))
@@ -12,7 +12,7 @@ test_that("vital rows cover every vital for every participant, flagged rows firs
 })
 
 test_that("vital rows count unique values and carry visit details for each value (#346)", {
-  df <- rm_VitalRows(rm_Classify(rm_Fixture()))
+  df <- rep_VitalRows(rep_Classify(rep_Fixture()))
   d <- df[df$subjid == "D" & df$vital == "weight", ]
   # 90 90 90 91 92 93: 4 unique of 6 values.
   expect_equal(d$n_unique, 4)
@@ -25,12 +25,12 @@ test_that("vital rows count unique values and carry visit details for each value
   expect_equal(c(e$n_unique, e$visits), c("0", ""))
 })
 
-test_that("measurements in order and their repeat-window mask match Mark_ConsecutiveRepeats (#346)", {
-  lClass <- rm_Classify(rm_Fixture(), strFlagRule = "rate")
-  df <- rm_VitalRows(lClass)
-  dfVS <- rm_Fixture()$Mapped_VS
+test_that("measurements in order and their repeat-window mask match MarkConsecutiveRepeats (#346)", {
+  lClass <- rep_Classify(rep_Fixture(), strFlagRule = "rate")
+  df <- rep_VitalRows(lClass)
+  dfVS <- rep_Fixture()$Mapped_VS
   for (strVital in c("weight", "pulse", "height")) {
-    dfMarked <- Mark_ConsecutiveRepeats(dfVS, strVital)
+    dfMarked <- MarkConsecutiveRepeats(dfVS, strVital)
     for (id in c("A", "B", "D")) {
       d <- dfMarked[dfMarked$subjid == id, ]
       row <- df[df$subjid == id & df$vital == strVital, ]
@@ -44,9 +44,9 @@ test_that("measurements in order and their repeat-window mask match Mark_Consecu
 
 test_that("vitals listing is one compact level with flag and rate in one column and CSV only when export is enabled (#346)", {
   skip_if_not_installed("DT")
-  lClass <- rm_Classify(rm_Fixture(), strFlagRule = "rate")
-  dfRows <- rm_VitalRows(lClass)
-  w <- rm_VitalsListing(dfRows, nWindowLength = 3)
+  lClass <- rep_Classify(rep_Fixture(), strFlagRule = "rate")
+  dfRows <- rep_VitalRows(lClass)
+  w <- rep_VitalsListing(dfRows, nWindowLength = 3)
   expect_s3_class(w, "datatables")
   expect_equal(w$elementId, "rm-vitals")
   opts <- w$x$options
@@ -71,7 +71,7 @@ test_that("vitals listing is one compact level with flag and rate in one column 
   expect_true(isTRUE(opts$deferRender))
   expect_match(w$x$container, "Flag \u00b7 rate")
 
-  wOff <- rm_VitalsListing(dfRows, bExport = FALSE)
+  wOff <- rep_VitalsListing(dfRows, bExport = FALSE)
   expect_equal(wOff$x$options$dom, "frtip")
   expect_length(wOff$x$options$buttons, 0)
 })
