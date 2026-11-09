@@ -4282,7 +4282,7 @@ font-size: 0.95em;
 <!-- The report's own header card carries the title, so hide the page's. -->
 <style>#header { display: none; }</style>
 <header id="rm-header" class="rm-header">
-<div class="rm-ctx"><a href="https://gilead-public.github.io/gsm.kri">gsm.kri</a> example · rendered November 06, 2026 16:16 UTC · <a href="#example-code">Example code ↓</a></div>
+<div class="rm-ctx"><a href="https://gilead-public.github.io/gsm.kri">gsm.kri</a> example · rendered November 09, 2026 19:03 UTC · <a href="#example-code">Example code ↓</a></div>
 <div class="rm-title">
 <h1 class="toc-ignore">Repeat Measurements</h1>
 <button id="rm-how-toggle" type="button" class="rm-btn" aria-expanded="false" aria-controls="rm-how">How to read</button>
@@ -4294,7 +4294,7 @@ AA-AA-000-0000
 </span>
 <span class="rm-pill">
 <b>Snapshot</b>
-2026-11-06
+2026-11-09
 </span>
 <span class="rm-pill">
 <b>Window</b>
@@ -4788,9 +4788,10 @@ clear.</li>
 <li><strong>Wide</strong> (default): one row per participant and visit
 record, one column per measure, as in the vital signs data. Hover a
 measure header for its name and KRI, and a site for its country; grey
-rows were not performed. <strong>Long</strong>: one row per participant,
-measure and non-missing value, in measurement order (# is the
-position).</li>
+rows were not performed. Untick <strong>Show visits with all measures
+missing</strong> to hide records with no value in any shown measure.
+<strong>Long</strong>: one row per participant, measure and non-missing
+value, in measurement order (# is the position).</li>
 <li>Dark red values are in a repeating window, not a flag. Click a row
 to filter the report to that participant; click again to clear.</li>
 </ul>
@@ -4804,6 +4805,10 @@ to filter the report to that participant; click again to clear.</li>
 <input id="rm-dt-only" type="checkbox" checked></input>
  
 <span id="rm-dt-only-label">Only participants with a repeating window</span>
+</label>
+<label>
+<input id="rm-dt-missing" type="checkbox" checked></input>
+ Show visits with all measures missing
 </label>
 </div>
 <div id="rm-dt-wide-view" data-rm-shape-view="wide">
@@ -4851,6 +4856,8 @@ to filter the report to that participant; click again to clear.</li>
     // Distribution rows: 'all', 'any' (an Amber or Red cell) or 'red' (a Red cell).
     distFlag: 'all',
     dtOnly: true,
+    // Wide data table: show records with no value in any shown measure.
+    dtMissing: true,
     // Listing settings to restore when the participant filter is cleared.
     prev: null
   };
@@ -5718,6 +5725,26 @@ to filter the report to that participant; click again to clear.</li>
     return ci;
   }
 
+  function isBlank(x) {
+    return x === null || x === undefined || x === '';
+  }
+
+  // Wide column indices of the shown measures, for the missing-record filter.
+  var wideShownCols = [];
+  var missingFilterOn = false;
+  // Hides Wide records with no value in any shown measure. Long lists only
+  // non-missing values, so it never has such rows.
+  function addMissingFilter() {
+    if (missingFilterOn) return;
+    missingFilterOn = true;
+    jQuery.fn.dataTable.ext.search.push(function (settings, searchData, i, rowData) {
+      if (state.dtMissing || !settings.nTable.closest('#rm-dt-wide')) return true;
+      return wideShownCols.some(function (c) {
+        return !isBlank(rowData[c]);
+      });
+    });
+  }
+
   // Long rows from the Wide rows: one per participant, measure and
   // non-missing value. Wide keeps each participant's records in measurement
   // order (date, visit, record), so a value's position (#) is its count among
@@ -5736,7 +5763,7 @@ to filter the report to that participant; click again to clear.</li>
       var repeats = ' ' + (r[ci.repeat_vitals] || '') + ' ';
       vitals.forEach(function (v, j) {
         var x = r[ci[v.vital]];
-        if (x === null || x === undefined || x === '') return;
+        if (isBlank(x)) return;
         var key = subj + '\u0001' + v.vital;
         seq[key] = (seq[key] || 0) + 1;
         rows.push({
@@ -5833,6 +5860,14 @@ to filter the report to that participant; click again to clear.</li>
     if (state.shape === 'long') initLong();
     var only = byId('rm-dt-only');
     if (only) only.checked = state.dtOnly;
+    var missing = byId('rm-dt-missing');
+    if (missing) {
+      missing.checked = state.dtMissing;
+      missing.disabled = state.shape === 'long';
+      missing.parentNode.title = state.shape === 'long'
+        ? 'Long lists only measured values, so it has no rows with all measures missing'
+        : '';
+    }
     var onlyLabel = byId('rm-dt-only-label');
     if (onlyLabel) {
       onlyLabel.textContent = state.shape === 'wide'
@@ -5870,6 +5905,13 @@ to filter the report to that participant; click again to clear.</li>
       var onlyRe = '';
       if (state.dtOnly) onlyRe = keys.length ? '(^| )(' + keys.join('|') + ')( |$)' : '^\\b$';
       wide.column('repeat_vitals:name').search(onlyRe, true, false);
+      var wci = colIndex(wide);
+      wideShownCols = shownVitals().map(function (v) {
+        return wci[v.vital];
+      }).filter(function (c) {
+        return c !== undefined;
+      });
+      addMissingFilter();
       scope(wide);
       wide.columns.adjust().draw();
     }
@@ -5890,18 +5932,22 @@ to filter the report to that participant; click again to clear.</li>
   // view; clearing it restores the reviewer's previous listing settings.
   function setSubj(id) {
     if (id && !state.subj) {
-      state.prev = { showValues: state.showValues, onlyRepeat: state.onlyRepeat, dtOnly: state.dtOnly };
+      state.prev = {
+        showValues: state.showValues, onlyRepeat: state.onlyRepeat, dtOnly: state.dtOnly, dtMissing: state.dtMissing
+      };
     }
     if (!id && state.subj && state.prev) {
       state.showValues = state.prev.showValues;
       state.onlyRepeat = state.prev.onlyRepeat;
       state.dtOnly = state.prev.dtOnly;
+      state.dtMissing = state.prev.dtMissing;
       state.prev = null;
     }
     if (id) {
       state.showValues = false;
       state.onlyRepeat = false;
       state.dtOnly = false;
+      state.dtMissing = true;
     }
     state.subj = id;
   }
@@ -6142,6 +6188,10 @@ to filter the report to that participant; click again to clear.</li>
     else if (id === 'rm-only-repeat') state.onlyRepeat = e.target.checked;
     else if (id === 'rm-dt-only') {
       state.dtOnly = e.target.checked;
+      syncDataTable();
+      return;
+    } else if (id === 'rm-dt-missing') {
+      state.dtMissing = e.target.checked;
       syncDataTable();
       return;
     } else if (id === 'rm-tiles-sort') {
