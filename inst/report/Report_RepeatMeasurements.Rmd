@@ -232,7 +232,7 @@ htmltools::div(
 
 ```{r data-note, echo=FALSE, results='asis'}
 desc(
-  "- **Wide** (default): one row per participant and visit record, one column per measure, as in the vital signs data. Hover a measure header for its name and KRI, and a site for its country; grey rows were not performed. **Long**: one row per participant, measure and non-missing value, in measurement order (# is the position).\n",
+  "- **Wide** (default): one row per participant and visit record, one column per measure, as in the vital signs data. Hover a measure header for its name and KRI, and a site for its country; grey rows were not performed. Untick **Show visits with all measures missing** to hide records with no value in any shown measure. **Long**: one row per participant, measure and non-missing value, in measurement order (# is the position).\n",
   "- Dark red values are in a repeating window, not a flag. Click a row to filter the report to that participant; click again to clear."
 )
 ```
@@ -245,6 +245,10 @@ htmltools::div(
     htmltools::tags$input(id = "rm-dt-only", type = "checkbox", checked = NA),
     " ",
     htmltools::tags$span(id = "rm-dt-only-label", "Only participants with a repeating window")
+  ),
+  htmltools::tags$label(
+    htmltools::tags$input(id = "rm-dt-missing", type = "checkbox", checked = NA),
+    " Show visits with all measures missing"
   )
 )
 ```

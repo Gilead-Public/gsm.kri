@@ -78,8 +78,9 @@ rep_DataTableWide <- function(lClass) {
 #' headers and the country and performed columns. Every column is named so
 #' the report's filter script can find it: the script filters `country`,
 #' `invid`, `subjid` and `repeat_vitals`, hides the measure columns that are
-#' not selected, turns a row click into the participant filter and builds the
-#' Long table from these rows. The CSV holds the rows the filters show, with
+#' not selected, can hide records with no value in any shown measure, turns a
+#' row click into the participant filter and builds the Long table from these
+#' rows. The CSV holds the rows the filters show, with
 #' the shown measures and their `<vital>_in_repeat_window` columns.
 #'
 #' @param dfWide `data.frame` Output of [rep_DataTableWide()].

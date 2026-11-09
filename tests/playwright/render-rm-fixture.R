@@ -1,7 +1,8 @@
 # Renders Report_RepeatMeasurements from the testthat fixture to fixture/RM.html;
 # without vital signs or repeat-measure metrics, fixture/RM_degraded.html, and
 # with systolic and diastolic BP for participant A, fixture/RM_bp.html; and
-# with a missing country, a quoted country and a 2/3 threshold, fixture/RM_edge.html;
+# with a missing country, a quoted country, a 2/3 threshold and a visit with
+# all measures missing, fixture/RM_edge.html;
 # and a site that spans countries, fixture/RM_split.html.
 # Run from the gsm.kri package root after devtools::load_all(".").
 source("tests/testthat/helper-rep.R")
@@ -31,9 +32,15 @@ Report_RepeatMeasurements(
   strOutputDir = out_dir,
   strOutputFile = "RM_bp.html"
 )
+# G also has a visit not performed, with every measure missing.
+fEdge <- rep_FixtureEdge()
+fEdge$Mapped_VS <- rbind(
+  fEdge$Mapped_VS,
+  data.frame(subjid = "G", visit = "V6", vs_dt = as.Date("2024-01-06"), vsperf_std = "N", weight = NA)
+)
 Report_RepeatMeasurements(
   dfMetrics = rep_FixtureMetrics(),
-  lListings = rep_FixtureEdge(),
+  lListings = fEdge,
   strFlagRule = "rate",
   vFlagThresholds = c(0.5, 2 / 3),
   strOutputDir = out_dir,

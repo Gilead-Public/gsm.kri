@@ -613,6 +613,20 @@ test.describe('Repeat Measurements report', () => {
     const wideCsv = await downloadCsv(page, '#rm-dt-wide .buttons-csv');
     expect(wideCsv[0]).toBe('"Country","Site","Participant","Visit","Date","Performed","Heart rate","pulse_in_repeat_window"');
     expect(wideCsv).toHaveLength(1 + 4);
+
+    // "All measures missing" counts only the shown measures: with heart rate
+    // shown, records without a heart rate are hidden, here and in the CSV.
+    await page.uncheck('#rm-dt-only');
+    const all = (await state(page)).wide.length;
+    await page.uncheck('#rm-dt-missing');
+    const pulse = await page.evaluate(() => {
+      const api = jQuery('#rm-dt-wide table.dataTable').DataTable();
+      const i = api.settings()[0].aoColumns.findIndex((c) => c.name === 'pulse');
+      return api.rows({ search: 'applied' }).data().toArray().map((r) => r[i]);
+    });
+    expect(pulse.length).toBeLessThan(all);
+    expect(pulse.every((x) => x !== null && x !== '')).toBe(true);
+    expect(await downloadCsv(page, '#rm-dt-wide .buttons-csv')).toHaveLength(1 + pulse.length);
   });
 
   test('the data table fits its column without horizontal scrolling (#346)', async ({ page }) => {
@@ -887,6 +901,36 @@ test.describe('Repeat Measurements edge cases', () => {
     expect(await page.locator('[data-x]').count()).toBe(0);
     const titles = await page.locator('#rm-dt-wide tbody td span[title]').evaluateAll((els) => els.map((el) => el.title));
     expect(titles).toContain(COUNTRY);
+  });
+
+  test('unticking "Show visits with all measures missing" hides those Wide rows and their CSV rows (#346)', async ({ page }) => {
+    await page.uncheck('#rm-dt-only');
+    await expect(page.locator('#rm-dt-missing')).toBeChecked();
+    let s = await state(page);
+    expect(s.wide).toHaveLength(11);
+    await page.uncheck('#rm-dt-missing');
+    s = await state(page);
+    expect(s.wide).toHaveLength(10);
+    const csv = await downloadCsv(page, '#rm-dt-wide .buttons-csv');
+    expect(csv).toHaveLength(1 + 10);
+    expect(csv.some((r) => r.includes('"V6"'))).toBe(false);
+
+    // Selecting a participant shows all of their records; clearing restores the setting.
+    await page.locator('#rm-dt-wide tbody tr').filter({ hasText: 'G' }).first().locator('td').nth(2).click();
+    await expect(page.locator('#rm-dt-missing')).toBeChecked();
+    expect((await state(page)).wide).toHaveLength(6);
+    await page.locator('#rm-dt-wide tbody tr').first().locator('td').nth(2).click();
+    await expect(page.locator('#rm-dt-missing')).not.toBeChecked();
+    expect((await state(page)).wide).toHaveLength(10);
+
+    // Long lists only measured values, so the toggle does not apply there.
+    await page.click('[data-rm-shape="long"]');
+    await expect(page.locator('#rm-dt-missing')).toBeDisabled();
+    expect((await state(page)).long).toHaveLength(10);
+    await page.click('[data-rm-shape="wide"]');
+    await expect(page.locator('#rm-dt-missing')).toBeEnabled();
+    await page.check('#rm-dt-missing');
+    expect((await state(page)).wide).toHaveLength(11);
   });
 
   test('a missing country is a (missing) row that filters to its participant (#345)', async ({ page }) => {
