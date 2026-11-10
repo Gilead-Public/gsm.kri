@@ -80,7 +80,11 @@ test_that("cached mapped data is generated correctly (#182)", {
   )
 
   # Test cached data generation
-  cached_result <- get_cached_mapped_data(test_lData, test_mappings_wf, cache_dir = test_cache_dir)
+  cached_result <- get_cached_mapped_data(
+    test_lData,
+    test_mappings_wf,
+    cache_dir = test_cache_dir
+  )
   expect_true(is.list(cached_result))
   expect_true("Mapped_SUBJ" %in% names(cached_result))
 
@@ -93,14 +97,23 @@ test_that("cached mapped data is generated correctly (#182)", {
 
   # Test that subsequent calls use cache
   start_time <- Sys.time()
-  cached_result2 <- get_cached_mapped_data(test_lData, test_mappings_wf, cache_dir = test_cache_dir)
+  cached_result2 <- get_cached_mapped_data(
+    test_lData,
+    test_mappings_wf,
+    cache_dir = test_cache_dir
+  )
   end_time <- Sys.time()
 
   # Cache should be faster (though this is timing dependent)
   expect_identical(cached_result, cached_result2)
 
   # Test force refresh
-  cached_result3 <- get_cached_mapped_data(test_lData, test_mappings_wf, force_refresh = TRUE, cache_dir = test_cache_dir)
+  cached_result3 <- get_cached_mapped_data(
+    test_lData,
+    test_mappings_wf,
+    force_refresh = TRUE,
+    cache_dir = test_cache_dir
+  )
   expect_identical(cached_result, cached_result3)
 })
 
@@ -115,7 +128,10 @@ test_that("mapping output caching works (#182)", {
   )
 
   # Test cached mapping output generation
-  cached_output <- get_cached_mapping_output(test_mappings_wf, cache_dir = test_cache_dir)
+  cached_output <- get_cached_mapping_output(
+    test_mappings_wf,
+    cache_dir = test_cache_dir
+  )
   expect_true(is.character(cached_output))
   expect_true("Mapped_SUBJ" %in% cached_output)
 
@@ -124,7 +140,10 @@ test_that("mapping output caching works (#182)", {
   expect_true(file.exists(output_cache_file))
 
   # Test subsequent calls use cache
-  cached_output2 <- get_cached_mapping_output(test_mappings_wf, cache_dir = test_cache_dir)
+  cached_output2 <- get_cached_mapping_output(
+    test_mappings_wf,
+    cache_dir = test_cache_dir
+  )
   expect_identical(cached_output, cached_output2)
 })
 
@@ -140,6 +159,10 @@ test_that("cache clearing works (#182)", {
   expect_message(clear_cache(test_cache_dir), "Cache cleared")
 
   # Check that cache files are removed
-  gsm_cache_files <- list.files(test_cache_dir, pattern = "(mapped_data|mappings_wf|mapping_output)\\.rds$", full.names = TRUE)
+  gsm_cache_files <- list.files(
+    test_cache_dir,
+    pattern = "(mapped_data|mappings_wf|mapping_output)\\.rds$",
+    full.names = TRUE
+  )
   expect_equal(length(gsm_cache_files), 0)
 })

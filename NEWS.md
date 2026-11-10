@@ -1,3 +1,5 @@
+# gsm.kri (development version)
+
 # gsm.kri v1.8.0
 
 This minor release adds the IP Monitoring report and metrics (IP non-starters and premature treatment discontinuation) and the repeat-measure vital-sign KRIs.

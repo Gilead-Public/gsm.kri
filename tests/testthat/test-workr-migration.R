@@ -34,7 +34,11 @@ test_that("workflow specs route extracted runtime functions through workr (#238)
 
   # Extracted runtime functions must resolve from {workr}, not {gsm.core}.
   extracted <- c(
-    "RunQuery", "RunStep", "RunWorkflow", "RunWorkflows", "MakeWorkflowList"
+    "RunQuery",
+    "RunStep",
+    "RunWorkflow",
+    "RunWorkflows",
+    "MakeWorkflowList"
   )
   pattern <- paste0("gsm\\.core::(", paste(extracted, collapse = "|"), ")")
   expect_equal(grep(pattern, step_names, value = TRUE), character(0))

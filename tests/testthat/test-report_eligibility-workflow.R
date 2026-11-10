@@ -21,14 +21,21 @@ test_that("report_eligibility module is discoverable and wired to Report_Eligibi
 
   expect_setequal(
     names(wf$spec),
-    c("Mapped_EXCLUSION", "Reporting_Results", "Reporting_Groups", "Reporting_Metrics")
+    c(
+      "Mapped_EXCLUSION",
+      "Reporting_Results",
+      "Reporting_Groups",
+      "Reporting_Metrics"
+    )
   )
 
   step_fns <- vapply(wf$steps, `[[`, character(1), "name")
   expect_equal(step_fns[length(step_fns)], "gsm.kri::Report_Eligibility")
 
   outputs <- vapply(wf$steps, `[[`, character(1), "output")
-  expect_true(all(c("dfResults", "dfMetrics", "dfGroups", "lListings") %in% outputs))
+  expect_true(all(
+    c("dfResults", "dfMetrics", "dfGroups", "lListings") %in% outputs
+  ))
 
   report_params <- wf$steps[[length(wf$steps)]]$params
   expect_setequal(
@@ -65,7 +72,12 @@ test_that("report_eligibility workflow runs with minimal inputs and renders the 
   # Report_Eligibility writes to the working directory by default.
   withr::local_dir(withr::local_tempdir())
 
-  result <- workr::RunWorkflow(wf, lData, bReturnResult = FALSE, bKeepInputData = TRUE)
+  result <- workr::RunWorkflow(
+    wf,
+    lData,
+    bReturnResult = FALSE,
+    bKeepInputData = TRUE
+  )
 
   # Inputs are subset to the eligibility metric and study-level groups.
   expect_setequal(unique(result$lData$dfResults$MetricID), "Analysis_qtl0001")

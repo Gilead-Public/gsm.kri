@@ -26,7 +26,9 @@ pd_PrematureCohort <- function(dfDeath, dfSubjects = NULL, nWindowDays = 90) {
     message = "dfDeath is not a data.frame"
   )
   gsm.core::stop_if(
-    cnd = !(is.numeric(nWindowDays) && length(nWindowDays) == 1 && nWindowDays > 0),
+    cnd = !(is.numeric(nWindowDays) &&
+      length(nWindowDays) == 1 &&
+      nWindowDays > 0),
     message = "nWindowDays must be a positive number"
   )
   gsm.core::stop_if(

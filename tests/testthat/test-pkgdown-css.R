@@ -4,7 +4,10 @@
 test_that("pkgdown/extra.css exists (#240)", {
   extra_css_path <- testthat::test_path("..", "..", "pkgdown", "extra.css")
 
-  skip_if_not(file.exists(extra_css_path), "pkgdown/extra.css not found (likely in installed package)")
+  skip_if_not(
+    file.exists(extra_css_path),
+    "pkgdown/extra.css not found (likely in installed package)"
+  )
 
   extra_css_content <- readLines(extra_css_path)
   extra_css_text <- paste(extra_css_content, collapse = "\n")
@@ -26,10 +29,15 @@ test_that("pkgdown/extra.css exists (#240)", {
 test_that("pkgdown/extra.css contains critical selectors (#240)", {
   extra_css_path <- file.path(
     system.file(package = "gsm.kri"),
-    "..", "pkgdown", "extra.css"
+    "..",
+    "pkgdown",
+    "extra.css"
   )
 
-  skip_if_not(file.exists(extra_css_path), "pkgdown/extra.css not found (likely in installed package)")
+  skip_if_not(
+    file.exists(extra_css_path),
+    "pkgdown/extra.css not found (likely in installed package)"
+  )
 
   extra_css_text <- paste(readLines(extra_css_path), collapse = "\n")
 
