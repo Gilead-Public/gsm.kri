@@ -34,9 +34,15 @@ Report_RepeatMeasurements(
   strOutputDir = out_dir,
   strOutputFile = "RM_bp.html"
 )
+# G also has a visit not performed, with every measure missing.
+fEdge <- rep_FixtureEdge()
+fEdge$Mapped_VS <- rbind(
+  fEdge$Mapped_VS,
+  data.frame(subjid = "G", visit = "V6", vs_dt = as.Date("2024-01-06"), vsperf_std = "N", weight = NA)
+)
 Report_RepeatMeasurements(
   dfMetrics = rep_FixtureMetrics(),
-  lListings = rep_FixtureEdge(),
+  lListings = fEdge,
   strFlagRule = "rate",
   vFlagThresholds = c(0.5, 2 / 3),
   strOutputDir = out_dir,

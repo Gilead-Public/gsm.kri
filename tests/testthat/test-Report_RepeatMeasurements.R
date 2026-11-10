@@ -180,7 +180,7 @@ test_that("the participant listing is the in-repo tiles widget with label, sort,
 
 test_that("the measure listing is one level and the data table offers Wide and a browser-built Long (#346)", {
   html <- rep_default_html()
-  for (id in c("rm-vitals-view", "rm-vitals", "rm-show-values", "rm-only-repeat", "rm-shape-long", "rm-shape-wide", "rm-dt-only", "rm-dt-long", "rm-dt-wide")) {
+  for (id in c("rm-vitals-view", "rm-vitals", "rm-show-values", "rm-only-repeat", "rm-shape-long", "rm-shape-wide", "rm-dt-only", "rm-dt-missing", "rm-dt-long", "rm-dt-wide")) {
     expect_match(html, paste0('id="', id, '"'), fixed = TRUE)
   }
   for (id in c("rm-all-records", "rm-records", "rm-back", "rm-crumb")) {
