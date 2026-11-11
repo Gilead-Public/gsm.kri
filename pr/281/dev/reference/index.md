@@ -2,6 +2,8 @@
 
 ## All functions
 
+- [`Analyze_ActionRiskScore()`](https://gilead-public.github.io/gsm.kri/dev/reference/Analyze_ActionRiskScore.md)
+  : Calculate an action-aware score and its detail together
 - [`CalculateActionRiskScore()`](https://gilead-public.github.io/gsm.kri/dev/reference/CalculateActionRiskScore.md)
   : Calculate an action-aware Site Risk or Review Priority Score
 - [`CalculateRiskScore()`](https://gilead-public.github.io/gsm.kri/dev/reference/CalculateRiskScore.md)

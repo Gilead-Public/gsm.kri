@@ -2,6 +2,22 @@
 
 ## gsm.kri (development version)
 
+- Added
+  [`Analyze_ActionRiskScore()`](https://gilead-public.github.io/gsm.kri/dev/reference/Analyze_ActionRiskScore.md)
+  to compute score and detail together, including explicit snapshot-date
+  policy and scoped quarantine. Source retrieval/persistence stays
+  outside the calculator.
+  [`Report_KRI()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_KRI.md)
+  normalizes result types and supports absent optional comparison detail
+  without a custom study preflight
+  ([\#280](https://github.com/Gilead-Public/gsm.kri/issues/280)).
+
+- Site reports with comparison-risk detail can download review CSV
+  through `gsm.vizr`. The versioned export includes current/review
+  flags, date provenance, weights, exclusion reasons, and reported score
+  components, without altering the report’s scores or filters
+  ([\#280](https://github.com/Gilead-Public/gsm.kri/issues/280)).
+
 - Added an explicit opt-in `strActionPolicy = "disposition"` draft. It
   keeps original metric-specific flag weights and the full denominator,
   applying state factors only while a documented decision is recent and
@@ -10,6 +26,7 @@
   Score (Draft); existing recent-review and legacy defaults remain
   unchanged
   ([\#280](https://github.com/Gilead-Public/gsm.kri/issues/280)).
+
 - Added
   [`MakeActionSummary()`](https://gilead-public.github.io/gsm.kri/dev/reference/MakeActionSummary.md)
   for the latest documented monitoring decision across all eligible
@@ -19,6 +36,7 @@
   separate, and incomplete, escalated, reopened, critical, or
   conflicting evidence cannot suppress a contribution
   ([\#280](https://github.com/Gilead-Public/gsm.kri/issues/280)).
+
 - The `srs0002` workflow now defaults to a configurable 90-day Review
   Priority Score, keeps the full original denominator, and returns
   `Analysis_ActionRiskScoreDetail` for the site report. Unknown dates
@@ -28,6 +46,7 @@
   unchanged. Direct callers retain legacy state weighting unless they
   specify `intActionWindowDays`
   ([\#280](https://github.com/Gilead-Public/gsm.kri/issues/280)).
+
 - Added
   [`CalculateActionRiskScore()`](https://gilead-public.github.io/gsm.kri/dev/reference/CalculateActionRiskScore.md)
   and the `srs0002` workflow for an action-status-weighted Site Risk
@@ -43,6 +62,7 @@
   the detail. Legacy state mode conservatively supports including
   missing states
   ([\#280](https://github.com/Gilead-Public/gsm.kri/issues/280)).
+
 - Added
   [`MakeActionRiskScoreDetail()`](https://gilead-public.github.io/gsm.kri/dev/reference/MakeActionRiskScoreDetail.md),
   which returns the per-KRI contributions behind the action-weighted
@@ -50,9 +70,11 @@
   [`Report_KRI()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_KRI.md)
   that shows them in the site overview
   ([\#280](https://github.com/Gilead-Public/gsm.kri/issues/280)).
+
 - Added configurable risk-score MetricIDs to the cross-study summary and
   widget APIs while retaining `Analysis_srs0001` as the default
   ([\#280](https://github.com/Gilead-Public/gsm.kri/issues/280)).
+
 - Extended the existing site overview in
   [`Report_KRI()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_KRI.md)
   to display an adjusted Site Risk Score immediately after the original
