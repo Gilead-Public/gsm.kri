@@ -397,11 +397,14 @@ With dated detail,
 [`Report_KRI()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_KRI.md)
 labels the second measure **Review Priority Score** unless an explicit
 label is supplied. Each specific site/KRI cell with a documented action
-0 through 90 days before the assessment date receives a thin dark-grey
-inset border. Other cells for the same site or metric are unaffected.
-The tooltip shows the recorded date and age. Missing and future dates,
-and actions older than 90 days, receive no border. Zero-weight and green
-KRIs can still have recent actions and are marked in the same way.
+0 through 90 days before the assessment date receives a thin
+state-colored inset border: green for Closed Action, red for Open
+Action, and grey for No Action or previous/other states. Other cells for
+the same site or metric are unaffected. The cell hover shows the latest
+action state, recorded date, and age exactly as listed in the dropdown.
+Missing and future dates, and actions older than 90 days, receive no
+border. Zero-weight and green KRIs can still have recent actions and are
+marked in the same way.
 
 This is a recency indicator, independent of whether the decision covers
 the current finding. It does not imply risk resolution or alter either
