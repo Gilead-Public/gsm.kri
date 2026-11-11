@@ -2393,15 +2393,8 @@ function renderRepeatMeasurementsTiles(el, input) {
   el.addEventListener('click', function (e) {
     var pg = e.target.closest('[data-rm-page]');
     if (pg) {
-      var step = pg.getAttribute('data-rm-page');
-      chart.page += Number(step);
+      chart.page += Number(pg.getAttribute('data-rm-page'));
       render();
-      // The pager is rebuilt, so focus moves to the same button, or the
-      // other one on the first or last page; the new page starts at the top.
-      scroll.scrollTop = 0;
-      var next = pagerEl.querySelector('[data-rm-page="' + step + '"]:not([disabled])') ||
-        pagerEl.querySelector('[data-rm-page]:not([disabled])');
-      if (next) next.focus();
       return;
     }
     var hit = e.target.closest('[role="button"][data-subjid]');
@@ -2417,24 +2410,9 @@ function renderRepeatMeasurementsTiles(el, input) {
   });
 
   chart.helpers = {
-    // The page follows the selected (or focused) participant; otherwise it is
-    // kept while the participants are unchanged and reset when they change.
     updateData: function (c, rows) {
-      var ids = function () {
-        return participants().map(function (p) {
-          return p.subjid;
-        });
-      };
-      var before = ids();
       c.data = (rows || []).slice();
-      var after = ids();
-      var keep = c.selected || (c.focus && c.focus.subjid);
-      var at = keep ? after.indexOf(keep) : -1;
-      if (at >= 0) {
-        c.page = Math.floor(at / c.pageSize);
-      } else if (before.join('\u0000') !== after.join('\u0000')) {
-        c.page = 0;
-      }
+      c.page = 0;
       render();
     },
     selectRow: function (c, id) {
@@ -4304,7 +4282,7 @@ font-size: 0.95em;
 <!-- The report's own header card carries the title, so hide the page's. -->
 <style>#header { display: none; }</style>
 <header id="rm-header" class="rm-header">
-<div class="rm-ctx"><a href="https://gilead-public.github.io/gsm.kri">gsm.kri</a> example · rendered November 11, 2026 17:00 UTC · <a href="#example-code">Example code ↓</a></div>
+<div class="rm-ctx"><a href="https://gilead-public.github.io/gsm.kri">gsm.kri</a> example · rendered November 11, 2026 17:04 UTC · <a href="#example-code">Example code ↓</a></div>
 <div class="rm-title">
 <h1 class="toc-ignore">Repeat Measurements</h1>
 <button id="rm-how-toggle" type="button" class="rm-btn" aria-expanded="false" aria-controls="rm-how">How to read</button>
@@ -4399,8 +4377,6 @@ AA-AA-000-0000
 #rm-dist .rm-arr { color: #3C587F; font-size: 11px; margin-left: 3px; }
 #rm-dist th.rm-cnt .rm-arr { margin: 0 3px 0 0; }
 #rm-dist tbody tr[data-rm-dist-row] { cursor: pointer; }
-#rm-dist .rm-dist-pick { background: none; border: 0; padding: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
-#rm-dist .rm-dist-pick:focus-visible { outline: 2px solid #1f6feb; outline-offset: 2px; }
 #rm-dist tbody tr[data-rm-dist-row]:hover td { background-color: #f6f8fa; }
 #rm-dist tbody tr.rm-study td { font-weight: 600; background-color: #fafbfc; border-bottom: 2px solid #dddddd; }
 #rm-dist tbody tr.rm-on td { background-color: #e7eef8; }
@@ -4916,13 +4892,6 @@ to filter the report to that participant; click again to clear.</li>
     });
   }
 
-  // A textarea parses its content as text, so no markup or script runs.
-  function unesc(s) {
-    var el = document.createElement('textarea');
-    el.innerHTML = String(s);
-    return el.value;
-  }
-
   function clone(x) {
     return JSON.parse(JSON.stringify(x));
   }
@@ -5049,7 +5018,6 @@ to filter the report to that participant; click again to clear.</li>
   // Applies the inputs when they are valid; otherwise explains and keeps the
   // last valid settings.
   function readThresholds() {
-    if (!settings) return;
     var amber = parseFloat((byId('rm-th-amber') || {}).value);
     var red = parseFloat((byId('rm-th-red') || {}).value);
     var min = Number((byId('rm-min-windows') || {}).value);
@@ -5060,12 +5028,7 @@ to filter the report to that participant; click again to clear.</li>
     if (!(min >= 1) || Math.floor(min) !== min) return settingsMsg('Minimum windows must be a whole number of 1 or more.');
     var scale = isRate() ? 100 : 1;
     settingsMsg('');
-    // An input still showing its rounded stored value keeps the exact value,
-    // so a 2/3 threshold does not become 0.666667 when another input changes.
-    var th = settings.thresholds[settings.rule];
-    settings.thresholds[settings.rule] = [amber, red].map(function (x, i) {
-      return String(x) === fmt(th[i] * scale) ? th[i] : x / scale;
-    });
+    settings.thresholds[settings.rule] = [amber / scale, red / scale];
     settings.minWindows = min;
     settingsChanged(true);
   }
@@ -5566,17 +5529,12 @@ to filter the report to that participant; click again to clear.</li>
       var cls = on ? 'rm-on' : selected ? 'rm-dim' : '';
       body += '<tr data-rm-dist-row="' + state.distLevel + '" data-rm-dist-key="' + esc(g.key) + '"' + (isSite ? ' data-rm-dist-country="' + esc(Object.keys(g.countries).length === 1 ? g.country : '') + '"' : '') +
         (cls ? ' class="' + cls + '"' : '') + ' aria-selected="' + on + '" title="Click to filter the report to ' + (isSite ? 'site ' : '') + esc(g.label) + '; click again to clear">' +
-        '<td class="rm-l rm-stick"><button type="button" class="rm-dist-pick" aria-pressed="' + on + '">' + esc(g.label) + '</button></td>' +
-        (isSite ? '<td class="rm-l rm-stick2">' + esc(g.country) + '</td>' : '') + counts(g);
+        '<td class="rm-l rm-stick">' + esc(g.label) + '</td>' + (isSite ? '<td class="rm-l rm-stick2">' + esc(g.country) + '</td>' : '') + counts(g);
       vitals.forEach(function (v) {
         body += distCell(g, v, false);
       });
       body += '</tr>';
     });
-    // The rows are rebuilt, so a focused row button keeps focus by its key.
-    var focused = document.activeElement && el.contains(document.activeElement) &&
-      document.activeElement.closest('tr[data-rm-dist-key]');
-    var focusKey = focused ? focused.getAttribute('data-rm-dist-key') : null;
     el.innerHTML = vitals.length
       ? '<table class="table table-condensed" data-rm-dist-level="' + state.distLevel + '" data-rm-dist-unit="' + (unitSites ? 'sites' : 'participants') + '"><thead>' +
         h1 + '</tr></thead><tbody>' + body + '</tbody></table>'
@@ -5588,10 +5546,6 @@ to filter the report to that participant; click again to clear.</li>
         : info('Participant flag: ' + ruleText() + '. Calculated in the report; change the rule under Settings.' +
           (isSite ? ' The dot before a bar is the site\u2019s own flag: ' + siteRuleText() + '.' : '')));
       el.style.setProperty('--rm-c1', first.offsetWidth + 'px');
-    }
-    if (focusKey !== null) {
-      var back = el.querySelector('tr[data-rm-dist-key="' + CSS.escape(focusKey) + '"] .rm-dist-pick');
-      if (back) back.focus();
     }
     var count = byId('rm-dist-count');
     if (count) {
@@ -5849,8 +5803,8 @@ to filter the report to that participant; click again to clear.</li>
         {
           title: 'Measure',
           render: function (d, type, row) {
-            if (type !== 'display') return d;
-            return esc(d) + (row[4] ? '<span class="rm-kri" title="' + esc(row[4]) + '">KRI</span>' : '');
+            if (type !== 'display' || !row[4]) return d;
+            return esc(d) + '<span class="rm-kri" title="' + esc(row[4]) + '">KRI</span>';
           }
         },
         { title: 'Metric', visible: false },
@@ -5932,8 +5886,7 @@ to filter the report to that participant; click again to clear.</li>
       long.column('vital:name').search(vitalRegex(), true, false);
       long.column('has_repeat:name').search(state.dtOnly ? '^Y$' : '', true, false);
       scope(long);
-      // A hidden table is drawn when it is next shown.
-      if (state.shape === 'long') long.draw();
+      long.draw();
     }
 
     var wide = dtApi('rm-dt-wide');
@@ -5960,9 +5913,10 @@ to filter the report to that participant; click again to clear.</li>
       });
       addMissingFilter();
       scope(wide);
-      if (state.shape === 'wide') wide.columns.adjust().draw();
+      wide.columns.adjust().draw();
     }
-    if (long && state.shape === 'long') long.columns.adjust();
+    var shownApi = state.shape === 'wide' ? wide : long;
+    if (shownApi) shownApi.columns.adjust();
   }
 
   // ---- shared --------------------------------------------------------------
@@ -6123,13 +6077,12 @@ to filter the report to that participant; click again to clear.</li>
     } else if (t.closest('[data-rm-set]')) {
       var set = t.closest('[data-rm-set]');
       var k = set.getAttribute('data-rm-set');
-      if (!settings || settings[k] === set.value) return;
+      if (settings[k] === set.value) return;
       settings[k] = set.value;
       settingsMsg('');
       settingsChanged(k === 'rule');
       return;
     } else if (t.closest('#rm-settings-defaults')) {
-      if (!defaults) return;
       var keep = settings._synced;
       settings = clone(defaults);
       settings._synced = keep;
@@ -6200,8 +6153,7 @@ to filter the report to that participant; click again to clear.</li>
       var cols = api.settings()[0].aoColumns;
       for (var i = 0; i < cols.length; i++) {
         if (cols[i].name === 'subjid') {
-          // R escapes the table cells, and Long is built from the Wide cells.
-          pickParticipant(unesc(row[i]));
+          pickParticipant(row[i]);
           return;
         }
       }

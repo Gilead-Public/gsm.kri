@@ -176,15 +176,8 @@ function renderRepeatMeasurementsTiles(el, input) {
   el.addEventListener('click', function (e) {
     var pg = e.target.closest('[data-rm-page]');
     if (pg) {
-      var step = pg.getAttribute('data-rm-page');
-      chart.page += Number(step);
+      chart.page += Number(pg.getAttribute('data-rm-page'));
       render();
-      // The pager is rebuilt, so focus moves to the same button, or the
-      // other one on the first or last page; the new page starts at the top.
-      scroll.scrollTop = 0;
-      var next = pagerEl.querySelector('[data-rm-page="' + step + '"]:not([disabled])') ||
-        pagerEl.querySelector('[data-rm-page]:not([disabled])');
-      if (next) next.focus();
       return;
     }
     var hit = e.target.closest('[role="button"][data-subjid]');
@@ -200,24 +193,9 @@ function renderRepeatMeasurementsTiles(el, input) {
   });
 
   chart.helpers = {
-    // The page follows the selected (or focused) participant; otherwise it is
-    // kept while the participants are unchanged and reset when they change.
     updateData: function (c, rows) {
-      var ids = function () {
-        return participants().map(function (p) {
-          return p.subjid;
-        });
-      };
-      var before = ids();
       c.data = (rows || []).slice();
-      var after = ids();
-      var keep = c.selected || (c.focus && c.focus.subjid);
-      var at = keep ? after.indexOf(keep) : -1;
-      if (at >= 0) {
-        c.page = Math.floor(at / c.pageSize);
-      } else if (before.join('\u0000') !== after.join('\u0000')) {
-        c.page = 0;
-      }
+      c.page = 0;
       render();
     },
     selectRow: function (c, id) {
