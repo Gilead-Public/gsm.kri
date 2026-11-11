@@ -29,6 +29,11 @@
 #'   comparison metric is absent from `dfResults`. Default: `NULL`.
 #' @param lData Optional workflow domain list. Used to obtain
 #'   `Analysis_ActionRiskScoreDetail` when `dfRiskScoreDetail` is NULL.
+#' @details Character ISO snapshot dates and identifiers are normalized at the
+#'   report boundary. An absent comparison metric leaves the original report
+#'   layout unchanged. Empty optional detail is treated as NULL; a present score
+#'   without detail warns and renders without its drilldown. Invalid supplied
+#'   detail or mismatched current group keys is an error.
 #'
 #' @return File path of the saved report html is returned invisibly. Save to object to view absolute output path.
 #' @examples
@@ -102,9 +107,32 @@ Report_KRI <- function(
   if (is.null(dfRiskScoreDetail) && !is.null(lData)) {
     dfRiskScoreDetail <- lData[["Analysis_ActionRiskScoreDetail"]]
   }
+  dfResults <- .normalize_risk_report_input(dfResults)
+  if (is.data.frame(dfRiskScoreDetail) && nrow(dfRiskScoreDetail) == 0L) dfRiskScoreDetail <- NULL
+  if (is.null(strComparisonRiskMetric)) dfRiskScoreDetail <- NULL
+  if (is.data.frame(dfResults) && !is.null(strComparisonRiskMetric) &&
+    any(dfResults$MetricID %in% strComparisonRiskMetric)) {
+    if (is.null(dfRiskScoreDetail)) {
+      cli::cli_warn("Comparison score supplied without optional detail; the report will omit the drilldown.")
+    } else {
+      required <- c("GroupID", "MetricID", "Weight", "EffectiveWeight", "ActionState")
+      if (!is.data.frame(dfRiskScoreDetail) || !all(required %in% names(dfRiskScoreDetail))) {
+        cli::cli_abort("Comparison detail must contain GroupID, MetricID, Weight, EffectiveWeight, and ActionState.")
+      }
+      dfRiskScoreDetail <- .normalize_risk_report_input(dfRiskScoreDetail)
+      keys <- intersect(c("StudyID", "SnapshotDate", "GroupLevel", "GroupID"),
+        intersect(names(dfResults), names(dfRiskScoreDetail)))
+      scores <- dfResults[dfResults$MetricID %in% strComparisonRiskMetric, , drop = FALSE]
+      if ("SnapshotDate" %in% names(scores) && nrow(scores))
+        scores <- scores[scores$SnapshotDate == max(scores$SnapshotDate), , drop = FALSE]
+      unmatched <- dplyr::anti_join(unique(scores[keys]), unique(dfRiskScoreDetail[keys]), by = keys)
+      if (nrow(unmatched)) cli::cli_abort("Comparison scores have no matching detail for their current study/snapshot/group keys.")
+    }
+  }
   if (missing(strComparisonRiskLabel) && is.data.frame(dfRiskScoreDetail) &&
       "ActionWindowDays" %in% names(dfRiskScoreDetail)) {
-    strComparisonRiskLabel <- "Review Priority Score"
+    strComparisonRiskLabel <- if ("ActionPolicy" %in% names(dfRiskScoreDetail) &&
+      all(dfRiskScoreDetail$ActionPolicy %in% "disposition")) "Adjusted Risk Score" else "Review Priority Score"
   }
   if (!is.null(strComparisonRiskMetric) &&
     (!rlang::is_string(strComparisonRiskMetric) ||
@@ -167,4 +195,33 @@ Report_KRI <- function(
       dfRiskScoreDetail = dfRiskScoreDetail
     )
   )
+}
+
+.normalize_risk_report_input <- function(data) {
+  if (!is.data.frame(data)) return(data)
+  for (column in intersect(c("StudyID", "GroupLevel", "GroupID", "MetricID"), names(data)))
+    data[[column]] <- as.character(data[[column]])
+  for (column in intersect(c("SnapshotDate", "ActionAsOfDate", "LastActionedDate", "ActionExtractionDate"), names(data))) {
+    value <- data[[column]]
+    if (inherits(value, "Date")) next
+    if (inherits(value, "POSIXt")) {
+      data[[column]] <- as.Date(value, tz = "UTC")
+    } else if (is.character(value) || is.factor(value)) {
+      text <- as.character(value)
+      date <- suppressWarnings(as.Date(text, format = "%Y-%m-%d"))
+      invalid <- !is.na(text) & (is.na(date) | !grepl("^[0-9]{4}-[0-9]{2}-[0-9]{2}$", text) |
+        format(date, "%Y-%m-%d") != text)
+      if (any(invalid)) stop(paste0(column, " must contain valid ISO dates."), call. = FALSE)
+      data[[column]] <- date
+    } else {
+      stop(paste0(column, " must use Date, POSIXt, or ISO date strings."), call. = FALSE)
+    }
+  }
+  if ("Flag" %in% names(data) && !is.numeric(data$Flag)) {
+    value <- data$Flag
+    flag <- suppressWarnings(as.numeric(if (is.factor(value)) as.character(value) else value))
+    if (any(!is.na(value) & is.na(flag))) stop("Flag must be numeric.", call. = FALSE)
+    data$Flag <- flag
+  }
+  data
 }

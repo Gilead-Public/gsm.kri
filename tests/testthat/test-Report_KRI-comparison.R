@@ -1,3 +1,24 @@
+test_that("report normalizes history and treats missing comparison detail as optional (#280)", {
+  captured <- NULL
+  testthat::local_mocked_bindings(RenderRmd = function(...) {
+    captured <<- list(...)
+    invisible("report.html")
+  }, .package = "gsm.kri")
+  results <- data.frame(StudyID = "STUDY", SnapshotDate = "2026-11-06", GroupLevel = "Site",
+    GroupID = "001", MetricID = "Analysis_srs0002", Flag = NA_character_)
+  expect_warning(Report_KRI(dfResults = results, strOutputFile = "report.html", dfRiskScoreDetail = data.frame()),
+    "without.*detail")
+  expect_s3_class(captured$lParams$dfResults$SnapshotDate, "Date")
+  expect_type(captured$lParams$dfResults$Flag, "double")
+  expect_null(captured$lParams$dfRiskScoreDetail)
+  Report_KRI(dfResults = results, strOutputFile = "report.html", strComparisonRiskMetric = NULL)
+  expect_null(captured$lParams$strComparisonRiskMetric)
+  invalid <- data.frame(GroupID = "other", MetricID = "Analysis_kri0001", Weight = 4,
+    EffectiveWeight = 4, ActionState = "Open Action")
+  expect_error(Report_KRI(dfResults = results, strOutputFile = "report.html", dfRiskScoreDetail = invalid),
+    "no matching detail")
+})
+
 test_that("Report_KRI forwards comparison score configuration (#280)", {
   captured <- NULL
   testthat::local_mocked_bindings(

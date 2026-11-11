@@ -77,6 +77,13 @@ File path of the saved report html is returned invisibly. Save to object to view
 
 This function generates a KRI report based on the provided inputs.
 }
+\details{
+Character ISO snapshot dates and identifiers are normalized at the
+  report boundary. An absent comparison metric leaves the original report
+  layout unchanged. Empty optional detail is treated as NULL; a present score
+  without detail warns and renders without its drilldown. Invalid supplied
+  detail or mismatched current group keys is an error.
+}
 \examples{
 \dontrun{
 # Run site-level KRI report.

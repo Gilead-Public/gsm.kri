@@ -1,5 +1,11 @@
 # gsm.kri (development version)
 
+- Added `Analyze_ActionRiskScore()` to compute score and detail together,
+  including explicit snapshot-date policy and scoped quarantine. Source
+  retrieval/persistence stays outside the calculator. `Report_KRI()` normalizes
+  result types and supports absent optional comparison detail without a custom
+  study preflight (#280).
+
 - Site reports with comparison-risk detail can download review CSV through
   `gsm.vizr`. The versioned export includes current/review flags, date provenance,
   weights, exclusion reasons, and reported score components, without altering
