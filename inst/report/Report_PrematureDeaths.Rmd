@@ -207,7 +207,7 @@ div.main-container { max-width: none; padding-left: 24px; padding-right: 24px; }
 }
 #TOC #tocify-header0 { display: block; }
 #toc-toggle { z-index: 1030 !important; }
-.pd-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin: 12px 0 18px; }
+.pd-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 12px 0 18px; }
 .pd-card { background: #fff; border: 1px solid #e3e8ef; border-radius: 6px; padding: 10px 14px; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
 .pd-card-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: #5b7193; }
 .pd-card-value { font-size: 28px; font-weight: 700; color: #1f2d3d; line-height: 1.2; }
@@ -281,12 +281,16 @@ pd_card <- function(label, value, sub, color) {
   )
 }
 pct_of <- function(n, d, of) sprintf("%.1f%% of %s", if (d > 0) 100 * n / d else 0, of)
+# Same data and arguments as the Patient Listing below, so the card matches its Treatment Related column.
+dfListed <- pd_PatientListingData(dfResults, Mapped_Death, Mapped_SUBJ, Mapped_EXCLUSION, Mapped_AE)
+nTreatmentRelated <- sum(dfListed$treatment_related == "Yes")
 htmltools::div(
   class = "pd-cards",
   pd_card("Total Enrolled", stats$nEnrolled, sprintf("Across %d site%s", stats$nSites, if (stats$nSites == 1) "" else "s"), "#5b7193"),
   pd_card("Premature Deaths", stats$nPremature, sprintf("%.1f%% of enrolled, within %d days", stats$nPrematureRate, nWindowDays), "#1f2d3d"),
   pd_card(lv[["death30"]], stats$nDeath30, pct_of(stats$nDeath30, stats$nEnrolled, "enrolled"), vColors[[lv[["death30"]]]]),
   pd_card(lv[["death3190"]], stats$nDeath3190, pct_of(stats$nDeath3190, stats$nEnrolled, "enrolled"), vColors[[lv[["death3190"]]]]),
+  pd_card("Treatment-Related Deaths", nTreatmentRelated, pct_of(nTreatmentRelated, nrow(dfListed), "listed premature deaths"), "#97162e"),
   if (stats$has_eligibility) {
     pd_card("Ineligible + Premature Death", stats$nIneligible, sprintf("%.1f%% of premature deaths", stats$nIneligibleRate), "#5b7193")
   } else {

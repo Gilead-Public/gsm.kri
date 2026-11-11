@@ -594,3 +594,20 @@ test_that("inlined JSON data cannot terminate the report's script block (#288)",
   # payload survives only as \u003c\/script -- inert to the HTML parser.
   expect_true(grepl("\\u003c\\/script", html, fixed = TRUE))
 })
+
+test_that("Overview Treatment-Related Deaths card counts the listing's Treatment Related Yes rows (#304)", {
+  testthat::skip_if_not_installed("plotly")
+  testthat::skip_if_not_installed("DT")
+  out <- Report_PrematureDeaths(
+    dfResults = dfResults,
+    dfMetrics = dfMetrics,
+    dfGroups = dfGroups,
+    lListings = lListings,
+    nWindowDays = 90,
+    strOutputDir = tempdir()
+  )
+  html <- paste(readLines(out, warn = FALSE), collapse = "\n")
+  # S1: AE death with a fatal related AE -> Yes; S2: disease progression -> No.
+  expect_equal(pd_card_value(html, "Treatment-Related Deaths"), "1")
+  expect_match(html, "50.0% of listed premature deaths", fixed = TRUE)
+})
