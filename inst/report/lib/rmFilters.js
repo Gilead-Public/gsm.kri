@@ -727,7 +727,7 @@
     rows.forEach(function (g) {
       var on = selected === g.key;
       var cls = on ? 'rm-on' : selected ? 'rm-dim' : '';
-      body += '<tr data-rm-dist-row="' + state.distLevel + '" data-rm-dist-key="' + esc(g.key) + '"' + (isSite ? ' data-rm-dist-country="' + esc(Object.keys(g.countries).length === 1 ? g.country : '') + '"' : '') +
+      body += '<tr data-rm-dist-row="' + state.distLevel + '" data-rm-dist-key="' + esc(g.key) + '"' +
         (cls ? ' class="' + cls + '"' : '') + ' aria-selected="' + on + '" title="Click to filter the report to ' + (isSite ? 'site ' : '') + esc(g.label) + '; click again to clear">' +
         '<td class="rm-l rm-stick"><button type="button" class="rm-dist-pick" aria-pressed="' + on + '">' + esc(g.label) + '</button></td>' +
         (isSite ? '<td class="rm-l rm-stick2">' + esc(g.country) + '</td>' : '') + counts(g);
@@ -1336,7 +1336,7 @@
       return;
     } else if (t.closest('#rm-dist tbody tr[data-rm-dist-row]')) {
       // A row click filters to its country or site; clicking the selected row clears it.
-      // A site spanning countries clears the country filter.
+      // A site click leaves the country filter as it is.
       var dr = t.closest('tr');
       var key2 = dr.getAttribute('data-rm-dist-key');
       if (dr.getAttribute('data-rm-dist-row') === 'country') {
@@ -1346,7 +1346,6 @@
         state.site = null;
       } else {
         state.site = key2;
-        state.country = dr.getAttribute('data-rm-dist-country') || null;
       }
       setSubj(null);
     } else if (t.closest('[data-rm-shape]')) {

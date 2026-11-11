@@ -467,9 +467,9 @@ test.describe('Repeat Measurements report', () => {
     await page.click('#rm-dist tr[data-rm-dist-key="S1"] td.rm-stick');
     s = await state(page);
     expect(s.tiles).toEqual(['A', 'B']);
-    expect(s.chips).toEqual(['US', 'S1']);
+    // A site click does not set the country filter.
+    expect(s.chips).toEqual(['S1']);
     await page.click('#rm-chip-site button');
-    await page.click('#rm-chip-country button');
     expect((await state(page)).tiles).toHaveLength(5);
     d = await dist(page);
     expect([d.on, d.dim]).toEqual([[], 0]);
@@ -477,7 +477,7 @@ test.describe('Repeat Measurements report', () => {
 
   test('every filter chip stays visible in the toolbar when all three are set (#344)', async ({ page }) => {
     await page.setViewportSize({ width: 1000, height: 800 });
-    await page.click('#rm-dist-site');
+    await clickDistRow(page, 'country', 'US');
     await clickDistRow(page, 'site', 'S1');
     await page.uncheck('#rm-only-repeat');
     await page.locator('#rm-vitals tbody tr').first().click();
@@ -660,6 +660,7 @@ test.describe('Repeat Measurements report', () => {
 
   test('reset filters clears the measures, country, site and participant (#344)', async ({ page }) => {
     await pickVitals(page, ['weight']);
+    await clickDistRow(page, 'country', 'US');
     await clickDistRow(page, 'site', 'S1');
     await page.locator('#rm-tiles th[data-subjid="A"]').click();
     let s = await state(page);
