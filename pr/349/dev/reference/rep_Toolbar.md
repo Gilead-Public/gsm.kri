@@ -16,7 +16,10 @@ rep_Toolbar(dfVitals, lSettings)
 
 - dfVitals:
 
-  \`data.frame\` The measures, \`vitals\` of \[rep_Classify()\].
+  \`data.frame\` The measures, \`vitals\` of \[rep_Classify()\]. An
+  optional logical \`kri\` column limits the KRI badge to measures whose
+  KRI is in the study's reporting results; without it, every measure
+  with a \`metric\` gets the badge.
 
 - lSettings:
 

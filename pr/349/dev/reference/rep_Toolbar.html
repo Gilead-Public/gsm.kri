@@ -74,7 +74,10 @@ participant filter chips, Reset filters, and the Settings popover, which
 
 
 <dl><dt id="arg-dfvitals">dfVitals<a class="anchor" aria-label="anchor" href="#arg-dfvitals"></a></dt>
-<dd><p>`data.frame` The measures, `vitals` of [rep_Classify()].</p></dd>
+<dd><p>`data.frame` The measures, `vitals` of [rep_Classify()]. An
+optional logical `kri` column limits the KRI badge to measures whose KRI is
+in the study's reporting results; without it, every measure with a
+`metric` gets the badge.</p></dd>
 
 
 <dt id="arg-lsettings">lSettings<a class="anchor" aria-label="anchor" href="#arg-lsettings"></a></dt>
