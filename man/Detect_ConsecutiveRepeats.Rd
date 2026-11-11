@@ -49,8 +49,8 @@ A `data.frame` with one row per subject in `df` (after measure
 `r lifecycle::badge("experimental")`
 
 Counts, per subject, the rolling windows of `nWindowLength` consecutive
-measurements in which every value is identical. Missing values are dropped 
-before windows are formed. Records are ordered by `strDateCol` within 
+measurements in which every value is identical. Missing values are dropped
+before windows are formed. Records are ordered by `strDateCol` within
 subject, then by `strOrderCol` to break same-date ties.
 }
 \examples{

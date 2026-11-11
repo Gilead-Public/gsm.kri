@@ -1,12 +1,14 @@
 test_that("MakeParamLabels generates labels", {
-  dfGroups <- data.frame(Param = c(
-    "param",
-    "Param",
-    "aParam",
-    "b param",
-    "c_param",
-    "paramID"
-  ))
+  dfGroups <- data.frame(
+    Param = c(
+      "param",
+      "Param",
+      "aParam",
+      "b param",
+      "c_param",
+      "paramID"
+    )
+  )
   dfGroupsMod <- MakeParamLabels(dfGroups)
   expect_identical(
     dfGroupsMod$Label,
@@ -22,14 +24,16 @@ test_that("MakeParamLabels generates labels", {
 })
 
 test_that("MakeParamLabels uses supplied labels", {
-  dfGroups <- data.frame(Param = c(
-    "param",
-    "Param",
-    "aParam",
-    "b param",
-    "c_param",
-    "paramID"
-  ))
+  dfGroups <- data.frame(
+    Param = c(
+      "param",
+      "Param",
+      "aParam",
+      "b param",
+      "c_param",
+      "paramID"
+    )
+  )
   dfGroupsMod <- MakeParamLabels(
     dfGroups,
     list("aParam" = "alpha parameter", "c_param" = "Chi Parameter")
@@ -48,14 +52,16 @@ test_that("MakeParamLabels uses supplied labels", {
 })
 
 test_that("MakeParamLabels works with character labels", {
-  dfGroups <- data.frame(Param = c(
-    "param",
-    "Param",
-    "aParam",
-    "b param",
-    "c_param",
-    "paramID"
-  ))
+  dfGroups <- data.frame(
+    Param = c(
+      "param",
+      "Param",
+      "aParam",
+      "b param",
+      "c_param",
+      "paramID"
+    )
+  )
   dfGroupsMod <- MakeParamLabels(
     dfGroups,
     c("aParam" = "alpha parameter", "c_param" = "Chi Parameter")
@@ -74,14 +80,16 @@ test_that("MakeParamLabels works with character labels", {
 })
 
 test_that("MakeParamLabels ignores length-0 labels", {
-  dfGroups <- data.frame(Param = c(
-    "param",
-    "Param",
-    "aParam",
-    "b param",
-    "c_param",
-    "paramID"
-  ))
+  dfGroups <- data.frame(
+    Param = c(
+      "param",
+      "Param",
+      "aParam",
+      "b param",
+      "c_param",
+      "paramID"
+    )
+  )
   dfGroupsMod <- MakeParamLabels(
     dfGroups,
     list()
@@ -100,14 +108,16 @@ test_that("MakeParamLabels ignores length-0 labels", {
 })
 
 test_that("MakeParamLabels works when no labels overlap", {
-  dfGroups <- data.frame(Param = c(
-    "param",
-    "Param",
-    "aParam",
-    "b param",
-    "c_param",
-    "paramID"
-  ))
+  dfGroups <- data.frame(
+    Param = c(
+      "param",
+      "Param",
+      "aParam",
+      "b param",
+      "c_param",
+      "paramID"
+    )
+  )
   dfGroupsMod <- MakeParamLabels(
     dfGroups,
     list(new = "nothing")

@@ -57,14 +57,18 @@ test_that("squares mark dosed participants, circles the rest (#320, #332)", {
 
 test_that("customdata carries subjid, invid, country and dosed per point (#320, #332)", {
   traces <- Filter(function(t) !is.null(t$name), ipm_scatter_data()$built$data)
-  ongoing <- traces[[which(vapply(traces, `[[`, "", "name") == "Treatment ongoing")]]
+  ongoing <- traces[[which(
+    vapply(traces, `[[`, "", "name") == "Treatment ongoing"
+  )]]
   first <- ongoing$customdata[[1]]
   expect_equal(unlist(first), c("P01", "JP01", "Japan", "Y"))
 })
 
 test_that("participants without an event sit on the diagonal (#320, #332)", {
   traces <- Filter(function(t) !is.null(t$name), ipm_scatter_data()$built$data)
-  ongoing <- traces[[which(vapply(traces, `[[`, "", "name") == "Treatment ongoing")]]
+  ongoing <- traces[[which(
+    vapply(traces, `[[`, "", "name") == "Treatment ongoing"
+  )]]
   ids <- vapply(ongoing$customdata, function(cd) cd[[1]], "")
   x <- unlist(ongoing$x)
   y <- unlist(ongoing$y)

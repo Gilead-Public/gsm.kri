@@ -60,7 +60,12 @@ is_cache_outdated <- function(cache_file, source_mtime) {
 }
 
 # Get or create cached mapped data
-get_cached_mapped_data <- function(lData, mappings_wf, force_refresh = FALSE, cache_dir = NULL) {
+get_cached_mapped_data <- function(
+  lData,
+  mappings_wf,
+  force_refresh = FALSE,
+  cache_dir = NULL
+) {
   if (is.null(cache_dir)) {
     cache_dir <- get_cache_dir()
   }
@@ -83,10 +88,12 @@ get_cached_mapped_data <- function(lData, mappings_wf, force_refresh = FALSE, ca
     !identical(readRDS(hash_cache), input_hash)
 
   # Check if cache is outdated or force refresh is requested
-  if (force_refresh ||
-    bHashChanged ||
-    is_cache_outdated(mapped_data_cache, source_mtime) ||
-    is_cache_outdated(mappings_wf_cache, source_mtime)) {
+  if (
+    force_refresh ||
+      bHashChanged ||
+      is_cache_outdated(mapped_data_cache, source_mtime) ||
+      is_cache_outdated(mappings_wf_cache, source_mtime)
+  ) {
     # Generate fresh mapped data
     mapped_data <- workr::RunWorkflows(mappings_wf, lData)
 
@@ -103,7 +110,11 @@ get_cached_mapped_data <- function(lData, mappings_wf, force_refresh = FALSE, ca
 }
 
 # Get mapping output names
-get_cached_mapping_output <- function(mappings_wf, force_refresh = FALSE, cache_dir = NULL) {
+get_cached_mapping_output <- function(
+  mappings_wf,
+  force_refresh = FALSE,
+  cache_dir = NULL
+) {
   if (is.null(cache_dir)) {
     cache_dir <- get_cache_dir()
   }
@@ -137,7 +148,11 @@ clear_cache <- function(cache_dir = NULL) {
   if (is.null(cache_dir)) {
     cache_dir <- get_cache_dir()
   }
-  cache_files <- list.files(cache_dir, pattern = "(mapped_data|mapped_data_hash|mappings_wf|mapping_output)\\.rds$", full.names = TRUE)
+  cache_files <- list.files(
+    cache_dir,
+    pattern = "(mapped_data|mapped_data_hash|mappings_wf|mapping_output)\\.rds$",
+    full.names = TRUE
+  )
   if (length(cache_files) > 0) {
     file.remove(cache_files)
   }

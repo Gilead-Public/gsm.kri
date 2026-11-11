@@ -41,7 +41,9 @@ testthat::test_that("Qual: Given appropriate raw participant-level data, Deaths 
   # verify vRiskScoreWeight was converted to weight vector of length 3
   walk(
     test,
-    ~ expect_true(is.vector(.x$vRiskScoreWeight) & length(.x$vRiskScoreWeight) == 3)
+    ~ expect_true(
+      is.vector(.x$vRiskScoreWeight) & length(.x$vRiskScoreWeight) == 3
+    )
   )
 
   # verify vFlag was converted to flag vector of length 3
@@ -53,6 +55,8 @@ testthat::test_that("Qual: Given appropriate raw participant-level data, Deaths 
   # verify Analysis_Flagged contains required flag columns
   walk(
     test,
-    ~ expect_true(all(c("Flag", "Weight", "WeightMax") %in% names(.x$Analysis_Flagged)))
+    ~ expect_true(all(
+      c("Flag", "Weight", "WeightMax") %in% names(.x$Analysis_Flagged)
+    ))
   )
 })

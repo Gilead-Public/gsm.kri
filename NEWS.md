@@ -6,6 +6,9 @@
   `pd_FatalAEListingData()`). Fatal AEs are now identified by outcome (`aeout`),
   grade 5 (`aetoxgr`) or death flag (`aesdth`), with relatedness from `aereldrv`.
   Treatment Related shows Unknown when a fatal AE lacks relatedness (#304).
+- The Premature Deaths report is restyled: summary cards replace the overview table, including a new
+  Treatment-Related Deaths card that counts the patient listing's Treatment Related "Yes" rows; the
+  filter strip is always shown, and the page uses the full window width (#304).
 
 # gsm.kri v1.8.0
 
