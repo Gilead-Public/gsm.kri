@@ -164,9 +164,9 @@ MarkConsecutiveRepeats <- function(
   if (length(strMissing)) {
     cli::cli_abort("Column{?s} not found in {.arg df}: {.val {strMissing}}.")
   }
-  # The marks are written onto df under these names, which would overwrite an
-  # input column before SummarizeConsecutiveRepeats() reads it.
-  strReserved <- intersect(lCols, MarkColumns())
+  # The marks and the engine's working columns use the .rep_ prefix, so an
+  # input column with it would be overwritten.
+  strReserved <- lCols[startsWith(lCols, ".rep_")]
   if (length(strReserved)) {
     cli::cli_abort("Column{?s} {.val {strReserved}} {?is/are} reserved for internal use.")
   }
@@ -187,22 +187,21 @@ MarkConsecutiveRepeats <- function(
     df[MarkColumns()] <- list(integer(0), logical(0), logical(0))
     return(df)
   }
-  vSubject <- df[[strSubjectCol]]
-  vValue <- df[[strValueCol]]
-  bNewSubject <- c(TRUE, vSubject[-1] != vSubject[-n])
-  # A run breaks on a new subject or a changed value, as rle() does per subject.
-  bNewRun <- bNewSubject | c(TRUE, vValue[-1] != vValue[-n])
-  vRun <- cumsum(bNewRun)
-  vRunLength <- tabulate(vRun)[vRun]
-  vPosInRun <- seq_len(n) - match(vRun, vRun) + 1L
-  vSubjectStart <- cummax(ifelse(bNewSubject, seq_len(n), 0L))
-
-  bInWindow <- vRunLength >= nWindowLength
-  df[MarkColumns()] <- list(
-    seq_len(n) - vSubjectStart + 1L,
-    bInWindow,
-    bInWindow & vPosInRun <= vRunLength - nWindowLength + 1
-  )
+  # A window repeats when it lies inside a run of at least nWindowLength
+  # identical values within the subject.
+  df <- df %>%
+    dplyr::mutate(
+      .rep_seq = dplyr::row_number(),
+      .rep_run = dplyr::consecutive_id(.data[[strValueCol]]),
+      .by = dplyr::all_of(strSubjectCol)
+    ) %>%
+    dplyr::mutate(
+      .rep_in_window = dplyr::n() >= nWindowLength,
+      .rep_window_start = .data$.rep_in_window &
+        dplyr::row_number() <= dplyr::n() - nWindowLength + 1,
+      .by = dplyr::all_of(c(strSubjectCol, ".rep_run"))
+    ) %>%
+    dplyr::select(-".rep_run")
   rownames(df) <- NULL
   df
 }
@@ -249,12 +248,19 @@ MarkColumns <- function() {
 #'   `Denominator`, one row per element of `vSubjects`.
 #' @noRd
 SummarizeConsecutiveRepeats <- function(dfMarked, vSubjects, strSubjectCol, nWindowLength) {
-  f <- factor(dfMarked[[strSubjectCol]], levels = vSubjects)
-  dfOut <- data.frame(
-    SubjectID = vSubjects,
-    Numerator = unname(vapply(split(dfMarked$.rep_window_start, f), sum, numeric(1))),
-    Denominator = as.numeric(pmax(0, tabulate(f, nbins = length(vSubjects)) - nWindowLength + 1))
-  )
-  names(dfOut)[1] <- strSubjectCol
-  dfOut
+  dfCounts <- dfMarked %>%
+    dplyr::summarise(
+      Numerator = as.numeric(sum(.data$.rep_window_start)),
+      .rep_n = dplyr::n(),
+      .by = dplyr::all_of(strSubjectCol)
+    )
+  # Every subject in vSubjects gets a row, in that order; one without records
+  # has no windows.
+  stats::setNames(data.frame(vSubjects), strSubjectCol) %>%
+    dplyr::left_join(dfCounts, by = strSubjectCol) %>%
+    dplyr::mutate(
+      Numerator = dplyr::coalesce(.data$Numerator, 0),
+      Denominator = as.numeric(pmax(0, dplyr::coalesce(.data$.rep_n, 0L) - nWindowLength + 1))
+    ) %>%
+    dplyr::select(-".rep_n")
 }

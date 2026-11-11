@@ -63,6 +63,8 @@
 #rm-dist .rm-arr { color: #3C587F; font-size: 11px; margin-left: 3px; }
 #rm-dist th.rm-cnt .rm-arr { margin: 0 3px 0 0; }
 #rm-dist tbody tr[data-rm-dist-row] { cursor: pointer; }
+#rm-dist .rm-dist-pick { background: none; border: 0; padding: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+#rm-dist .rm-dist-pick:focus-visible { outline: 2px solid #1f6feb; outline-offset: 2px; }
 #rm-dist tbody tr[data-rm-dist-row]:hover td { background-color: #f6f8fa; }
 #rm-dist tbody tr.rm-study td { font-weight: 600; background-color: #fafbfc; border-bottom: 2px solid #dddddd; }
 #rm-dist tbody tr.rm-on td { background-color: #e7eef8; }

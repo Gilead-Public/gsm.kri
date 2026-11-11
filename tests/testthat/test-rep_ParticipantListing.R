@@ -41,3 +41,10 @@ test_that("tile rates round to whole percents and 0/0 is a missing rate, not NaN
   expect_identical(b$rate, NA_real_)
   expect_identical(lClass$participants$rate[lClass$participants$vital == "pulse"], NA_real_)
 })
+
+test_that("tile rates round halves up, as the browser does (#349)", {
+  # 1 of 8 windows is 12.5%, which round() would show as 12%.
+  lClass <- rep_Classify(rep_listings(rep_vs(list(A = c(1, 1, 1, 2:8)))), strFlagRule = "rate")
+  a <- rep_ParticipantTiles(lClass)
+  expect_equal(a$label_rate[a$vital == "weight"], "13%")
+})

@@ -799,6 +799,49 @@ test.describe('Repeat Measurements report', () => {
     await expect(panel).toBeHidden();
     await expect(toggle).toHaveAttribute('aria-expanded', 'false');
   });
+
+  test('the keyboard sets and clears the country and site filters from the distribution rows (#349)', async ({ page }) => {
+    for (const level of ['country', 'site']) {
+      await page.click('#rm-dist-' + level);
+      const pick = page.locator('#rm-dist tbody tr[data-rm-dist-row="' + level + '"] .rm-dist-pick').first();
+      const key = await pick.textContent();
+      await pick.focus();
+      await page.keyboard.press('Enter');
+      expect((await state(page)).chips).toContain(key);
+      const back = page.locator('#rm-dist tbody tr[data-rm-dist-key="' + key + '"] .rm-dist-pick');
+      await expect(back).toBeFocused();
+      await expect(back).toHaveAttribute('aria-pressed', 'true');
+      await page.keyboard.press(' ');
+      expect((await state(page)).chips).not.toContain(key);
+      await expect(back).toBeFocused();
+    }
+  });
+
+  test('tile paging keeps focus on the pager and returns to a cleared participant\u2019s page (#349)', async ({ page }) => {
+    await page.evaluate(() => {
+      const c = document.getElementById('rm-tiles').gsmChart;
+      c.pageSize = 2;
+      c.helpers.updateData(c, c.data);
+    });
+    expect((await state(page)).tiles).toEqual(['A', 'B']);
+    const next = page.locator('#rm-tiles [data-rm-page="1"]');
+    const prev = page.locator('#rm-tiles [data-rm-page="-1"]');
+    await next.click();
+    await expect(next).toBeFocused();
+    expect((await state(page)).tiles).toEqual(['D', 'C']);
+    await next.click();
+    expect((await state(page)).tiles).toEqual(['E']);
+    await expect(prev).toBeFocused();
+    await prev.click();
+    await page.locator('#rm-tiles th[data-subjid="D"]').click();
+    expect((await state(page)).tiles).toEqual(['D']);
+    await page.locator('#rm-tiles th[data-subjid="D"]').click();
+    expect((await state(page)).tiles).toEqual(['D', 'C']);
+    // A sync that leaves the participants unchanged keeps the page.
+    await page.click('#rm-settings-toggle');
+    await setInput(page, 'rm-min-windows', 1);
+    expect((await state(page)).tiles).toEqual(['D', 'C']);
+  });
 });
 
 test.describe('Repeat Measurements blood pressure view', () => {
@@ -901,6 +944,16 @@ test.describe('Repeat Measurements edge cases', () => {
     expect(f.tiles['F weight']).toBe('Red');
     expect(f.listing['F weight']).toBe('Red');
     expect(f.overview.weight.red).toBe(1);
+  });
+
+  test('changing Minimum windows keeps a 2/3 rate at the 2/3 Red threshold (#349)', async ({ page }) => {
+    await page.click('#rm-settings-toggle');
+    await setInput(page, 'rm-min-windows', 2);
+    await expect(page.locator('#rm-settings-msg')).toHaveText('');
+    expect((await flags(page)).tiles['F weight']).toBe('Red');
+    // Retyping the shown rounded value is not an edit either.
+    await setInput(page, 'rm-th-red', await page.inputValue('#rm-th-red'));
+    expect((await flags(page)).tiles['F weight']).toBe('Red');
   });
 
   test('a country with quotes stays text in every title (#346)', async ({ page }) => {
@@ -1036,5 +1089,24 @@ test('IDs with HTML are shown as text everywhere, and the metric Threshold sets 
   await clickDistRow(page, 'site', 'S<b>');
   expect((await state(page)).chips).toEqual(['S<b>']);
   expect(await injected()).toBe(0);
+  expect(errors).toEqual([]);
+});
+
+test('a row click selects a participant whose ID holds HTML characters (#349)', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+  await page.goto(HTML_IDS);
+  await page.waitForFunction(() => document.querySelectorAll('#rm-tiles tbody tr').length > 0);
+  await page.uncheck('#rm-dt-only');
+  for (const [sel, id] of [['#rm-vitals', '</script><b>x'], ['#rm-dt-wide', 'P&2'], ['#rm-dt-long', 'P&2']]) {
+    if (sel === '#rm-dt-long') await page.click('[data-rm-shape="long"]');
+    await page.locator(sel + ' tbody tr').filter({ hasText: id }).first().locator('td').nth(2).click();
+    const s = await state(page);
+    expect(s.chips).toEqual([id]);
+    expect(s.tiles).toEqual([id]);
+    expect(s.wide.length).toBeGreaterThan(0);
+    await page.click('[data-rm-clear="subj"]');
+  }
   expect(errors).toEqual([]);
 });

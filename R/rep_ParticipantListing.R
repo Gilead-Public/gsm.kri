@@ -19,7 +19,8 @@ rep_ParticipantTiles <- function(lClass) {
   df <- lClass$participants
   strRate <- ifelse(
     df$Denominator > 0,
-    paste0(round(100 * df$Numerator / df$Denominator), "%"),
+    # Half up, as the browser's Math.round() does; round() goes to even.
+    paste0(floor(100 * df$Numerator / df$Denominator + 0.5), "%"),
     "NE"
   )
   strND <- ifelse(df$Denominator > 0, paste0(df$Numerator, "/", df$Denominator), "NE")

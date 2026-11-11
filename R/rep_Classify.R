@@ -96,6 +96,7 @@ rep_Classify <- function(
     dfSubj$studyid <- rep(NA_character_, nrow(dfSubj))
   }
   dfSubj <- dfSubj[!duplicated(dfSubj$subjid), c("studyid", "country", "invid", "subjid")]
+  dfSubj$subjid <- rep_AsID(dfSubj$subjid)
   # A missing country or site becomes "(missing)" so the browser can filter it.
   for (strCol in c("country", "invid")) {
     dfSubj[[strCol]] <- as.character(dfSubj[[strCol]])
@@ -123,7 +124,8 @@ rep_Classify <- function(
     vNumeric <- setdiff(names(dfVS)[vapply(dfVS, is.numeric, logical(1))], c(dfVitals$vital, vIDCols))
     # A constant study day or visit number would score as a repeating vital,
     # and the window marks would clash with the engine's own columns.
-    vNumeric <- setdiff(vNumeric, c("record", "in_repeat_window", "window_start", MarkColumns()))
+    vNumeric <- setdiff(vNumeric, c("record", "in_repeat_window", "window_start"))
+    vNumeric <- vNumeric[!startsWith(vNumeric, ".rep_")]
     vNumeric[!grepl("^visit|(dy|num|seq|id)$", vNumeric, ignore.case = TRUE)]
   }
   # Paired BP: one value per record with both readings, so a run breaks when
@@ -145,6 +147,7 @@ rep_Classify <- function(
 
   # Mapped_SUBJ is the source of truth for site and country.
   if (!is.null(dfVS) && nrow(dfVS) > 0) {
+    dfVS$subjid <- rep_AsID(dfVS$subjid)
     dfVS <- dfVS[dfVS$subjid %in% dfSubj$subjid, setdiff(names(dfVS), c("studyid", "invid", "country")), drop = FALSE]
     dfVS <- dplyr::left_join(dfVS, dfSubj, by = "subjid")
     dfVS$record <- seq_len(nrow(dfVS))
@@ -270,4 +273,13 @@ rep_ParseDates <- function(dfVS, vVitals) {
   bISO <- !bMeasured & grepl("^[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}$", vDate)
   dOut[bISO] <- as.Date(vDate[bISO], format = "%Y-%m-%d")
   dOut
+}
+
+# Participant IDs are text in the browser, where filters compare and escape
+# them as strings; numbers keep all digits rather than scientific notation.
+rep_AsID <- function(x) {
+  if (!is.numeric(x)) {
+    return(as.character(x))
+  }
+  ifelse(is.na(x), NA_character_, trimws(formatC(x, format = "fg", digits = 15)))
 }

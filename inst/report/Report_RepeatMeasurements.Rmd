@@ -93,7 +93,8 @@ rep_Header(
 ```{css, file=system.file("report", "lib", "rm.css", package = "gsm.kri"), echo=FALSE}
 ```
 
-```{r filter-strip, echo=FALSE}
+```{r filter-strip, echo=FALSE, eval=has_participants}
+# Without participants there is no #rm-data for the controls to act on.
 rep_Toolbar(dfVitals, lSettings)
 ```
 

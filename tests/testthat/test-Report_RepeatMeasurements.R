@@ -302,6 +302,9 @@ test_that("the report renders with no enrolled participants (#344)", {
   # Every section is skipped, so no widget or data block is embedded.
   expect_no_match(html, 'id="rm-data"', fixed = TRUE)
   expect_no_match(html, 'id="rm-tiles"', fixed = TRUE)
+  # Nor are the Measures and Settings controls, which act on that data (#349).
+  expect_no_match(html, 'id="rm-vital-btn"', fixed = TRUE)
+  expect_no_match(html, 'id="rm-settings"', fixed = TRUE)
 })
 
 test_that("the report renders with no enrolled participants and no studyid column (#344)", {

@@ -68,6 +68,13 @@
     });
   }
 
+  // A textarea parses its content as text, so no markup or script runs.
+  function unesc(s) {
+    var el = document.createElement('textarea');
+    el.innerHTML = String(s);
+    return el.value;
+  }
+
   function clone(x) {
     return JSON.parse(JSON.stringify(x));
   }
@@ -194,6 +201,7 @@
   // Applies the inputs when they are valid; otherwise explains and keeps the
   // last valid settings.
   function readThresholds() {
+    if (!settings) return;
     var amber = parseFloat((byId('rm-th-amber') || {}).value);
     var red = parseFloat((byId('rm-th-red') || {}).value);
     var min = Number((byId('rm-min-windows') || {}).value);
@@ -204,7 +212,12 @@
     if (!(min >= 1) || Math.floor(min) !== min) return settingsMsg('Minimum windows must be a whole number of 1 or more.');
     var scale = isRate() ? 100 : 1;
     settingsMsg('');
-    settings.thresholds[settings.rule] = [amber / scale, red / scale];
+    // An input still showing its rounded stored value keeps the exact value,
+    // so a 2/3 threshold does not become 0.666667 when another input changes.
+    var th = settings.thresholds[settings.rule];
+    settings.thresholds[settings.rule] = [amber, red].map(function (x, i) {
+      return String(x) === fmt(th[i] * scale) ? th[i] : x / scale;
+    });
     settings.minWindows = min;
     settingsChanged(true);
   }
@@ -705,12 +718,17 @@
       var cls = on ? 'rm-on' : selected ? 'rm-dim' : '';
       body += '<tr data-rm-dist-row="' + state.distLevel + '" data-rm-dist-key="' + esc(g.key) + '"' + (isSite ? ' data-rm-dist-country="' + esc(Object.keys(g.countries).length === 1 ? g.country : '') + '"' : '') +
         (cls ? ' class="' + cls + '"' : '') + ' aria-selected="' + on + '" title="Click to filter the report to ' + (isSite ? 'site ' : '') + esc(g.label) + '; click again to clear">' +
-        '<td class="rm-l rm-stick">' + esc(g.label) + '</td>' + (isSite ? '<td class="rm-l rm-stick2">' + esc(g.country) + '</td>' : '') + counts(g);
+        '<td class="rm-l rm-stick"><button type="button" class="rm-dist-pick" aria-pressed="' + on + '">' + esc(g.label) + '</button></td>' +
+        (isSite ? '<td class="rm-l rm-stick2">' + esc(g.country) + '</td>' : '') + counts(g);
       vitals.forEach(function (v) {
         body += distCell(g, v, false);
       });
       body += '</tr>';
     });
+    // The rows are rebuilt, so a focused row button keeps focus by its key.
+    var focused = document.activeElement && el.contains(document.activeElement) &&
+      document.activeElement.closest('tr[data-rm-dist-key]');
+    var focusKey = focused ? focused.getAttribute('data-rm-dist-key') : null;
     el.innerHTML = vitals.length
       ? '<table class="table table-condensed" data-rm-dist-level="' + state.distLevel + '" data-rm-dist-unit="' + (unitSites ? 'sites' : 'participants') + '"><thead>' +
         h1 + '</tr></thead><tbody>' + body + '</tbody></table>'
@@ -722,6 +740,10 @@
         : info('Participant flag: ' + ruleText() + '. Calculated in the report; change the rule under Settings.' +
           (isSite ? ' The dot before a bar is the site\u2019s own flag: ' + siteRuleText() + '.' : '')));
       el.style.setProperty('--rm-c1', first.offsetWidth + 'px');
+    }
+    if (focusKey !== null) {
+      var back = el.querySelector('tr[data-rm-dist-key="' + CSS.escape(focusKey) + '"] .rm-dist-pick');
+      if (back) back.focus();
     }
     var count = byId('rm-dist-count');
     if (count) {
@@ -979,8 +1001,8 @@
         {
           title: 'Measure',
           render: function (d, type, row) {
-            if (type !== 'display' || !row[4]) return d;
-            return esc(d) + '<span class="rm-kri" title="' + esc(row[4]) + '">KRI</span>';
+            if (type !== 'display') return d;
+            return esc(d) + (row[4] ? '<span class="rm-kri" title="' + esc(row[4]) + '">KRI</span>' : '');
           }
         },
         { title: 'Metric', visible: false },
@@ -1062,7 +1084,8 @@
       long.column('vital:name').search(vitalRegex(), true, false);
       long.column('has_repeat:name').search(state.dtOnly ? '^Y$' : '', true, false);
       scope(long);
-      long.draw();
+      // A hidden table is drawn when it is next shown.
+      if (state.shape === 'long') long.draw();
     }
 
     var wide = dtApi('rm-dt-wide');
@@ -1089,10 +1112,9 @@
       });
       addMissingFilter();
       scope(wide);
-      wide.columns.adjust().draw();
+      if (state.shape === 'wide') wide.columns.adjust().draw();
     }
-    var shownApi = state.shape === 'wide' ? wide : long;
-    if (shownApi) shownApi.columns.adjust();
+    if (long && state.shape === 'long') long.columns.adjust();
   }
 
   // ---- shared --------------------------------------------------------------
@@ -1253,12 +1275,13 @@
     } else if (t.closest('[data-rm-set]')) {
       var set = t.closest('[data-rm-set]');
       var k = set.getAttribute('data-rm-set');
-      if (settings[k] === set.value) return;
+      if (!settings || settings[k] === set.value) return;
       settings[k] = set.value;
       settingsMsg('');
       settingsChanged(k === 'rule');
       return;
     } else if (t.closest('#rm-settings-defaults')) {
+      if (!defaults) return;
       var keep = settings._synced;
       settings = clone(defaults);
       settings._synced = keep;
@@ -1329,7 +1352,8 @@
       var cols = api.settings()[0].aoColumns;
       for (var i = 0; i < cols.length; i++) {
         if (cols[i].name === 'subjid') {
-          pickParticipant(row[i]);
+          // R escapes the table cells, and Long is built from the Wide cells.
+          pickParticipant(unesc(row[i]));
           return;
         }
       }

@@ -497,3 +497,16 @@ test_that("only measured, enrolled records need a readable vs_dt (#343)", {
   lListings$Mapped_SUBJ <- lListings$Mapped_SUBJ[0, ]
   expect_equal(nrow(rep_Classify(lListings)$participants), 0)
 })
+
+test_that("numeric participant IDs become text in every table (#349)", {
+  lListings <- rep_listings(rep_vs(list(A = c(7, 7, 7), B = c(1, 2, 3))))
+  lListings$Mapped_VS$subjid <- ifelse(lListings$Mapped_VS$subjid == "A", 100000, 10414)
+  lListings$Mapped_SUBJ$subjid <- c(100000L, 10414L)
+  lClass <- rep_Classify(lListings)
+  for (strTable in c("participants", "measurements", "records")) {
+    expect_type(lClass[[strTable]]$subjid, "character")
+  }
+  expect_setequal(lClass$participants$subjid, c("100000", "10414"))
+  df <- lClass$participants[lClass$participants$vital == "weight", ]
+  expect_equal(df$Numerator[df$subjid == "100000"], 1)
+})
