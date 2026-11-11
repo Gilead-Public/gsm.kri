@@ -1,5 +1,10 @@
 # gsm.kri (development version)
 
+- Site reports with comparison-risk detail can download review CSV through
+  `gsm.vizr`. The versioned export includes current/review flags, date provenance,
+  weights, exclusion reasons, and reported score components, without altering
+  the report's scores or filters (#280).
+
 - Added an explicit opt-in `strActionPolicy = "disposition"` draft. It keeps
   original metric-specific flag weights and the full denominator, applying
   state factors only while a documented decision is recent and applicable.
