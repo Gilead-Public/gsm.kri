@@ -321,7 +321,9 @@ Score** unless an explicit label is supplied. Each specific site/KRI cell with
 a documented action 0 through 90 days before the assessment date receives a
 pale background tint: light green for Closed Action, light red for Open Action,
 and light grey for No Action or previous/other states. Other cells for the same
-site or metric are unaffected. The original KRI hover content is preserved;
+site or metric are unaffected. A 3px inset border uses bright green for Closed,
+bright red for Open, and dark grey otherwise, without changing cell dimensions.
+The original KRI hover content is preserved;
 only its final line shows the latest action state, recorded date, and age as
 listed in the dropdown. Missing and future dates, and
 actions older than 90 days, are not highlighted. Zero-weight and green KRIs can
@@ -331,7 +333,7 @@ This is a recency indicator, independent of whether the decision covers the
 current finding. It does not imply risk resolution or alter either reported
 score. All KRI cells remain visible and retain their original flag colors.
 The single **Highlight actions within 90 days** checkbox is on by default;
-turning it off removes only the tint and restores the original background. Its state survives sorting and redraws,
+turning it off removes the border and tint, restoring the original background. Its state survives sorting and redraws,
 and action dates, details, and reported scores stay unchanged. There are no
 window, hide, or score-exclusion controls.
 
