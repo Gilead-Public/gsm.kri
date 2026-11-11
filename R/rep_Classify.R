@@ -23,11 +23,13 @@
 #' columns are not measures and are skipped: `studyid`, `subjid`, `invid`,
 #' `country`, `visit`, `vs_dt`, `vsperf_std`, and any name (ignoring case)
 #' starting with `visit` or ending in `dy`, `num`, `seq` or `id` (e.g.
-#' `vsdy`, `visitnum`, `vsseq`, `siteid`). With `sysbp` and `diabp`, paired
+#' `vsdy`, `visitnum`, `vsseq`, `siteid`), and the report's own `record`,
+#' `in_repeat_window` and `window_start` columns. With `sysbp` and `diabp`, paired
 #' blood pressure (`bp`, see [rep_Vitals()]) is added.
 #'
 #' A character `vs_dt` must hold ISO dates and is converted to `Date`, as in
-#' [Detect_ConsecutiveRepeats()].
+#' [Detect_ConsecutiveRepeats()]. Only records with a measurement are checked;
+#' an unreadable date on a record without one is left blank.
 #'
 #' @param lListings `list` with `Mapped_SUBJ` (enrolled participants with
 #'   `subjid`, `invid` and `country`; a missing `invid` or `country` is
@@ -119,11 +121,10 @@ rep_Classify <- function(
     character(0)
   } else {
     vNumeric <- setdiff(names(dfVS)[vapply(dfVS, is.numeric, logical(1))], c(dfVitals$vital, vIDCols))
-    # A constant study day or visit number would score as a repeating vital.
+    # A constant study day or visit number would score as a repeating vital,
+    # and the window marks would clash with the engine's own columns.
+    vNumeric <- setdiff(vNumeric, c("record", "in_repeat_window", "window_start", MarkColumns()))
     vNumeric[!grepl("^visit|(dy|num|seq|id)$", vNumeric, ignore.case = TRUE)]
-  }
-  if (!is.null(dfVS) && "vs_dt" %in% names(dfVS)) {
-    dfVS$vs_dt <- ParseDateColumn(dfVS$vs_dt, "vs_dt")
   }
   # Paired BP: one value per record with both readings, so a run breaks when
   # either changes.
@@ -147,6 +148,9 @@ rep_Classify <- function(
     dfVS <- dfVS[dfVS$subjid %in% dfSubj$subjid, setdiff(names(dfVS), c("studyid", "invid", "country")), drop = FALSE]
     dfVS <- dplyr::left_join(dfVS, dfSubj, by = "subjid")
     dfVS$record <- seq_len(nrow(dfVS))
+  }
+  if (!is.null(dfVS) && (is.character(dfVS$vs_dt) || is.factor(dfVS$vs_dt))) {
+    dfVS$vs_dt <- rep_ParseDates(dfVS, intersect(dfVitals$vital, names(dfVS)))
   }
   strOrderCol <- if ("visit" %in% names(dfVS)) "visit"
   # Each measure is windowed once; its marks feed the listings and its
@@ -253,4 +257,17 @@ rep_Classify <- function(
       split_sites = vSplitSites
     ))
   )
+}
+
+# Converts a character vs_dt for enrolled records. A record without a
+# measurement never enters a window, so an unreadable date there is blank
+# rather than an error.
+rep_ParseDates <- function(dfVS, vVitals) {
+  vDate <- trimws(as.character(dfVS$vs_dt))
+  bMeasured <- rowSums(!is.na(dfVS[vVitals])) > 0
+  dOut <- as.Date(rep(NA_character_, length(vDate)))
+  dOut[bMeasured] <- ParseDateColumn(vDate[bMeasured], "vs_dt")
+  bISO <- !bMeasured & grepl("^[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}$", vDate)
+  dOut[bISO] <- as.Date(vDate[bISO], format = "%Y-%m-%d")
+  dOut
 }

@@ -456,6 +456,16 @@ test_that("numeric timing and ID columns are not scored as extra measures (#343)
   expect_equal(flag_of(lClass, "D", "spo2"), "Red")
 })
 
+test_that("window-mark columns in Mapped_VS are not scored as extra measures (#343)", {
+  lListings <- rep_Fixture()
+  for (strCol in c("record", "in_repeat_window", "window_start", ".rep_seq", ".rep_in_window", ".rep_window_start")) {
+    lListings$Mapped_VS[[strCol]] <- 1
+  }
+  lClass <- rep_Classify(lListings)
+  expect_identical(lClass$vitals, rep_Classify(rep_Fixture())$vitals)
+  expect_identical(lClass$participants, rep_Classify(rep_Fixture())$participants)
+})
+
 test_that("a character vs_dt is read as ISO dates (#343)", {
   lListings <- rep_listings(rep_vs(list(A = c(7, 5, 7, 7))))
   lListings$Mapped_VS$vs_dt <- c("2024-01-8", "2024-01-9", "2024-01-10", "2024-01-11")
@@ -470,4 +480,20 @@ test_that("a character vs_dt is read as ISO dates (#343)", {
 
   lListings$Mapped_VS$vs_dt[1] <- "8 Jan 2024"
   expect_error(rep_Classify(lListings), "can't be read as a date")
+})
+
+test_that("only measured, enrolled records need a readable vs_dt (#343)", {
+  lListings <- rep_listings(rep_vs(list(A = c(7, 7, 7, NA))))
+  lListings$Mapped_VS$vs_dt <- c("2024-01-08", "2024-01-09", "2024-01-10", "8 Jan 2024")
+  lOrphan <- lListings$Mapped_VS[1, ]
+  lOrphan$subjid <- "Z"
+  lOrphan$vs_dt <- "not a date"
+  lListings$Mapped_VS <- rbind(lListings$Mapped_VS, lOrphan)
+  lClass <- rep_Classify(lListings)
+  expect_equal(lClass$records$vs_dt, as.Date(c("2024-01-08", "2024-01-09", "2024-01-10", NA)))
+  df <- lClass$participants[lClass$participants$vital == "weight", ]
+  expect_equal(c(df$Numerator, df$Denominator), c(1, 1))
+
+  lListings$Mapped_SUBJ <- lListings$Mapped_SUBJ[0, ]
+  expect_equal(nrow(rep_Classify(lListings)$participants), 0)
 })

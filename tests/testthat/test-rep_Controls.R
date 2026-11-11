@@ -45,4 +45,6 @@ test_that("rep_Header omits the Study pill without a study ID", {
     expect_no_match(html, "<b>Study</b>", fixed = TRUE)
     expect_match(html, "<b>Window</b>", fixed = TRUE)
   }
+  html <- as.character(rep_Header(lClass, c("S1", NA, "", "S2")))
+  expect_match(gsub("\\s+", " ", html), "<b>Study</b> ?S1, S2")
 })

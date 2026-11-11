@@ -79,10 +79,12 @@ flagged the same way, although they have no KRI. Numeric timing and ID
 columns are not measures and are skipped: `studyid`, `subjid`, `invid`,
 `country`, `visit`, `vs_dt`, `vsperf_std`, and any name (ignoring case)
 starting with `visit` or ending in `dy`, `num`, `seq` or `id` (e.g.
-`vsdy`, `visitnum`, `vsseq`, `siteid`). With `sysbp` and `diabp`, paired
+`vsdy`, `visitnum`, `vsseq`, `siteid`), and the report's own `record`,
+`in_repeat_window` and `window_start` columns. With `sysbp` and `diabp`, paired
 blood pressure (`bp`, see [rep_Vitals()]) is added.
 
 A character `vs_dt` must hold ISO dates and is converted to `Date`, as in
-[Detect_ConsecutiveRepeats()].
+[Detect_ConsecutiveRepeats()]. Only records with a measurement are checked;
+an unreadable date on a record without one is left blank.
 }
 \keyword{internal}
