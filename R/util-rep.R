@@ -89,15 +89,26 @@ rep_FlagThresholds <- function(strFlagRule = c("count", "rate"), vFlagThresholds
     if (is.null(strMetric)) {
       return(c(0.2, 0.3))
     }
-    vFlagThresholds <- as.numeric(strsplit(as.character(strMetric), ",")[[1]])
+    vMetric <- suppressWarnings(as.numeric(strsplit(as.character(strMetric), ",")[[1]]))
+    gsm.core::stop_if(
+      cnd = !rep_ValidThresholds(vMetric),
+      message = paste0(
+        "The kri0020/cou0020 metric Threshold (\"", strMetric,
+        "\") must be two positive numbers, Amber then Red, with Amber <= Red"
+      )
+    )
+    return(vMetric)
   }
+  # A threshold of 0 would flag participants without a repeating window.
   gsm.core::stop_if(
-    cnd = !is.numeric(vFlagThresholds) || length(vFlagThresholds) != 2 ||
-      any(!is.finite(vFlagThresholds)) || any(vFlagThresholds < 0) ||
-      vFlagThresholds[1] > vFlagThresholds[2],
-    message = "vFlagThresholds must be two non-negative numbers, Amber then Red, with Amber <= Red"
+    cnd = !rep_ValidThresholds(vFlagThresholds),
+    message = "vFlagThresholds must be two positive numbers, Amber then Red, with Amber <= Red"
   )
   as.numeric(vFlagThresholds)
+}
+
+rep_ValidThresholds <- function(x) {
+  is.numeric(x) && length(x) == 2 && all(is.finite(x)) && all(x > 0) && x[1] <= x[2]
 }
 
 # Flags `Score` with gsm.core::Flag(), as the kri0020 workflow does: 0 below
@@ -144,7 +155,7 @@ rep_MetricMeta <- function(dfMetrics, strField) {
   if (is.null(dfMetrics) || !all(c("ID", strField) %in% names(dfMetrics))) {
     return(NULL)
   }
-  vValue <- dfMetrics[[strField]][grepl("^(kri|cou)0020", dfMetrics$ID)]
+  vValue <- dfMetrics[[strField]][grepl("^(kri|cou)0020[a-f]$", dfMetrics$ID)]
   vValue <- unique(vValue[!is.na(vValue)])
   if (!length(vValue)) {
     return(NULL)
@@ -203,6 +214,14 @@ rep_CsvButton <- function(bExport, strFile, columns = ":visible", lHeaders = NUL
   ))
 }
 
+# Displays each value with the fewest significant digits (15 to 17) that
+# read back as the same number, so values the engine treats as different
+# (0.1 + 0.2 and 0.3) never display alike.
 rep_FormatValue <- function(x) {
-  format(x, trim = TRUE, drop0trailing = TRUE, scientific = FALSE, digits = 10)
+  strOut <- formatC(x, digits = 15, format = "fg")
+  for (nDigits in 16:17) {
+    bLossy <- !is.na(x) & suppressWarnings(as.numeric(strOut)) != x
+    strOut[bLossy] <- formatC(x[bLossy], digits = nDigits, format = "fg")
+  }
+  trimws(strOut)
 }

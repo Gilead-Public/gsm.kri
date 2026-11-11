@@ -272,3 +272,77 @@ test_that("strContext is shown above the title", {
     "strContext"
   )
 })
+
+test_that("strContext must be a single character string", {
+  for (bad in list(NA_character_, 1, c("<b>a</b>", "<b>b</b>"), NULL)) {
+    expect_error(
+      Report_RepeatMeasurements(lListings = rep_Fixture(), strContext = bad),
+      "strContext must be a single character string"
+    )
+  }
+})
+
+test_that("the header has no Study pill when Mapped_SUBJ has no study ID (#344)", {
+  lListings <- rep_Fixture()
+  lListings$Mapped_SUBJ$studyid <- NULL
+  html <- render_rm(lListings)
+  expect_no_match(html, "<b>Study</b>", fixed = TRUE)
+  expect_match(gsub("\\s+", " ", html), "<b>Window</b> 3 measurements", fixed = TRUE)
+
+  lListings$Mapped_SUBJ$studyid <- c(NA, "", NA, NA, NA)
+  html <- render_rm(lListings)
+  expect_no_match(html, "<b>Study</b>", fixed = TRUE)
+})
+
+test_that("the report renders with no enrolled participants (#344)", {
+  f <- rep_Fixture()
+  html <- render_rm(rep_listings(f$Mapped_VS, f$Mapped_SUBJ[0, ]))
+  expect_match(html, "No enrolled participants", fixed = TRUE)
+  expect_no_match(html, "<b>Study</b>", fixed = TRUE)
+  # Every section is skipped, so no widget or data block is embedded.
+  expect_no_match(html, 'id="rm-data"', fixed = TRUE)
+  expect_no_match(html, 'id="rm-tiles"', fixed = TRUE)
+})
+
+test_that("the report renders with no enrolled participants and no studyid column (#344)", {
+  f <- rep_Fixture()
+  dfSubj <- f$Mapped_SUBJ[0, setdiff(names(f$Mapped_SUBJ), "studyid")]
+  html <- render_rm(rep_listings(f$Mapped_VS, dfSubj))
+  expect_match(html, "No enrolled participants", fixed = TRUE)
+  expect_no_match(html, "<b>Study</b>", fixed = TRUE)
+})
+
+test_that("IDs with HTML are escaped in the data block and the split-site banner (#344)", {
+  html <- render_rm(rep_FixtureHTML(), dfMetrics = rep_FixtureMetrics())
+  strData <- sub('.*<script type="application/json" id="rm-data">(.*?)</script>.*', "\\1", html)
+  expect_match(strData, '"subjid":"\\u003c\\/script>\\u003cb>x"', fixed = TRUE)
+  expect_match(strData, '"invid":"S\\u003cb>"', fixed = TRUE)
+  expect_false(grepl("</script", strData, fixed = TRUE))
+  lData <- rep_DataBlock(html)
+  expect_equal(lData$participants$subjid, c("</script><b>x", "P&2"))
+  # Script contents are not parsed as HTML; outside them no ID is raw markup.
+  # An unescaped </script> would end its block early and leave <b>x behind.
+  strOutside <- gsub("<script\\b[^>]*>.*?</script>", "", html, perl = TRUE)
+  expect_false(grepl("<b>x", strOutside, fixed = TRUE))
+  expect_false(grepl("S<b>", strOutside, fixed = TRUE))
+  expect_match(
+    gsub("\\s+", " ", html),
+    "1 site with participants in more than one country</strong> (S&lt;b&gt;).",
+    fixed = TRUE
+  )
+  for (lPayload in rep_WidgetPayloads(html)) {
+    expect_false(grepl("</script", jsonlite::toJSON(lPayload), fixed = TRUE))
+  }
+})
+
+test_that("a non-default metric Threshold reaches the rate settings and the rule text (#343, #344)", {
+  html <- render_rm(dfMetrics = rep_FixtureMetrics(strThreshold = "0.25,0.4"), strFlagRule = "rate")
+  lData <- rep_DataBlock(html)
+  expect_equal(lData$settings$thresholds$rate, c(0.25, 0.4))
+  expect_equal(lData$settings$thresholds$count, c(2, 3))
+  expect_match(html, "% of windows that repeat, Amber \u2265 25%, Red \u2265 40%", fixed = TRUE)
+
+  # Under the count rule the metric Threshold still sets the rate settings.
+  lData <- rep_DataBlock(render_rm(dfMetrics = rep_FixtureMetrics(strThreshold = "0.25,0.4")))
+  expect_equal(lData$settings$thresholds$rate, c(0.25, 0.4))
+})

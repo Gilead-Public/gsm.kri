@@ -126,7 +126,7 @@
   }
 
   // ---- flags ---------------------------------------------------------------
-  // Mirrors rm_Classify(): too few windows is Not evaluable; otherwise the
+  // Mirrors rep_Classify(): too few windows is Not evaluable; otherwise the
   // count or rate is compared with the Amber and Red thresholds.
   function flagOf(n, d) {
     if (!d || d < settings.minWindows) return 'Not evaluable';
@@ -137,7 +137,7 @@
     return 'Green';
   }
 
-  // Runs only when Settings change; on load the flags come from rm_Classify().
+  // Runs only when Settings change; on load the flags come from rep_Classify().
   function applyFlags() {
     (allTiles || []).forEach(function (t) {
       t.flag = flagOf(t.Numerator, t.Denominator);
@@ -197,8 +197,8 @@
     var amber = parseFloat((byId('rm-th-amber') || {}).value);
     var red = parseFloat((byId('rm-th-red') || {}).value);
     var min = Number((byId('rm-min-windows') || {}).value);
-    if (!isFinite(amber) || !isFinite(red) || amber < 0 || red < 0) {
-      return settingsMsg('Enter Amber and Red thresholds of 0 or more.');
+    if (!isFinite(amber) || !isFinite(red) || amber <= 0 || red <= 0) {
+      return settingsMsg('Enter Amber and Red thresholds above 0.');
     }
     if (amber > red) return settingsMsg('Amber must not be above Red.');
     if (!(min >= 1) || Math.floor(min) !== min) return settingsMsg('Minimum windows must be a whole number of 1 or more.');
@@ -924,7 +924,7 @@
   // Long rows from the Wide rows: one per participant, measure and
   // non-missing value. Wide keeps each participant's records in measurement
   // order (date, visit, record), so a value's position (#) is its count among
-  // the participant's non-missing values of that measure, as in rm_Classify().
+  // the participant's non-missing values of that measure, as in rep_Classify().
   function longRows(wide) {
     var ci = colIndex(wide);
     var vitals = rmData().vitals.filter(function (v) {

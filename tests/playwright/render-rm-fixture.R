@@ -1,9 +1,11 @@
 # Renders Report_RepeatMeasurements from the testthat fixture to fixture/RM.html;
 # without vital signs or repeat-measure metrics, fixture/RM_degraded.html, and
 # with systolic and diastolic BP for participant A, fixture/RM_bp.html; and
-# with a missing country, a quoted country, a 2/3 threshold and a visit with
-# all measures missing, fixture/RM_edge.html;
-# and a site that spans countries, fixture/RM_split.html.
+# with a missing country, a quoted country and a 2/3 threshold, fixture/RM_edge.html;
+# and a site that spans countries, fixture/RM_split.html; and under the rate
+# rule a Green participant with more repeat windows than a Red one,
+# fixture/RM_rate.html; and IDs with HTML, a split site and a metric
+# Threshold of 25% / 40% under the rate rule, fixture/RM_html.html.
 # Run from the gsm.kri package root after devtools::load_all(".").
 source("tests/testthat/helper-rep.R")
 dir.create("tests/playwright/fixture", showWarnings = FALSE, recursive = TRUE)
@@ -51,4 +53,21 @@ suppressWarnings(Report_RepeatMeasurements(
   lListings = rep_FixtureSplit(),
   strOutputDir = out_dir,
   strOutputFile = "RM_split.html"
+))
+# Rate rule, default thresholds: P01 is Green at 2/20 windows, P02 Red at 1/3.
+Report_RepeatMeasurements(
+  lListings = rep_listings(rep_vs(list(
+    P01 = c(1, 1, 1, 1, 2:19),
+    P02 = c(1, 1, 1, 2, 3)
+  ))),
+  strFlagRule = "rate",
+  strOutputDir = out_dir,
+  strOutputFile = "RM_rate.html"
+)
+suppressWarnings(Report_RepeatMeasurements(
+  dfMetrics = rep_FixtureMetrics(strThreshold = "0.25,0.4"),
+  lListings = rep_FixtureHTML(),
+  strFlagRule = "rate",
+  strOutputDir = out_dir,
+  strOutputFile = "RM_html.html"
 ))

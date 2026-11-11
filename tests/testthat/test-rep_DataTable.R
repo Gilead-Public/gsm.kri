@@ -46,6 +46,11 @@ test_that("Long rows built from Wide reproduce rep_Classify() measurements (#346
   d <- rep_WideToLong(rep_DataTableWide(rep_Classify(rep_Fixture())), c("weight", "pulse", "height"))
   expect_equal(unique(d$subjid), c("A", "B", "D", "C"))
   expect_equal(d$value[d$subjid == "D" & d$vital == "weight"], c("90", "90", "90", "91", "92", "93"))
+  # Known answer: B's pulse 60, 60, 60, 61 repeats in its first window only.
+  b <- d[d$subjid == "B" & d$vital == "pulse", ]
+  expect_equal(b$value, c("60", "60", "60", "61"))
+  expect_equal(b$in_repeat_window, c(TRUE, TRUE, TRUE, FALSE))
+  expect_equal(b$seq, 1:4)
 })
 
 test_that("wide data table has one row per record, a column per vital and repeat-window flags (#346)", {
@@ -126,4 +131,12 @@ test_that("data table headers fit without horizontal scrolling and the CSV keeps
   lCSV <- w$x$options$buttons[[1]]$exportOptions
   expect_match(as.character(lCSV$columns), sprintf("always = [%d,%d]", idx(dfWide, "country"), idx(dfWide, "performed")), fixed = TRUE)
   expect_match(as.character(lCSV$format$header), '"6":"Weight"', fixed = TRUE)
+})
+
+test_that("Wide rows without vsperf_std leave performed missing, without a warning (#346)", {
+  lClass <- rep_Classify(rep_listings(rep_vs(list(A = c(1, 1, 1), B = c(2, 3, 4)))))
+  expect_false("vsperf_std" %in% names(lClass$records))
+  expect_no_warning(dfWide <- rep_DataTableWide(lClass))
+  expect_equal(nrow(dfWide), 6)
+  expect_true(all(is.na(dfWide$performed)))
 })

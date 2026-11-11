@@ -9,7 +9,9 @@ rep_Header(lClass, strStudy, dSnapshotDate = NULL, strContext = "")
 \arguments{
 \item{lClass}{`list` Output of [rep_Classify()].}
 
-\item{strStudy}{`character` Study ID(s) shown in the header.}
+\item{strStudy}{`character` Study ID(s) shown in the header, comma-separated.
+Missing and empty IDs are dropped; the Study pill is omitted when none
+remain.}
 
 \item{dSnapshotDate}{`Date` Snapshot date. Optional; omitted when `NULL`.}
 

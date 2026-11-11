@@ -32,3 +32,26 @@ test_that("tiles widget rejects unknown labels and missing columns (#347)", {
   expect_error(Widget_RepeatMeasurementsTiles(dfTiles, strLabel = "pct"))
   expect_error(Widget_RepeatMeasurementsTiles(dfTiles[setdiff(names(dfTiles), "label_both")]), "label_both")
 })
+
+test_that("tiles widget names the allowed labels and needs a data frame (#347)", {
+  dfTiles <- rep_ParticipantTiles(rep_Classify(rep_Fixture()))
+  expect_error(
+    Widget_RepeatMeasurementsTiles(dfTiles, strLabel = "pct"),
+    "'arg' should be one of"
+  )
+  expect_error(Widget_RepeatMeasurementsTiles(as.list(dfTiles)), "dfTiles needs")
+  expect_error(Widget_RepeatMeasurementsTiles(NULL), "dfTiles needs subjid")
+})
+
+test_that("tiles widget payload carries severity for the initial worst-flag sort (#347)", {
+  dfTiles <- rep_ParticipantTiles(rep_Classify(rep_Fixture()))
+  expect_true("severity" %in% names(dfTiles))
+  dfPayload <- jsonlite::fromJSON(Widget_RepeatMeasurementsTiles(dfTiles)$x$tiles)
+  expect_equal(dfPayload$severity, rep_FlagSeverity(dfPayload$flag))
+  expect_equal(dfPayload$severity, dfTiles$severity)
+
+  # Not required: an input without it gets it from flag.
+  dfNoSeverity <- dfTiles[setdiff(names(dfTiles), "severity")]
+  dfPayload <- jsonlite::fromJSON(Widget_RepeatMeasurementsTiles(dfNoSeverity)$x$tiles)
+  expect_equal(dfPayload$severity, dfTiles$severity)
+})

@@ -9,7 +9,9 @@
 #' (`.rm-rule-text`) when the reviewer changes the settings.
 #'
 #' @param lClass `list` Output of [rep_Classify()].
-#' @param strStudy `character` Study ID(s) shown in the header.
+#' @param strStudy `character` Study ID(s) shown in the header, comma-separated.
+#'   Missing and empty IDs are dropped; the Study pill is omitted when none
+#'   remain.
 #' @param dSnapshotDate `Date` Snapshot date. Optional; omitted when `NULL`.
 #' @param strContext `character` HTML for a line above the title, such as a
 #'   link back to the page that embeds the report. Omitted when empty.
@@ -20,6 +22,7 @@
 rep_Header <- function(lClass, strStudy, dSnapshotDate = NULL, strContext = "") {
   nW <- lClass$meta$window_length
   rule_text <- rep_RuleText(lClass$meta)
+  vStudy <- setdiff(as.character(strStudy), c(NA, ""))
   # The H1 is HTML rather than markdown and .toc-ignore, so the contents list
   # starts at the first section.
   htmltools::tags$header(
@@ -33,7 +36,7 @@ rep_Header <- function(lClass, strStudy, dSnapshotDate = NULL, strContext = "") 
     ),
     htmltools::tags$div(
       class = "rm-meta",
-      rep_Pill("Study", strStudy),
+      if (length(vStudy)) rep_Pill("Study", paste(vStudy, collapse = ", ")),
       if (!is.null(dSnapshotDate)) rep_Pill("Snapshot", format(dSnapshotDate)),
       rep_Pill("Window", paste(nW, "measurements")),
       rep_Pill("Participant flag", htmltools::HTML(rule_text), class = "rm-pill-rule")

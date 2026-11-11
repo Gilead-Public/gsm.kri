@@ -19,8 +19,17 @@
 #' Amber is at or above the first threshold, Red at or above the second.
 #' Participants with fewer than `nMinWindows` windows are `Not evaluable`.
 #' Height, BSA and any other numeric `Mapped_VS` column are windowed and
-#' flagged the same way, although they have no KRI. With `sysbp` and
-#' `diabp`, paired blood pressure (`bp`, see [rep_Vitals()]) is added.
+#' flagged the same way, although they have no KRI. Numeric timing and ID
+#' columns are not measures and are skipped: `studyid`, `subjid`, `invid`,
+#' `country`, `visit`, `vs_dt`, `vsperf_std`, and any name (ignoring case)
+#' starting with `visit` or ending in `dy`, `num`, `seq` or `id` (e.g.
+#' `vsdy`, `visitnum`, `vsseq`, `siteid`), and the report's own `record`,
+#' `in_repeat_window` and `window_start` columns. With `sysbp` and `diabp`, paired
+#' blood pressure (`bp`, see [rep_Vitals()]) is added.
+#'
+#' A character `vs_dt` must hold ISO dates and is converted to `Date`, as in
+#' [Detect_ConsecutiveRepeats()]. Only records with a measurement are checked;
+#' an unreadable date on a record without one is left blank.
 #'
 #' @param lListings `list` with `Mapped_SUBJ` (enrolled participants with
 #'   `subjid`, `invid` and `country`; a missing `invid` or `country` is
@@ -52,11 +61,11 @@
 #'     and `invid` from `Mapped_SUBJ` and a `record` key that `measurements`
 #'     refers to.
 #'   * `vitals`: the rows of [rep_Vitals()] in the report, plus any other
-#'     numeric `Mapped_VS` column.
+#'     numeric `Mapped_VS` column that is not a timing or ID column.
 #'   * `meta`: `window_length`, `window_source` (`"metrics"`, `"argument"` or
 #'     `"default"`), `rule`, `thresholds` (Amber, Red), `min_windows` and
 #'     `split_sites` (sites whose participants have more than one country;
-#'     a warning lists them).
+#'     a warning lists them; participants without a site are not a site).
 #' @keywords internal
 #' @export
 rep_Classify <- function(
@@ -84,7 +93,7 @@ rep_Classify <- function(
     )
   )
   if (!"studyid" %in% names(dfSubj)) {
-    dfSubj$studyid <- NA_character_
+    dfSubj$studyid <- rep(NA_character_, nrow(dfSubj))
   }
   dfSubj <- dfSubj[!duplicated(dfSubj$subjid), c("studyid", "country", "invid", "subjid")]
   # A missing country or site becomes "(missing)" so the browser can filter it.
@@ -94,7 +103,9 @@ rep_Classify <- function(
   }
   # Country comes from each participant (as in the cou0020 KRIs), so a site
   # whose participants carry different countries is counted in each of them.
-  nCountries <- tapply(dfSubj$country, dfSubj$invid, function(x) length(unique(x)))
+  # Participants without a site share "(missing)" but are not one site.
+  bSite <- dfSubj$invid != "(missing)"
+  nCountries <- tapply(dfSubj$country[bSite], dfSubj$invid[bSite], function(x) length(unique(x)))
   vSplitSites <- as.character(names(nCountries)[nCountries > 1])
   if (length(vSplitSites) > 0) {
     gsm.core::LogMessage(
@@ -109,7 +120,11 @@ rep_Classify <- function(
   vExtra <- if (is.null(dfVS)) {
     character(0)
   } else {
-    setdiff(names(dfVS)[vapply(dfVS, is.numeric, logical(1))], c(dfVitals$vital, vIDCols))
+    vNumeric <- setdiff(names(dfVS)[vapply(dfVS, is.numeric, logical(1))], c(dfVitals$vital, vIDCols))
+    # A constant study day or visit number would score as a repeating vital,
+    # and the window marks would clash with the engine's own columns.
+    vNumeric <- setdiff(vNumeric, c("record", "in_repeat_window", "window_start", MarkColumns()))
+    vNumeric[!grepl("^visit|(dy|num|seq|id)$", vNumeric, ignore.case = TRUE)]
   }
   # Paired BP: one value per record with both readings, so a run breaks when
   # either changes.
@@ -133,6 +148,9 @@ rep_Classify <- function(
     dfVS <- dfVS[dfVS$subjid %in% dfSubj$subjid, setdiff(names(dfVS), c("studyid", "invid", "country")), drop = FALSE]
     dfVS <- dplyr::left_join(dfVS, dfSubj, by = "subjid")
     dfVS$record <- seq_len(nrow(dfVS))
+  }
+  if (!is.null(dfVS) && (is.character(dfVS$vs_dt) || is.factor(dfVS$vs_dt))) {
+    dfVS$vs_dt <- rep_ParseDates(dfVS, intersect(dfVitals$vital, names(dfVS)))
   }
   strOrderCol <- if ("visit" %in% names(dfVS)) "visit"
   # Each measure is windowed once; its marks feed the listings and its
@@ -162,9 +180,9 @@ rep_Classify <- function(
         vital = rep(strVital, nrow(dfMarked)),
         value = if (is.character(x)) rep(NA_real_, length(x)) else as.numeric(x),
         value_text = if (is.character(x)) x else rep_FormatValue(as.numeric(x)),
-        seq = dfMarked$seq,
-        in_repeat_window = dfMarked$in_repeat_window,
-        window_start = dfMarked$window_start
+        seq = dfMarked$.rep_seq,
+        in_repeat_window = dfMarked$.rep_in_window,
+        window_start = dfMarked$.rep_window_start
       )
       list(measurements = dfMeasurements, metric = dfMetric)
     }
@@ -239,4 +257,17 @@ rep_Classify <- function(
       split_sites = vSplitSites
     ))
   )
+}
+
+# Converts a character vs_dt for enrolled records. A record without a
+# measurement never enters a window, so an unreadable date there is blank
+# rather than an error.
+rep_ParseDates <- function(dfVS, vVitals) {
+  vDate <- trimws(as.character(dfVS$vs_dt))
+  bMeasured <- rowSums(!is.na(dfVS[vVitals])) > 0
+  dOut <- as.Date(rep(NA_character_, length(vDate)))
+  dOut[bMeasured] <- ParseDateColumn(vDate[bMeasured], "vs_dt")
+  bISO <- !bMeasured & grepl("^[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}$", vDate)
+  dOut[bISO] <- as.Date(vDate[bISO], format = "%Y-%m-%d")
+  dOut
 }

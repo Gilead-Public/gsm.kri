@@ -13,7 +13,8 @@
 #' `helpers.selectRow()`, `helpers.clearSelection()` and
 #' `helpers.updateSpec()` for the label mode).
 #'
-#' @param dfTiles `data.frame` Output of [rep_ParticipantTiles()].
+#' @param dfTiles `data.frame` Output of [rep_ParticipantTiles()]. An absent
+#'   `severity` column is derived from `flag`.
 #' @param strLabel `character` Initial tile label: `"both"`, `"rate"` or `"nd"`.
 #' @param strId `character` Element ID of the widget.
 #' @param nPageSize `integer` Participants per page.
@@ -37,6 +38,10 @@ Widget_RepeatMeasurementsTiles <- function(
     cnd = !is.data.frame(dfTiles) || length(vMissing) > 0,
     message = paste0("dfTiles needs ", paste(vMissing, collapse = ", "))
   )
+  # The report's initial "Worst flag" sort reads severity.
+  if (!"severity" %in% names(dfTiles)) {
+    dfTiles$severity <- rep_FlagSeverity(dfTiles$flag)
+  }
   dfVitals <- rep_Vitals()
   vVitals <- unique(dfTiles$vital)
   vVitals <- c(intersect(dfVitals$vital, vVitals), setdiff(vVitals, dfVitals$vital))
@@ -50,7 +55,7 @@ Widget_RepeatMeasurementsTiles <- function(
   htmlwidgets::createWidget(
     name = "Widget_RepeatMeasurementsTiles",
     x = list(
-      tiles = jsonlite::toJSON(dfTiles[vRequired], dataframe = "rows", na = "null"),
+      tiles = jsonlite::toJSON(dfTiles[c(vRequired, "severity")], dataframe = "rows", na = "null"),
       columns = jsonlite::toJSON(dfColumns, dataframe = "rows", na = "null"),
       colors = as.list(vColors[c("Red", "Amber", "Green", "Not evaluable")]),
       label = strLabel,
