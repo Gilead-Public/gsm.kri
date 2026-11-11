@@ -21,7 +21,9 @@ rep_Header(lClass, strStudy, dSnapshotDate = NULL, strContext = "")
 
 - strStudy:
 
-  \`character\` Study ID(s) shown in the header.
+  \`character\` Study ID(s) shown in the header, comma-separated.
+  Missing and empty IDs are dropped; the Study pill is omitted when none
+  remain.
 
 - dSnapshotDate:
 

@@ -56,6 +56,8 @@
 <li>Add the <code>report_repeatmeasurements</code> workflow module (<a href="https://github.com/Gilead-Public/gsm.kri/issues/340" class="external-link">#340</a>).</li>
 <li>
 <code><a href="../reference/Detect_ConsecutiveRepeats.html">Detect_ConsecutiveRepeats()</a></code> and the Repeat Measurements report now share one windowing engine, so the report’s participant counts are the KRI’s by construction. Records with a missing subject are now dropped with a warning instead of failing with “arguments imply differing number of rows” (<a href="https://github.com/Gilead-Public/gsm.kri/issues/340" class="external-link">#340</a>).</li>
+<li>
+<code><a href="../reference/Detect_ConsecutiveRepeats.html">Detect_ConsecutiveRepeats()</a></code> now reads a character (or factor) date column as ISO dates (<code>"YYYY-MM-DD"</code>) instead of sorting it as text, so <code>"2024-01-9"</code> comes before <code>"2024-01-10"</code>; a value that is not an ISO date is an error. <code>Date</code>, <code>POSIXct</code> and zero-padded ISO text dates give the same results as before. <code>strMeasureVal</code> must now be a single non-missing value (<a href="https://github.com/Gilead-Public/gsm.kri/issues/340" class="external-link">#340</a>).</li>
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.8.0" id="gsmkri-v180">gsm.kri v1.8.0<a class="anchor" aria-label="anchor" href="#gsmkri-v180"></a></h2>

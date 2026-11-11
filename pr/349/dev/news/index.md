@@ -19,6 +19,13 @@
   with a missing subject are now dropped with a warning instead of
   failing with “arguments imply differing number of rows”
   ([\#340](https://github.com/Gilead-Public/gsm.kri/issues/340)).
+- [`Detect_ConsecutiveRepeats()`](https://gilead-public.github.io/gsm.kri/dev/reference/Detect_ConsecutiveRepeats.md)
+  now reads a character (or factor) date column as ISO dates
+  (`"YYYY-MM-DD"`) instead of sorting it as text, so `"2024-01-9"` comes
+  before `"2024-01-10"`; a value that is not an ISO date is an error.
+  `Date`, `POSIXct` and zero-padded ISO text dates give the same results
+  as before. `strMeasureVal` must now be a single non-missing value
+  ([\#340](https://github.com/Gilead-Public/gsm.kri/issues/340)).
 
 ## gsm.kri v1.8.0
 
