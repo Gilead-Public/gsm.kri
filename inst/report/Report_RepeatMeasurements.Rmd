@@ -1,0 +1,305 @@
+---
+# pagetitle sets only the browser tab; the visible title is the H1 below, which
+# also renders in the knit_child pkgdown embed.
+pagetitle: "Repeat Measurements"
+output:
+  html_document:
+    mathjax: null
+    md_extensions: "-tex_math_dollars"
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    css: styles.css
+params:
+  dfResults: NA
+  dfMetrics: NA
+  lListings: NA
+  dSnapshotDate: NA
+  nWindowLength: NA
+  strFlagRule: "count"
+  vFlagThresholds: NA
+  nMinWindows: 1
+  strBPMode: "separate"
+  bExport: TRUE
+  strContext: ""
+---
+
+```{r setup, include=FALSE}
+library(gsm.kri)
+
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+
+# Unset YAML params arrive as NA.
+param <- function(x, default = NULL) {
+  if (is.null(x) || (is.atomic(x) && length(x) == 1 && is.na(x))) default else x
+}
+dfResults <- param(params$dfResults)
+dfMetrics <- param(params$dfMetrics)
+lListings <- params$lListings
+dSnapshotDate <- param(params$dSnapshotDate)
+# HTML for a line above the title, e.g. where the report is embedded.
+strContext <- param(params$strContext, "")
+bExport <- isTRUE(params$bExport)
+
+# One classification feeds every section.
+lClass <- rep_Classify(
+  lListings,
+  dfMetrics = dfMetrics,
+  nWindowLength = param(params$nWindowLength),
+  strFlagRule = param(params$strFlagRule, "count"),
+  vFlagThresholds = param(params$vFlagThresholds),
+  nMinWindows = param(params$nMinWindows, 1)
+)
+# Every measure: the six KRI vitals, paired BP, height, BSA and any other.
+dfVitals <- lClass$vitals
+nW <- lClass$meta$window_length
+has_participants <- nrow(lClass$participants) > 0
+has_vs <- has_participants && nrow(lClass$measurements) > 0
+has_evaluable <- any(lClass$participants$flag %in% c("Red", "Amber", "Green"))
+
+# The Settings panel starts from these; the other rule keeps its defaults.
+lSettings <- list(
+  rule = lClass$meta$rule,
+  thresholds = list(
+    count = if (lClass$meta$rule == "count") lClass$meta$thresholds else rep_FlagThresholds("count"),
+    rate = if (lClass$meta$rule == "rate") lClass$meta$thresholds else rep_FlagThresholds("rate", dfMetrics = dfMetrics)
+  ),
+  minWindows = lClass$meta$min_windows,
+  bp = param(params$strBPMode, "separate")
+)
+in_cmp <- lClass$meta$window_source == "metrics"
+dfSites <- rep_SiteFlagRows(lClass, dfResults, dfMetrics)
+# The KRI badge marks a measure whose KRI has site results in this study's
+# reporting data, the same test that makes its site flags KRI flags.
+dfVitals$kri <- dfVitals$vital %in% dfSites$vital[dfSites$source == "KRI"]
+lSiteRule <- rep_SiteRule(dfMetrics)
+
+tiles <- rep_ParticipantTiles(lClass)
+listing <- rep_VitalsListing(rep_VitalRows(lClass), nWindowLength = nW, bExport = bExport)
+data_table <- rep_DataTable(rep_DataTableWide(lClass), lClass$vitals, bExport = bExport)
+
+# A section description as a pandoc fenced div, so markdown (bold, lists)
+# still renders inside it.
+desc <- function(...) cat("\n::: {.rm-desc}\n", ..., "\n:::\n\n", sep = "")
+```
+
+```{r header, echo=FALSE}
+rep_Header(
+  lClass,
+  strStudy = paste(setdiff(unique(as.character(lListings$Mapped_SUBJ$studyid)), c(NA, "")), collapse = ", "),
+  dSnapshotDate = dSnapshotDate,
+  strContext = strContext
+)
+```
+
+```{css, file=system.file("report", "lib", "rm.css", package = "gsm.kri"), echo=FALSE}
+```
+
+```{r filter-strip, echo=FALSE, eval=has_participants}
+# Without participants there is no #rm-data for the controls to act on.
+rep_Toolbar(dfVitals, lSettings)
+```
+
+```{r degraded, echo=FALSE, results='asis'}
+if (!has_participants) {
+  cat("\n> **No enrolled participants.** Every section is empty for this snapshot.\n")
+} else if (!has_vs) {
+  cat("\n> **No vital signs recorded.** `Mapped_VS` has no measurements for the enrolled participants, so no participant is evaluable.\n")
+} else if (!has_evaluable) {
+  nNeeded <- nW + lClass$meta$min_windows - 1
+  cat(sprintf(
+    "\n> **No evaluable participants** at the initial settings: none has the %s measurements of a measure needed for %s window%s of %s.\n",
+    nNeeded, lClass$meta$min_windows, if (lClass$meta$min_windows == 1) "" else "s", nW
+  ))
+}
+if (length(lClass$meta$split_sites) > 0) {
+  cat(sprintf(
+    "\n> **%s site%s with participants in more than one country** (%s). As in the country KRIs, each participant counts toward their own country, so %s counted in each of %s countries.\n",
+    length(lClass$meta$split_sites), if (length(lClass$meta$split_sites) == 1) "" else "s",
+    htmltools::htmlEscape(paste(lClass$meta$split_sites, collapse = ", ")),
+    if (length(lClass$meta$split_sites) == 1) "the site is" else "each site is",
+    if (length(lClass$meta$split_sites) == 1) "its" else "their"
+  ))
+}
+if (!in_cmp) {
+  cat(sprintf(
+    "\n> The repeat-measure KRIs (`kri0020a`&ndash;`f`) are not in this study's metrics. The report uses a window of %s measurements (%s) and flags sites at Amber \u2265 %s%%, Red \u2265 %s%% of windows, with at least %s windows.\n",
+    nW,
+    if (lClass$meta$window_source == "argument") "report argument" else "default",
+    format(100 * lSiteRule$thresholds[1]), format(100 * lSiteRule$thresholds[2]), lSiteRule$accrual
+  ))
+}
+```
+
+## Study overview
+
+```{r overview-note, echo=FALSE, results='asis'}
+desc("Every measure for the whole study; the filters do not apply. Bars show the share of sites evaluated and of evaluable participants flagged Amber or Red. Click a measure to show only it in the report; click again to show all.")
+```
+
+```{r overview-controls, echo=FALSE}
+htmltools::div(
+  class = "rm-controls",
+  rep_Seg("Overview view", c(distribution = "% flagged", counts = "Counts"), "distribution", "data-rm-ov", strIdPrefix = "rm-ov-")
+)
+```
+
+<div id="rm-overview"></div>
+
+## Site/country distribution
+
+```{r dist-note, echo=FALSE, results='asis'}
+desc("One row per country or site and one column per measure; each bar is the share of evaluable participants (or, by country, of sites) flagged Amber or Red. Use **Flags** to keep only rows with any flag or a Red flag. Click a column header to sort; click a row to filter the report to that country or site.")
+```
+
+```{r dist-controls, echo=FALSE, eval=has_participants}
+dist_seg <- function(label, attr, values, selected) {
+  rep_Seg(label, values, selected, "data-rm-dist", strGroup = attr, strIdPrefix = "rm-dist-")
+}
+# rmFilters.js draws the table from the tiles, #rm-data and the settings.
+htmltools::tagList(
+  htmltools::div(
+    class = "rm-controls",
+    htmltools::tags$span(class = "rm-grp", "Rows", dist_seg("Rows", "level", c(country = "Country", site = "Site"), "country")),
+    htmltools::tags$span(
+      class = "rm-grp",
+      "Cells",
+      dist_seg("Cells", "unit", c(participants = "Participant flags", sites = "Site flags"), "participants")
+    ),
+    htmltools::tags$span(class = "rm-grp", "Flags", dist_seg("Flags", "flag", c(all = "All", any = "Any flag", red = "Red only"), "all")),
+    htmltools::tags$input(id = "rm-dist-search", type = "search", placeholder = "Search site or country", hidden = NA),
+    htmltools::tags$span(id = "rm-dist-count", class = "rm-unit")
+  ),
+  htmltools::div(id = "rm-dist", class = "rm-dist-wrap"),
+  htmltools::tags$p(id = "rm-dist-legend", class = "rm-legend"),
+  htmltools::div(id = "rm-dist-tip", class = "rm-tip", hidden = NA)
+)
+```
+
+## Participant listing
+
+```{r tiles-note, echo=FALSE, results='asis'}
+desc("One row per participant and one tile per measure, coloured by the participant's flag: N/D is repeating windows of all windows, NE is not evaluable. Click a participant or tile to filter the report; click again to clear.")
+```
+
+```{r tiles-controls, echo=FALSE, eval=has_participants}
+htmltools::div(
+  class = "rm-controls",
+  rep_Seg("Cell label", c(both = "Both", rate = "Rate", nd = "N/D"), "both", "data-rm-label", strIdPrefix = "rm-label-"),
+  htmltools::tags$label(
+    "Sort ",
+    htmltools::tags$select(
+      id = "rm-tiles-sort",
+      htmltools::tags$option(value = "worst", "Worst flag"),
+      htmltools::tags$option(value = "subjid", "Participant"),
+      htmltools::tags$option(value = "invid", "Site"),
+      lapply(seq_len(nrow(dfVitals)), function(i) {
+        htmltools::tags$option(value = paste0("rate:", dfVitals$vital[i]), paste(dfVitals$label[i], "rate"))
+      })
+    )
+  ),
+  htmltools::tags$input(id = "rm-tiles-search", type = "search", placeholder = "Search participant, site, country"),
+  if (bExport) htmltools::tags$button(id = "rm-tiles-csv", type = "button", class = "rm-btn", "Download CSV")
+)
+```
+
+```{r tiles, echo=FALSE, eval=has_participants}
+Widget_RepeatMeasurementsTiles(tiles, strId = "rm-tiles")
+```
+
+## Measure listing
+
+```{r vitals-note, echo=FALSE, results='asis'}
+desc(
+  "- One row per participant and measure, for every measure in the vital signs data. Height, BSA and paired BP have no KRI; the report flags them with the same rule.\n",
+  "- Hover a measure for its metric ID (* = no KRI). Hover a flag for the values measured and N of D windows repeating. Sort the Flag column to see the worst first.\n",
+  "- **Distinct** is the number of distinct values out of all non-missing values; few distinct values among many suggest copied measurements.\n",
+  "- **Measurements in order** are the values the windows run over. Dark red blocks are values in a repeating window, not a flag. Hover one for its position, visit and date. Tick **Show values** to show the numbers.\n",
+  "- Click a row to filter the report to that participant; click again to clear."
+)
+```
+
+```{r vitals-controls, echo=FALSE, eval=has_participants}
+htmltools::div(
+  id = "rm-vitals-view",
+  htmltools::div(
+    class = "rm-controls",
+    htmltools::tags$label(htmltools::tags$input(id = "rm-show-values", type = "checkbox"), " Show values"),
+    htmltools::tags$label(htmltools::tags$input(id = "rm-only-repeat", type = "checkbox", checked = NA), " Only rows with a repeating window")
+  ),
+  htmltools::div(id = "rm-vitals-wrap", listing)
+)
+```
+
+## Data table
+
+```{r data-note, echo=FALSE, results='asis'}
+desc(
+  "- **Wide** (default): one row per participant and visit record, one column per measure, as in the vital signs data. Hover a measure header for its name and KRI, and a site for its country; grey rows were not performed. Untick **Show visits with all measures missing** to hide records with no value in any shown measure. **Long**: one row per participant, measure and non-missing value, in measurement order (# is the position).\n",
+  "- Dark red values are in a repeating window, not a flag. Click a row to filter the report to that participant; click again to clear."
+)
+```
+
+```{r data-controls, echo=FALSE, eval=has_participants}
+htmltools::div(
+  class = "rm-controls",
+  rep_Seg("Table shape", c(wide = "Wide", long = "Long"), "wide", "data-rm-shape", strIdPrefix = "rm-shape-"),
+  htmltools::tags$label(
+    htmltools::tags$input(id = "rm-dt-only", type = "checkbox", checked = NA),
+    " ",
+    htmltools::tags$span(id = "rm-dt-only-label", "Only participants with a repeating window")
+  ),
+  htmltools::tags$label(
+    htmltools::tags$input(id = "rm-dt-missing", type = "checkbox", checked = NA),
+    " Show visits with all measures missing"
+  )
+)
+```
+
+```{r data-table, echo=FALSE, eval=has_participants}
+# rmFilters.js builds Long from the Wide rows the first time it is shown, so
+# the data are embedded once.
+htmltools::tagList(
+  htmltools::div(id = "rm-dt-wide-view", `data-rm-shape-view` = "wide", data_table),
+  htmltools::div(
+    id = "rm-dt-long-view",
+    `data-rm-shape-view` = "long",
+    style = "display:none",
+    htmltools::div(
+      id = "rm-dt-long",
+      htmltools::tags$table(class = "display compact hover nowrap", style = "width:100%")
+    )
+  )
+)
+```
+
+```{r rm-data, echo=FALSE, eval=has_participants}
+lData <- list(
+  sites = dfSites[c("vital", "invid", "flag", "source")],
+  siteRule = list(thresholds = lSiteRule$thresholds, accrual = jsonlite::unbox(lSiteRule$accrual)),
+  vitals = dfVitals,
+  participants = unique(lClass$participants[c("subjid", "invid", "country")]),
+  # Unboxed so the scalars arrive as JSON scalars, not length-1 arrays.
+  settings = list(
+    rule = jsonlite::unbox(lSettings$rule),
+    thresholds = lSettings$thresholds,
+    minWindows = jsonlite::unbox(lSettings$minWindows),
+    bp = jsonlite::unbox(lSettings$bp)
+  ),
+  export = jsonlite::unbox(bExport)
+)
+# 17 significant digits round-trip every double, so the browser compares
+# windows with exactly R's thresholds (15 can flip a flag at the boundary).
+htmltools::tags$script(
+  type = "application/json",
+  id = "rm-data",
+  htmltools::HTML(gsub(
+    "<", "\\\\u003c",
+    jsonlite::toJSON(lData, dataframe = "rows", na = "null", null = "null", digits = I(17))
+  ))
+)
+```
+
+```{js, file=system.file("report", "lib", "rmFilters.js", package = "gsm.kri"), echo=FALSE}
+```

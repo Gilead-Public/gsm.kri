@@ -1,5 +1,10 @@
 # gsm.kri (development version)
 
+- Add the Repeat Measurements report for the repeat-measure KRIs (`kri0020a`-`f`, `cou0020a`-`f`): a study overview, site/country distribution, participant and measure listings, and a data table, with filters and adjustable participant flag rules. `Report_RepeatMeasurements()` renders it, and its `strContext` argument adds a line above the title, such as a link back to an embedding page (#340, #342-#348).
+- Add the `report_repeatmeasurements` workflow module (#340).
+- `Detect_ConsecutiveRepeats()` and the Repeat Measurements report now share one windowing engine, so the report's participant counts are the KRI's by construction. Records with a missing subject are now dropped with a warning instead of failing with "arguments imply differing number of rows" (#340).
+- `Detect_ConsecutiveRepeats()` now reads a character (or factor) date column as ISO dates (`"YYYY-MM-DD"`) instead of sorting it as text, so `"2024-01-9"` comes before `"2024-01-10"`; a value that is not an ISO date is an error. `Date`, `POSIXct` and zero-padded ISO text dates give the same results as before. `strMeasureVal` must now be a single non-missing value (#340).
+
 # gsm.kri v1.8.0
 
 This minor release adds the IP Monitoring report and metrics (IP non-starters and premature treatment discontinuation) and the repeat-measure vital-sign KRIs.

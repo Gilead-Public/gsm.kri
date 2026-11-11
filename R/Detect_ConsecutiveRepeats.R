@@ -6,20 +6,25 @@
 #' Counts, per subject, the rolling windows of `nWindowLength` consecutive
 #' measurements in which every value is identical. Missing values are dropped
 #' before windows are formed. Records are ordered by `strDateCol` within
-#' subject, then by `strOrderCol` to break same-date ties.
+#' subject, then by `strOrderCol` to break same-date ties. Records with a
+#' missing subject are dropped with a warning.
 #'
 #' @param df `data.frame` One row per measurement record.
 #' @param strValueCol `character` Column holding the measurement value.
 #' @param strSubjectCol `character` Subject identifier column. Default
 #'   `"subjid"`.
-#' @param strDateCol `character` Date/ordering column. Default `"vs_dt"`.
+#' @param strDateCol `character` Date/ordering column. Default `"vs_dt"`. A
+#'   `Date` or `POSIXct` column is used as is. A character (or factor) column
+#'   must hold ISO dates (`"YYYY-MM-DD"`); it is converted to `Date` so that,
+#'   for example, `"2024-01-9"` sorts before `"2024-01-10"`. Any other value
+#'   is an error. Missing dates sort last within subject.
 #' @param strOrderCol `character` Optional column(s) used, in order, to break
 #'   ties on `strDateCol` (e.g. an intra-visit measurement time or `"visit"`).
 #'   Default `NULL`, in which case tied records keep their input order.
 #' @param strMeasureCol `character` Optional column identifying the measure,
 #'   for long-format data. When supplied, `df` is filtered to `strMeasureVal`.
-#' @param strMeasureVal `character` Value of `strMeasureCol` to keep. Required
-#'   when `strMeasureCol` is supplied.
+#' @param strMeasureVal `character` The single value of `strMeasureCol` to
+#'   keep. Required when `strMeasureCol` is supplied.
 #' @param nWindowLength `numeric` Window length; a whole number >= 2. Default
 #'   `3`.
 #'
@@ -47,6 +52,63 @@ Detect_ConsecutiveRepeats <- function(
   strMeasureVal = NULL,
   nWindowLength = 3
 ) {
+  dfMarked <- MarkConsecutiveRepeats(
+    df,
+    strValueCol,
+    strSubjectCol = strSubjectCol,
+    strDateCol = strDateCol,
+    strOrderCol = strOrderCol,
+    strMeasureCol = strMeasureCol,
+    strMeasureVal = strMeasureVal,
+    nWindowLength = nWindowLength
+  )
+
+  if (!is.null(strMeasureCol)) {
+    df <- df[df[[strMeasureCol]] %in% strMeasureVal, , drop = FALSE]
+  }
+  # Subjects whose values are all missing still get a 0/0 row.
+  vSubjects <- unique(df[[strSubjectCol]])
+  bMissing <- is.na(vSubjects)
+  if (any(bMissing)) {
+    nDropped <- sum(is.na(df[[strSubjectCol]]))
+    cli::cli_warn(
+      "Dropped {nDropped} record{?s} with a missing {.field {strSubjectCol}}."
+    )
+    vSubjects <- vSubjects[!bMissing]
+  }
+  SummarizeConsecutiveRepeats(dfMarked, vSubjects, strSubjectCol, nWindowLength)
+}
+
+#' Mark measurements inside consecutive repeating windows
+#'
+#' The windowing engine behind [Detect_ConsecutiveRepeats()] and
+#' [rep_Classify()]. Returns every non-missing measurement in evaluation order,
+#' marked when it sits inside a rolling window of `nWindowLength` identical
+#' consecutive values. Records with a missing value or subject are dropped.
+#'
+#' @inheritParams Detect_ConsecutiveRepeats
+#'
+#' @return `df` without rows whose value or subject is missing (filtered to
+#'   `strMeasureVal` when `strMeasureCol` is supplied), ordered by subject, then
+#'   `strDateCol`, then `strOrderCol`, with three columns added. Their `.rep_`
+#'   names keep them apart from input columns such as `seq`, which stay
+#'   untouched:
+#'   * `.rep_seq`: position of the measurement within its subject.
+#'   * `.rep_in_window`: `TRUE` when the measurement belongs to at least one
+#'     all-identical window.
+#'   * `.rep_window_start`: `TRUE` when the window starting at this measurement
+#'     is all-identical. Its per-subject sum is the repeat-window count.
+#' @noRd
+MarkConsecutiveRepeats <- function(
+  df,
+  strValueCol,
+  strSubjectCol = "subjid",
+  strDateCol = "vs_dt",
+  strOrderCol = NULL,
+  strMeasureCol = NULL,
+  strMeasureVal = NULL,
+  nWindowLength = 3
+) {
   if (!is.data.frame(df)) {
     cli::cli_abort("{.arg df} must be a data frame.")
   }
@@ -64,6 +126,11 @@ Detect_ConsecutiveRepeats <- function(
   if (!is.null(strMeasureCol) && is.null(strMeasureVal)) {
     cli::cli_abort(
       "{.arg strMeasureVal} is required when {.arg strMeasureCol} is supplied."
+    )
+  }
+  if (!is.null(strMeasureCol) && (length(strMeasureVal) != 1 || is.na(strMeasureVal))) {
+    cli::cli_abort(
+      "{.arg strMeasureVal} must be a single non-missing value, not {.val {strMeasureVal}}."
     )
   }
   # Validate each argument before c(), which would coerce numerics to strings
@@ -97,39 +164,103 @@ Detect_ConsecutiveRepeats <- function(
   if (length(strMissing)) {
     cli::cli_abort("Column{?s} not found in {.arg df}: {.val {strMissing}}.")
   }
+  # The marks and the engine's working columns use the .rep_ prefix, so an
+  # input column with it would be overwritten.
+  strReserved <- lCols[startsWith(lCols, ".rep_")]
+  if (length(strReserved)) {
+    cli::cli_abort("Column{?s} {.val {strReserved}} {?is/are} reserved for internal use.")
+  }
 
   if (!is.null(strMeasureCol)) {
     df <- df[df[[strMeasureCol]] %in% strMeasureVal, , drop = FALSE]
   }
-
-  # Subjects whose values are all missing still get a 0/0 row.
-  vSubjects <- unique(df[[strSubjectCol]])
-  df <- df[!is.na(df[[strValueCol]]), , drop = FALSE]
+  df <- df[!is.na(df[[strValueCol]]) & !is.na(df[[strSubjectCol]]), , drop = FALSE]
+  df[[strDateCol]] <- ParseDateColumn(df[[strDateCol]], strDateCol)
   # arrange() is stable and sorts in the C locale, so full ties keep input order.
   df <- dplyr::arrange(
     df,
     dplyr::pick(dplyr::all_of(c(strSubjectCol, strDateCol, strOrderCol)))
   )
 
-  lBySubject <- split(
-    df[[strValueCol]],
-    factor(df[[strSubjectCol]], levels = vSubjects)
-  )
-  nNumerator <- vapply(
-    lBySubject,
-    function(x) {
-      nRuns <- rle(x)$lengths
-      sum(pmax(0, nRuns - nWindowLength + 1))
-    },
-    numeric(1)
-  )
-  nDenominator <- pmax(0, lengths(lBySubject) - nWindowLength + 1)
+  n <- nrow(df)
+  if (n == 0) {
+    df[MarkColumns()] <- list(integer(0), logical(0), logical(0))
+    return(df)
+  }
+  # A window repeats when it lies inside a run of at least nWindowLength
+  # identical values within the subject.
+  df <- df %>%
+    dplyr::mutate(
+      .rep_seq = dplyr::row_number(),
+      .rep_run = dplyr::consecutive_id(.data[[strValueCol]]),
+      .by = dplyr::all_of(strSubjectCol)
+    ) %>%
+    dplyr::mutate(
+      .rep_in_window = dplyr::n() >= nWindowLength,
+      .rep_window_start = .data$.rep_in_window &
+        dplyr::row_number() <= dplyr::n() - nWindowLength + 1,
+      .by = dplyr::all_of(c(strSubjectCol, ".rep_run"))
+    ) %>%
+    dplyr::select(-".rep_run")
+  rownames(df) <- NULL
+  df
+}
 
-  dfOut <- data.frame(
-    SubjectID = vSubjects,
-    Numerator = unname(nNumerator),
-    Denominator = unname(as.numeric(nDenominator))
-  )
-  names(dfOut)[1] <- strSubjectCol
-  dfOut
+# Text dates sort as text ("2024-01-9" after "2024-01-10"), so a character
+# or factor date column must be ISO dates and is converted to Date. Other
+# types are returned unchanged.
+ParseDateColumn <- function(x, strDateCol) {
+  if (!is.character(x) && !is.factor(x)) {
+    return(x)
+  }
+  x <- trimws(as.character(x))
+  x[x %in% ""] <- NA
+  bISO <- grepl("^[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}$", x)
+  dOut <- as.Date(ifelse(bISO, x, NA_character_), format = "%Y-%m-%d")
+  bBad <- !is.na(x) & is.na(dOut)
+  if (any(bBad)) {
+    cli::cli_abort(c(
+      "{.field {strDateCol}} must be a Date, a POSIXct or ISO dates ({.val YYYY-MM-DD}).",
+      x = "{sum(bBad)} value{?s} can't be read as a date, e.g. {.val {utils::head(unique(x[bBad]), 3)}}."
+    ))
+  }
+  dOut
+}
+
+# Names of the marks MarkConsecutiveRepeats() adds: position, in a window and
+# window start.
+MarkColumns <- function() {
+  c(".rep_seq", ".rep_in_window", ".rep_window_start")
+}
+
+#' Summarize marked measurements per subject
+#'
+#' The `Numerator` / `Denominator` step shared by
+#' [Detect_ConsecutiveRepeats()] and [rep_Classify()].
+#'
+#' @param dfMarked `data.frame` Output of `MarkConsecutiveRepeats()`.
+#' @param vSubjects Unique, non-missing subjects to report, in output order.
+#'   A subject without marked rows gets 0/0.
+#' @param strSubjectCol `character` Subject identifier column.
+#' @param nWindowLength `numeric` Window length used for the marks.
+#'
+#' @return A `data.frame` with the subject column, `Numerator` and
+#'   `Denominator`, one row per element of `vSubjects`.
+#' @noRd
+SummarizeConsecutiveRepeats <- function(dfMarked, vSubjects, strSubjectCol, nWindowLength) {
+  dfCounts <- dfMarked %>%
+    dplyr::summarise(
+      Numerator = as.numeric(sum(.data$.rep_window_start)),
+      .rep_n = dplyr::n(),
+      .by = dplyr::all_of(strSubjectCol)
+    )
+  # Every subject in vSubjects gets a row, in that order; one without records
+  # has no windows.
+  stats::setNames(data.frame(vSubjects), strSubjectCol) %>%
+    dplyr::left_join(dfCounts, by = strSubjectCol) %>%
+    dplyr::mutate(
+      Numerator = dplyr::coalesce(.data$Numerator, 0),
+      Denominator = as.numeric(pmax(0, dplyr::coalesce(.data$.rep_n, 0L) - nWindowLength + 1))
+    ) %>%
+    dplyr::select(-".rep_n")
 }

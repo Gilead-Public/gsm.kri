@@ -229,3 +229,344 @@ test_that("fixture date tie is resolved by visit, not input order (#307)", {
     )
   }
 })
+
+# MarkConsecutiveRepeats(): the shared windowing engine (#342)
+
+test_that("worked examples mark every value inside a repeat window (#342)", {
+  df <- rbind(
+    make_vs(c(10, 10, 5, 3, 10), "A"),
+    make_vs(c(10, 10, 10, 10, 10), "B"),
+    make_vs(c(10, 10, 10, 1, 5, 6), "C")
+  )
+  res <- MarkConsecutiveRepeats(df, "weight")
+  expect_equal(res$subjid, rep(c("A", "B", "C"), c(5, 5, 6)))
+  expect_equal(res$.rep_seq, c(1:5, 1:5, 1:6))
+  expect_equal(
+    res$.rep_in_window,
+    c(rep(FALSE, 5), rep(TRUE, 5), TRUE, TRUE, TRUE, FALSE, FALSE, FALSE)
+  )
+  expect_equal(
+    res$.rep_window_start,
+    c(rep(FALSE, 5), TRUE, TRUE, TRUE, FALSE, FALSE, TRUE, rep(FALSE, 5))
+  )
+})
+
+test_that("rows come back in evaluation order with input columns kept (#342)", {
+  df <- data.frame(
+    subjid = c("A", "A", "A", "A"),
+    vs_dt = as.Date("2024-01-01") + c(2, 0, 1, 1),
+    visit = c("V3", "V1", "V2b", "V2a"),
+    weight = c(5, 5, 5, 6),
+    extra = c("c", "a", "d", "b")
+  )
+  res <- MarkConsecutiveRepeats(df, "weight", strOrderCol = "visit")
+  expect_equal(res$visit, c("V1", "V2a", "V2b", "V3"))
+  expect_equal(res$extra, c("a", "b", "d", "c"))
+  expect_equal(res$.rep_in_window, c(FALSE, FALSE, FALSE, FALSE))
+})
+
+test_that("missing values are dropped before windows are formed (#342)", {
+  res <- MarkConsecutiveRepeats(make_vs(c(10, NA, 10, 10)), "weight")
+  expect_equal(nrow(res), 3)
+  expect_equal(res$.rep_seq, 1:3)
+  expect_true(all(res$.rep_in_window))
+  expect_equal(res$.rep_window_start, c(TRUE, FALSE, FALSE))
+})
+
+test_that("a single record or fewer than W records is never marked (#342)", {
+  expect_false(MarkConsecutiveRepeats(make_vs(7), "weight")$.rep_in_window)
+  res <- MarkConsecutiveRepeats(make_vs(c(7, 7)), "weight")
+  expect_equal(res$.rep_in_window, c(FALSE, FALSE))
+})
+
+test_that("window length 2 and 4 change the marking (#342)", {
+  df <- make_vs(c(1, 1, 2, 3, 3, 3))
+  res2 <- MarkConsecutiveRepeats(df, "weight", nWindowLength = 2)
+  expect_equal(res2$.rep_in_window, c(TRUE, TRUE, FALSE, TRUE, TRUE, TRUE))
+  expect_equal(res2$.rep_window_start, c(TRUE, FALSE, FALSE, TRUE, TRUE, FALSE))
+  res4 <- MarkConsecutiveRepeats(df, "weight", nWindowLength = 4)
+  expect_false(any(res4$.rep_in_window))
+})
+
+test_that("overlapping windows each start once (#342)", {
+  res <- MarkConsecutiveRepeats(make_vs(rep(4, 6)), "weight")
+  expect_equal(res$.rep_window_start, c(TRUE, TRUE, TRUE, TRUE, FALSE, FALSE))
+  expect_true(all(res$.rep_in_window))
+})
+
+test_that("a run never continues across subjects (#342)", {
+  df <- rbind(make_vs(c(1, 1), "A"), make_vs(c(1, 1), "B"))
+  res <- MarkConsecutiveRepeats(df, "weight")
+  expect_false(any(res$.rep_in_window))
+})
+
+test_that("arguments are validated by the engine (#342)", {
+  df <- make_vs(c(1, 1, 1))
+  expect_error(MarkConsecutiveRepeats(df, "weight", nWindowLength = 1), "nWindowLength")
+  expect_error(MarkConsecutiveRepeats(df, "pulse"), "not found")
+  expect_error(MarkConsecutiveRepeats(list(), "weight"), "data frame")
+})
+
+test_that("empty input returns an empty frame with the marking columns (#342)", {
+  res <- MarkConsecutiveRepeats(make_vs(1)[0, ], "weight")
+  expect_equal(nrow(res), 0)
+  expect_true(all(c(".rep_seq", ".rep_in_window", ".rep_window_start") %in% names(res)))
+})
+
+test_that("Detect_ConsecutiveRepeats() counts equal the marked window starts for all six vitals (#342)", {
+  dfVS <- mapped_data$Mapped_VS
+  expect_gt(nrow(dfVS), 0)
+  for (strCol in c("weight", "pulse", "sysbp", "diabp", "resp", "temp")) {
+    dfDetect <- Detect_ConsecutiveRepeats(dfVS, strCol, strOrderCol = "visit")
+    dfMark <- MarkConsecutiveRepeats(dfVS, strCol, strOrderCol = "visit")
+    vN <- tapply(dfMark$.rep_window_start, factor(dfMark$subjid, dfDetect$subjid), sum)
+    vN[is.na(vN)] <- 0
+    expect_equal(unname(as.numeric(vN)), dfDetect$Numerator, label = strCol)
+    vMeasured <- table(factor(dfMark$subjid, dfDetect$subjid))
+    expect_equal(
+      pmax(0, as.numeric(vMeasured) - 2),
+      dfDetect$Denominator,
+      label = strCol
+    )
+    expect_gt(sum(dfMark$.rep_in_window), 0)
+  }
+
+  # Known answers: the marked window starts reproduce the hand-derived
+  # fixture, not only Detect_ConsecutiveRepeats().
+  dfVS <- read_fixture("vs.csv")
+  dfExpected <- read_fixture("vs_expected_subject.csv")
+  for (strMeasure in unique(dfExpected$measure)) {
+    dfExp <- dfExpected[dfExpected$measure == strMeasure, ]
+    dfMark <- MarkConsecutiveRepeats(dfVS, strMeasure)
+    vN <- tapply(dfMark$.rep_window_start, factor(dfMark$subjid, dfExp$subjid), sum)
+    vN[is.na(vN)] <- 0
+    expect_equal(unname(as.numeric(vN)), dfExp$Numerator, label = strMeasure)
+  }
+})
+
+test_that("measure filtering applies to long data (#342)", {
+  df <- data.frame(
+    subjid = "A",
+    vs_dt = as.Date("2024-01-01") + rep(0:2, 2),
+    test = rep(c("WT", "HR"), each = 3),
+    value = c(1, 1, 1, 60, 70, 80)
+  )
+  res <- MarkConsecutiveRepeats(
+    df, "value",
+    strMeasureCol = "test", strMeasureVal = "WT"
+  )
+  expect_equal(res$test, rep("WT", 3))
+  expect_true(all(res$.rep_in_window))
+})
+
+test_that("records with a missing subject are dropped with a warning, not a crash", {
+  df <- rbind(
+    make_vs(c(1, 1, 1), "A"),
+    make_vs(c(2, 2, 2, 2), NA),
+    make_vs(c(1, 2, 3), "B")
+  )
+  expect_warning(
+    res <- Detect_ConsecutiveRepeats(df, "weight"),
+    "Dropped 4 records with a missing"
+  )
+  expect_equal(res$subjid, c("A", "B"))
+  expect_equal(res$Numerator, c(1, 0))
+  expect_equal(res$Denominator, c(1, 1))
+  expect_false(anyNA(MarkConsecutiveRepeats(df, "weight")$subjid))
+})
+
+test_that("empty input returns an empty summary with the expected columns", {
+  res <- Detect_ConsecutiveRepeats(make_vs(1)[0, ], "weight")
+  expect_equal(names(res), c("subjid", "Numerator", "Denominator"))
+  expect_equal(nrow(res), 0)
+})
+
+test_that("columns named like the engine's marks work as input columns (#342)", {
+  # v1.8.0 accepted these names; the marks use .rep_ names so they still work.
+  df <- make_vs(c(5, 10, 10, 10, 10))
+  df$vs_dt <- as.Date("2024-01-01") + c(0, 0, 1, 2, 3)
+  df$visit <- c(2, 1, 3, 4, 5)
+  dfExpected <- Detect_ConsecutiveRepeats(df, "weight", strOrderCol = "visit")
+  expect_equal(dfExpected$Numerator, 1)
+  for (strCol in c("seq", "in_repeat_window", "window_start")) {
+    dfRenamed <- df
+    dfRenamed[[strCol]] <- dfRenamed$visit
+    dfRenamed$visit <- NULL
+    expect_identical(
+      Detect_ConsecutiveRepeats(dfRenamed, "weight", strOrderCol = strCol),
+      dfExpected,
+      label = strCol
+    )
+    expect_identical(
+      Detect_ConsecutiveRepeats(dfRenamed, "weight", strOrderCol = strCol),
+      Detect_ConsecutiveRepeats_v1.8.0(dfRenamed, "weight", strOrderCol = strCol),
+      label = strCol
+    )
+  }
+
+  # Value, subject and date columns named window_start, seq and
+  # in_repeat_window.
+  dfNamed <- data.frame(
+    seq = make_vs(1)$subjid,
+    in_repeat_window = df$vs_dt,
+    visit = df$visit,
+    window_start = df$weight
+  )
+  expect_identical(
+    Detect_ConsecutiveRepeats(
+      dfNamed, "window_start",
+      strSubjectCol = "seq", strDateCol = "in_repeat_window", strOrderCol = "visit"
+    ),
+    stats::setNames(dfExpected, c("seq", "Numerator", "Denominator"))
+  )
+
+  # Input columns with those names are kept as they are by the engine.
+  df$seq <- 9
+  df$window_start <- "x"
+  res <- MarkConsecutiveRepeats(df, "weight", strOrderCol = "visit")
+  expect_equal(res$seq, rep(9, 5))
+  expect_equal(res$window_start, rep("x", 5))
+  expect_equal(res$.rep_seq, 1:5)
+  expect_equal(res$.rep_window_start, c(FALSE, FALSE, TRUE, FALSE, FALSE))
+})
+
+test_that("the engine's internal .rep_ column names are rejected as input columns (#342)", {
+  df <- make_vs(c(1, 1, 1))
+  df$.rep_seq <- 1:3
+  expect_error(
+    Detect_ConsecutiveRepeats(df, "weight", strOrderCol = ".rep_seq"),
+    "reserved for internal use"
+  )
+  # Unused, it is overwritten.
+  expect_equal(Detect_ConsecutiveRepeats(df, "weight")$Numerator, 1)
+})
+
+test_that("results are identical to the v1.8.0 implementation on the six vitals (#342)", {
+  dfVS <- mapped_data$Mapped_VS
+  dfVS <- dfVS[!is.na(dfVS$subjid), ]
+  for (strCol in c("weight", "pulse", "sysbp", "diabp", "resp", "temp")) {
+    for (nW in 2:4) {
+      expect_identical(
+        Detect_ConsecutiveRepeats(dfVS, strCol, strOrderCol = "visit", nWindowLength = nW),
+        Detect_ConsecutiveRepeats_v1.8.0(dfVS, strCol, strOrderCol = "visit", nWindowLength = nW),
+        label = paste(strCol, nW)
+      )
+    }
+  }
+})
+
+test_that("results are identical to the v1.8.0 implementation on random data (#342)", {
+  withr::local_seed(20240307)
+  for (i in seq_len(300)) {
+    df <- detect_random_vs(
+      nSubjects = sample(0:8, 1),
+      nValues = sample(1:4, 1),
+      pNA = sample(c(0, 0.15, 0.5), 1)
+    )
+    if (i %% 3 == 0) {
+      # Paired-BP-like text values.
+      df$value <- ifelse(is.na(df$value), NA_character_, paste0(df$value, "/80"))
+    }
+    nW <- sample(2:5, 1)
+    strOrderCol <- if (i %% 2 == 0) "visit"
+    label <- paste0("run ", i, ", W = ", nW)
+    expect_identical(
+      Detect_ConsecutiveRepeats(df, "value", strOrderCol = strOrderCol, nWindowLength = nW),
+      Detect_ConsecutiveRepeats_v1.8.0(df, "value", strOrderCol = strOrderCol, nWindowLength = nW),
+      label = label
+    )
+    expect_identical(
+      Detect_ConsecutiveRepeats(
+        df, "value",
+        strMeasureCol = "measure", strMeasureVal = "HR", nWindowLength = nW
+      ),
+      Detect_ConsecutiveRepeats_v1.8.0(
+        df, "value",
+        strMeasureCol = "measure", strMeasureVal = "HR", nWindowLength = nW
+      ),
+      label = paste(label, "(long)")
+    )
+  }
+})
+
+test_that("character dates are read as ISO dates, not sorted as text", {
+  # As text "2024-01-10" sorts before "2024-01-8", giving 7, 7, 7, 5 (N = 1).
+  df <- data.frame(
+    subjid = "A",
+    vs_dt = c("2024-01-8", "2024-01-9", "2024-01-10", "2024-01-11"),
+    weight = c(7, 5, 7, 7)
+  )
+  res <- Detect_ConsecutiveRepeats(df, "weight")
+  expect_equal(c(res$Numerator, res$Denominator), c(0, 2))
+  expect_identical(
+    MarkConsecutiveRepeats(df, "weight")$vs_dt,
+    as.Date("2024-01-08") + 0:3
+  )
+
+  dfDate <- transform(df, vs_dt = as.Date(vs_dt))
+  expect_identical(Detect_ConsecutiveRepeats(dfDate, "weight"), res)
+  expect_identical(Detect_ConsecutiveRepeats(transform(df, vs_dt = factor(vs_dt)), "weight"), res)
+  expect_identical(Detect_ConsecutiveRepeats(transform(df, vs_dt = as.POSIXct(dfDate$vs_dt)), "weight"), res)
+  # Blank and missing text dates are missing dates, sorted last.
+  df$vs_dt[2] <- " "
+  expect_equal(Detect_ConsecutiveRepeats(df, "weight")$Numerator, 1)
+})
+
+test_that("character dates that are not ISO dates are an error", {
+  df <- make_vs(c(1, 1, 1))
+  for (strBad in c("2024-02-30", "01/02/2024", "2024-01-02 10:00", "soon")) {
+    df$vs_dt <- c("2024-01-01", strBad, "2024-01-03")
+    expect_error(
+      Detect_ConsecutiveRepeats(df, "weight"),
+      "1 value can't be read as a date",
+      label = strBad
+    )
+  }
+  df$vs_dt <- c("x", "y", "2024-01-03")
+  expect_error(MarkConsecutiveRepeats(df, "weight"), "must be a Date, a POSIXct or ISO dates")
+})
+
+test_that("zero-padded ISO text dates match Date input and v1.8.0 on random data", {
+  withr::local_seed(20240308)
+  for (i in seq_len(100)) {
+    df <- detect_random_vs(nSubjects = sample(1:6, 1), nValues = sample(1:3, 1))
+    dfText <- transform(df, vs_dt = format(vs_dt))
+    nW <- sample(2:4, 1)
+    res <- Detect_ConsecutiveRepeats(dfText, "value", strOrderCol = "visit", nWindowLength = nW)
+    expect_identical(res, Detect_ConsecutiveRepeats(df, "value", strOrderCol = "visit", nWindowLength = nW))
+    expect_identical(
+      res,
+      Detect_ConsecutiveRepeats_v1.8.0(dfText, "value", strOrderCol = "visit", nWindowLength = nW)
+    )
+  }
+})
+
+test_that("missing dates sort last and still join windows, as in v1.8.0", {
+  df <- data.frame(
+    subjid = "A",
+    vs_dt = as.Date(c("2024-01-01", NA, "2024-01-02", "2024-01-03")),
+    weight = c(5, 7, 7, 7)
+  )
+  # Ordered 5, 7, 7, 7(NA date): the last window repeats.
+  res <- Detect_ConsecutiveRepeats(df, "weight")
+  expect_equal(c(res$Numerator, res$Denominator), c(1, 2))
+  expect_identical(res, Detect_ConsecutiveRepeats_v1.8.0(df, "weight"))
+})
+
+test_that("strMeasureVal must be one value, and subjects without that measure are absent", {
+  df <- data.frame(
+    subjid = c("A", "A", "A", "B", "B", "B"),
+    vs_dt = as.Date("2024-01-01") + c(0:2, 0:2),
+    measure = c("HR", "HR", "HR", "WT", "WT", "WT"),
+    value = c(60, 60, 60, 70, 70, 70)
+  )
+  res <- Detect_ConsecutiveRepeats(df, "value", strMeasureCol = "measure", strMeasureVal = "HR")
+  expect_equal(res$subjid, "A")
+  expect_equal(res$Numerator, 1)
+  for (val in list(c("HR", "WT"), character(0), NA_character_)) {
+    expect_error(
+      Detect_ConsecutiveRepeats(df, "value", strMeasureCol = "measure", strMeasureVal = val),
+      "must be a single non-missing value"
+    )
+  }
+})

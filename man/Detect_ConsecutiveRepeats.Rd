@@ -23,7 +23,11 @@ Detect_ConsecutiveRepeats(
 \item{strSubjectCol}{`character` Subject identifier column. Default
 `"subjid"`.}
 
-\item{strDateCol}{`character` Date/ordering column. Default `"vs_dt"`.}
+\item{strDateCol}{`character` Date/ordering column. Default `"vs_dt"`. A
+`Date` or `POSIXct` column is used as is. A character (or factor) column
+must hold ISO dates (`"YYYY-MM-DD"`); it is converted to `Date` so that,
+for example, `"2024-01-9"` sorts before `"2024-01-10"`. Any other value
+is an error. Missing dates sort last within subject.}
 
 \item{strOrderCol}{`character` Optional column(s) used, in order, to break
 ties on `strDateCol` (e.g. an intra-visit measurement time or `"visit"`).
@@ -32,8 +36,8 @@ Default `NULL`, in which case tied records keep their input order.}
 \item{strMeasureCol}{`character` Optional column identifying the measure,
 for long-format data. When supplied, `df` is filtered to `strMeasureVal`.}
 
-\item{strMeasureVal}{`character` Value of `strMeasureCol` to keep. Required
-when `strMeasureCol` is supplied.}
+\item{strMeasureVal}{`character` The single value of `strMeasureCol` to
+keep. Required when `strMeasureCol` is supplied.}
 
 \item{nWindowLength}{`numeric` Window length; a whole number >= 2. Default
 `3`.}
@@ -51,7 +55,8 @@ A `data.frame` with one row per subject in `df` (after measure
 Counts, per subject, the rolling windows of `nWindowLength` consecutive
 measurements in which every value is identical. Missing values are dropped
 before windows are formed. Records are ordered by `strDateCol` within
-subject, then by `strOrderCol` to break same-date ties.
+subject, then by `strOrderCol` to break same-date ties. Records with a
+missing subject are dropped with a warning.
 }
 \examples{
 df <- data.frame(
