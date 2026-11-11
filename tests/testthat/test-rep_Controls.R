@@ -38,6 +38,19 @@ test_that("rep_Toolbar lists every measure and starts the settings from lSetting
   expect_match(html, 'id="rm-settings"', fixed = TRUE)
 })
 
+test_that("the Measures menu shows a KRI badge only for KRIs in the reporting results (#349)", {
+  dfVitals <- rep_Quietly(rep_Classify(rep_Fixture()))$vitals
+  nBadges <- function(df) {
+    html <- as.character(rep_Toolbar(df, list()))
+    lengths(regmatches(html, gregexpr('class="rm-kri"', html, fixed = TRUE)))
+  }
+  expect_equal(nBadges(dfVitals), sum(!is.na(dfVitals$metric)))
+  dfVitals$kri <- dfVitals$vital %in% "weight"
+  html <- as.character(rep_Toolbar(dfVitals, list()))
+  expect_equal(nBadges(dfVitals), 1)
+  expect_match(html, 'title="kri0020a">KRI', fixed = TRUE)
+})
+
 test_that("rep_Header omits the Study pill without a study ID", {
   lClass <- rep_Quietly(rep_Classify(rep_Fixture()))
   for (strStudy in list("", NA_character_, NULL, character(0))) {

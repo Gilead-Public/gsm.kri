@@ -104,7 +104,10 @@ rep_Seg <- function(strLabel, vValues, strSelected, strAttr, strGroup = NULL, st
 #' participant filter chips, Reset filters, and the Settings popover, which
 #' `rmFilters.js` fills from the settings in `#rm-data`.
 #'
-#' @param dfVitals `data.frame` The measures, `vitals` of [rep_Classify()].
+#' @param dfVitals `data.frame` The measures, `vitals` of [rep_Classify()]. An
+#'   optional logical `kri` column limits the KRI badge to measures whose KRI is
+#'   in the study's reporting results; without it, every measure with a
+#'   `metric` gets the badge.
 #' @param lSettings `list` The initial settings: `rule`, `thresholds`,
 #'   `minWindows` and `bp`.
 #'
@@ -235,8 +238,10 @@ rep_Chip <- function(key, label) {
 
 # rmFilters.js hides the BP options the Blood pressure setting does not show.
 rep_MeasureSelect <- function(dfVitals) {
-  kri_badge <- function(strMetric) {
-    if (!is.na(strMetric)) htmltools::tags$span(class = "rm-kri", title = strMetric, "KRI")
+  # Without a `kri` column, every measure with a metric ID gets the badge.
+  bKRI <- if ("kri" %in% names(dfVitals)) dfVitals$kri %in% TRUE else !is.na(dfVitals$metric)
+  kri_badge <- function(i) {
+    if (bKRI[i]) htmltools::tags$span(class = "rm-kri", title = dfVitals$metric[i], "KRI")
   }
   htmltools::tags$span(
     class = "rm-ms",
@@ -266,7 +271,7 @@ rep_MeasureSelect <- function(dfVitals) {
           `data-rm-vital-opt` = dfVitals$vital[i],
           htmltools::tags$input(type = "checkbox", value = dfVitals$vital[i], `data-rm-vital-cb` = NA, checked = NA),
           " ", dfVitals$label[i], " ",
-          kri_badge(dfVitals$metric[i])
+          kri_badge(i)
         )
       })
     )

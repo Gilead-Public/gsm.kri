@@ -95,6 +95,12 @@
 
   // Measures the BP view shows, in report order: the Measures options and the
   // Study overview rows.
+  function vitalOf(id) {
+    return rmData().vitals.filter(function (v) {
+      return v.vital === id;
+    })[0];
+  }
+
   function bpVitals() {
     return rmData().vitals.filter(function (v) {
       return bpShown(v.vital);
@@ -326,9 +332,14 @@
     });
   }
 
+  // Only a measure whose KRI is in the study's reporting results gets the badge.
+  function kriBadge(v) {
+    return v && v.kri ? '<span class="rm-kri" title="' + esc(v.metric) + '">KRI</span>' : '';
+  }
+
   function measureCell(v) {
     return '<td class="rm-l">' + esc(v.label) +
-      (v.metric ? '<span class="rm-kri" title="' + esc(v.metric) + '">KRI</span>' : '') + '</td>';
+      kriBadge(v) + '</td>';
   }
 
   // A 100% stacked bar of not flagged / Amber / Red; labels only where they fit.
@@ -704,7 +715,7 @@
       var on = state.distSort === v.vital;
       h1 += '<th class="rm-grp rm-sep" data-rm-dist-sort="' + esc(v.vital) + '" title="' + (unitSites ? 'Site flags' : 'Participant flags') + '. Sort by % ' + who + ' flagged"' +
         (on ? ' aria-sort="' + (state.distDir < 0 ? 'descending' : 'ascending') + '"' : '') + '>' + esc(v.label) +
-        (v.metric ? '<span class="rm-kri" title="' + esc(v.metric) + '">KRI</span>' : '') +
+        kriBadge(v) +
         (on ? '<span class="rm-arr">' + (state.distDir < 0 ? '\u25bc' : '\u25b2') + '</span>' : '') + '</th>';
     });
     var body = '<tr class="rm-study" data-rm-dist-study=""><td class="rm-l rm-stick">Study</td>' + (isSite ? '<td class="rm-l rm-stick2"></td>' : '') + counts(groups.study);
@@ -1002,7 +1013,7 @@
           title: 'Measure',
           render: function (d, type, row) {
             if (type !== 'display') return d;
-            return esc(d) + (row[4] ? '<span class="rm-kri" title="' + esc(row[4]) + '">KRI</span>' : '');
+            return esc(d) + kriBadge(vitalOf(row[10]));
           }
         },
         { title: 'Metric', visible: false },

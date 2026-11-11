@@ -181,6 +181,12 @@ test.describe('Repeat Measurements report', () => {
     // Weight: KRI site flags S1 Red, S2 Green, S3 Amber (filled); A Amber.
     expect([w.kri, w.sites, w.siteSource, w.siteFilled, w.siteFlags]).toEqual(['kri0020a', '3 / 3', 'KRI', 2, ['1', '1']]);
     expect([w.participants, w.participantEmpty, w.participantFlags]).toEqual(['3 / 5', 2, ['1', '0']]);
+    // A KRI badge needs the KRI in the reporting results: RM.html has
+    // kri0020a and kri0020b only (#349).
+    expect(rows.map((r) => r.kri)).toEqual(['kri0020a', 'kri0020b', null, null, null, null, null]);
+    expect(rows.map((r) => r.siteSource)).toEqual(['KRI', 'KRI', 'report', 'report', 'report', 'report', 'report']);
+    await expect(page.locator('#rm-vital-menu .rm-kri')).toHaveCount(2);
+    await expect(page.locator('#rm-dist thead .rm-kri')).toHaveCount(2);
     const h = rows[6];
     // Height has no KRI: report-calculated site flags (empty), none above accrual.
     expect([h.kri, h.sites, h.siteSource, h.siteFilled]).toEqual([null, '0 / 3', 'report', 0]);

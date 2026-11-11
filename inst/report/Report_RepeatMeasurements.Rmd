@@ -70,6 +70,9 @@ lSettings <- list(
 )
 in_cmp <- lClass$meta$window_source == "metrics"
 dfSites <- rep_SiteFlagRows(lClass, dfResults, dfMetrics)
+# The KRI badge marks a measure whose KRI has site results in this study's
+# reporting data, the same test that makes its site flags KRI flags.
+dfVitals$kri <- dfVitals$vital %in% dfSites$vital[dfSites$source == "KRI"]
 lSiteRule <- rep_SiteRule(dfMetrics)
 
 tiles <- rep_ParticipantTiles(lClass)
@@ -275,7 +278,7 @@ htmltools::tagList(
 lData <- list(
   sites = dfSites[c("vital", "invid", "flag", "source")],
   siteRule = list(thresholds = lSiteRule$thresholds, accrual = jsonlite::unbox(lSiteRule$accrual)),
-  vitals = lClass$vitals,
+  vitals = dfVitals,
   participants = unique(lClass$participants[c("subjid", "invid", "country")]),
   # Unboxed so the scalars arrive as JSON scalars, not length-1 arrays.
   settings = list(

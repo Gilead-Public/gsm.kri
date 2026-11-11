@@ -7,7 +7,10 @@
 rep_Toolbar(dfVitals, lSettings)
 }
 \arguments{
-\item{dfVitals}{`data.frame` The measures, `vitals` of [rep_Classify()].}
+\item{dfVitals}{`data.frame` The measures, `vitals` of [rep_Classify()]. An
+optional logical `kri` column limits the KRI badge to measures whose KRI is
+in the study's reporting results; without it, every measure with a
+`metric` gets the badge.}
 
 \item{lSettings}{`list` The initial settings: `rule`, `thresholds`,
 `minWindows` and `bp`.}
