@@ -174,6 +174,31 @@ test_that("site report demo uses the bundled snapshot-policy analysis (#280)", {
   expect_equal(example$action_weighted_score[names(recomputed$Analysis_Summary)], recomputed$Analysis_Summary)
 })
 
+test_that("child report templates default optional comparison labels (#280)", {
+  script <- tempfile(fileext = ".R")
+  on.exit(unlink(script), add = TRUE)
+  knitr::purl(system.file("report", "Report_KRI.Rmd", package = "gsm.kri"),
+    output = script, quiet = TRUE)
+  expressions <- parse(script)
+  overview <- Filter(function(expression) {
+    is.call(expression) && identical(expression[[1L]], as.name("<-")) &&
+      identical(expression[[2L]], as.name("GroupOverViz"))
+  }, as.list(expressions))[[1L]]
+  child <- new.env(parent = baseenv())
+  child$params <- list()
+  child$dfMetrics <- data.frame()
+  child$dfResults_current <- data.frame()
+  child$setup <- list(GroupLevel = "Country")
+  child$Widget_GroupOverview <- function(...) list(...)
+  eval(overview, child)
+  expect_equal(child$GroupOverViz$strComparisonRiskLabel, "Adjusted Risk Score")
+  expect_null(child$GroupOverViz$strComparisonRiskMetric)
+  expect_null(child$GroupOverViz$dfComparisonRiskDetail)
+  child$params$strComparisonRiskLabel <- "Custom comparison"
+  eval(overview, child)
+  expect_equal(child$GroupOverViz$strComparisonRiskLabel, "Custom comparison")
+})
+
 test_that("Report_KRI renders without an action-weighted score (#280)", {
   skip_if_not(rmarkdown::pandoc_available())
 

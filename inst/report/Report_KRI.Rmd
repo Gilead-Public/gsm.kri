@@ -88,7 +88,11 @@ GroupOverViz <- Widget_GroupOverview(
     NULL
   ),
   strComparisonRiskMetric = params$strComparisonRiskMetric,
-  strComparisonRiskLabel = params$strComparisonRiskLabel,
+  strComparisonRiskLabel = if (is.null(params$strComparisonRiskLabel)) {
+    "Adjusted Risk Score"
+  } else {
+    params$strComparisonRiskLabel
+  },
   dfComparisonRiskDetail = params$dfRiskScoreDetail,
   dfResultsHistory = params$dfResults
 )
