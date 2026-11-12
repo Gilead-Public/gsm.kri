@@ -156,22 +156,18 @@ test_that("site report demo uses the bundled snapshot-policy analysis (#280)", {
   example <- new.env(parent = asNamespace("gsm.kri"))
   expect_warning(sys.source(script, envir = example), "Rows with NA values in 'Weight' or 'WeightMax'")
   expect_identical(example$demo_action_log, gsm.core::reportingActionLog)
-  expect_identical(example$demo_excluded_signals, gsm.core::reportingActionLogExcludedSignals)
   detail <- example$action_score_detail
   expect_equal(nrow(detail), nrow(example$current_kri_results))
   proxy <- detail$ActionDateIsProxy %in% TRUE
   expect_true(any(proxy))
   expect_true(all(grepl("proxy", detail$ActionedDateSource[proxy])))
   expect_true(any(detail$SnapshotDecisionExcluded))
-  expect_true(any(detail$SnapshotQuarantineBlocked))
-  expect_true(all(detail$GroupID[detail$SnapshotQuarantineBlocked] %in% example$demo_excluded_signals$GroupID))
-  expect_false(any(detail$SnapshotDecisionExcluded & detail$SnapshotQuarantineBlocked))
   expect_true(all(detail$EffectiveWeight[detail$SnapshotDecisionExcluded] == 0))
   green <- detail[!is.na(detail$Flag) & detail$Flag == 0 & proxy, ]
   expect_gt(nrow(green), 0L)
   expect_true(all(green$ActionState == "Closed Action"))
   expect_warning(recomputed <- Analyze_ActionRiskScore(example$current_kri_results, example$weights,
-    example$demo_action_log, example$demo_excluded_signals, bUseSnapshotDate = TRUE,
+    example$demo_action_log, bUseSnapshotDate = TRUE,
     bScoreSnapshotNoAction = TRUE, bActionHistoryComplete = FALSE, strActionPolicy = "disposition"),
     "Rows with NA values in 'Weight' or 'WeightMax'")
   expect_equal(detail, recomputed$Analysis_ActionRiskScoreDetail)

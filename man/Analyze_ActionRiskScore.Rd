@@ -8,7 +8,6 @@ Analyze_ActionRiskScore(
   dfResults,
   dfWeights,
   dfActionLog,
-  dfExcludedSignals = NULL,
   bUseSnapshotDate = FALSE,
   intActionWindowDays = 90L,
   strActionPolicy = "disposition",
@@ -34,10 +33,6 @@ each group and metric the latest signal snapshot on or before
 `dActionSnapshotDate` is used within the selected frozen extraction.
 Multiple actions and signals at that snapshot are reduced using the
 largest configured factor. Identifiers must distinguish those rows.}
-
-\item{dfExcludedSignals}{Optional source quarantine audit. Known site/KRI
-records block that pair, missing metric IDs block the site, and unknown
-sites block the affected study. NULL means no records were quarantined.}
 
 \item{bUseSnapshotDate}{Use labelled work-item snapshot date proxies and
 recent, unambiguous No Action dispositions. Default FALSE. This does not

@@ -41,16 +41,16 @@ test_that("action analysis retains proxies when snapshot scoring is disabled (#2
   expect_true(all(output$Analysis_ActionRiskScoreDetail$ActionDateIsProxy))
 })
 
-test_that("action analysis preserves scoped quarantine and the denominator (#280)", {
+test_that("action analysis scores valid reviews without another input (#280)", {
   fixture <- action_analysis_fixture()
   fixture$dfActionLog$State <- "No Action"
-  fixture$dfExcludedSignals <- data.frame(StudyID = "STUDY", GroupLevel = "Site", GroupID = "1002", MetricID = NA_character_)
-  output <- do.call(Analyze_ActionRiskScore, fixture)
-  expect_equal(output$Analysis_Summary$Score, c(0, 100))
+  expect_identical(names(formals(Analyze_ActionRiskScore))[[4L]], "bUseSnapshotDate")
+  output <- Analyze_ActionRiskScore(
+    fixture$dfResults, fixture$dfWeights, fixture$dfActionLog, TRUE
+  )
+  expect_equal(output$Analysis_Summary$Score, c(0, 0))
   expect_equal(output$Analysis_Summary$Denominator, c(4, 4))
-  expect_equal(output$Analysis_ActionRiskScoreDetail$SnapshotQuarantineBlocked, c(FALSE, TRUE))
-  fixture$dfExcludedSignals$GroupID <- NA_character_
-  expect_equal(do.call(Analyze_ActionRiskScore, fixture)$Analysis_Summary$Score, c(100, 100))
+  expect_true(all(output$Analysis_ActionRiskScoreDetail$SnapshotDecisionExcluded))
 })
 
 test_that("action analysis ignores stale, pending and conflicting decisions (#280)", {

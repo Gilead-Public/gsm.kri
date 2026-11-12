@@ -355,7 +355,7 @@ available in the detail row's tooltip.
 **Download CSV** exports the review rows across all supplied sites, independent
 of the selected site, table filters, and highlight toggle. CSV schema version 1
 includes the visible fields plus stable study/site/KRI IDs, date and proxy
-provenance, weights, exclusion/quarantine reasons, and full-precision reported
+provenance, weights, exclusion reasons, and full-precision reported
 scores with their numerators and denominators. Missing values are blank and
 dates use ISO `YYYY-MM-DD`. Text is quoted and formula-like spreadsheet values
 are apostrophe-prefixed; numerical flags and weights remain numerical. See

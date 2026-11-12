@@ -16,8 +16,8 @@ output:
 
 # Set Up
 
-This example uses the bundled synthetic reporting results, ActionLog and
-quarantine audit from `gsm.core`, generated with `gsm.datasim`. The adjusted
+This example uses the bundled synthetic reporting results and ActionLog
+from `gsm.core`, generated with `gsm.datasim`. The adjusted
 score and per-KRI detail come from the same `Analyze_ActionRiskScore()` call
 used by the metric workflow. Original KRI flags and the Site Risk Score remain
 unchanged.
@@ -25,8 +25,7 @@ unchanged.
 Open and Closed dispositions retain their weights. An unambiguous No Action
 snapshot within 90 days can exclude a contribution when snapshot scoring is
 explicitly enabled. These are labelled snapshot-date proxies, not verified
-human-action timestamps. Missing evidence retains the contribution. A synthetic
-signal with a missing KRI identifier blocks exclusions for its site only.
+human-action timestamps. Missing evidence retains the contribution.
 Earlier flagged findings that are now green retain their Closed review evidence.
 
 The reporting archive runs from February to April 2025, spanning 59 days.
@@ -72,12 +71,10 @@ current_kri_results <- gsm.core::reportingResults %>%
     .data$MetricID %in% active_site_metrics
   )
 demo_action_log <- gsm.core::reportingActionLog
-demo_excluded_signals <- gsm.core::reportingActionLogExcludedSignals
 analysis <- gsm.kri::Analyze_ActionRiskScore(
   dfResults = current_kri_results,
   dfWeights = weights,
   dfActionLog = demo_action_log,
-  dfExcludedSignals = demo_excluded_signals,
   bUseSnapshotDate = TRUE,
   bScoreSnapshotNoAction = TRUE,
   intActionWindowDays = 90L,

@@ -26,9 +26,6 @@ spec:
   Reporting_ActionLog:
     _all:
       required: true
-  Reporting_ActionLogExcludedSignals:
-    _all:
-      required: true
 steps:
   - output: dfResults
     name: workr::RunQuery
@@ -58,7 +55,6 @@ steps:
       dfResults: dfResults
       dfWeights: dfWeights
       dfActionLog: Reporting_ActionLog
-      dfExcludedSignals: Reporting_ActionLogExcludedSignals
       bUseSnapshotDate: UseSnapshotDate
       bScoreSnapshotNoAction: ScoreSnapshotNoAction
       strActionPolicy: ActionPolicy

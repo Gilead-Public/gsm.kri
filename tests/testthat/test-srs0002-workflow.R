@@ -8,8 +8,7 @@ test_that("srs0002 workflow consumes persisted KRI and ActionLog domains (#280)"
   expect_true(nzchar(workflow_path))
   workflow <- yaml::read_yaml(workflow_path)
 
-  expect_true(all(c("Analysis_Summary", "Reporting_ActionLog", "Reporting_ActionLogExcludedSignals") %in%
-    names(workflow$spec)))
+  expect_setequal(names(workflow$spec), c("Analysis_Summary", "Reporting_ActionLog"))
   expect_equal(workflow$meta$ActionWindowDays, 90)
   expect_identical(workflow$meta$ActionHistoryComplete, FALSE)
   expect_true("ActionAsOfDate" %in% names(workflow$meta))
@@ -72,8 +71,7 @@ test_that("srs0002 workflow produces canonical action-weighted rows (#280)", {
     workflow,
     lData = list(
       Analysis_Summary = results,
-      Reporting_ActionLog = action_log,
-      Reporting_ActionLogExcludedSignals = data.frame()
+      Reporting_ActionLog = action_log
     )
   )
 
@@ -92,14 +90,12 @@ test_that("srs0002 workflow produces canonical action-weighted rows (#280)", {
   action_log$ExtractionDate <- as.Date("2025-03-07")
   frozen <- workr::RunWorkflow(
     workflow,
-    lData = list(Analysis_Summary = results, Reporting_ActionLog = action_log,
-      Reporting_ActionLogExcludedSignals = data.frame())
+    lData = list(Analysis_Summary = results, Reporting_ActionLog = action_log)
   )
   expect_equal(frozen$Analysis_Summary$Numerator, 8)
   missing <- workr::RunWorkflow(
     workflow,
-    lData = list(Analysis_Summary = results, Reporting_ActionLog = action_log[0, ],
-      Reporting_ActionLogExcludedSignals = data.frame())
+    lData = list(Analysis_Summary = results, Reporting_ActionLog = action_log[0, ])
   )
   expect_equal(missing$Analysis_Summary$Numerator, 12)
 
@@ -108,17 +104,12 @@ test_that("srs0002 workflow produces canonical action-weighted rows (#280)", {
   action_log$ActionedFlag <- NULL
   action_log$ActionScope <- NULL
   workflow$meta$ActionHistoryComplete <- FALSE
-  audit <- data.frame(StudyID = "AA-AA-000-0000", GroupLevel = "Site", GroupID = "1001", MetricID = NA_character_)
-  blocked <- workr::RunWorkflow(workflow, lData = list(Analysis_Summary = results,
-    Reporting_ActionLog = action_log, Reporting_ActionLogExcludedSignals = audit))
-  expect_equal(blocked$Analysis_Summary$Numerator, 12)
-  expect_true(all(blocked$Analysis_ActionRiskScoreDetail$SnapshotQuarantineBlocked))
-  unblocked <- workr::RunWorkflow(workflow, lData = list(Analysis_Summary = results,
-    Reporting_ActionLog = action_log, Reporting_ActionLogExcludedSignals = audit[FALSE, ]))
-  expect_equal(unblocked$Analysis_Summary$Numerator, 8)
-  expect_true(all(unblocked$Analysis_ActionRiskScoreDetail$ActionDateIsProxy))
+  snapshot <- workr::RunWorkflow(workflow, lData = list(Analysis_Summary = results,
+    Reporting_ActionLog = action_log))
+  expect_equal(snapshot$Analysis_Summary$Numerator, 8)
+  expect_true(all(snapshot$Analysis_ActionRiskScoreDetail$ActionDateIsProxy))
   workflow$meta$ScoreSnapshotNoAction <- FALSE
   display_only <- workr::RunWorkflow(workflow, lData = list(Analysis_Summary = results,
-    Reporting_ActionLog = action_log, Reporting_ActionLogExcludedSignals = audit[FALSE, ]))
+    Reporting_ActionLog = action_log))
   expect_equal(display_only$Analysis_Summary$Numerator, 12)
 })
