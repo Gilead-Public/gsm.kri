@@ -58,10 +58,20 @@ MakeMetricTable(
     FilterByLatestSnapshotDate(),
   dfGroups = gsm.core::reportingGroups
 )
-#> Error in .testdata_abort_no_match(pkg, version, sha): No published gsm test data matches gsm.mapping 1.2.0 (de2868c) together
-#> with your other installed gsm packages.
-#> ℹ gsm.mapping is probably out of step with the other gsm packages. Updating it
-#>   (or them) to a compatible set usually fixes this.
-#> ℹ To use specific data anyway, see `use_testdata_tag()` or
-#>   `use_testdata_snapshot()`.
+#>          StudyID GroupID         MetricID          Group SnapshotDate Enrolled
+#> 1 AA-AA-000-0000  0X9490 Analysis_kri0001   0X9490 (Doe)   2025-04-01       13
+#> 2 AA-AA-000-0000  0X6995 Analysis_kri0001  0X6995 (Deer)   2025-04-01        7
+#> 3 AA-AA-000-0000  0X4747 Analysis_kri0001   0X4747 (Doe)   2025-04-01        4
+#> 4 AA-AA-000-0000   0X700 Analysis_kri0001   0X700 (Deer)   2025-04-01        4
+#> 5 AA-AA-000-0000  0X2861 Analysis_kri0001  0X2861 (Deer)   2025-04-01        4
+#> 6 AA-AA-000-0000  0X8090 Analysis_kri0001   0X8090 (Doe)   2025-04-01        9
+#> 7 AA-AA-000-0000  0X9252 Analysis_kri0001 0X9252 (Smith)   2025-04-01       11
+#>   Numerator Denominator Metric Score Flag
+#> 1        25         532   0.05 -1.56   -1
+#> 2        13         306   0.04 -1.34   -1
+#> 3         5         151   0.03 -1.17   -1
+#> 4         0          50   0.00 -1.14   -1
+#> 5         6         165   0.04 -1.14   -1
+#> 6        16         318   0.05 -1.09   -1
+#> 7        33         554   0.06 -1.00   -1
 ```
