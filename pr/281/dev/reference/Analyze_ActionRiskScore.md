@@ -11,7 +11,6 @@ Analyze_ActionRiskScore(
   dfResults,
   dfWeights,
   dfActionLog,
-  dfExcludedSignals = NULL,
   bUseSnapshotDate = FALSE,
   intActionWindowDays = 90L,
   strActionPolicy = "disposition",
@@ -46,12 +45,6 @@ Analyze_ActionRiskScore(
   selected frozen extraction. Multiple actions and signals at that
   snapshot are reduced using the largest configured factor. Identifiers
   must distinguish those rows.
-
-- dfExcludedSignals:
-
-  Optional source quarantine audit. Known site/KRI records block that
-  pair, missing metric IDs block the site, and unknown sites block the
-  affected study. NULL means no records were quarantined.
 
 - bUseSnapshotDate:
 

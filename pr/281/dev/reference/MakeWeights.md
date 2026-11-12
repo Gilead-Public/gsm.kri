@@ -62,9 +62,21 @@ The function performs the following steps:
 ``` r
 # Create weight table from gsm.core::reportingMetrics
 dfWeights <- MakeWeights(gsm.core::reportingMetrics)
+#> Error in .testdata_abort_no_match(pkg, version, sha): No published gsm test data matches gsm.mapping 1.2.0 (de2868c) together
+#> with your other installed gsm packages.
+#> ℹ gsm.mapping is probably out of step with the other gsm packages. Updating it
+#>   (or them) to a compatible set usually fixes this.
+#> ℹ To use specific data anyway, see `use_testdata_tag()` or
+#>   `use_testdata_snapshot()`.
 
 # Join to KRI results
 library(dplyr)
 dfResults <- gsm.core::reportingResults %>%
   left_join(dfWeights, by = c("MetricID", "Flag"))
+#> Error in .testdata_abort_no_match(pkg, version, sha): No published gsm test data matches gsm.mapping 1.2.0 (de2868c) together
+#> with your other installed gsm packages.
+#> ℹ gsm.mapping is probably out of step with the other gsm packages. Updating it
+#>   (or them) to a compatible set usually fixes this.
+#> ℹ To use specific data anyway, see `use_testdata_tag()` or
+#>   `use_testdata_snapshot()`.
 ```

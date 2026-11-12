@@ -42,63 +42,34 @@ parameters.
 
 ``` r
 head(gsm.core::reportingGroups)
-#>   GroupID                 Param          Value GroupLevel
-#> 1   0X002                  City Newtown Square       Site
-#> 2   0X002               Country             US       Site
-#> 3   0X002 InvestigatorFirstName           Fred       Site
-#> 4   0X002  InvestigatorLastName          Smith       Site
-#> 5   0X002                 invid          0X002       Site
-#> 6   0X002      ParticipantCount              1       Site
+#> Error in .testdata_abort_no_match(pkg, version, sha): No published gsm test data matches gsm.mapping 1.2.0 (de2868c) together
+#> with your other installed gsm packages.
+#> ℹ gsm.mapping is probably out of step with the other gsm packages. Updating it
+#>   (or them) to a compatible set usually fixes this.
+#> ℹ To use specific data anyway, see `use_testdata_tag()` or
+#>   `use_testdata_snapshot()`.
 MakeParamLabels(head(gsm.core::reportingGroups))
-#>   GroupID                 Param          Value GroupLevel
-#> 1   0X002                  City Newtown Square       Site
-#> 2   0X002               Country             US       Site
-#> 3   0X002 InvestigatorFirstName           Fred       Site
-#> 4   0X002  InvestigatorLastName          Smith       Site
-#> 5   0X002                 invid          0X002       Site
-#> 6   0X002      ParticipantCount              1       Site
-#>                     Label
-#> 1                    City
-#> 2                 Country
-#> 3 Investigator First Name
-#> 4  Investigator Last Name
-#> 5                   Invid
-#> 6       Participant Count
+#> Error in .testdata_abort_no_match(pkg, version, sha): No published gsm test data matches gsm.mapping 1.2.0 (de2868c) together
+#> with your other installed gsm packages.
+#> ℹ gsm.mapping is probably out of step with the other gsm packages. Updating it
+#>   (or them) to a compatible set usually fixes this.
+#> ℹ To use specific data anyway, see `use_testdata_tag()` or
+#>   `use_testdata_snapshot()`.
 MakeParamLabels(
   head(gsm.core::reportingGroups),
   list(ParticipantCount = "Number of Participants")
 )
-#>   GroupID                 Param          Value GroupLevel
-#> 1   0X002                  City Newtown Square       Site
-#> 2   0X002               Country             US       Site
-#> 3   0X002 InvestigatorFirstName           Fred       Site
-#> 4   0X002  InvestigatorLastName          Smith       Site
-#> 5   0X002                 invid          0X002       Site
-#> 6   0X002      ParticipantCount              1       Site
-#>                     Label
-#> 1                    City
-#> 2                 Country
-#> 3 Investigator First Name
-#> 4  Investigator Last Name
-#> 5                   Invid
-#> 6  Number of Participants
+#> Error in .testdata_abort_no_match(pkg, version, sha): No published gsm test data matches gsm.mapping 1.2.0 (de2868c) together
+#> with your other installed gsm packages.
+#> ℹ gsm.mapping is probably out of step with the other gsm packages. Updating it
+#>   (or them) to a compatible set usually fixes this.
+#> ℹ To use specific data anyway, see `use_testdata_tag()` or
+#>   `use_testdata_snapshot()`.
 MakeParamLabelsList(head(gsm.core::reportingGroups$Param))
-#> $City
-#> [1] "City"
-#> 
-#> $Country
-#> [1] "Country"
-#> 
-#> $InvestigatorFirstName
-#> [1] "Investigator First Name"
-#> 
-#> $InvestigatorLastName
-#> [1] "Investigator Last Name"
-#> 
-#> $invid
-#> [1] "Invid"
-#> 
-#> $ParticipantCount
-#> [1] "Participant Count"
-#> 
+#> Error in .testdata_abort_no_match(pkg, version, sha): No published gsm test data matches gsm.mapping 1.2.0 (de2868c) together
+#> with your other installed gsm packages.
+#> ℹ gsm.mapping is probably out of step with the other gsm packages. Updating it
+#>   (or them) to a compatible set usually fixes this.
+#> ℹ To use specific data anyway, see `use_testdata_tag()` or
+#>   `use_testdata_snapshot()`.
 ```

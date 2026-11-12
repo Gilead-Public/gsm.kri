@@ -2,21 +2,19 @@
 
 ## gsm.kri (development version)
 
-- The site example now consumes core’s bundled ActionLog and quarantine
-  audit through
+- The site example now consumes core’s bundled ActionLog through
   [`Analyze_ActionRiskScore()`](https://gilead-public.github.io/gsm.kri/dev/reference/Analyze_ActionRiskScore.md),
   with labelled snapshot proxies and explicit No Action scoring. The
-  bundled `srs0002` workflow uses the same single-calculation path and
-  requires an audit input (empty when none were excluded). Its snapshot
-  policy can be disabled through `UseSnapshotDate` or made display-only
-  through `ScoreSnapshotNoAction`
+  bundled `srs0002` workflow uses the same single-calculation path with
+  results and ActionLog inputs. Its snapshot policy can be disabled
+  through `UseSnapshotDate` or made display-only through
+  `ScoreSnapshotNoAction`
   ([\#280](https://github.com/Gilead-Public/gsm.kri/issues/280)).
 
 - Added
   [`Analyze_ActionRiskScore()`](https://gilead-public.github.io/gsm.kri/dev/reference/Analyze_ActionRiskScore.md)
   to compute score and detail together, including explicit snapshot-date
-  policy and scoped quarantine. Source retrieval/persistence stays
-  outside the calculator.
+  policy. Source retrieval/persistence stays outside the calculator.
   [`Report_KRI()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_KRI.md)
   normalizes result types and supports absent optional comparison detail
   without a custom study preflight

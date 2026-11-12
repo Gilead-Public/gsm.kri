@@ -73,20 +73,23 @@ library(dplyr)
 dfResults <- gsm.core::reportingResults %>%
   dplyr::filter(!grepl("srs0001", MetricID)) %>%
   FilterByLatestSnapshotDate()
+#> Error in .testdata_abort_no_match(pkg, version, sha): No published gsm test data matches gsm.mapping 1.2.0 (de2868c) together
+#> with your other installed gsm packages.
+#> ℹ gsm.mapping is probably out of step with the other gsm packages. Updating it
+#>   (or them) to a compatible set usually fixes this.
+#> ℹ To use specific data anyway, see `use_testdata_tag()` or
+#>   `use_testdata_snapshot()`.
 
 # Create weights table
 dfWeights <- gsm.kri::MakeWeights(gsm.core::reportingMetrics)
+#> Error in .testdata_abort_no_match(pkg, version, sha): No published gsm test data matches gsm.mapping 1.2.0 (de2868c) together
+#> with your other installed gsm packages.
+#> ℹ gsm.mapping is probably out of step with the other gsm packages. Updating it
+#>   (or them) to a compatible set usually fixes this.
+#> ℹ To use specific data anyway, see `use_testdata_tag()` or
+#>   `use_testdata_snapshot()`.
 
 # Calculate risk scores
 dfRiskScore <- CalculateRiskScore(dfResults, dfWeights)
-#> Warning: Rows with NA values in 'Weight' or 'WeightMax' have been dropped, corresponding to thefollowing metric IDs:
-#> - Analysis_kri0007
-#> - Analysis_kri0010
-#> - Analysis_kri0013
-#> - Analysis_kri0020a
-#> - Analysis_kri0020b
-#> - Analysis_kri0020c
-#> - Analysis_kri0020d
-#> - Analysis_kri0020e
-#> - Analysis_kri0020f.
+#> Error: object 'dfResults' not found
 ```

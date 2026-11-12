@@ -436,12 +436,12 @@ available in the detail row’s tooltip.
 **Download CSV** exports the review rows across all supplied sites,
 independent of the selected site, table filters, and highlight toggle.
 CSV schema version 1 includes the visible fields plus stable
-study/site/KRI IDs, date and proxy provenance, weights,
-exclusion/quarantine reasons, and full-precision reported scores with
-their numerators and denominators. Missing values are blank and dates
-use ISO `YYYY-MM-DD`. Text is quoted and formula-like spreadsheet values
-are apostrophe-prefixed; numerical flags and weights remain numerical.
-See the [gsm.vizr CSV
+study/site/KRI IDs, date and proxy provenance, weights, exclusion
+reasons, and full-precision reported scores with their numerators and
+denominators. Missing values are blank and dates use ISO `YYYY-MM-DD`.
+Text is quoted and formula-like spreadsheet values are
+apostrophe-prefixed; numerical flags and weights remain numerical. See
+the [gsm.vizr CSV
 contract](https://github.com/Gilead-Public/gsm.vizr#review-csv) for the
 ordered columns and encoding. The browser creates the download locally;
 no data is uploaded. Complete evidence stays in the widget’s supplied

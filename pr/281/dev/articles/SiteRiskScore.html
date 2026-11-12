@@ -42,14 +42,7 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-examples" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Examples</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-examples">
-<li><a class="dropdown-item" href="../examples/Example_SiteReport.html">Site KRI Report</a></li>
-    <li><a class="dropdown-item" href="../examples/Example_Eligibility.html">Eligibility Report</a></li>
-    <li><a class="dropdown-item" href="../examples/Example_CrossStudySRS.html">Cross-Study KRI Report</a></li>
-    <li><a class="dropdown-item" href="../examples/Example_IPMonitoring.html">IP Monitoring Report</a></li>
-    <li><a class="dropdown-item" href="../examples/Example_PrematureDeaths.html">Premature Deaths Report</a></li>
-    <li><a class="dropdown-item" href="../examples/Cookbook_AdverseEventKRI.html">Cookbook - Adverse Event KRI Report</a></li>
-    <li><a class="dropdown-item" href="../examples/Cookbook_AdverseEventWorkflow.html">Cookbook - Adverse Event Workflow Examples</a></li>
-    <li><a class="dropdown-item" href="../examples/Cookbook_ReportingWorkflow.html">Cookbook - Reporting Workflow Examples</a></li>
+<li><a class="dropdown-item" href="../examples/Cookbook_ReportingWorkflow.html">Cookbook - Reporting Workflow Examples</a></li>
   </ul>
 </li>
       </ul>
@@ -703,12 +696,12 @@ the detail row’s tooltip.</p>
 <p><strong>Download CSV</strong> exports the review rows across all
 supplied sites, independent of the selected site, table filters, and
 highlight toggle. CSV schema version 1 includes the visible fields plus
-stable study/site/KRI IDs, date and proxy provenance, weights,
-exclusion/quarantine reasons, and full-precision reported scores with
-their numerators and denominators. Missing values are blank and dates
-use ISO <code>YYYY-MM-DD</code>. Text is quoted and formula-like
-spreadsheet values are apostrophe-prefixed; numerical flags and weights
-remain numerical. See the <a href="https://github.com/Gilead-Public/gsm.vizr#review-csv" class="external-link">gsm.vizr CSV
+stable study/site/KRI IDs, date and proxy provenance, weights, exclusion
+reasons, and full-precision reported scores with their numerators and
+denominators. Missing values are blank and dates use ISO
+<code>YYYY-MM-DD</code>. Text is quoted and formula-like spreadsheet
+values are apostrophe-prefixed; numerical flags and weights remain
+numerical. See the <a href="https://github.com/Gilead-Public/gsm.vizr#review-csv" class="external-link">gsm.vizr CSV
 contract</a> for the ordered columns and encoding. The browser creates
 the download locally; no data is uploaded. Complete evidence stays in
 the widget’s supplied data. Backend scoring remains configurable for

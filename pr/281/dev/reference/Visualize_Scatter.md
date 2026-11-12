@@ -64,9 +64,21 @@ group-level plot object.
 ## Filter sample data to only one metric
 reportingResults_filter <- gsm.core::reportingResults %>%
   dplyr::filter(MetricID == "Analysis_kri0001")
+#> Error in .testdata_abort_no_match(pkg, version, sha): No published gsm test data matches gsm.mapping 1.2.0 (de2868c) together
+#> with your other installed gsm packages.
+#> ℹ gsm.mapping is probably out of step with the other gsm packages. Updating it
+#>   (or them) to a compatible set usually fixes this.
+#> ℹ To use specific data anyway, see `use_testdata_tag()` or
+#>   `use_testdata_snapshot()`.
 
 reportingBounds_filter <- gsm.core::reportingBounds %>%
   dplyr::filter(MetricID == "Analysis_kri0001")
+#> Error in .testdata_abort_no_match(pkg, version, sha): No published gsm test data matches gsm.mapping 1.2.0 (de2868c) together
+#> with your other installed gsm packages.
+#> ℹ gsm.mapping is probably out of step with the other gsm packages. Updating it
+#>   (or them) to a compatible set usually fixes this.
+#> ℹ To use specific data anyway, see `use_testdata_tag()` or
+#>   `use_testdata_snapshot()`.
 
 ## Output- filtered to one snapshot date
 Visualize_Scatter(
@@ -75,9 +87,7 @@ Visualize_Scatter(
   dfBounds = reportingBounds_filter %>%
     dplyr::filter(SnapshotDate == max(SnapshotDate))
 )
-#> Warning: Removed 252 rows containing missing values or values outside the scale range
-#> (`geom_line()`).
-
+#> Error: object 'reportingResults_filter' not found
 
 ## Create Faceted output on snapshot date
 Visualize_Scatter(
@@ -86,9 +96,7 @@ Visualize_Scatter(
   strGroupCol = "SnapshotDate",
   strGroupLabel = "Snapshot Date"
 )
-#> Warning: Removed 758 rows containing missing values or values outside the scale range
-#> (`geom_line()`).
-
+#> Error: object 'reportingResults_filter' not found
 
 ## Custom Colors
 Visualize_Scatter(
@@ -98,7 +106,5 @@ Visualize_Scatter(
     dplyr::filter(SnapshotDate == max(SnapshotDate)),
   vColors = c("#F4E7E7", "#C17070", "#981212")
 )
-#> Warning: Removed 252 rows containing missing values or values outside the scale range
-#> (`geom_line()`).
-
+#> Error: object 'reportingResults_filter' not found
 ```
