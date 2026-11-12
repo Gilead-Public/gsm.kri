@@ -2,6 +2,16 @@
 
 ## gsm.kri (development version)
 
+- The site example now consumes core’s bundled ActionLog and quarantine
+  audit through
+  [`Analyze_ActionRiskScore()`](https://gilead-public.github.io/gsm.kri/dev/reference/Analyze_ActionRiskScore.md),
+  with labelled snapshot proxies and explicit No Action scoring. The
+  bundled `srs0002` workflow uses the same single-calculation path and
+  requires an audit input (empty when none were excluded). Its snapshot
+  policy can be disabled through `UseSnapshotDate` or made display-only
+  through `ScoreSnapshotNoAction`
+  ([\#280](https://github.com/Gilead-Public/gsm.kri/issues/280)).
+
 - Added
   [`Analyze_ActionRiskScore()`](https://gilead-public.github.io/gsm.kri/dev/reference/Analyze_ActionRiskScore.md)
   to compute score and detail together, including explicit snapshot-date
@@ -37,8 +47,8 @@
   conflicting evidence cannot suppress a contribution
   ([\#280](https://github.com/Gilead-Public/gsm.kri/issues/280)).
 
-- The `srs0002` workflow now defaults to a configurable 90-day Review
-  Priority Score, keeps the full original denominator, and returns
+- The `srs0002` workflow supports a configurable 90-day Adjusted Site
+  Risk Score, keeps the full original denominator, and returns
   `Analysis_ActionRiskScoreDetail` for the site report. Unknown dates
   retain full contribution. Dated detail adds a border to each site/KRI
   cell with a recorded action within 90 days; the table has no hide or
