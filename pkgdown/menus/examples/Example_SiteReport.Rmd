@@ -16,31 +16,27 @@ output:
 
 # Set Up
 
-This page provides a sample Site KRI Report generated using the standard KRIs included in the `gsm.kri` package. Expand the "Setup" section below to see the code used to generate the report. Or scroll down for the standard KRI report output.
+This example uses the bundled synthetic reporting results, ActionLog and
+quarantine audit from `gsm.core`, generated with `gsm.datasim`. The adjusted
+score and per-KRI detail come from the same `Analyze_ActionRiskScore()` call
+used by the metric workflow. Original KRI flags and the Site Risk Score remain
+unchanged.
 
-The example combines the `gsm.core` KRI results with synthetic monitoring
-decisions to demonstrate a draft 90-day Adjusted Risk Score. These decision dates
-are demonstration data, not inferred dates from the ActionLog fixture. The
-actions refer only to actual flagged snapshots for active site/KRI pairs.
-Most belong to currently flagged cells; a small sample is now green after an
-earlier flag was reviewed. Open actions, closed actions, and signals awaiting
-triage and explicit No Action decisions vary across sites. A closed action does not change the underlying KRI flag. Dates
-remain inside the bundled reporting history rather than inventing older evidence.
+Open and Closed dispositions retain their weights. An unambiguous No Action
+snapshot within 90 days can exclude a contribution when snapshot scoring is
+explicitly enabled. These are labelled snapshot-date proxies, not verified
+human-action timestamps. Missing evidence retains the contribution. A synthetic
+signal with a missing KRI identifier blocks exclusions for its site only.
+Earlier flagged findings that are now green retain their Closed review evidence.
 
-### Scoring Draft
-
-Each KRI keeps its existing metric-specific flag weight. The 90-day period is
-a validity window, not a severity multiplier. Open, closed, and awaiting-triage
-findings retain their current weights. Only a documented, applicable No Action
-decision within 90 days can exclude a contribution; it counts again after expiry.
-Missing or uncertain evidence always retains the weight. The original maximum
-weight denominator and Site Risk Score are unchanged. Highlights show recent
-reviews independently of whether that KRI counts toward the draft score.
+The reporting archive runs from February to April 2025, spanning 59 days.
+It does not demonstrate 90-day expiry; separate synthetic regression scenarios
+cover the inclusive day-90 and expired day-91 boundaries.
 
 <details>
 <summary>Setup</summary>
 
-```{r}
+```{r, warning=FALSE}
 # Load libraries
 library(gsm.core)
 library(gsm.kri)
@@ -75,132 +71,25 @@ current_kri_results <- gsm.core::reportingResults %>%
     grepl("^Analysis_kri", .data$MetricID),
     .data$MetricID %in% active_site_metrics
   )
-current_flagged <- current_kri_results %>%
-  dplyr::filter(!is.na(.data$Flag), .data$Flag != 0) %>%
-  dplyr::select("StudyID", "GroupLevel", "GroupID", "MetricID", "Flag")
-demo_action_log <- gsm.core::reportingResults %>%
-  dplyr::semi_join(
-    current_flagged,
-    by = c("StudyID", "GroupLevel", "GroupID", "MetricID", "Flag")
-  ) %>%
-  dplyr::filter(.data$SnapshotDate <= latest_snapshot) %>%
-  dplyr::group_by(.data$StudyID, .data$GroupLevel, .data$GroupID, .data$MetricID) %>%
-  dplyr::slice_min(.data$SnapshotDate, n = 1L, with_ties = FALSE) %>%
-  dplyr::ungroup() %>%
-  dplyr::arrange(.data$MetricID, .data$GroupID) %>%
-  dplyr::group_by(.data$MetricID) %>%
-  dplyr::mutate(decision_group = (dplyr::row_number() - 1L) %% 6L) %>%
-  dplyr::ungroup() %>%
-  dplyr::mutate(
-    ExtractionDate = latest_snapshot,
-    RiskSignalID = paste0("DEMO-RS-", seq_len(dplyr::n())),
-    State = c("Open Action", "Closed Action", "Awaiting Triage", "No Action", "Open Action", "Closed Action")[.data$decision_group + 1L],
-    ActionID = dplyr::if_else(.data$State %in% c("Awaiting Triage", "No Action"), NA_character_, paste0("DEMO-ACT-", seq_len(dplyr::n()))),
-    ActionedDate = latest_snapshot - pmin(
-      c(14, 35, NA_real_, 21, 45, 59)[.data$decision_group + 1L],
-      as.integer(latest_snapshot - .data$SnapshotDate)
-    ),
-    ActionedDateSource = dplyr::if_else(!is.na(.data$ActionedDate), "Synthetic flag-matched monitoring decision", NA_character_),
-    ActionedFlag = dplyr::if_else(.data$State == "Awaiting Triage", NA_real_, as.numeric(.data$Flag)),
-    ActionScope = dplyr::if_else(.data$State == "Awaiting Triage", NA_character_, "SiteMetric"),
-    ActionCriticality = dplyr::if_else(.data$State == "Awaiting Triage", NA, FALSE),
-    ActionState = dplyr::if_else(!is.na(.data$ActionID), .data$State, NA_character_),
-    ActionCreatedDate = dplyr::case_when(
-      .data$State == "Closed Action" ~ pmax(.data$SnapshotDate, .data$ActionedDate - 7),
-      .data$State == "Open Action" ~ .data$ActionedDate,
-      TRUE ~ as.Date(NA)
-    ),
-    ActionResolvedDate = dplyr::if_else(.data$State == "Closed Action", .data$ActionedDate, as.Date(NA))
-  ) %>%
-  dplyr::select(-"decision_group")
-current_green <- current_kri_results %>%
-  dplyr::filter(!is.na(.data$Flag), .data$Flag == 0) %>%
-  dplyr::select("StudyID", "GroupLevel", "GroupID", "MetricID")
-demo_reviewed_green <- gsm.core::reportingResults %>%
-  dplyr::semi_join(current_green, by = c("StudyID", "GroupLevel", "GroupID", "MetricID")) %>%
-  dplyr::filter(.data$SnapshotDate < latest_snapshot, !is.na(.data$Flag), .data$Flag != 0) %>%
-  dplyr::group_by(.data$StudyID, .data$GroupLevel, .data$GroupID, .data$MetricID) %>%
-  dplyr::slice_max(.data$SnapshotDate, n = 1L, with_ties = FALSE) %>%
-  dplyr::ungroup() %>%
-  dplyr::arrange(.data$MetricID, .data$GroupID) %>%
-  dplyr::group_by(.data$MetricID) %>%
-  dplyr::mutate(review_order = dplyr::row_number()) %>%
-  dplyr::ungroup() %>%
-  dplyr::arrange(.data$review_order, .data$MetricID, .data$GroupID) %>%
-  dplyr::slice_head(n = 12L) %>%
-  dplyr::mutate(
-    ExtractionDate = latest_snapshot,
-    RiskSignalID = paste0("DEMO-GREEN-RS-", seq_len(dplyr::n())),
-    State = "Closed Action",
-    ActionID = paste0("DEMO-GREEN-ACT-", seq_len(dplyr::n())),
-    ActionedDate = pmin(.data$SnapshotDate + 7, latest_snapshot - 1),
-    ActionedDateSource = "Synthetic review of earlier flag",
-    ActionedFlag = as.numeric(.data$Flag),
-    ActionScope = "SiteMetric",
-    ActionCriticality = FALSE,
-    ActionState = "Closed Action",
-    ActionCreatedDate = pmin(.data$SnapshotDate + 1, .data$ActionedDate),
-    ActionResolvedDate = .data$ActionedDate
-  ) %>%
-  dplyr::select(-"review_order")
-demo_action_log <- dplyr::bind_rows(demo_action_log, demo_reviewed_green)
-weighted_kri_results <- current_kri_results %>%
-  dplyr::semi_join(weights, by = c("MetricID", "Flag"))
-action_weighted_score <- gsm.kri::CalculateActionRiskScore(
-  dfResults = weighted_kri_results,
+demo_action_log <- gsm.core::reportingActionLog
+demo_excluded_signals <- gsm.core::reportingActionLogExcludedSignals
+analysis <- gsm.kri::Analyze_ActionRiskScore(
+  dfResults = current_kri_results,
   dfWeights = weights,
   dfActionLog = demo_action_log,
-  intActionWindowDays = 90,
-  bActionHistoryComplete = TRUE,
-  strActionPolicy = "disposition"
-) %>%
+  dfExcludedSignals = demo_excluded_signals,
+  bUseSnapshotDate = TRUE,
+  bScoreSnapshotNoAction = TRUE,
+  intActionWindowDays = 90L,
+  strActionPolicy = "disposition",
+  bActionHistoryComplete = FALSE
+)
+action_score_detail <- analysis$Analysis_ActionRiskScoreDetail
+action_weighted_score <- analysis$Analysis_Summary %>%
   dplyr::mutate(
     StudyID = unique(current_kri_results$StudyID),
     SnapshotDate = latest_snapshot
   )
-
-# Per-KRI detail explains the priority score without changing the original SRS.
-action_score_detail <- gsm.kri::MakeActionRiskScoreDetail(
-  dfResults = weighted_kri_results,
-  dfWeights = weights,
-  dfActionLog = demo_action_log,
-  intActionWindowDays = 90,
-  bActionHistoryComplete = TRUE,
-  strActionPolicy = "disposition"
-)
-unweighted_kri_results <- current_kri_results %>%
-  dplyr::anti_join(
-    weighted_kri_results,
-    by = c("StudyID", "SnapshotDate", "GroupLevel", "GroupID", "MetricID")
-  )
-if (nrow(unweighted_kri_results) > 0L) {
-  unweighted_detail <- gsm.kri::MakeActionSummary(
-    dfResults = unweighted_kri_results,
-    dfActionLog = demo_action_log,
-    intActionWindowDays = 90,
-    bActionHistoryComplete = TRUE
-  ) %>%
-    dplyr::mutate(Weight = NA_real_, WeightMax = NA_real_, EffectiveWeight = NA_real_)
-  action_score_detail <- dplyr::bind_rows(action_score_detail, unweighted_detail)
-}
-demo_signal_states <- demo_action_log %>%
-  dplyr::select("StudyID", "GroupLevel", "GroupID", "MetricID", DemoSignalState = "State")
-action_score_detail <- action_score_detail %>%
-  dplyr::left_join(demo_signal_states, by = c("StudyID", "GroupLevel", "GroupID", "MetricID")) %>%
-  dplyr::mutate(
-    ActionState = dplyr::coalesce(
-      .data$ActionState, .data$DemoSignalState,
-      dplyr::if_else(is.na(.data$Flag), "Not assessed", "Not flagged")
-    ),
-    ActionReason = dplyr::case_when(
-      .data$ActionState == "Awaiting Triage" ~ "Awaiting triage",
-      is.na(.data$Flag) ~ "Not assessed",
-      .data$Flag == 0 & !is.na(.data$LastActionedDate) ~ "Previously flagged; reviewed",
-      .data$Flag == 0 ~ "Not flagged",
-      TRUE ~ .data$ActionReason
-    )
-  ) %>%
-  dplyr::select(-"DemoSignalState")
 
 site_results <- dplyr::bind_rows(
   dfResults,
@@ -226,9 +115,9 @@ child_env <- list2env(
   list(
     params = list(
       lCharts = lCharts,
-  dfResults = site_results,
+        dfResults = site_results,
       dfGroups = gsm.core::reportingGroups,
-  dfMetrics = dfMetrics,
+        dfMetrics = dfMetrics,
       strComparisonRiskMetric = "Analysis_srs0002",
       strComparisonRiskLabel = "Adjusted Risk Score (Draft)",
       dfRiskScoreDetail = action_score_detail

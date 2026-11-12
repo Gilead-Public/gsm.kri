@@ -146,88 +146,36 @@ test_that("dated action detail selects priority labels and is optional in workfl
   expect_equal(captured$lParams$strComparisonRiskLabel, "Review Priority Score")
 })
 
-test_that("site report demo actions match actual flagged snapshots (#280)", {
-  testthat::local_mocked_bindings(
-    MakeCharts = function(...) list(), .package = "gsm.kri"
-  )
-  testthat::local_mocked_bindings(
-    knit_child = function(...) character(), .package = "knitr"
-  )
+test_that("site report demo uses the bundled snapshot-policy analysis (#280)", {
+  testthat::local_mocked_bindings(MakeCharts = function(...) list(), .package = "gsm.kri")
+  testthat::local_mocked_bindings(knit_child = function(...) character(), .package = "knitr")
   source_path <- testthat::test_path("..", "..", "pkgdown", "menus", "examples", "Example_SiteReport.Rmd")
   skip_if_not(file.exists(source_path), "Pkgdown examples are excluded from built packages")
   script <- tempfile(fileext = ".R")
   knitr::purl(source_path, output = script, quiet = TRUE)
   example <- new.env(parent = asNamespace("gsm.kri"))
-  example_warnings <- character()
-  withCallingHandlers(
-    sys.source(script, envir = example),
-    warning = function(condition) {
-      example_warnings <<- c(example_warnings, conditionMessage(condition))
-      invokeRestart("muffleWarning")
-    }
-  )
-  expect_equal(example_warnings, character())
-  actions <- example$demo_action_log
-  keys <- c("StudyID", "SnapshotDate", "GroupLevel", "GroupID", "MetricID")
-  actual <- gsm.core::reportingResults[, c(keys, "Flag")]
-  matched <- merge(actions, actual, by = keys, suffixes = c("", "_actual"))
-  expect_equal(nrow(matched), nrow(actions))
-  expect_true(all(!is.na(matched$Flag_actual) & matched$Flag_actual != 0))
-  reviewed <- !is.na(matched$ActionedDate)
-  expect_equal(matched$ActionedFlag[reviewed], as.numeric(matched$Flag_actual[reviewed]))
-  expect_true(all(actions$State %in% c("Open Action", "Closed Action", "Awaiting Triage", "No Action")))
-  expect_true(all(c("Open Action", "Closed Action", "Awaiting Triage", "No Action") %in% actions$State))
-  expect_true(all(actions$ActionedDate >= actions$SnapshotDate, na.rm = TRUE))
-  expect_true(all(actions$ActionedDate <= example$latest_snapshot, na.rm = TRUE))
-  expect_equal(anyDuplicated(stats::na.omit(actions$ActionID)), 0L)
-  pending <- actions$State == "Awaiting Triage"
-  expect_true(any(pending))
-  expect_true(all(is.na(actions$ActionID[pending]) & is.na(actions$ActionedDate[pending])))
-  expect_true(all(is.na(actions$ActionResolvedDate[actions$State == "Open Action"])))
-  closed <- actions$State == "Closed Action"
-  expect_true(all(actions$ActionResolvedDate[closed] >= actions$ActionCreatedDate[closed]))
-  current <- example$current_kri_results
+  expect_warning(sys.source(script, envir = example), "Rows with NA values in 'Weight' or 'WeightMax'")
+  expect_identical(example$demo_action_log, gsm.core::reportingActionLog)
+  expect_identical(example$demo_excluded_signals, gsm.core::reportingActionLogExcludedSignals)
   detail <- example$action_score_detail
-  expect_equal(nrow(detail), nrow(current))
-  expect_false(any(detail$RecentlyAddressed[is.na(detail$Flag)]))
-  reviewed_green <- detail[!is.na(detail$Flag) & detail$Flag == 0 & !is.na(detail$LastActionedDate), ]
-  expect_gt(nrow(reviewed_green), 0L)
-  expect_lte(nrow(reviewed_green), 12L)
-  expect_true(all(reviewed_green$ActionState == "Closed Action"))
-  expect_true(all(reviewed_green$ActionedFlag != 0))
-  expect_true(all(reviewed_green$ActionSignalSnapshotDate < reviewed_green$SnapshotDate))
-  expect_true(all(reviewed_green$LastActionedDate < reviewed_green$SnapshotDate))
-  expect_true(all(reviewed_green$DaysSinceAction >= 0 & reviewed_green$DaysSinceAction <= 90))
-  expect_true(all(reviewed_green$ActionReason == "Previously flagged; reviewed"))
-  expect_true(all(is.na(reviewed_green$EffectiveWeight) | reviewed_green$EffectiveWeight == 0))
-  expect_true(all(detail$ActionState[!is.na(detail$LastActionedDate)] %in% c("Open Action", "Closed Action", "No Action")))
-  weighted_detail <- detail[!is.na(detail$Weight), ]
-  expect_true(all(weighted_detail$ActionPolicy == "disposition"))
-  retained <- weighted_detail$ActionState %in% c("Open Action", "Closed Action", "Awaiting Triage")
-  expect_equal(weighted_detail$EffectiveWeight[retained], weighted_detail$Weight[retained])
-  dismissed <- weighted_detail$ActionState == "No Action" & weighted_detail$RecentlyAddressed
-  expect_true(any(dismissed & weighted_detail$Weight > 0, na.rm = TRUE))
-  expect_true(all(weighted_detail$EffectiveWeight[dismissed] == 0))
-  expect_true(all(actions$ActionedDate >= min(gsm.core::reportingResults$SnapshotDate), na.rm = TRUE))
-  expect_true(any(detail$RecentlyAddressed))
-  expect_true(any(detail$ActionState == "Awaiting Triage"))
-  expect_true(any(example$action_weighted_score$Numerator > 0))
-  site_metric <- c("StudyID", "GroupLevel", "GroupID", "MetricID")
-  active <- gsm.core::reportingMetrics
-  active <- active$MetricID[active$GroupLevel == "Site" & active$Active %in% TRUE]
-  expect_true(all(actions$MetricID %in% active))
-  current_flagged <- current[!is.na(current$Flag) & current$Flag != 0, site_metric]
-  expect_equal(nrow(merge(unique(actions[site_metric]), current_flagged, by = site_metric)), nrow(current_flagged))
-  current_actions <- merge(actions, current_flagged, by = site_metric)
-  expect_true(all(vapply(split(current_actions$State, current_actions$MetricID), function(states) {
-    length(states) == 1L || length(unique(states)) > 1L
-  }, logical(1))))
-  without_green <- CalculateActionRiskScore(
-    example$weighted_kri_results, example$weights, current_actions,
-    intActionWindowDays = 90, bActionHistoryComplete = TRUE, strActionPolicy = "disposition"
-  )
-  score_columns <- c("GroupID", "Numerator", "Denominator", "Score")
-  expect_equal(example$action_weighted_score[score_columns], without_green[score_columns])
+  expect_equal(nrow(detail), nrow(example$current_kri_results))
+  proxy <- detail$ActionDateIsProxy %in% TRUE
+  expect_true(any(proxy))
+  expect_true(all(grepl("proxy", detail$ActionedDateSource[proxy])))
+  expect_true(any(detail$SnapshotDecisionExcluded))
+  expect_true(any(detail$SnapshotQuarantineBlocked))
+  expect_true(all(detail$GroupID[detail$SnapshotQuarantineBlocked] %in% example$demo_excluded_signals$GroupID))
+  expect_false(any(detail$SnapshotDecisionExcluded & detail$SnapshotQuarantineBlocked))
+  expect_true(all(detail$EffectiveWeight[detail$SnapshotDecisionExcluded] == 0))
+  green <- detail[!is.na(detail$Flag) & detail$Flag == 0 & proxy, ]
+  expect_gt(nrow(green), 0L)
+  expect_true(all(green$ActionState == "Closed Action"))
+  expect_warning(recomputed <- Analyze_ActionRiskScore(example$current_kri_results, example$weights,
+    example$demo_action_log, example$demo_excluded_signals, bUseSnapshotDate = TRUE,
+    bScoreSnapshotNoAction = TRUE, bActionHistoryComplete = FALSE, strActionPolicy = "disposition"),
+    "Rows with NA values in 'Weight' or 'WeightMax'")
+  expect_equal(detail, recomputed$Analysis_ActionRiskScoreDetail)
+  expect_equal(example$action_weighted_score[names(recomputed$Analysis_Summary)], recomputed$Analysis_Summary)
 })
 
 test_that("Report_KRI renders without an action-weighted score (#280)", {

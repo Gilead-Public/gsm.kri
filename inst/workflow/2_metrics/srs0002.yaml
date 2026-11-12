@@ -3,17 +3,20 @@ meta:
   Type: Analysis
   ID: srs0002
   GroupLevel: Site
-  Abbreviation: Review Priority
-  Metric: Site Review Priority Score
-  Numerator: KRI weights requiring review
+  Abbreviation: Adjusted SRS
+  Metric: Adjusted Site Risk Score
+  Numerator: Disposition-adjusted KRI weights
   Denominator: Maximum Weights
   Model: Identity
-  Score: Normalized Site Review Priority Score
+  Score: Adjusted Site Risk Score
   AnalysisType: identity
   Priority: 4
   GenerateRiskSignal: true
   ActionWindowDays: 90
   ActionHistoryComplete: false
+  ActionPolicy: disposition
+  UseSnapshotDate: true
+  ScoreSnapshotNoAction: true
   ActionAsOfDate: null
   ActionExtractionDate: null
 spec:
@@ -21,6 +24,9 @@ spec:
     _all:
       required: true
   Reporting_ActionLog:
+    _all:
+      required: true
+  Reporting_ActionLogExcludedSignals:
     _all:
       required: true
 steps:
@@ -46,29 +52,17 @@ steps:
     name: gsm.kri::MakeWeights
     params:
       dfMetrics: dfMetrics
-  - output: dfRiskScoreDetail
-    name: gsm.kri::MakeActionRiskScoreDetail
-    params:
-      dfResults: dfResults
-      dfWeights: dfWeights
-      dfActionLog: Reporting_ActionLog
-      intActionWindowDays: ActionWindowDays
-      dActionAsOfDate: ActionAsOfDate
-      dActionExtractionDate: ActionExtractionDate
-      bActionHistoryComplete: ActionHistoryComplete
-  - output: dfRiskScore
-    name: gsm.kri::CalculateActionRiskScore
-    params:
-      dfResults: dfResults
-      dfWeights: dfWeights
-      dfActionLog: Reporting_ActionLog
-      intActionWindowDays: ActionWindowDays
-      dActionAsOfDate: ActionAsOfDate
-      dActionExtractionDate: ActionExtractionDate
-      bActionHistoryComplete: ActionHistoryComplete
   - output: lAnalysis
-    name: list
+    name: gsm.kri::Analyze_ActionRiskScore
     params:
-      ID: ID
-      Analysis_Summary: dfRiskScore
-      Analysis_ActionRiskScoreDetail: dfRiskScoreDetail
+      dfResults: dfResults
+      dfWeights: dfWeights
+      dfActionLog: Reporting_ActionLog
+      dfExcludedSignals: Reporting_ActionLogExcludedSignals
+      bUseSnapshotDate: UseSnapshotDate
+      bScoreSnapshotNoAction: ScoreSnapshotNoAction
+      strActionPolicy: ActionPolicy
+      intActionWindowDays: ActionWindowDays
+      dActionAsOfDate: ActionAsOfDate
+      dActionExtractionDate: ActionExtractionDate
+      bActionHistoryComplete: ActionHistoryComplete

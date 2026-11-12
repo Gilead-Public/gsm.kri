@@ -1,5 +1,12 @@
 # gsm.kri (development version)
 
+- The site example now consumes core's bundled ActionLog and quarantine audit
+  through `Analyze_ActionRiskScore()`, with labelled snapshot proxies and
+  explicit No Action scoring. The bundled `srs0002` workflow uses the same
+  single-calculation path and requires an audit input (empty when none were
+  excluded). Its snapshot policy can be disabled through `UseSnapshotDate` or
+  made display-only through `ScoreSnapshotNoAction` (#280).
+
 - Added `Analyze_ActionRiskScore()` to compute score and detail together,
   including explicit snapshot-date policy and scoped quarantine. Source
   retrieval/persistence stays outside the calculator. `Report_KRI()` normalizes
@@ -23,7 +30,7 @@
   and extraction dates are never substituted. Recency and coverage are separate,
   and incomplete, escalated, reopened, critical, or conflicting evidence cannot
   suppress a contribution (#280).
-- The `srs0002` workflow now defaults to a configurable 90-day Review Priority
+- The `srs0002` workflow supports a configurable 90-day Adjusted Site Risk
   Score, keeps the full original denominator, and returns
   `Analysis_ActionRiskScoreDetail` for the site report. Unknown dates retain
   full contribution. Dated detail adds a border to each site/KRI cell with a
