@@ -11,6 +11,7 @@ meta:
   AnalysisType: rate
   Score: Adjusted Z-Score
   Threshold: -2,-1,2,3
+  Flag: "-2,-1,0,1,2"
   AccrualThreshold: 30
   AccrualMetric: Denominator
   GenerateRiskSignal: true
@@ -30,6 +31,11 @@ steps:
     name: gsm.core::ParseThreshold
     params:
       strThreshold: Threshold
+  - output: vFlag
+    name: gsm.core::ParseThreshold
+    params:
+      strThreshold: Flag
+      bSort: false
   - output: Analysis_Input
     name: gsm.core::Input_Rate
     params:
@@ -56,6 +62,7 @@ steps:
     params:
       dfAnalyzed: Analysis_Analyzed
       vThreshold: vThreshold
+      vFlag: vFlag
       nAccrualThreshold: AccrualThreshold
       strAccrualMetric: AccrualMetric
   - output: Analysis_Summary
