@@ -8,7 +8,8 @@ Widget_CrossStudyRiskScore(
   dfResults,
   dfMetrics,
   dfGroups,
-  strGroupLevel = "Site"
+  strGroupLevel = "Site",
+  strRiskScoreMetric = "Analysis_srs0001"
 )
 }
 \arguments{
@@ -19,6 +20,9 @@ Widget_CrossStudyRiskScore(
 \item{dfGroups}{`data.frame` Metadata about groups (sites/studies).}
 
 \item{strGroupLevel}{`character` The group level. Default is 'Site'.}
+
+\item{strRiskScoreMetric}{`character` Risk score MetricID to display.
+Defaults to `"Analysis_srs0001"`.}
 }
 \value{
 An htmlwidget for cross-study risk score visualization.

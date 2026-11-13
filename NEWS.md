@@ -1,5 +1,18 @@
 # gsm.kri (development version)
 
+- Added `CalculateActionRiskScore()`, `MakeActionRiskScoreDetail()` and
+  `MakeActionSummary()` for action-aware Site Risk Scores and per-KRI review
+  detail (#280).
+- Added `Analyze_ActionRiskScore()` and the `srs0002` workflow to calculate
+  adjusted scores and detail from results and ActionLog inputs (#280).
+- Added configurable recency windows, action-state weighting and snapshot-date
+  scoring (#280).
+- Extended `Report_KRI()` with adjacent comparison scores, review detail,
+  action highlighting and CSV downloads (#280).
+- Added configurable risk-score MetricIDs to cross-study summaries and widgets
+  (#280).
+- Updated the site report example to use core's synthetic ActionLog (#280).
+
 # gsm.kri v1.8.0
 
 This minor release adds the IP Monitoring report and metrics (IP non-starters and premature treatment discontinuation) and the repeat-measure vital-sign KRIs.

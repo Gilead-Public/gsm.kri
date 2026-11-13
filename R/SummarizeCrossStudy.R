@@ -11,6 +11,8 @@
 #' @param dfGroups `data.frame` Optional. A data frame containing group metadata (for InvestigatorName and enrollment lookup). Must include StudyID, GroupID, Param, and Value columns.
 #' @param strNameCol `character` The column name in dfGroups to use for investigator names. Default is 'InvestigatorLastName'.
 #' @param strEnrollmentCol `character` The Param value in dfGroups to use for site enrollment counts. Default is 'ParticipantCount'.
+#' @param strRiskScoreMetric `character` Risk score MetricID to summarize.
+#'   Defaults to `"Analysis_srs0001"`.
 #'
 #' @return `data.frame` Summary table with the following columns:
 #' - GroupID: Site identifier
@@ -30,11 +32,13 @@ SummarizeCrossStudy <- function(
   strGroupLevel = "Site",
   dfGroups = NULL,
   strNameCol = "InvestigatorLastName",
-  strEnrollmentCol = "ParticipantCount"
+  strEnrollmentCol = "ParticipantCount",
+  strRiskScoreMetric = "Analysis_srs0001"
 ) {
   stopifnot(is.data.frame(dfResults))
   stopifnot(is.character(strGroupLevel) && length(strGroupLevel) == 1)
   stopifnot(is.null(dfGroups) || is.data.frame(dfGroups))
+  stopifnot(is.character(strRiskScoreMetric) && length(strRiskScoreMetric) == 1)
 
   # Filter to specified group level
   group_results <- dfResults %>%
@@ -46,7 +50,7 @@ SummarizeCrossStudy <- function(
 
   # Get risk score data
   risk_score_data <- group_results %>%
-    dplyr::filter(.data$MetricID == "Analysis_srs0001") %>%
+    dplyr::filter(.data$MetricID == strRiskScoreMetric) %>%
     dplyr::group_by(.data$GroupID) %>%
     dplyr::summarise(
       NumStudies = dplyr::n_distinct(.data$StudyID),

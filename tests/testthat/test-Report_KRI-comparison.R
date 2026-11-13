@@ -1,0 +1,244 @@
+test_that("report normalizes history and treats missing comparison detail as optional (#280)", {
+  captured <- NULL
+  testthat::local_mocked_bindings(RenderRmd = function(...) {
+    captured <<- list(...)
+    invisible("report.html")
+  }, .package = "gsm.kri")
+  results <- data.frame(StudyID = "STUDY", SnapshotDate = "2026-11-06", GroupLevel = "Site",
+    GroupID = "001", MetricID = "Analysis_srs0002", Flag = NA_character_)
+  expect_warning(Report_KRI(dfResults = results, strOutputFile = "report.html", dfRiskScoreDetail = data.frame()),
+    "without.*detail")
+  expect_s3_class(captured$lParams$dfResults$SnapshotDate, "Date")
+  expect_type(captured$lParams$dfResults$Flag, "double")
+  expect_null(captured$lParams$dfRiskScoreDetail)
+  Report_KRI(dfResults = results, strOutputFile = "report.html", strComparisonRiskMetric = NULL)
+  expect_null(captured$lParams$strComparisonRiskMetric)
+  invalid <- data.frame(GroupID = "other", MetricID = "Analysis_kri0001", Weight = 4,
+    EffectiveWeight = 4, ActionState = "Open Action")
+  expect_error(Report_KRI(dfResults = results, strOutputFile = "report.html", dfRiskScoreDetail = invalid),
+    "no matching detail")
+})
+
+test_that("Report_KRI forwards comparison score configuration (#280)", {
+  captured <- NULL
+  testthat::local_mocked_bindings(
+    RenderRmd = function(...) {
+      captured <<- list(...)
+      invisible("report.html")
+    },
+    .package = "gsm.kri"
+  )
+
+  Report_KRI(
+    lCharts = list(),
+    dfResults = data.frame(),
+    dfMetrics = data.frame(),
+    dfGroups = data.frame(),
+    strOutputFile = "report.html",
+    strComparisonRiskMetric = "Analysis_custom_srs",
+    strComparisonRiskLabel = "Comparison Score",
+    strGroupSubset = "all"
+  )
+
+  expect_equal(
+    captured$lParams$strComparisonRiskMetric,
+    "Analysis_custom_srs"
+  )
+  expect_equal(
+    captured$lParams$strComparisonRiskLabel,
+    "Comparison Score"
+  )
+  expect_equal(captured$lParams$strGroupSubset, "all")
+})
+
+test_that("Report_KRI can disable and validates comparison scores (#280)", {
+  captured <- NULL
+  testthat::local_mocked_bindings(
+    RenderRmd = function(...) {
+      captured <<- list(...)
+      invisible("report.html")
+    },
+    .package = "gsm.kri"
+  )
+
+  Report_KRI(
+    strOutputFile = "report.html",
+    strComparisonRiskMetric = NULL
+  )
+  expect_null(captured$lParams$strComparisonRiskMetric)
+
+  expect_error(
+    Report_KRI(
+      strOutputFile = "report.html",
+      strComparisonRiskMetric = character()
+    ),
+    "strComparisonRiskMetric.*must be NULL"
+  )
+  expect_error(
+    Report_KRI(
+      strOutputFile = "report.html",
+      strComparisonRiskLabel = NA_character_
+    ),
+    "strComparisonRiskLabel.*must be a single"
+  )
+  expect_error(
+    Report_KRI(
+      strOutputFile = "report.html",
+      strGroupSubset = "unknown"
+    ),
+    "strGroupSubset.*must be NULL"
+  )
+})
+test_that("Report_KRI forwards risk score detail (#280)", {
+  captured <- NULL
+  testthat::local_mocked_bindings(
+    RenderRmd = function(...) {
+      captured <<- list(...)
+      invisible("report.html")
+    },
+    .package = "gsm.kri"
+  )
+
+  detail <- data.frame(GroupID = "1", MetricID = "Analysis_kri0001")
+  Report_KRI(strOutputFile = "report.html", dfRiskScoreDetail = detail)
+  expect_equal(captured$lParams$dfRiskScoreDetail, detail)
+
+  Report_KRI(strOutputFile = "report.html")
+  expect_null(captured$lParams$dfRiskScoreDetail)
+})
+
+test_that("dated action detail selects priority labels and is optional in workflows (#280)", {
+  captured <- NULL
+  testthat::local_mocked_bindings(
+    RenderRmd = function(...) {
+      captured <<- list(...)
+      invisible("report.html")
+    },
+    MakeCharts = function(...) list(),
+    .package = "gsm.kri"
+  )
+  detail <- data.frame(
+    GroupID = "1001", MetricID = "Analysis_kri0001", ActionWindowDays = 90
+  )
+  Report_KRI(strOutputFile = "report.html", dfRiskScoreDetail = detail)
+  expect_equal(captured$lParams$strComparisonRiskLabel, "Review Priority Score")
+  Report_KRI(
+    strOutputFile = "report.html", dfRiskScoreDetail = detail,
+    strComparisonRiskLabel = "Custom priority"
+  )
+  expect_equal(captured$lParams$strComparisonRiskLabel, "Custom priority")
+
+  workflow <- yaml::read_yaml(system.file(
+    "workflow/4_modules/report_kri_site.yaml", package = "gsm.kri"
+  ))
+  workflow$steps[[length(workflow$steps)]]$params$strOutputFile <- "report.html"
+  domains <- list(
+    Reporting_Results = gsm.core::reportingResults,
+    Reporting_Metrics = gsm.core::reportingMetrics,
+    Reporting_Groups = gsm.core::reportingGroups,
+    Reporting_Bounds = gsm.core::reportingBounds
+  )
+  workr::RunWorkflow(workflow, lData = domains)
+  expect_null(captured$lParams$dfRiskScoreDetail)
+  domains$Analysis_ActionRiskScoreDetail <- detail
+  workr::RunWorkflow(workflow, lData = domains)
+  expect_equal(captured$lParams$dfRiskScoreDetail, detail)
+  expect_equal(captured$lParams$strComparisonRiskLabel, "Review Priority Score")
+})
+
+test_that("site report demo uses the bundled snapshot-policy analysis (#280)", {
+  testthat::local_mocked_bindings(MakeCharts = function(...) list(), .package = "gsm.kri")
+  testthat::local_mocked_bindings(knit_child = function(...) character(), .package = "knitr")
+  source_path <- testthat::test_path("..", "..", "pkgdown", "menus", "examples", "Example_SiteReport.Rmd")
+  skip_if_not(file.exists(source_path), "Pkgdown examples are excluded from built packages")
+  script <- tempfile(fileext = ".R")
+  knitr::purl(source_path, output = script, quiet = TRUE)
+  example <- new.env(parent = asNamespace("gsm.kri"))
+  expect_warning(sys.source(script, envir = example), "Rows with NA values in 'Weight' or 'WeightMax'")
+  expect_identical(example$demo_action_log, gsm.core::reportingActionLog)
+  detail <- example$action_score_detail
+  expect_equal(nrow(detail), nrow(example$current_kri_results))
+  proxy <- detail$ActionDateIsProxy %in% TRUE
+  expect_true(any(proxy))
+  expect_true(all(grepl("proxy", detail$ActionedDateSource[proxy])))
+  expect_true(any(detail$SnapshotDecisionExcluded))
+  expect_true(all(detail$EffectiveWeight[detail$SnapshotDecisionExcluded] == 0))
+  green <- detail[!is.na(detail$Flag) & detail$Flag == 0 & proxy, ]
+  expect_gt(nrow(green), 0L)
+  expect_true(all(green$ActionState == "Closed Action"))
+  expect_warning(recomputed <- Analyze_ActionRiskScore(example$current_kri_results, example$weights,
+    example$demo_action_log, bUseSnapshotDate = TRUE,
+    bScoreSnapshotNoAction = TRUE, bActionHistoryComplete = FALSE, strActionPolicy = "disposition"),
+    "Rows with NA values in 'Weight' or 'WeightMax'")
+  expect_equal(detail, recomputed$Analysis_ActionRiskScoreDetail)
+  expect_equal(example$action_weighted_score[names(recomputed$Analysis_Summary)], recomputed$Analysis_Summary)
+})
+
+test_that("child report templates default optional comparison labels (#280)", {
+  script <- tempfile(fileext = ".R")
+  on.exit(unlink(script), add = TRUE)
+  knitr::purl(system.file("report", "Report_KRI.Rmd", package = "gsm.kri"),
+    output = script, quiet = TRUE)
+  expressions <- parse(script)
+  overview <- Filter(function(expression) {
+    is.call(expression) && identical(expression[[1L]], as.name("<-")) &&
+      identical(expression[[2L]], as.name("GroupOverViz"))
+  }, as.list(expressions))[[1L]]
+  child <- new.env(parent = baseenv())
+  child$params <- list()
+  child$dfMetrics <- data.frame()
+  child$dfResults_current <- data.frame()
+  child$setup <- list(GroupLevel = "Country")
+  child$Widget_GroupOverview <- function(...) list(...)
+  eval(overview, child)
+  expect_equal(child$GroupOverViz$strComparisonRiskLabel, "Adjusted Risk Score")
+  expect_null(child$GroupOverViz$strComparisonRiskMetric)
+  expect_null(child$GroupOverViz$dfComparisonRiskDetail)
+  child$params$strComparisonRiskLabel <- "Custom comparison"
+  eval(overview, child)
+  expect_equal(child$GroupOverViz$strComparisonRiskLabel, "Custom comparison")
+})
+
+test_that("Report_KRI renders without an action-weighted score (#280)", {
+  skip_if_not(rmarkdown::pandoc_available())
+
+  metric_ids <- c("Analysis_kri0001", "Analysis_kri0002", "Analysis_srs0001")
+  results <- gsm.core::reportingResults %>%
+    dplyr::filter(.data$MetricID %in% metric_ids)
+  metrics <- gsm.core::reportingMetrics %>%
+    dplyr::filter(.data$MetricID %in% metric_ids)
+  bounds <- gsm.core::reportingBounds %>%
+    dplyr::filter(.data$MetricID %in% metric_ids)
+  # Site risk scores have no thresholds to chart.
+  kri_ids <- setdiff(metric_ids, "Analysis_srs0001")
+  charts <- MakeCharts(
+    dfResults = results %>% dplyr::filter(.data$MetricID %in% kri_ids),
+    dfGroups = gsm.core::reportingGroups,
+    dfMetrics = metrics %>% dplyr::filter(.data$MetricID %in% kri_ids),
+    dfBounds = bounds
+  )
+  detail <- data.frame(
+    GroupID = unique(results$GroupID)[1],
+    MetricID = "Analysis_kri0001",
+    Weight = 4,
+    EffectiveWeight = 0,
+    ActionState = "No Action"
+  )
+
+  output_dir <- withr::local_tempdir()
+  for (report_detail in list(NULL, detail)) {
+    output_file <- Report_KRI(
+      lCharts = charts,
+      dfResults = results,
+      dfMetrics = metrics,
+      dfGroups = gsm.core::reportingGroups,
+      strOutputDir = output_dir,
+      strOutputFile = "no_srs0002.html",
+      dfRiskScoreDetail = report_detail
+    )
+    html <- paste(readLines(file.path(output_dir, "no_srs0002.html"), warn = FALSE), collapse = "\n")
+    expect_true(grepl("Widget_GroupOverview", html, fixed = TRUE))
+    # Detail for a score that is not displayed never reaches the widget.
+    expect_false(grepl("No Action", html, fixed = TRUE))
+  }
+})

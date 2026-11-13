@@ -16,19 +16,31 @@ output:
 
 # Set Up
 
-This page provides a sample Site KRI Report generated using the standard KRIs included in the `gsm.kri` package. Expand the "Setup" section below to see the code used to generate the report. Or scroll down for the standard KRI report output.
+This example uses the bundled synthetic reporting results and ActionLog
+from `gsm.core`, generated with `gsm.datasim`. The adjusted
+score and per-KRI detail come from the same `Analyze_ActionRiskScore()` call
+used by the metric workflow. Original KRI flags and the Site Risk Score remain
+unchanged.
+
+Open and Closed dispositions retain their weights. An unambiguous No Action
+snapshot within 90 days can exclude a contribution when snapshot scoring is
+explicitly enabled. These are labelled snapshot-date proxies, not verified
+human-action timestamps. Missing evidence retains the contribution.
+Earlier flagged findings that are now green retain their Closed review evidence.
+
+The reporting archive runs from February to April 2025, spanning 59 days.
+It does not demonstrate 90-day expiry; separate synthetic regression scenarios
+cover the inclusive day-90 and expired day-91 boundaries.
 
 <details>
 <summary>Setup</summary>
 
-```{r}
+```{r, warning=FALSE}
 # Load libraries
 library(gsm.core)
 library(gsm.kri)
 library(here)
 
-## Retired metric: inactive, with results in earlier snapshots only.
-## The example data have none, so one is copied from the Adverse Event Rate.
 dfMetrics <- gsm.core::reportingMetrics %>%
   dplyr::filter(MetricID == "Analysis_kri0001") %>%
   dplyr::mutate(
@@ -46,9 +58,44 @@ dfResults <- gsm.core::reportingResults %>%
   dplyr::mutate(MetricID = "Analysis_kri9999") %>%
   dplyr::bind_rows(gsm.core::reportingResults, .)
 
+latest_snapshot <- max(gsm.core::reportingResults$SnapshotDate)
+weights <- gsm.kri::MakeWeights(gsm.core::reportingMetrics)
+active_site_metrics <- gsm.core::reportingMetrics %>%
+  dplyr::filter(.data$GroupLevel == "Site", .data$Active %in% TRUE) %>%
+  dplyr::pull("MetricID")
+current_kri_results <- gsm.core::reportingResults %>%
+  dplyr::filter(
+    .data$SnapshotDate == latest_snapshot,
+    .data$GroupLevel == "Site",
+    grepl("^Analysis_kri", .data$MetricID),
+    .data$MetricID %in% active_site_metrics
+  )
+demo_action_log <- gsm.core::reportingActionLog
+analysis <- gsm.kri::Analyze_ActionRiskScore(
+  dfResults = current_kri_results,
+  dfWeights = weights,
+  dfActionLog = demo_action_log,
+  bUseSnapshotDate = TRUE,
+  bScoreSnapshotNoAction = TRUE,
+  intActionWindowDays = 90L,
+  strActionPolicy = "disposition",
+  bActionHistoryComplete = FALSE
+)
+action_score_detail <- analysis$Analysis_ActionRiskScoreDetail
+action_weighted_score <- analysis$Analysis_Summary %>%
+  dplyr::mutate(
+    StudyID = unique(current_kri_results$StudyID),
+    SnapshotDate = latest_snapshot
+  )
+
+site_results <- dplyr::bind_rows(
+  dfResults,
+  action_weighted_score
+)
+
 ## Site Report
 lCharts <- gsm.kri::MakeCharts(
-  dfResults = dfResults,
+  dfResults = site_results,
   dfGroups = gsm.core::reportingGroups,
   dfMetrics = dfMetrics,
   dfBounds = gsm.core::reportingBounds
@@ -65,10 +112,12 @@ child_env <- list2env(
   list(
     params = list(
       lCharts = lCharts,
-      # All snapshots: the retired metric has no results in the latest one.
-      dfResults = dfResults,
+        dfResults = site_results,
       dfGroups = gsm.core::reportingGroups,
-      dfMetrics = dfMetrics
+        dfMetrics = dfMetrics,
+      strComparisonRiskMetric = "Analysis_srs0002",
+      strComparisonRiskLabel = "Adjusted Risk Score (Draft)",
+      dfRiskScoreDetail = action_score_detail
     )
   ),
   parent = environment()
