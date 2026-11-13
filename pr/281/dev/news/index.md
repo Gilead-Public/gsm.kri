@@ -2,93 +2,30 @@
 
 ## gsm.kri (development version)
 
-- The site example now consumes core’s bundled ActionLog through
-  [`Analyze_ActionRiskScore()`](https://gilead-public.github.io/gsm.kri/dev/reference/Analyze_ActionRiskScore.md),
-  with labelled snapshot proxies and explicit No Action scoring. The
-  bundled `srs0002` workflow uses the same single-calculation path with
-  results and ActionLog inputs. Its snapshot policy can be disabled
-  through `UseSnapshotDate` or made display-only through
-  `ScoreSnapshotNoAction`
+- Added
+  [`CalculateActionRiskScore()`](https://gilead-public.github.io/gsm.kri/dev/reference/CalculateActionRiskScore.md),
+  [`MakeActionRiskScoreDetail()`](https://gilead-public.github.io/gsm.kri/dev/reference/MakeActionRiskScoreDetail.md)
+  and
+  [`MakeActionSummary()`](https://gilead-public.github.io/gsm.kri/dev/reference/MakeActionSummary.md)
+  for action-aware Site Risk Scores and per-KRI review detail
   ([\#280](https://github.com/Gilead-Public/gsm.kri/issues/280)).
-
 - Added
   [`Analyze_ActionRiskScore()`](https://gilead-public.github.io/gsm.kri/dev/reference/Analyze_ActionRiskScore.md)
-  to compute score and detail together, including explicit snapshot-date
-  policy. Source retrieval/persistence stays outside the calculator.
+  and the `srs0002` workflow to calculate adjusted scores and detail
+  from results and ActionLog inputs
+  ([\#280](https://github.com/Gilead-Public/gsm.kri/issues/280)).
+- Added configurable recency windows, action-state weighting and
+  snapshot-date scoring
+  ([\#280](https://github.com/Gilead-Public/gsm.kri/issues/280)).
+- Extended
   [`Report_KRI()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_KRI.md)
-  normalizes result types and supports absent optional comparison detail
-  without a custom study preflight
+  with adjacent comparison scores, review detail, action highlighting
+  and CSV downloads
   ([\#280](https://github.com/Gilead-Public/gsm.kri/issues/280)).
-
-- Site reports with comparison-risk detail can download review CSV
-  through `gsm.vizr`. The versioned export includes current/review
-  flags, date provenance, weights, exclusion reasons, and reported score
-  components, without altering the report’s scores or filters
+- Added configurable risk-score MetricIDs to cross-study summaries and
+  widgets
   ([\#280](https://github.com/Gilead-Public/gsm.kri/issues/280)).
-
-- Added an explicit opt-in `strActionPolicy = "disposition"` draft. It
-  keeps original metric-specific flag weights and the full denominator,
-  applying state factors only while a documented decision is recent and
-  applicable. Defaults keep Open/Closed weights and temporarily exclude
-  No Action only. The site example previews this model as Adjusted Risk
-  Score (Draft); existing recent-review and legacy defaults remain
-  unchanged
-  ([\#280](https://github.com/Gilead-Public/gsm.kri/issues/280)).
-
-- Added
-  [`MakeActionSummary()`](https://gilead-public.github.io/gsm.kri/dev/reference/MakeActionSummary.md)
-  for the latest documented monitoring decision across all eligible
-  signal snapshots per site/KRI, including zero-weight results. Explicit
-  event dates and provenance are required; signal creation and
-  extraction dates are never substituted. Recency and coverage are
-  separate, and incomplete, escalated, reopened, critical, or
-  conflicting evidence cannot suppress a contribution
-  ([\#280](https://github.com/Gilead-Public/gsm.kri/issues/280)).
-
-- The `srs0002` workflow supports a configurable 90-day Adjusted Site
-  Risk Score, keeps the full original denominator, and returns
-  `Analysis_ActionRiskScoreDetail` for the site report. Unknown dates
-  retain full contribution. Dated detail adds a border to each site/KRI
-  cell with a recorded action within 90 days; the table has no hide or
-  score-exclusion controls and leaves reported scores and flag colors
-  unchanged. Direct callers retain legacy state weighting unless they
-  specify `intActionWindowDays`
-  ([\#280](https://github.com/Gilead-Public/gsm.kri/issues/280)).
-
-- Added
-  [`CalculateActionRiskScore()`](https://gilead-public.github.io/gsm.kri/dev/reference/CalculateActionRiskScore.md)
-  and the `srs0002` workflow for an action-status-weighted Site Risk
-  Score. Open, closed, and awaiting-triage findings are included by
-  default; no-action findings are excluded; missing nonzero action
-  states fail unless an explicit fallback is configured. The full raw
-  SRS denominator is retained. For each site and metric, the latest
-  signal snapshot on or before the results snapshot (or
-  `dActionSnapshotDate`) is applied within a complete frozen extraction.
-  `dActionExtractionDate` selects the extraction cutoff; later-extracted
-  decisions are not used by default. Multiple actions use the largest
-  factor and retain character identifiers and extraction provenance in
-  the detail. Legacy state mode conservatively supports including
-  missing states
-  ([\#280](https://github.com/Gilead-Public/gsm.kri/issues/280)).
-
-- Added
-  [`MakeActionRiskScoreDetail()`](https://gilead-public.github.io/gsm.kri/dev/reference/MakeActionRiskScoreDetail.md),
-  which returns the per-KRI contributions behind the action-weighted
-  score, and a `dfRiskScoreDetail` argument to
-  [`Report_KRI()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_KRI.md)
-  that shows them in the site overview
-  ([\#280](https://github.com/Gilead-Public/gsm.kri/issues/280)).
-
-- Added configurable risk-score MetricIDs to the cross-study summary and
-  widget APIs while retaining `Analysis_srs0001` as the default
-  ([\#280](https://github.com/Gilead-Public/gsm.kri/issues/280)).
-
-- Extended the existing site overview in
-  [`Report_KRI()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_KRI.md)
-  to display an adjusted Site Risk Score immediately after the original
-  Risk Score when `Analysis_srs0002` is available. Direct
-  [`Widget_GroupOverview()`](https://gilead-public.github.io/gsm.vizr/reference/Widget_GroupOverview.html)
-  consumers retain the original single-score layout unless they opt in
+- Updated the site report example to use core’s synthetic ActionLog
   ([\#280](https://github.com/Gilead-Public/gsm.kri/issues/280)).
 
 ## gsm.kri v1.8.0
