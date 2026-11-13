@@ -75,7 +75,7 @@ Analyze_ActionRiskScore <- function(
   assessment <- unique(detail$ActionAsOfDate)
   extraction <- unique(detail$ActionExtractionDate)
   cutoff <- if (length(extraction) == 1L && !is.na(extraction)) extraction else assessment
-  observed <- .action_snapshot_summary(actions, assessment, cutoff)
+  observed <- .action_snapshot_summary(actions, min(assessment, detail$SnapshotDate), cutoff)
   detail <- dplyr::left_join(detail, observed, by = .risk_score_action_join_key)
   proxy <- is.na(detail$LastActionedDate) & !is.na(detail$SnapshotScoreDate)
   detail$ActionDateIsProxy <- proxy
