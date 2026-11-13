@@ -153,7 +153,7 @@ MakeActionSummary <- function(
     dplyr::slice_max(.data$ActionedDate, n = 1L, with_ties = TRUE) %>%
     dplyr::mutate(
       HasConflictingLatestDecision = dplyr::n_distinct(
-        .data$ActionedFlag, .data$ActionScope, .data$RiskEpisodeID,
+        .data$State, .data$ActionedFlag, .data$ActionScope, .data$RiskEpisodeID,
         dplyr::if_else(.data$ActionScope == "Signal", as.character(.data$SnapshotDate), NA_character_)
       ) > 1L
     ) %>%
