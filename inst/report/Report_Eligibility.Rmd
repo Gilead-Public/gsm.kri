@@ -1,7 +1,11 @@
 ---
+# pagetitle sets only the browser tab; the visible title is the H1 below, which
+# also renders in the knit_child pkgdown embed.
+pagetitle: "Ineligible Participant Overview"
 output:
   html_document:
     mathjax: null
+    md_extensions: "-tex_math_dollars"
     toc: true
     toc_float:
       collapsed: false
@@ -14,117 +18,446 @@ params:
   lListings: NA
 ---
 
-```{r setup, include=FALSE} 
-library(dplyr)
-library(stringr)
-library(tidyr)
+```{r setup, include=FALSE}
+# Data contract (see ?Report_Eligibility): lListings$IE_denom is
+# Mapped_EXCLUSION; optional level 1 columns on it switch on pilot mode,
+# optional lListings$IE_records (level 2) adds the deep dive, and the optional
+# level 3 metric in dfResults adds Status over Time. R derives every status and
+# count; eligFilters.js only filters.
 library(gsm.kri)
-library(gsm.qtl)
-library(gt)
-library(htmltools)
-library(knitr)
-
-knitr::opts_chunk$set(warning = FALSE, message = FALSE)
-
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
 
 dfResults <- params$dfResults
 dfMetrics <- params$dfMetrics
 dfGroups <- params$dfGroups
 lListings <- params$lListings
-IE_num <- lListings$IE_num
-IE_denom <- lListings$IE_denom
-latest_snapshot = max(dfResults$SnapshotDate)
+dfExclusion <- if (!is.null(lListings$IE_denom)) lListings$IE_denom else lListings$IE_num
+dfRecords <- lListings$IE_records
+
+bPilot <- elig_Mode(dfExclusion) == "pilot"
+dfElig <- elig_ClassifyParticipants(dfExclusion, dfGroups)
+vSources <- elig_Sources(dfElig)
+bHasEdcPd <- elig_HasSource(dfElig, "flag_edc_pd")
+bDeepDive <- bPilot && is.data.frame(dfRecords) && nrow(dfRecords) > 0
+
+strRateID <- elig_RateMetricID(dfResults)
+dfRate <- dfResults[dfResults$MetricID == strRateID, ]
+dfRateMetric <- dfMetrics[dfMetrics$MetricID == strRateID, ]
+dfTrend <- elig_TrendRows(dfResults)
+latest_snapshot <- max(as.Date(dfResults$SnapshotDate))
+strStudyID <- paste(unique(stats::na.omit(dfElig$studyid)), collapse = ", ")
+
+status_rows <- lapply(
+  c(study = "study", country = "country", site = "site"),
+  function(level) elig_StatusRows(dfElig, level)
+)
+source_data <- elig_SourceRows(dfElig)
+criteria_data <- elig_CriteriaRows(dfElig)
+vStatusColors <- elig_StatusColors(bPilot)
+vSourceColors <- vStatusColors[setdiff(names(vStatusColors), "No Eligibility Risk")]
+vCriterionColors <- c(Inclusion = "#3C587F", Exclusion = "#8FB3DE", Other = "#B8C4D6")[unique(criteria_data$study$Status)]
+has_criteria <- length(criteria_data$order) > 0
+
+dfListing <- elig_ListingData(dfElig)
+
+vDelivered <- unname(c(
+  "EDC eCRF",
+  if (any(names(vSources) %in% c("flag_pd", "flag_pd_important"))) "Protocol Deviation",
+  if (bPilot) "EDC Query",
+  if (bHasEdcPd) "EDC PD"
+))
+
+status_note <- function(level) {
+  cat(
+    "\n> One bar per ", level,
+    if (level == "study") ", as % of its enrolled participants. Use the chart's position control for counts." else ", by count of its enrolled participants. Use the chart's position control for the 100% view.",
+    if (level != "study") paste0(
+      " Click a ", level, " bar to filter the ",
+      if (level == "country") "site charts, flag sources, criteria and listings" else "flag sources, criteria and listings",
+      ". Use the Show buttons to keep only the ", if (level == "country") "countries" else "sites",
+      " with flagged participants; their bars keep every status."
+    ),
+    "\n",
+    sep = ""
+  )
+}
+sources_note <- paste0(
+  "\n> Participants in scope flagged by each source, by their overall status",
+  if (bPilot) " (Ineligible wins over Potentially Ineligible)" else "",
+  ". A participant can count under several sources. Hover for % of enrolled.",
+  if (bPilot && !bHasEdcPd) " EDC PD is not delivered for this study." else "",
+  "\n"
+)
+criteria_note <- "\n> EDC I/E eCRF criteria only. Participants flagged only by a PD, a query or an EDC PD have no criterion codes and do not appear here.\n"
 ```
 
----
-title: " Ineligible Participant Overview"
-subtitle: "Study: `r unique(lListings[[1]]$studyid)`"
-date: "Snapshot Date: `r latest_snapshot`"
----
+```{r page-css, results='asis'}
+# Inline and literal hex: the pkgdown embed loads neither styles.css nor its
+# var(--...) tokens.
+cat('
+<style>
+#TOC #tocify-header0 { display: block; }
+/* Full window width: the listings have one wide column per source. div.* outranks the 1200px cap
+   that toc_float sets on div.main-container; the pkgdown embed has no main-container. */
+div.main-container { max-width: none; padding-left: 24px; padding-right: 24px; }
+@media (min-width: 992px) {
+  .main-container > .row > .col-md-3 { width: 290px; }
+  .main-container > .row > .toc-content.col-md-9 { width: calc(100% - 290px); }
+}
+#toc-toggle { z-index: 1030 !important; }
+.elig-filter-strip { position: sticky; top: 48px; z-index: 1029; display: flex; align-items: center; flex-wrap: wrap; gap: 10px; background-color: #f1f7fe; border-bottom: 1px solid #cfe3fb; padding: 8px 14px; margin: 0 0 16px; }
+.elig-filter-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #5b7193; }
+.elig-filter-hint { font-size: 13px; color: #5b7193; }
+.elig-chip { display: inline-flex; align-items: center; gap: 6px; background-color: #ffffff; border: 1px solid #3C587F; border-radius: 16px; padding: 3px 6px 3px 12px; font-size: 13px; color: #3C587F; }
+.elig-chip-value { font-weight: 600; }
+.elig-chip button { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; padding: 0; border: none; border-radius: 50%; background-color: transparent; color: #3C587F; font-size: 13px; line-height: 1; cursor: pointer; }
+.elig-chip button:hover { background-color: #3C587F; color: #ffffff; }
+.elig-chip button:focus-visible { outline: 2px solid #3C587F; outline-offset: 2px; }
+.elig-scope { display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5b7193; background-color: #eef2f7; border-radius: 10px; padding: 1px 8px; margin-bottom: 6px; }
+.elig-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin: 8px 0 18px; }
+.elig-card { background-color: #ffffff; border: 1px solid #e3e8ef; border-radius: 6px; padding: 10px 14px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04); }
+.elig-card-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: #5b7193; }
+.elig-card-value { font-size: 28px; font-weight: 700; color: #1f2d3d; line-height: 1.2; }
+.elig-card-sub { font-size: 12px; color: #6b7a90; }
+.elig-badge { display: inline-block; border-radius: 10px; padding: 1px 9px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.elig-kri-badge { background-color: #3C587F; color: #ffffff; font-size: 10px; letter-spacing: 0.06em; padding: 0 7px; margin-left: 6px; vertical-align: 1px; cursor: help; }
+.elig-note { color: #5b7193; font-size: 13px; }
+.elig-status-filter { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: 6px 0 8px; font-size: 13px; color: #3C587F; }
+.elig-status-filter-label { font-weight: 600; }
+.elig-status-filter-options { display: inline-flex; border: 1px solid #3C587F; border-radius: 16px; overflow: hidden; }
+.elig-status-filter-options button { border: none; background-color: #ffffff; color: #3C587F; padding: 3px 12px; font-size: 13px; cursor: pointer; }
+.elig-status-filter-options button + button { border-left: 1px solid #3C587F; }
+.elig-status-filter-options button.active { background-color: #3C587F; color: #ffffff; }
+.elig-status-filter-options button:focus-visible { outline: 2px solid #3C587F; outline-offset: -3px; }
+.elig-status-count { color: #5b7193; }
+.elig-status-filter-active .elig-status-count { color: #3C587F; font-weight: 600; }
+.elig-status-empty { flex-basis: 100%; padding: 10px 12px; background-color: #f6f8fb; border: 1px dashed #b8c4d6; color: #5b7193; }
+.elig-empty { color: #5b7193; font-style: italic; }
+.elig-map, .elig-conc { border-collapse: collapse; font-size: 13px; margin: 6px 0 10px; }
+.elig-map th, .elig-map td, .elig-conc th, .elig-conc td { border: 1px solid #e3e8ef; padding: 4px 8px; text-align: center; }
+.elig-map tbody th, .elig-conc td:first-child { text-align: left; }
+.elig-map-total { font-weight: 600; background-color: #f6f8fb; }
+.elig-conc { width: 100%; }
+.elig-conc tr.elig-conc-hot td { background-color: #FFF6E0; }
+.elig-conc summary { cursor: pointer; font-weight: 600; }
+.elig-conc ul { margin: 4px 0 0 16px; padding: 0; text-align: left; }
+.elig-truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px; cursor: help; }
+.elig-records { white-space: pre-line; max-height: 240px; overflow-y: auto; }
+.elig-detail { padding: 8px 16px; background-color: #f8fafc; }
+#map-wrap-country, #map-wrap-site, #elig-concentration { overflow-x: auto; }
+/* Clears the navbar and the sticky strip when a contents link jumps to a section. */
+.section.level2, .section.level3 { scroll-margin-top: 100px; }
+</style>
+')
+```
 
 # Ineligible Participant Overview
 
-## Study Overview
-```{r, echo=FALSE}
-Eligibility_Overview(
-  dfResults = dfResults,
-  dSnapshot = latest_snapshot,
-  strNum = "Ineligible Participants",
-  strDenom = "Total Enrolled", 
-  strQTL = "Current Ineligible Enrolled Rate"
+```{r header, results='asis'}
+cat(sprintf(
+  "**Study:** %s  \n*Snapshot date: %s* &nbsp;|&nbsp; *Sources: %s*\n\n",
+  strStudyID, format(latest_snapshot), paste(vDelivered, collapse = ", ")
+))
+```
+
+```{r filter-strip}
+# htmltools, not raw HTML, so pandoc does not wrap the controls in a <p>.
+chip <- function(key, label) {
+  htmltools::tags$span(
+    id = paste0("elig-chip-", key), class = "elig-chip", style = "display:none;",
+    htmltools::tags$span(label, ": ", htmltools::tags$span(class = "elig-chip-value")),
+    htmltools::tags$button(
+      type = "button", `data-elig-clear` = key,
+      `aria-label` = paste("Clear", tolower(label), "filter"), htmltools::HTML("&times;")
+    )
+  )
+}
+htmltools::tags$div(
+  id = "elig-filter-strip", class = "elig-filter-strip",
+  htmltools::tags$span(class = "elig-filter-eyebrow", "Filters"),
+  htmltools::tags$span(
+    id = "elig-filter-hint", class = "elig-filter-hint",
+    "None. Click a country or site bar to filter."
+  ),
+  chip("country", "Country"),
+  chip("site", "Site")
 )
 ```
 
-## Time Series Chart
-```{r, echo=FALSE, results='asis', fig.height=4}
+## Study Overview
+
+<span class="elig-scope">Study-wide</span>
+
+```{r overview}
+elig_OverviewCards(dfElig, bPilot)
+```
+
+## Time Series {.tabset .tabset-pills}
+
+### Ineligibility Rate
+
+<span class="elig-scope">Study-wide</span>
+
+```{r ts}
 gsm.kri::Widget_TimeSeries(
-  dfResults = dfResults %>% mutate(Flag = NA),
-  lMetric = as.list(dfMetrics),
+  dfResults = dplyr::mutate(dfRate, Flag = NA),
+  lMetric = as.list(dfRateMetric),
   dfGroups = dfGroups,
   strOutcome = "Metric",
   bAddGroupSelect = FALSE,
-  selectedGroupIDs = unique(dfResults$GroupID)
+  selectedGroupIDs = unique(dfRate$GroupID)
 )
 ```
 
-## Bar Charts {.tabset .tabset-pills}
-
-### Site
-```{r, echo = FALSE}
-gsm.qtl::eligibility_groupBar(dfNum = IE_num, dfDenom = IE_denom, varGroupID = invid, strGroupLabel = "Site")
+```{r ts-status-tab, results='asis', eval=bPilot && nrow(dfTrend) > 0}
+cat("\n### Status over Time\n\n<span class=\"elig-scope\">Study-wide</span>\n\n")
 ```
 
-### Country
-```{r, echo = FALSE}
-gsm.qtl::eligibility_groupBar(dfNum = IE_num, dfDenom = IE_denom, varGroupID = country, strGroupLabel = "Country")
-```
-
-### Source
-```{r, echo = FALSE}
-gsm.qtl::eligibility_sourceBar(df = IE_num)
-```
-
-### Criteria/Site (EDC I/E data only)
-```{r, echo = FALSE}
-gsm.qtl::criteria_groupBar(df =  IE_num, varGroupID = invid, strGroupLabel = "Site")
-```
-
-### Criteria/Country (EDC I/E data only)
-```{r, echo = FALSE}
-gsm.qtl::criteria_groupBar(df =  IE_num, varGroupID = country, strGroupLabel = "Country")
-```
-
-### Site/Criteria (EDC I/E data only)
-```{r, echo = FALSE}
-gsm.qtl::criteria_groupBar(df =  IE_num, varGroupID = invid, strGroupLabel = "Site", bSwapAxes = TRUE)
-```
-
-### Country/Criteria (EDC I/E data only)
-```{r, echo = FALSE}
-gsm.qtl::criteria_groupBar(df =  IE_num, varGroupID = country, strGroupLabel = "Country", bSwapAxes = TRUE)
-```
-
-## Inclusion/Exclusion Listing
-```{r, echo = FALSE}
-# output the listing on the html
-gsm.qtl::eligibility_listing(df = IE_num)
-
-# grab the dataset to download
-x <- gsm.qtl::eligibility_listing(df = IE_denom, download = TRUE)
-csv_txt <- paste(utils::capture.output(utils::write.csv(x, row.names = FALSE)), collapse = "\n")# turn into a data-URI (single-file HTML friendly)
-href <- base64enc::dataURI(charToRaw(csv_txt), mime = "text/csv;charset=utf-8")
-
-knitr::asis_output(
-  sprintf('<p><a class="btn btn-primary" download="eligibility_listing.csv" href="%s">
-            ⬇️ Download CSV
-          </a></p>', href)
+```{r ts-status, eval=bPilot && nrow(dfTrend) > 0}
+gsm.vizr::bars(
+  data = dfTrend,
+  spec = elig_TrendBarSpec(),
+  metadata = list(chartId = "elig-trend-status")
 )
 ```
 
-
-```{r echo=FALSE}
-toggle_toc <- system.file('report', 'lib', 'toggleTOC.js', package = "gsm.kri")
+```{r ts-status-note, results='asis', eval=bPilot && nrow(dfTrend) > 0}
+cat(sprintf(
+  '<p class="elig-note">Enrolled participants by eligibility status at each snapshot with the eligibility risk metric, from %s. History starts at the study\'s go-live and is never back-filled. The Ineligibility Rate can step up at go-live because the eligibility PD categories widened.</p>',
+  min(dfTrend$GroupID)
+))
 ```
 
-```{js, file={toggle_toc}, echo=FALSE}
+## Study {.tabset .tabset-pills}
+
+### Status
+
+```{r study-status}
+gsm.vizr::bars(
+  data = status_rows$study,
+  spec = elig_StatusBarSpec("study", status_rows$study$GroupID, bPilot),
+  metadata = list(chartId = "elig-study-status", level = "study"),
+  height = 230,
+  minHeight = 230
+)
+```
+
+```{r study-status-note, results='asis'}
+status_note("study")
+```
+
+### Flag Sources
+
+```{r study-sources}
+gsm.vizr::bars(
+  data = source_data$study,
+  spec = elig_BreakdownBarSpec(source_data$order, "Flag source", vSourceColors),
+  metadata = list(chartId = "elig-study-sources", level = "study"),
+  minHeight = 300
+)
+```
+
+```{r study-sources-note, results='asis'}
+cat(sources_note)
+```
+
+### Criteria (EDC I/E only)
+
+```{r study-criteria, eval=has_criteria}
+gsm.vizr::bars(
+  data = criteria_data$study,
+  spec = elig_BreakdownBarSpec(criteria_data$order, "I/E criterion", vCriterionColors),
+  metadata = list(chartId = "elig-study-criteria", level = "study"),
+  minHeight = 300
+)
+```
+
+```{r study-criteria-note, results='asis'}
+cat(if (has_criteria) criteria_note else "\n> No EDC I/E criterion cases.\n")
+```
+
+## Country {.tabset .tabset-pills}
+
+### Status
+
+```{r country-status-filter}
+elig_StatusFilter("country", bPilot)
+```
+
+```{r country-status}
+gsm.vizr::bars(
+  data = status_rows$country,
+  spec = elig_StatusBarSpec("country", status_rows$country$GroupID, bPilot),
+  metadata = list(chartId = "elig-country-status", level = "country")
+)
+```
+
+```{r country-status-note, results='asis'}
+status_note("country")
+```
+
+### Flag Sources
+
+```{r country-sources}
+gsm.vizr::bars(
+  data = source_data$study,
+  spec = elig_BreakdownBarSpec(source_data$order, "Flag source", vSourceColors),
+  metadata = list(chartId = "elig-country-sources", level = "country"),
+  minHeight = 300
+)
+```
+
+```{r country-sources-note, results='asis'}
+cat(sources_note)
+```
+
+### Criteria (EDC I/E only)
+
+```{r country-criteria, eval=has_criteria}
+gsm.vizr::bars(
+  data = criteria_data$study,
+  spec = elig_BreakdownBarSpec(criteria_data$order, "I/E criterion", vCriterionColors),
+  metadata = list(chartId = "elig-country-criteria", level = "country"),
+  minHeight = 300
+)
+```
+
+```{r country-criteria-note, results='asis'}
+cat(if (has_criteria) criteria_note else "\n> No EDC I/E criterion cases.\n")
+```
+
+### Criteria Map (EDC I/E only)
+
+```{r country-map}
+htmltools::div(id = "map-wrap-country", htmltools::div(id = "elig-country-map"))
+```
+
+```{r country-map-note, results='asis'}
+cat("\n> Countries with at least one criterion case, most affected first; columns are the criteria present in the rows shown. Shade shows the participant count. Follows the country filter.", criteria_note)
+```
+
+## Site {.tabset .tabset-pills}
+
+### Status
+
+```{r site-status-filter}
+elig_StatusFilter("site", bPilot)
+```
+
+```{r site-status}
+gsm.vizr::bars(
+  data = status_rows$site,
+  spec = elig_StatusBarSpec("site", status_rows$site$GroupID, bPilot),
+  metadata = list(chartId = "elig-site-status", level = "site")
+)
+```
+
+```{r site-status-note, results='asis'}
+status_note("site")
+```
+
+### Flag Sources
+
+```{r site-sources}
+gsm.vizr::bars(
+  data = source_data$study,
+  spec = elig_BreakdownBarSpec(source_data$order, "Flag source", vSourceColors),
+  metadata = list(chartId = "elig-site-sources", level = "site"),
+  minHeight = 300
+)
+```
+
+```{r site-sources-note, results='asis'}
+cat(sources_note)
+```
+
+### Criteria (EDC I/E only)
+
+```{r site-criteria, eval=has_criteria}
+gsm.vizr::bars(
+  data = criteria_data$study,
+  spec = elig_BreakdownBarSpec(criteria_data$order, "I/E criterion", vCriterionColors),
+  metadata = list(chartId = "elig-site-criteria", level = "site"),
+  minHeight = 300
+)
+```
+
+```{r site-criteria-note, results='asis'}
+cat(if (has_criteria) criteria_note else "\n> No EDC I/E criterion cases.\n")
+```
+
+### Criteria Map (EDC I/E only)
+
+```{r site-map}
+htmltools::div(id = "map-wrap-site", htmltools::div(id = "elig-site-map"))
+```
+
+```{r site-map-note, results='asis'}
+cat("\n> Sites with at least one criterion case, most affected first; columns are the criteria present in the rows shown. Shade shows the participant count. Follows the country filter.", criteria_note)
+```
+
+## Criteria Concentration
+
+```{r concentration}
+htmltools::div(id = "elig-concentration")
+```
+
+```{r concentration-note, results='asis'}
+cat("\n> One row per EDC I/E criterion in scope: participants, sites, countries and the site with the most cases. Rows where one site has 2 or more cases are highlighted; expand a criterion to list its sites.", criteria_note)
+```
+
+## Ineligibility Listing
+
+```{r listing-note, results='asis'}
+cat(sprintf(
+  '<p class="elig-note">%s participants (%d). Expand a row to see %s. Long text is cut; hover for the full value.%s</p>',
+  if (bPilot) "Ineligible and Potentially Ineligible" else "Ineligible",
+  nrow(dfListing),
+  if (bDeepDive) "the records behind the status" else "the participant\'s PD dates and terms and EDC I/E criteria",
+  if (bPilot && !bHasEdcPd) " &dagger; EDC PD is N/A: the source is not delivered for this study." else ""
+))
+```
+
+```{r listing}
+htmltools::tagList(
+  elig_Listing(dfListing, dfElig, if (bDeepDive) dfRecords),
+  elig_CsvButton("elig-listing", sprintf("eligibility_listing_%s.csv", strStudyID))
+)
+```
+
+```{r deep-dive-title, results='asis', eval=bDeepDive}
+dfDeepDive <- elig_DeepDiveData(dfElig, dfRecords)
+cat(sprintf(
+  '\n## Deep Dive Listing\n\n<p class="elig-note">One row per flagged participant, one column per source. Each cell lists the records as <code>[record id] date</code> followed by the source\'s key fields; a blank cell means no records from that source. %d participants.</p>\n\n',
+  nrow(dfDeepDive)
+))
+```
+
+```{r deep-dive, eval=bDeepDive}
+htmltools::tagList(
+  elig_DeepDive(dfDeepDive),
+  elig_CsvButton("elig-deep-dive", sprintf("eligibility_deep_dive_%s.csv", strStudyID))
+)
+```
+
+## Eligibility Logic
+
+```{r logic}
+elig_LogicTable(bPilot)
+```
+
+```{r elig-data}
+elig_DataScript(list(
+  status = status_rows,
+  sources = source_data,
+  criteria = criteria_data,
+  map = elig_CriteriaMapRows(dfElig),
+  conc = elig_ConcentrationRows(dfElig)
+))
+```
+
+```{js, file=system.file("report", "lib", "eligFilters.js", package = "gsm.kri"), echo=FALSE}
+```
+
+```{js, file=system.file("report", "lib", "toggleTOC.js", package = "gsm.kri"), echo=FALSE}
 ```

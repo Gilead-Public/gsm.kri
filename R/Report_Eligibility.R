@@ -3,66 +3,74 @@
 #' @description
 #' `r lifecycle::badge("stable")`
 #'
-#' This function generates a Eligibility report based on the provided inputs.
+#' Generates the Eligibility report: enrolled participants by eligibility
+#' status at study, country and site level, flag sources, EDC I/E criteria
+#' views, the Ineligibility listing and the eligibility rules.
 #'
-#' @param dfResults `data.frame` Analysis results data.
+#' The report picks its mode from the data it receives:
+#' - **Basic** (every study): two statuses, Ineligible (`Source != 'Neither'`)
+#'   and No Eligibility Risk, computed as before.
+#' - **Pilot**: `Mapped_EXCLUSION` carries the optional `edc_query` column, and
+#'   a third status, Potentially Ineligible, appears (gsm.roadmap#113).
+#'
+#' @section Data contract:
+#' Each level is optional and unlocks more of the report.
+#' 1. **Columns** on `lListings$IE_denom` (`Mapped_EXCLUSION`), `"Y"`/`"N"`:
+#'    `pd_important` and `pd_nonimportant` (split the PD source),
+#'    `edc_query` (switches on pilot mode) and `edc_pd` (`NA` throughout when
+#'    the EDC PD source is not delivered; the listing shows "N/A"). A
+#'    participant is Ineligible when `Source != 'Neither'`, otherwise
+#'    Potentially Ineligible when `edc_query` or `edc_pd` is `"Y"`, otherwise
+#'    No Eligibility Risk. `Source` itself never carries Potentially Ineligible.
+#' 2. **Records**: `lListings$IE_records`, one row per record behind a flag,
+#'    with `studyid`, `subjid`, `source` (`"EDC eCRF"`, `"Protocol Deviation"`,
+#'    `"EDC Query"`, `"EDC PD"`), `record_id`, `record_date` and the source's
+#'    key fields as further columns. Adds the Deep Dive listing (pilot mode).
+#' 3. **History metric**: `Analysis_elig0001` rows in `dfResults`, the
+#'    study-level rate (Ineligible + Potentially Ineligible) / enrolled. Adds
+#'    the Status over Time tab (pilot mode).
+#'
+#' Site-level rows of `dfGroups` (`InvestigatorFirstName`,
+#' `InvestigatorLastName`) fill the listing's Investigator Name; with
+#' Study-level groups only, the column is blank.
+#'
+#' @param dfResults `data.frame` Analysis results: the study-level eligibility
+#'   rate (qtl0001) and, optionally, `Analysis_elig0001`.
 #' @param dfMetrics `data.frame` Analysis metrics data.
 #' @param dfGroups `data.frame` Analysis groups data.
-#' @param lListings `list` List containing appropriate dataset to display for eligiiblity listing
+#' @param lListings `list` with `IE_denom` (`Mapped_EXCLUSION`), `IE_num`
+#'   (its ineligible rows) and, optionally, `IE_records`.
 #' @param strOutputDir The output directory path for the generated report. If not provided,
 #'  the report will be saved in the current working directory.
 #' @param strOutputFile The output file name for the generated report. If not provided,
-#'  the report will be named based on the study ID, Group Level and Date.
+#'  the report will be named `Report_Eligibility.html`.
 #' @param strInputPath `string` or `fs_path` Path to the template `Rmd` file.
 #'
 #' @return File path of the saved report html is returned invisibly. Save to object to view absolute output path.
 #' @examples
 #' \dontrun{
-#' # Run study-level Eligibility report.
 #' dfResults <- gsm.core::reportingResults_study %>%
-#'   filter(MetricID %in% "Analysis_qtl0001") %>%
-#'   mutate(MetricID = "study_eligibility")
-#'
+#'   dplyr::filter(MetricID == "Analysis_qtl0001")
 #' dfMetrics <- gsm.core::reportingMetrics_study %>%
-#'   filter(MetricID %in% "Analysis_qtl0001") %>%
-#'   mutate(MetricID = "study_eligibility")
-#'
-#' dfGroups <- gsm.core::reportingGroups_study
+#'   dplyr::filter(MetricID == "Analysis_qtl0001")
 #'
 #' mappings_wf <- workr::MakeWorkflowList(
 #'   strNames = c("IE", "EXCLUSION", "ENROLL", "PD"),
 #'   strPath = "workflow/1_mappings",
 #'   strPackage = "gsm.mapping"
 #' )
-#' mappings_spec <- gsm.mapping::CombineSpecs(mappings_wf)
-#' lRaw <- map_depth(
-#'   list(gsm.core::lSource),
-#'   1,
-#'   gsm.mapping::Ingest,
-#'   mappings_spec
-#' )
-#' mapped <- map_depth(lRaw, 1, ~ workr::RunWorkflows(mappings_wf, .x))
+#' lRaw <- gsm.mapping::Ingest(gsm.core::lSource, gsm.mapping::CombineSpecs(mappings_wf))
+#' mapped <- workr::RunWorkflows(mappings_wf, lRaw)
 #'
-#' # test rendering of report
-#' lListings <- list(
-#'   IE = mapped[[1]]$Mapped_EXCLUSION
-#' )
-#'
-#' lParams <- list(
+#' Report_Eligibility(
 #'   dfResults = dfResults,
 #'   dfMetrics = dfMetrics,
-#'   dfGroups = dfGroups,
-#'   lListings = lListings
-#' )
-#'
-#' # Local call to render function - run from pkg root
-#' Report_Eligibility(
-#'   lParams = lParams,
-#'   strOutputDir = file.path(getwd(), "pkgdown", "assets", "examples"),
-#'   strOutputFile = "Example_Eligibility.html",
-#'   strInputPath = file.path(
-#'     getwd(), "pkgdown", "menus", "examples", "report/Report_Eligibility.Rmd"
-#'   )
+#'   dfGroups = gsm.core::reportingGroups,
+#'   lListings = list(
+#'     IE_num = dplyr::filter(mapped$Mapped_EXCLUSION, Source != "Neither"),
+#'     IE_denom = mapped$Mapped_EXCLUSION
+#'   ),
+#'   strOutputDir = tempdir()
 #' )
 #' }
 #'
@@ -85,7 +93,6 @@ Report_Eligibility <- function(
 ) {
   rlang::check_installed("rmarkdown", reason = "to run `Report_Eligibility()`")
   rlang::check_installed("knitr", reason = "to run `Report_Eligibility()`")
-  rlang::check_installed("gsm.qtl", reason = "to run `Report_Eligibility()`")
 
   # set output path
   if (is.null(strOutputFile)) {

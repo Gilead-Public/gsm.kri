@@ -9,10 +9,10 @@
     "consoleErrors": 0
   },
   "eligibility": {
-    "htmlWidgetCount": 8,
-    "canvasCount": 8,
+    "htmlWidgetCount": 11,
+    "canvasCount": 10,
     "groupOverviewRowCounts": [],
-    "selectCount": 0,
+    "selectCount": 1,
     "consoleErrors": 0
   }
 }

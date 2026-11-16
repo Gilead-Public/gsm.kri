@@ -1,5 +1,7 @@
 # gsm.kri (development version)
 
+- The Eligibility report has a new layout for every study: study overview cards, a sticky country/site filter, Study / Country / Site sections with Status, Flag Sources and EDC I/E criteria tabs, a criteria map, a criteria concentration table, an expandable Ineligibility Listing (renamed from Inclusion/Exclusion Listing) with a CSV of the on-screen rows, and an Eligibility Logic table. Colour now encodes only status or Inclusion vs Exclusion. Studies without the new data keep two statuses, computed as before. Studies that deliver the optional pilot data (an `edc_query` column on `Mapped_EXCLUSION`, `lListings$IE_records` and the `Analysis_elig0001` history metric) also get a Potentially Ineligible status, a Deep Dive listing and a Status over Time chart; see the data contract in `?Report_Eligibility`. The report no longer uses gsm.qtl and now imports reactable (#371, gsm.roadmap#113).
+
 # gsm.kri v1.8.0
 
 This minor release adds the IP Monitoring report and metrics (IP non-starters and premature treatment discontinuation) and the repeat-measure vital-sign KRIs.
