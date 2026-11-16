@@ -1,4 +1,4 @@
-test_that("status rows count every enrolled participant by status and level (#113)", {
+test_that("status rows count every enrolled participant by status and level (#371, #180)", {
   df <- elig_ClassifyParticipants(elig_Fixture())
   study <- elig_StatusRows(df, "study")
   expect_equal(sum(study$n), 8)
@@ -11,7 +11,7 @@ test_that("status rows count every enrolled participant by status and level (#11
   expect_equal(unique(site$OuterGroupID[site$GroupID == "0X003"]), "CA")
 })
 
-test_that("status bars and Show buttons have 2 statuses in basic and 3 in pilot mode (#113)", {
+test_that("status bars and Show buttons have 2 statuses in basic and 3 in pilot mode (#371, #180)", {
   expect_equal(names(elig_StatusBarSpec("site")$scales$fill$colors), c(ELIG_INELIGIBLE, ELIG_NO_RISK))
   expect_length(elig_StatusBarSpec("site", bPilot = TRUE)$scales$fill$colors, 3)
 
@@ -23,7 +23,7 @@ test_that("status bars and Show buttons have 2 statuses in basic and 3 in pilot 
   expect_equal(labels(elig_StatusFilter("country", bPilot = TRUE)), c("All", "With any risk", "With Ineligible"))
 })
 
-test_that("Flag Sources count a participant under each source, stacked by overall status (#113)", {
+test_that("Flag Sources count a participant under each source, stacked by overall status (#371)", {
   rows <- elig_SourceRows(elig_ClassifyParticipants(elig_Fixture()))
   expect_equal(rows$order, c("Protocol Deviation", "EDC eCRF"))
   n <- function(key) sum(rows$study$n[rows$study$key == key])
@@ -44,7 +44,7 @@ test_that("Flag Sources count a participant under each source, stacked by overal
   expect_false("EDC PD" %in% noPD$order)
 })
 
-test_that("criteria views count EDC I/E criterion cases and keep only groups with cases (#113)", {
+test_that("criteria views count EDC I/E criterion cases and keep only groups with cases (#371)", {
   df <- elig_ClassifyParticipants(elig_Fixture())
   a <- elig_CriteriaRows(df)
   expect_equal(a$order, c("incl1", "excl2"))
@@ -63,7 +63,7 @@ test_that("criteria views count EDC I/E criterion cases and keep only groups wit
   expect_equal(nrow(c$country$US), 2)
 })
 
-test_that("the data script keeps one-element vectors as JSON arrays (#113)", {
+test_that("the data script keeps one-element vectors as JSON arrays (#371)", {
   df <- elig_ClassifyParticipants(elig_Fixture())
   html <- as.character(elig_DataScript(list(map = elig_CriteriaMapRows(df[df$subjid == "P04", ]))))
   expect_match(html, '"order":["excl2"]', fixed = TRUE)

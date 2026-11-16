@@ -40,7 +40,7 @@ async function open(page, url) {
 }
 
 test.describe('basic mode', () => {
-  test('shows two statuses and never Potentially Ineligible (#113)', async ({ page }) => {
+  test('shows two statuses and never Potentially Ineligible (#371)', async ({ page }) => {
     const errors = await open(page, BASIC);
     await expect(page.locator('.elig-card')).toHaveCount(3);
     expect(await datasetLabels(page, 'elig-site-status')).toEqual(['Ineligible', 'No Eligibility Risk']);
@@ -51,7 +51,7 @@ test.describe('basic mode', () => {
     expect(errors).toEqual([]);
   });
 
-  test('has the Stratification-style tabs and one PD column (#113)', async ({ page }) => {
+  test('has the Stratification-style tabs and one PD column (#371)', async ({ page }) => {
     await open(page, BASIC);
     expect(await tabs(page, 'study')).toEqual(['Status', 'Flag Sources', 'Criteria (EDC I/E only)']);
     expect(await tabs(page, 'country')).toEqual(['Status', 'Flag Sources', 'Criteria (EDC I/E only)', 'Criteria Map (EDC I/E only)']);
@@ -61,7 +61,7 @@ test.describe('basic mode', () => {
     expect(headers).not.toContain('Source');
   });
 
-  test('a country click filters the site chart, criteria map and listing; the chip clears it (#113)', async ({ page }) => {
+  test('a country click filters the site chart, criteria map and listing; the chip clears it (#371)', async ({ page }) => {
     await open(page, BASIC);
     const allRows = await listingRows(page);
     const allSites = (await categories(page, 'elig-site-status')).length;
@@ -83,7 +83,7 @@ test.describe('basic mode', () => {
     expect((await categories(page, 'elig-site-status')).length).toBe(allSites);
   });
 
-  test('the criteria map shows no empty column (#113)', async ({ page }) => {
+  test('the criteria map shows no empty column (#371)', async ({ page }) => {
     await open(page, BASIC);
     await clickBar(page, 'elig-country-status', { GroupID: 'UK', OuterGroupID: null });
     await page.locator('#site > .nav-pills a', { hasText: 'Criteria Map' }).click();
@@ -100,7 +100,7 @@ test.describe('basic mode', () => {
     expect(emptyColumns).toEqual([]);
   });
 
-  test('listing rows expand and the CSV exports the on-screen rows (#113)', async ({ page }) => {
+  test('listing rows expand and the CSV exports the on-screen rows (#371)', async ({ page }) => {
     await open(page, BASIC);
     await page.locator('#elig-listing .rt-expander-button').first().click();
     await expect(page.locator('#elig-listing .elig-detail').first()).toContainText('EDC I/E criteria');
@@ -117,7 +117,7 @@ test.describe('basic mode', () => {
 });
 
 test.describe('pilot mode', () => {
-  test('shows three statuses, total risk and the pilot-only sections (#113)', async ({ page }) => {
+  test('shows three statuses, total risk and the pilot-only sections (#371)', async ({ page }) => {
     const errors = await open(page, PILOT);
     await expect(page.locator('.elig-card')).toHaveCount(4);
     await expect(page.locator('.elig-card-label', { hasText: 'Total risk' })).toHaveCount(1);
@@ -131,7 +131,7 @@ test.describe('pilot mode', () => {
     expect(errors).toEqual([]);
   });
 
-  test('Show buttons keep only groups with the chosen statuses (#113)', async ({ page }) => {
+  test('Show buttons keep only groups with the chosen statuses (#371)', async ({ page }) => {
     await open(page, PILOT);
     const all = (await categories(page, 'elig-site-status')).length;
     await page.locator('#elig-site-status-filter button', { hasText: 'With Ineligible' }).click();
@@ -143,13 +143,13 @@ test.describe('pilot mode', () => {
     await expect(page.locator('#elig-site-status-filter .elig-status-count')).toHaveText(`Showing ${risk} of ${all} sites`);
   });
 
-  test('expanding a listing row shows the records behind the status (#113)', async ({ page }) => {
+  test('expanding a listing row shows the records behind the status (#371)', async ({ page }) => {
     await open(page, PILOT);
     await page.locator('#elig-listing .rt-expander-button').first().click();
     await expect(page.locator('#elig-listing .elig-detail').first()).toContainText('Records behind this status');
   });
 
-  test('a site click filters the deep dive (#113)', async ({ page }) => {
+  test('a site click filters the deep dive (#371)', async ({ page }) => {
     await open(page, PILOT);
     const site = await page.evaluate(() => Reactable.getState('elig-deep-dive').sortedData[0]);
     await clickBar(page, 'elig-site-status', { GroupID: site.Site, OuterGroupID: site.Country });

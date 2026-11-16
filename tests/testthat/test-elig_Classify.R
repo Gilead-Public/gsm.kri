@@ -1,4 +1,4 @@
-test_that("basic mode keeps two statuses and never yields Potentially Ineligible (#113)", {
+test_that("basic mode keeps two statuses and never yields Potentially Ineligible (#371)", {
   df <- elig_ClassifyParticipants(elig_Fixture(), elig_FixtureGroups())
 
   expect_equal(elig_Mode(elig_Fixture()), "basic")
@@ -7,7 +7,7 @@ test_that("basic mode keeps two statuses and never yields Potentially Ineligible
   expect_false(any(df$status == ELIG_POTENTIAL))
 })
 
-test_that("Ineligible is Source != 'Neither' whatever the Source wording (#113)", {
+test_that("Ineligible is Source != 'Neither' whatever the Source wording (#371)", {
   df <- elig_Fixture()
   df$Source[df$Source == "Eligibility IPD only"] <- "Some future wording"
   out <- elig_ClassifyParticipants(df)
@@ -15,7 +15,7 @@ test_that("Ineligible is Source != 'Neither' whatever the Source wording (#113)"
   expect_equal(out$status[out$subjid == "P03"], ELIG_NO_RISK)
 })
 
-test_that("pilot mode is triggered by the edc_query column and Ineligible wins (#113)", {
+test_that("pilot mode is triggered by the edc_query column and Ineligible wins (#371)", {
   dfIn <- elig_Fixture(bPilot = TRUE)
   df <- elig_ClassifyParticipants(dfIn)
 
@@ -27,7 +27,7 @@ test_that("pilot mode is triggered by the edc_query column and Ineligible wins (
   expect_equal(status[["P07"]], ELIG_NO_RISK)
 })
 
-test_that("flag sources come from the flag columns, not from Source (#113)", {
+test_that("flag sources come from the flag columns, not from Source (#371)", {
   df <- elig_ClassifyParticipants(elig_Fixture())
   flag <- function(id, col) df[[col]][df$subjid == id]
 
@@ -44,7 +44,7 @@ test_that("flag sources come from the flag columns, not from Source (#113)", {
   expect_equal(out$flag_pd[out$subjid == "P01"], "N")
 })
 
-test_that("EDC PD is NA when the source is not delivered (#113)", {
+test_that("EDC PD is NA when the source is not delivered (#371)", {
   df <- elig_ClassifyParticipants(elig_Fixture(bPilot = TRUE, bEdcPd = FALSE))
   expect_true(all(is.na(df$flag_edc_pd)))
   expect_false(elig_HasSource(df, "flag_edc_pd"))
@@ -52,7 +52,7 @@ test_that("EDC PD is NA when the source is not delivered (#113)", {
   expect_equal(df$status[df$subjid == "P06"], ELIG_NO_RISK)
 })
 
-test_that("investigator names come from Site groups and are blank without them (#113)", {
+test_that("investigator names come from Site groups and are blank without them (#371)", {
   df <- elig_ClassifyParticipants(elig_Fixture(), elig_FixtureGroups())
   inv <- stats::setNames(df$investigator, df$subjid)
   expect_equal(inv[["P01"]], "Ada Lovelace")
@@ -63,13 +63,13 @@ test_that("investigator names come from Site groups and are blank without them (
   expect_true(all(is.na(elig_ClassifyParticipants(elig_Fixture())$investigator)))
 })
 
-test_that("missing country and site show as Unknown (#113)", {
+test_that("missing country and site show as Unknown (#371)", {
   df <- elig_ClassifyParticipants(elig_Fixture())
   expect_equal(df$country[df$subjid == "P08"], "Unknown")
   expect_equal(df$invid[df$subjid == "P08"], "Unknown")
 })
 
-test_that("criterion codes are split and typed as Inclusion or Exclusion (#113)", {
+test_that("criterion codes are split and typed as Inclusion or Exclusion (#371)", {
   df <- elig_CriteriaLong(elig_ClassifyParticipants(elig_Fixture()))
   expect_equal(nrow(df), 3)
   expect_setequal(df$criterion, c("incl1", "excl2"))
@@ -78,7 +78,7 @@ test_that("criterion codes are split and typed as Inclusion or Exclusion (#113)"
   expect_equal(elig_CriterionType(c("I001", "E010", "INCL3", "x9")), c("Inclusion", "Exclusion", "Inclusion", "Other"))
 })
 
-test_that("the history slices Potentially Ineligible as the risk numerator minus qtl0001 (#113)", {
+test_that("the history slices Potentially Ineligible as the risk numerator minus qtl0001 (#371)", {
   rows <- elig_TrendRows(elig_FixtureResults(bRisk = TRUE))
   oct <- rows[rows$GroupID == "2026-10-01", ]
   expect_equal(oct$n[oct$Status == ELIG_INELIGIBLE], 3)

@@ -1,4 +1,4 @@
-test_that("the listing has flagged participants only, with basic or pilot columns (#113)", {
+test_that("the listing has flagged participants only, with basic or pilot columns (#371)", {
   basic <- elig_ListingData(elig_ClassifyParticipants(elig_Fixture(), elig_FixtureGroups()))
   expect_equal(nrow(basic), 4)
   expect_false("Source" %in% names(basic))
@@ -16,7 +16,7 @@ test_that("the listing has flagged participants only, with basic or pilot column
   expect_equal(pilot$`Eligibility Status`[pilot$`Participant ID` == "P03"], ELIG_POTENTIAL)
 })
 
-test_that("the deep dive lists records per source, blank when none (#113)", {
+test_that("the deep dive lists records per source, blank when none (#371)", {
   dfElig <- elig_ClassifyParticipants(elig_Fixture(bPilot = TRUE))
   dd <- elig_DeepDiveData(dfElig, elig_FixtureRecords())
   expect_equal(names(dd)[5:8], c("EDC eCRF", "Protocol Deviation", "EDC Query", "EDC PD"))
@@ -25,7 +25,7 @@ test_that("the deep dive lists records per source, blank when none (#113)", {
   expect_match(dd$`EDC PD`[dd$`Participant ID` == "P06"], "^\\[D1\\]\n")
 })
 
-test_that("overview cards follow the mode (#113)", {
+test_that("overview cards follow the mode (#371)", {
   basic <- as.character(elig_OverviewCards(elig_ClassifyParticipants(elig_Fixture())))
   expect_match(basic, ELIG_NO_RISK, fixed = TRUE)
   expect_no_match(basic, "Potentially", fixed = TRUE)
