@@ -100,6 +100,27 @@ test.describe('basic mode', () => {
     expect(emptyColumns).toEqual([]);
   });
 
+  test('a site with no criterion case empties the criteria chart (#371)', async ({ page }) => {
+    const errors = await open(page, BASIC);
+    const site = await page.evaluate(() => {
+      const withCases = new Set(Reactable.getState('elig-listing').sortedData.filter((r) => r['Which I/E']).map((r) => r.Site));
+      return JSON.parse(document.getElementById('elig-data').textContent).status.site.find((r) => !withCases.has(r.GroupID));
+    });
+    await clickBar(page, 'elig-site-status', site);
+    expect(await categories(page, 'elig-site-criteria')).toEqual([]);
+    expect(errors).toEqual([]);
+  });
+
+  test('a site click leaves only the site\'s criteria in the criteria chart (#371)', async ({ page }) => {
+    await open(page, BASIC);
+    const row = await page.evaluate(() => Reactable.getState('elig-listing').sortedData.find((r) => r['Which I/E']));
+    await clickBar(page, 'elig-site-status', { GroupID: row.Site, OuterGroupID: row.Country });
+    const expected = await page.evaluate(() => [...new Set(Reactable.getState('elig-listing').sortedData
+      .flatMap((r) => (r['Which I/E'] || '').split(', ').filter(Boolean)))].sort());
+    expect(expected.length).toBeGreaterThan(0);
+    expect((await categories(page, 'elig-site-criteria')).sort()).toEqual(expected);
+  });
+
   test('listing rows expand and the CSV exports the on-screen rows (#371)', async ({ page }) => {
     await open(page, BASIC);
     await page.locator('#elig-listing .rt-expander-button').first().click();

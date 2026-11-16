@@ -63,6 +63,21 @@ test_that("criteria views count EDC I/E criterion cases and keep only groups wit
   expect_equal(nrow(c$country$US), 2)
 })
 
+test_that("criteria slices hold only the criteria with cases in each scope (#371)", {
+  a <- elig_CriteriaRows(elig_ClassifyParticipants(elig_Fixture()))
+  slices <- c(list(a$study), a$country, unlist(a$site, recursive = FALSE))
+  for (s in slices) expect_true(all(s$n > 0))
+  expect_equal(a$site$US$`0X002`$key, "excl2")
+  expect_equal(nrow(a$country$CA), 0)
+  expect_equal(nrow(a$zero), 0)
+  # 1 of 3 enrolled at 0X001.
+  expect_equal(a$site$US$`0X001`$pct, c(33.3, 33.3))
+
+  # Flag Sources keep one bar per delivered source, empty or not.
+  src <- elig_SourceRows(elig_ClassifyParticipants(elig_Fixture()))
+  expect_setequal(src$site$CA$`0X003`$key, src$order)
+})
+
 test_that("the data script keeps one-element vectors as JSON arrays (#371)", {
   df <- elig_ClassifyParticipants(elig_Fixture())
   html <- as.character(elig_DataScript(list(map = elig_CriteriaMapRows(df[df$subjid == "P04", ]))))

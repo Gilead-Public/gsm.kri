@@ -44,6 +44,18 @@ test_that("flag sources come from the flag columns, not from Source (#371)", {
   expect_equal(out$flag_pd[out$subjid == "P01"], "N")
 })
 
+test_that("a PD that is neither important nor non-important keeps the PD flag (#371)", {
+  dfExclusion <- elig_Fixture(bPilot = TRUE)
+  dfExclusion$pd_nonimportant[dfExclusion$subjid == "P05"] <- "N"
+  df <- elig_ClassifyParticipants(dfExclusion)
+  expect_equal(df$flag_pd[df$subjid == "P05"], "Y")
+  expect_true("flag_pd" %in% names(elig_Sources(df)))
+  expect_equal(elig_ListingData(df)$PD[elig_ListingData(df)$`Participant ID` == "P05"], "Y")
+
+  # Every PD classified: the split replaces the PD flag.
+  expect_false("flag_pd" %in% names(elig_Sources(elig_ClassifyParticipants(elig_Fixture(bPilot = TRUE)))))
+})
+
 test_that("EDC PD is NA when the source is not delivered (#371)", {
   df <- elig_ClassifyParticipants(elig_Fixture(bPilot = TRUE, bEdcPd = FALSE))
   expect_true(all(is.na(df$flag_edc_pd)))
