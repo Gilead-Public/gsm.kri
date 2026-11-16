@@ -68,7 +68,7 @@ participants in scope.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">elig_BreakdownRows</span><span class="op">(</span><span class="va">dfElig</span>, <span class="va">dfRecords</span>, <span class="va">vOrder</span>, <span class="va">vStatuses</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">elig_BreakdownRows</span><span class="op">(</span><span class="va">dfElig</span>, <span class="va">dfRecords</span>, <span class="va">vOrder</span>, <span class="va">vStatuses</span>, bKeepEmpty <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -90,11 +90,16 @@ participants in scope.</p>
 <dt id="arg-vstatuses">vStatuses<a class="anchor" aria-label="anchor" href="#arg-vstatuses"></a></dt>
 <dd><p>`character` Fill values, in stack order.</p></dd>
 
+
+<dt id="arg-bkeepempty">bKeepEmpty<a class="anchor" aria-label="anchor" href="#arg-bkeepempty"></a></dt>
+<dd><p>`logical` Keep the rows with no record, so every key shows
+in every scope. Default: `TRUE`.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>`list` with `order`, `study`, `country`, `site` (by country, then
-  site) and `zero`.</p>
+  site) and `zero`. `pct` is rounded to 1 decimal.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

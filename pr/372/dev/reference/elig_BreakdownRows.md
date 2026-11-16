@@ -10,7 +10,7 @@ over enrolled participants in scope.
 ## Usage
 
 ``` r
-elig_BreakdownRows(dfElig, dfRecords, vOrder, vStatuses)
+elig_BreakdownRows(dfElig, dfRecords, vOrder, vStatuses, bKeepEmpty = TRUE)
 ```
 
 ## Arguments
@@ -31,7 +31,12 @@ elig_BreakdownRows(dfElig, dfRecords, vOrder, vStatuses)
 
   \`character\` Fill values, in stack order.
 
+- bKeepEmpty:
+
+  \`logical\` Keep the rows with no record, so every key shows in every
+  scope. Default: \`TRUE\`.
+
 ## Value
 
 \`list\` with \`order\`, \`study\`, \`country\`, \`site\` (by country,
-then site) and \`zero\`.
+then site) and \`zero\`. \`pct\` is rounded to 1 decimal.
