@@ -31,7 +31,10 @@
   }
 
   // Breakdown totals sit past the bar end, so the chart keeps room on the right.
+  // A scope with few criteria keeps its bars at the study chart's thickness
+  // instead of stretching them over the fixed chart height.
   var PAD = 80;
+  var MAX_BAR = 24;
   function padBreakdowns() {
     LEVELS.forEach(function (level) {
       KINDS.forEach(function (kind) {
@@ -40,6 +43,7 @@
         var opts = c.config.options;
         if (opts.layout && opts.layout.padding && opts.layout.padding.right === PAD) return;
         opts.layout = { padding: { right: PAD } };
+        if (kind === 'criteria') opts.datasets = { bar: { maxBarThickness: MAX_BAR } };
         c.update('none');
       });
     });

@@ -4,7 +4,7 @@
 \alias{elig_BreakdownRows}
 \title{Breakdown slices}
 \usage{
-elig_BreakdownRows(dfElig, dfRecords, vOrder, vStatuses)
+elig_BreakdownRows(dfElig, dfRecords, vOrder, vStatuses, bKeepEmpty = TRUE)
 }
 \arguments{
 \item{dfElig}{`data.frame` from [elig_ClassifyParticipants()].}
@@ -14,10 +14,13 @@ elig_BreakdownRows(dfElig, dfRecords, vOrder, vStatuses)
 \item{vOrder}{`character` Key order.}
 
 \item{vStatuses}{`character` Fill values, in stack order.}
+
+\item{bKeepEmpty}{`logical` Keep the rows with no record, so every key shows
+in every scope. Default: `TRUE`.}
 }
 \value{
 `list` with `order`, `study`, `country`, `site` (by country, then
-  site) and `zero`.
+  site) and `zero`. `pct` is rounded to 1 decimal.
 }
 \description{
 `r lifecycle::badge("experimental")`

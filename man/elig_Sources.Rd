@@ -11,8 +11,9 @@ elig_Sources(dfElig)
 }
 \value{
 Named `character`: flag column = display name, in display order.
-  The PD split replaces the single PD source when delivered; EDC PD stays
-  listed when not delivered, so the listing can show "N/A".
+  The PD split replaces the single PD source when delivered, unless a PD is
+  neither important nor non-important; EDC PD stays listed when not
+  delivered, so the listing can show "N/A".
 }
 \description{
 Flag sources shown by the report

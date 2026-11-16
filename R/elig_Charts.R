@@ -208,13 +208,15 @@ elig_StatusFilter <- function(strLevel = c("country", "site"), bPilot = FALSE) {
 #' @param dfRecords `data.frame` with `subjid`, `key` and `status`.
 #' @param vOrder `character` Key order.
 #' @param vStatuses `character` Fill values, in stack order.
+#' @param bKeepEmpty `logical` Keep the rows with no record, so every key shows
+#'   in every scope. Default: `TRUE`.
 #'
 #' @return `list` with `order`, `study`, `country`, `site` (by country, then
-#'   site) and `zero`.
+#'   site) and `zero`. `pct` is rounded to 1 decimal.
 #'
 #' @keywords internal
 #' @export
-elig_BreakdownRows <- function(dfElig, dfRecords, vOrder, vStatuses) {
+elig_BreakdownRows <- function(dfElig, dfRecords, vOrder, vStatuses, bKeepEmpty = TRUE) {
   dfRecords <- dfRecords[c("subjid", "key", "status")] %>%
     dplyr::left_join(dfElig[c("subjid", "country", "invid")], by = "subjid")
   grid <- tidyr::expand_grid(key = vOrder, Status = vStatuses)
@@ -225,8 +227,9 @@ elig_BreakdownRows <- function(dfElig, dfRecords, vOrder, vStatuses) {
       dplyr::left_join(counts, by = c("key", "Status")) %>%
       dplyr::mutate(
         n = dplyr::coalesce(as.integer(.data$n), 0L),
-        pct = if (nEnrolled > 0) 100 * .data$n / nEnrolled else 0
-      )
+        pct = if (nEnrolled > 0) round(100 * .data$n / nEnrolled, 1) else 0
+      ) %>%
+      dplyr::filter(bKeepEmpty | .data$n > 0)
   }
   vCountries <- sort(unique(dfElig$country), method = "radix")
   lSites <- lapply(vCountries, function(c) {
@@ -243,7 +246,7 @@ elig_BreakdownRows <- function(dfElig, dfRecords, vOrder, vStatuses) {
       vCountries
     ),
     site = stats::setNames(lSites, vCountries),
-    zero = dplyr::mutate(grid, n = 0L, pct = 0)
+    zero = dplyr::mutate(grid, n = 0L, pct = 0) %>% dplyr::filter(bKeepEmpty)
   )
 }
 
@@ -276,7 +279,8 @@ elig_SourceRows <- function(dfElig) {
 #' @param dfElig `data.frame` from [elig_ClassifyParticipants()].
 #'
 #' @return `list` from [elig_BreakdownRows()], keyed by criterion code and
-#'   filled by Inclusion / Exclusion.
+#'   filled by Inclusion / Exclusion. Each scope holds only the criteria with
+#'   cases in it.
 #'
 #' @keywords internal
 #' @export
@@ -288,7 +292,8 @@ elig_CriteriaRows <- function(dfElig) {
     dfElig,
     dplyr::transmute(long, .data$subjid, key = .data$criterion, status = .data$type),
     vOrder,
-    if (length(vTypes)) vTypes else c("Inclusion", "Exclusion")
+    if (length(vTypes)) vTypes else c("Inclusion", "Exclusion"),
+    bKeepEmpty = FALSE
   )
 }
 

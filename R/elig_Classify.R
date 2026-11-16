@@ -166,14 +166,17 @@ elig_HasSource <- function(dfElig, strFlag) {
 #' @param dfElig `data.frame` from [elig_ClassifyParticipants()].
 #'
 #' @return Named `character`: flag column = display name, in display order.
-#'   The PD split replaces the single PD source when delivered; EDC PD stays
-#'   listed when not delivered, so the listing can show "N/A".
+#'   The PD split replaces the single PD source when delivered, unless a PD is
+#'   neither important nor non-important; EDC PD stays listed when not
+#'   delivered, so the listing can show "N/A".
 #'
 #' @keywords internal
 #' @export
 elig_Sources <- function(dfElig) {
   vFlags <- intersect(names(ELIG_SOURCES), names(dfElig))
-  if (all(c("flag_pd_important", "flag_pd_nonimportant") %in% vFlags)) {
+  bUnclassified <- dfElig[["flag_pd"]] %in% "Y" &
+    dfElig[["flag_pd_important"]] %in% "N" & dfElig[["flag_pd_nonimportant"]] %in% "N"
+  if (all(c("flag_pd_important", "flag_pd_nonimportant") %in% vFlags) && !any(bUnclassified)) {
     vFlags <- setdiff(vFlags, "flag_pd")
   }
   ELIG_SOURCES[vFlags]
