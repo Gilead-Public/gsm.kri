@@ -5,7 +5,7 @@
 - The Eligibility report has a new layout for every study: study
   overview cards, a sticky country/site filter, Study / Country / Site
   sections with Status, Flag Sources and EDC I/E criteria tabs, a
-  criteria map, a criteria concentration table, an expandable
+  criteria map, a per-criterion site spread chart, an expandable
   Ineligibility Listing (renamed from Inclusion/Exclusion Listing) with
   a CSV of the on-screen rows, and an Eligibility Logic table. Colour
   now encodes only status or Inclusion vs Exclusion. Studies without the

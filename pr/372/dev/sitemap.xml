@@ -55,7 +55,6 @@
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/elig_BreakdownBarSpec.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/elig_BreakdownRows.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/elig_ClassifyParticipants.html</loc></url>
-<url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/elig_ConcentrationRows.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/elig_CriteriaLong.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/elig_CriteriaMapRows.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/elig_CriteriaRows.html</loc></url>
@@ -71,6 +70,7 @@
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/elig_Mode.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/elig_OverviewCards.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/elig_RateMetricID.html</loc></url>
+<url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/elig_SiteSpreadRows.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/elig_SourceRows.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/elig_Sources.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/elig_StatusBarSpec.html</loc></url>
