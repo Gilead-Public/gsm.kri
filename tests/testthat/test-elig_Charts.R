@@ -12,15 +12,28 @@ test_that("status rows count every enrolled participant by status and level (#37
 })
 
 test_that("status bars and Show buttons have 2 statuses in basic and 3 in pilot mode (#371, #180)", {
-  expect_equal(names(elig_StatusBarSpec("site")$scales$fill$colors), c(ELIG_INELIGIBLE, ELIG_NO_RISK))
+  expect_equal(
+    names(elig_StatusBarSpec("site")$scales$fill$colors),
+    c(ELIG_INELIGIBLE, ELIG_NO_RISK)
+  )
   expect_length(elig_StatusBarSpec("site", bPilot = TRUE)$scales$fill$colors, 3)
 
   labels <- function(tag) {
     html <- as.character(tag)
-    regmatches(html, gregexpr("(?<=>)(All|With any risk|With Ineligible)(?=</button>)", html, perl = TRUE))[[1]]
+    regmatches(
+      html,
+      gregexpr(
+        "(?<=>)(All|With any risk|With Ineligible)(?=</button>)",
+        html,
+        perl = TRUE
+      )
+    )[[1]]
   }
   expect_equal(labels(elig_StatusFilter("site")), c("All", "With Ineligible"))
-  expect_equal(labels(elig_StatusFilter("country", bPilot = TRUE)), c("All", "With any risk", "With Ineligible"))
+  expect_equal(
+    labels(elig_StatusFilter("country", bPilot = TRUE)),
+    c("All", "With any risk", "With Ineligible")
+  )
 })
 
 test_that("Flag Sources count a participant under each source, stacked by overall status (#371)", {
@@ -31,8 +44,13 @@ test_that("Flag Sources count a participant under each source, stacked by overal
   expect_equal(n("EDC eCRF"), 2)
   expect_false(ELIG_POTENTIAL %in% rows$study$Status)
 
-  pilot <- elig_SourceRows(elig_ClassifyParticipants(elig_Fixture(bPilot = TRUE)))
-  expect_equal(pilot$order, c("Important PD", "Non-important PD", "EDC eCRF", "EDC Query", "EDC PD"))
+  pilot <- elig_SourceRows(elig_ClassifyParticipants(elig_Fixture(
+    bPilot = TRUE
+  )))
+  expect_equal(
+    pilot$order,
+    c("Important PD", "Non-important PD", "EDC eCRF", "EDC Query", "EDC PD")
+  )
   q <- pilot$study[pilot$study$key == "EDC Query", ]
   expect_equal(q$n[q$Status == ELIG_INELIGIBLE], 1)
   expect_equal(q$n[q$Status == ELIG_POTENTIAL], 1)
@@ -40,7 +58,10 @@ test_that("Flag Sources count a participant under each source, stacked by overal
   expect_equal(sum(ca$n[ca$key == "EDC PD"]), 1)
 
   # EDC PD not delivered: no bar, rather than a misleading zero.
-  noPD <- elig_SourceRows(elig_ClassifyParticipants(elig_Fixture(bPilot = TRUE, bEdcPd = FALSE)))
+  noPD <- elig_SourceRows(elig_ClassifyParticipants(elig_Fixture(
+    bPilot = TRUE,
+    bEdcPd = FALSE
+  )))
   expect_false("EDC PD" %in% noPD$order)
 })
 
@@ -55,18 +76,35 @@ test_that("criteria views count EDC I/E criterion cases and keep only groups wit
   expect_equal(unique(b$country$GroupID), "US")
   expect_setequal(b$site$GroupID, c("0X001", "0X002"))
 
-  c <- elig_ConcentrationRows(df)
+  c <- elig_SiteSpreadRows(df)
   excl <- c$study[c$study$criterion == "excl2", ]
   expect_equal(excl$participants, 2)
   expect_equal(excl$sites, 2)
-  expect_equal(excl$top_n, 1)
   expect_equal(nrow(c$country$US), 2)
+})
+
+test_that("site spread puts the criterion most held by one site first (#371)", {
+  df <- elig_ClassifyParticipants(elig_Fixture())
+  # incl1: one participant at each of 3 sites; excl2: both participants at 0X001.
+  df$criteria <- c(
+    P01 = "incl1,excl2",
+    P02 = "excl2",
+    P04 = "incl1",
+    P05 = "incl1"
+  )[df$subjid]
+  s <- elig_SiteSpreadRows(df)$study
+  expect_equal(s$criterion, c("excl2", "incl1"))
+  expect_equal(s$by_site[[1]]$n, 2)
+  expect_equal(s$sites, c(1, 3))
+  expect_false(any(c("top_site", "top_country", "top_n") %in% names(s)))
 })
 
 test_that("criteria slices hold only the criteria with cases in each scope (#371)", {
   a <- elig_CriteriaRows(elig_ClassifyParticipants(elig_Fixture()))
   slices <- c(list(a$study), a$country, unlist(a$site, recursive = FALSE))
-  for (s in slices) expect_true(all(s$n > 0))
+  for (s in slices) {
+    expect_true(all(s$n > 0))
+  }
   expect_equal(a$site$US$`0X002`$key, "excl2")
   expect_equal(nrow(a$country$CA), 0)
   expect_equal(nrow(a$zero), 0)
@@ -80,6 +118,8 @@ test_that("criteria slices hold only the criteria with cases in each scope (#371
 
 test_that("the data script keeps one-element vectors as JSON arrays (#371)", {
   df <- elig_ClassifyParticipants(elig_Fixture())
-  html <- as.character(elig_DataScript(list(map = elig_CriteriaMapRows(df[df$subjid == "P04", ]))))
+  html <- as.character(elig_DataScript(list(
+    map = elig_CriteriaMapRows(df[df$subjid == "P04", ])
+  )))
   expect_match(html, '"order":["excl2"]', fixed = TRUE)
 })

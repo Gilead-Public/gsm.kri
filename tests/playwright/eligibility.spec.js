@@ -83,6 +83,38 @@ test.describe('basic mode', () => {
     expect((await categories(page, 'elig-site-status')).length).toBe(allSites);
   });
 
+  test('site spread splits each criterion by site, shades by count and follows the country filter (#371)', async ({ page }) => {
+    const errors = await open(page, BASIC);
+    const spread = () => page.evaluate(() => Array.from(document.querySelectorAll('#elig-site-spread .elig-spread-bar')).map((bar) => {
+      const segs = Array.from(bar.querySelectorAll('.elig-spread-seg'));
+      return {
+        sites: segs.length,
+        label: bar.nextElementSibling.textContent,
+        n: segs.map((s) => Number(s.dataset.n)),
+        alpha: segs.map((s) => Number(getComputedStyle(s).backgroundColor.match(/[\d.]+\)$/)[0].slice(0, -1))),
+        share: segs[0] && Number(segs[0].dataset.n) / segs.reduce((a, s) => a + Number(s.dataset.n), 0),
+      };
+    }));
+    const all = await spread();
+    expect(all.length).toBeGreaterThan(0);
+    for (const r of all) expect(r.label).toMatch(new RegExp(`^${r.sites} sites?, `));
+    // Clustered criteria first.
+    const shares = all.map((r) => r.share);
+    expect(shares).toEqual([...shares].sort((a, b) => b - a));
+    // More participants at a site, darker segment.
+    const segs = all.flatMap((r) => r.n.map((n, i) => [n, r.alpha[i]]));
+    const darkest = Math.max(...segs.map((s) => s[0]));
+    expect(darkest).toBeGreaterThan(1);
+    expect(segs.find((s) => s[0] === darkest)[1]).toBeGreaterThan(segs.find((s) => s[0] === 1)[1]);
+    await expect(page.locator('#site-spread')).not.toContainText('most cases');
+
+    await clickBar(page, 'elig-country-status', { GroupID: 'Japan', OuterGroupID: null });
+    const japan = await spread();
+    expect(japan.length).toBeGreaterThan(0);
+    for (const r of japan) expect(r.label).toMatch(/, 1 country$/);
+    expect(errors).toEqual([]);
+  });
+
   test('the criteria map shows no empty column (#371)', async ({ page }) => {
     await open(page, BASIC);
     await clickBar(page, 'elig-country-status', { GroupID: 'UK', OuterGroupID: null });
