@@ -400,7 +400,7 @@ htmltools::div(id = "map-wrap-site", htmltools::div(id = "elig-site-map"))
 cat("\n> Sites with at least one criterion case, most affected first; columns are the criteria present in the rows shown. Shade shows the participant count. Follows the country filter.", criteria_note)
 ```
 
-## Site Spread (EDC I/E only)
+### Criteria Spread (EDC I/E only)
 
 ```{r site-spread}
 htmltools::div(id = "elig-site-spread")

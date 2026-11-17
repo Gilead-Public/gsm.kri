@@ -55,6 +55,7 @@ test.describe('basic mode', () => {
     await open(page, BASIC);
     expect(await tabs(page, 'study')).toEqual(['Status', 'Flag Sources', 'Criteria (EDC I/E only)']);
     expect(await tabs(page, 'country')).toEqual(['Status', 'Flag Sources', 'Criteria (EDC I/E only)', 'Criteria Map (EDC I/E only)']);
+    expect(await tabs(page, 'site')).toEqual(['Status', 'Flag Sources', 'Criteria (EDC I/E only)', 'Criteria Map (EDC I/E only)', 'Criteria Spread (EDC I/E only)']);
     expect(await categories(page, 'elig-study-sources')).toEqual(['Protocol Deviation', 'EDC eCRF']);
     const headers = await page.locator('#elig-listing .rt-th').allTextContents();
     expect(headers).toEqual(expect.arrayContaining(['PD', 'EDC eCRF', 'Which I/E', 'Investigator Name']));
