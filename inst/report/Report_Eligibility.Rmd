@@ -133,18 +133,22 @@ div.main-container { max-width: none; padding-left: 24px; padding-right: 24px; }
 .elig-status-filter-active .elig-status-count { color: #3C587F; font-weight: 600; }
 .elig-status-empty { flex-basis: 100%; padding: 10px 12px; background-color: #f6f8fb; border: 1px dashed #b8c4d6; color: #5b7193; }
 .elig-empty { color: #5b7193; font-style: italic; }
-.elig-map, .elig-conc { border-collapse: collapse; font-size: 13px; margin: 6px 0 10px; }
-.elig-map th, .elig-map td, .elig-conc th, .elig-conc td { border: 1px solid #e3e8ef; padding: 4px 8px; text-align: center; }
-.elig-map tbody th, .elig-conc td:first-child { text-align: left; }
+.elig-map { border-collapse: collapse; font-size: 13px; margin: 6px 0 10px; }
+.elig-map th, .elig-map td { border: 1px solid #e3e8ef; padding: 4px 8px; text-align: center; }
+.elig-map tbody th { text-align: left; }
 .elig-map-total { font-weight: 600; background-color: #f6f8fb; }
-.elig-conc { width: 100%; }
-.elig-conc tr.elig-conc-hot td { background-color: #FFF6E0; }
-.elig-conc summary { cursor: pointer; font-weight: 600; }
-.elig-conc ul { margin: 4px 0 0 16px; padding: 0; text-align: left; }
+.elig-spread { display: grid; grid-template-columns: max-content minmax(240px, 1fr) max-content; gap: 4px 12px; align-items: center; font-variant-numeric: tabular-nums; }
+.elig-spread-hd { font-weight: 600; }
+.elig-spread-bar { display: flex; gap: 2px; height: 16px; }
+.elig-spread-seg { min-width: 3px; border-radius: 1px; }
+.elig-spread-seg:focus { outline: 2px solid #1f2937; outline-offset: 1px; }
+.elig-spread-sites { color: #5b6575; white-space: nowrap; }
+.elig-spread-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 8px; color: #5b6575; }
+.elig-spread-legend i { display: inline-block; width: 12px; height: 12px; margin-right: 4px; vertical-align: -1px; }
 .elig-truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px; cursor: help; }
 .elig-records { white-space: pre-line; max-height: 240px; overflow-y: auto; }
 .elig-detail { padding: 8px 16px; background-color: #f8fafc; }
-#map-wrap-country, #map-wrap-site, #elig-concentration { overflow-x: auto; }
+#map-wrap-country, #map-wrap-site, #elig-site-spread { overflow-x: auto; }
 /* Clears the navbar and the sticky strip when a contents link jumps to a section. */
 .section.level2, .section.level3 { scroll-margin-top: 100px; }
 </style>
@@ -396,14 +400,14 @@ htmltools::div(id = "map-wrap-site", htmltools::div(id = "elig-site-map"))
 cat("\n> Sites with at least one criterion case, most affected first; columns are the criteria present in the rows shown. Shade shows the participant count. Follows the country filter.", criteria_note)
 ```
 
-## Criteria Concentration
+## Site Spread (EDC I/E only)
 
-```{r concentration}
-htmltools::div(id = "elig-concentration")
+```{r site-spread}
+htmltools::div(id = "elig-site-spread")
 ```
 
-```{r concentration-note, results='asis'}
-cat("\n> One row per EDC I/E criterion in scope: participants, sites, countries and the site with the most cases. Rows where one site has 2 or more cases are highlighted; expand a criterion to list its sites.", criteria_note)
+```{r site-spread-note, results='asis'}
+cat("\n> One bar per EDC I/E criterion in scope, split by site. A segment's width is the site's share of the criterion's participants; its shade is the participant count, on the Criteria Map's scale. Criteria with the most participants at one site come first. Hover or focus a segment for the site and count. Follows the country filter.", criteria_note)
 ```
 
 ## Ineligibility Listing
@@ -452,7 +456,7 @@ elig_DataScript(list(
   sources = source_data,
   criteria = criteria_data,
   map = elig_CriteriaMapRows(dfElig),
-  conc = elig_ConcentrationRows(dfElig)
+  spread = elig_SiteSpreadRows(dfElig)
 ))
 ```
 

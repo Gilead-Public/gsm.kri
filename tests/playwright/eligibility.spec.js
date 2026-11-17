@@ -98,15 +98,15 @@ test.describe('basic mode', () => {
     const all = await spread();
     expect(all.length).toBeGreaterThan(0);
     for (const r of all) expect(r.label).toMatch(new RegExp(`^${r.sites} sites?, `));
-    // Clustered criteria first.
-    const shares = all.map((r) => r.share);
-    expect(shares).toEqual([...shares].sort((a, b) => b - a));
+    // Most participants at one site first, then the largest share.
+    const keys = all.map((r) => [r.n[0], r.share]);
+    expect(keys).toEqual([...keys].sort((a, b) => b[0] - a[0] || b[1] - a[1]));
     // More participants at a site, darker segment.
     const segs = all.flatMap((r) => r.n.map((n, i) => [n, r.alpha[i]]));
     const darkest = Math.max(...segs.map((s) => s[0]));
     expect(darkest).toBeGreaterThan(1);
     expect(segs.find((s) => s[0] === darkest)[1]).toBeGreaterThan(segs.find((s) => s[0] === 1)[1]);
-    await expect(page.locator('#site-spread')).not.toContainText('most cases');
+    await expect(page.locator('body')).not.toContainText('most cases');
 
     await clickBar(page, 'elig-country-status', { GroupID: 'Japan', OuterGroupID: null });
     const japan = await spread();
