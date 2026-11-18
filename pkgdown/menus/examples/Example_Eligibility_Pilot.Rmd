@@ -14,7 +14,7 @@ output:
     css: styles.css
 ---
 # Set Up 
-This page provides a sample Eligibility Report generated using `gsm.kri` package, with the optional pilot data simulated on top of the basic example: open EDC queries and active EDC PDs (level 1), the records behind each flag (level 2) and the `Analysis_elig0001` risk metric history (level 3). These add a Potentially Ineligible status, a Deep Dive listing and Status over Time; see the data contract in `?Report_Eligibility`. Switch to **Basic** to see the same participants without the pilot data. Expand the "Setup" section below to see the code used to generate the report. Or scroll down for the standard report output.
+This page provides a sample Eligibility Report generated using `gsm.kri` package, with the optional pilot data simulated on top of the basic example: open EDC queries and active EDC PDs (level 1), the records behind each flag (level 2) and the `Analysis_elig0001` risk metric history (level 3). These add a Potentially Ineligible status, the records behind each flag in the listing's expanded rows and CSV, and Status over Time; see the data contract in `?Report_Eligibility`. Switch to **Basic** to see the same participants without the pilot data. Expand the "Setup" section below to see the code used to generate the report. Or scroll down for the standard report output.
 
 <nav class="elig-view-switch" aria-label="Report mode">
 <a href="Example_Eligibility.html">Basic</a>
@@ -100,6 +100,8 @@ dfRecords <- bind_rows(
     ),
   dfPilot %>%
     filter(!is.na(eligibility_criteria)) %>%
+    # Mapped_EXCLUSION joins a participant's PDs; level 2 has one row per PD.
+    tidyr::separate_longer_delim(c(dvdtm, eligibility_criteria), delim = ";;;") %>%
     transmute(
       studyid, subjid, source = "Protocol Deviation", record_id = paste0("PD-", row_number()),
       record_date = substr(dvdtm, 1, 10), Description = eligibility_criteria,

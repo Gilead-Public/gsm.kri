@@ -29,14 +29,20 @@ for (const [mode, { file, other, label }] of Object.entries(PAGES)) {
 
     test(`renders the ${mode} mode report (#371)`, async ({ page }) => {
       const labels = await page.evaluate(() => document.getElementById('elig-site-status').gsmChart.data.datasets.map((d) => d.label));
+      expect(await page.locator('#deep-dive-listing').count()).toBe(0);
       if (mode === 'basic') {
         expect(labels).not.toContain('Potentially Ineligible');
-        expect(await page.locator('#deep-dive-listing').count()).toBe(0);
       } else {
         expect(labels).toContain('Potentially Ineligible');
-        await expect(page.locator('#deep-dive-listing')).toHaveCount(1);
         await expect(page.locator('#status-over-time')).toHaveCount(1);
       }
+    });
+
+    test(`${mode} PD records are one per PD (#371)`, async ({ page }) => {
+      const pd = await page.evaluate(() => JSON.parse(document.getElementById('elig-data').textContent)
+        .export.rows.map((r) => r['Protocol Deviation details']));
+      expect(pd.filter((d) => d.includes(';;;'))).toEqual([]);
+      expect(pd.some((d) => d.includes('\n\nID: PD-') || d.includes('\n\nDate: '))).toBe(true);
     });
   });
 }

@@ -25,7 +25,8 @@
 #' 2. **Records**: `lListings$IE_records`, one row per record behind a flag,
 #'    with `studyid`, `subjid`, `source` (`"EDC eCRF"`, `"Protocol Deviation"`,
 #'    `"EDC Query"`, `"EDC PD"`), `record_id`, `record_date` and the source's
-#'    key fields as further columns. Adds the Deep Dive listing (pilot mode).
+#'    key fields as further columns. Fills the listing's expanded rows and the
+#'    CSV details columns (pilot mode).
 #' 3. **History metric**: `Analysis_elig0001` rows in `dfResults`, the
 #'    study-level rate (Ineligible + Potentially Ineligible) / enrolled. Adds
 #'    the Status over Time tab (pilot mode).

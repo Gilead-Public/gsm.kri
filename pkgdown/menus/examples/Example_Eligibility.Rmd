@@ -14,7 +14,7 @@ output:
     css: styles.css
 ---
 # Set Up 
-This page provides a sample Eligibility Report generated using `gsm.kri` package, in basic mode: the study delivers no pilot data, so participants are Ineligible or have No Eligibility Risk. Switch to **Pilot data** to see the same participants with the optional pilot data: a Potentially Ineligible status, a Deep Dive listing and Status over Time. Expand the "Setup" section below to see the code used to generate the report. Or scroll down for the standard report output.
+This page provides a sample Eligibility Report generated using `gsm.kri` package, in basic mode: the study delivers no pilot data, so participants are Ineligible or have No Eligibility Risk. Switch to **Pilot data** to see the same participants with the optional pilot data: a Potentially Ineligible status, the records behind each flag in the listing's expanded rows and CSV, and Status over Time. Expand the "Setup" section below to see the code used to generate the report. Or scroll down for the standard report output.
 
 <nav class="elig-view-switch" aria-label="Report mode">
 <span aria-current="page">Basic</span>

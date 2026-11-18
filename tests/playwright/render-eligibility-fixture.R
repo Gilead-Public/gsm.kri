@@ -67,6 +67,8 @@ dfRecords <- bind_rows(
     ),
   dfPilot %>%
     filter(!is.na(eligibility_criteria)) %>%
+    # Mapped_EXCLUSION joins a participant's PDs; level 2 has one row per PD.
+    tidyr::separate_longer_delim(c(dvdtm, eligibility_criteria), delim = ";;;") %>%
     transmute(
       studyid, subjid, source = "Protocol Deviation", record_id = paste0("PD-", row_number()),
       record_date = substr(dvdtm, 1, 10), Description = eligibility_criteria,
