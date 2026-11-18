@@ -46,9 +46,10 @@ sim_data <- Sim_Studies(
 ```{r simulate-actions}
 #### Step 2: Simulate ActionLogs and Adjusted Risk Scores ####
 
-# Synthetic actions on flagged site KRIs, scored per study with the same
-# Analyze_ActionRiskScore() call as the Site KRI Report. Action dates are
-# labelled snapshot-date proxies, not verified human-action timestamps.
+# One synthetic action per flagged site KRI in each study, within the last
+# 90 days: mostly Open or Closed, about 10% No Action. Scored per study with
+# the same Analyze_ActionRiskScore() call as the Site KRI Report. Action dates
+# are labelled snapshot-date proxies, not verified human-action timestamps.
 action_scores <- Sim_ActionScores(
   dfResults = sim_data$dfResults,
   dfMetrics = gsm.core::reportingMetrics
