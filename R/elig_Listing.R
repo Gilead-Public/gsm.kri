@@ -136,9 +136,10 @@ elig_TruncatedCell <- function(value) {
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' One row per record: the level 2 records when delivered, otherwise one
-#' Protocol Deviation row per PD date/term pair and one EDC eCRF row per
-#' criterion code of `Mapped_EXCLUSION`.
+#' One row per record: the level 2 records when delivered. A participant's PD
+#' or EDC eCRF source without level 2 records falls back to `Mapped_EXCLUSION`:
+#' one Protocol Deviation row per PD date/term pair and one EDC eCRF row per
+#' criterion code.
 #'
 #' @param dfElig `data.frame` from [elig_ClassifyParticipants()].
 #' @param dfRecords `data.frame` Level 2 records, or `NULL`.
@@ -151,12 +152,6 @@ elig_TruncatedCell <- function(value) {
 elig_ParticipantRecords <- function(dfElig, dfRecords = NULL) {
   flagged <- dfElig[dfElig$status != ELIG_NO_RISK, ]
   vHead <- c("subjid", "source", "ID", "Date")
-  if (!is.null(dfRecords)) {
-    recs <- as.data.frame(dfRecords[dfRecords$subjid %in% flagged$subjid, ])
-    recs$studyid <- NULL
-    names(recs)[match(c("record_id", "record_date"), names(recs))] <- c("ID", "Date")
-    return(recs[c(vHead, setdiff(names(recs), vHead))])
-  }
   # Mapped_EXCLUSION carries no PD record IDs.
   pd <- lapply(seq_len(nrow(flagged)), function(i) {
     dates <- elig_SplitPD(flagged$pd_dates[[i]])
@@ -175,7 +170,16 @@ elig_ParticipantRecords <- function(dfElig, dfRecords = NULL) {
       Criterion = trimws(.data$criteria)
     )
   empty <- data.frame(subjid = character(), source = character(), ID = character(), Date = character())
-  as.data.frame(dplyr::bind_rows(empty, pd, ecrf))
+  derived <- dplyr::bind_rows(empty, pd, ecrf)
+  if (is.null(dfRecords)) return(as.data.frame(derived))
+  recs <- dfRecords[dfRecords$subjid %in% flagged$subjid, setdiff(names(dfRecords), "studyid")]
+  names(recs)[match(c("record_id", "record_date"), names(recs))] <- c("ID", "Date")
+  # Character throughout, so Date or numeric key fields bind with the fallback rows.
+  recs <- dplyr::mutate(recs, dplyr::across(dplyr::everything(), as.character))
+  # Incomplete level 2 data must not leave a flagged participant with nothing behind the flag.
+  derived <- dplyr::anti_join(derived, recs, by = c("subjid", "source"))
+  out <- as.data.frame(dplyr::bind_rows(recs, derived))
+  out[c(vHead, setdiff(names(out), vHead))]
 }
 
 elig_RecordSourceOrder <- function(vSources) {
@@ -270,7 +274,12 @@ elig_Listing <- function(dfListing, dfPartRecords, strID = "elig-listing") {
 #' @keywords internal
 #' @export
 elig_ExportData <- function(dfListing, dfPartRecords, bRecords = TRUE) {
-  vSources <- if (isTRUE(bRecords)) ELIG_RECORD_SOURCES else "Protocol Deviation"
+  # Any extra source shown in the expanded row also reaches the CSV.
+  vSources <- if (isTRUE(bRecords)) {
+    elig_RecordSourceOrder(c(ELIG_RECORD_SOURCES, unique(dfPartRecords$source)))
+  } else {
+    "Protocol Deviation"
+  }
   vFields <- setdiff(names(dfPartRecords), c("subjid", "source"))
   text <- vapply(seq_len(nrow(dfPartRecords)), function(i) {
     v <- vapply(vFields, function(f) as.character(dfPartRecords[[f]][[i]]), "")

@@ -18,8 +18,9 @@ elig_ParticipantRecords(dfElig, dfRecords = NULL)
 \description{
 `r lifecycle::badge("experimental")`
 
-One row per record: the level 2 records when delivered, otherwise one
-Protocol Deviation row per PD date/term pair and one EDC eCRF row per
-criterion code of `Mapped_EXCLUSION`.
+One row per record: the level 2 records when delivered. A participant's PD
+or EDC eCRF source without level 2 records falls back to `Mapped_EXCLUSION`:
+one Protocol Deviation row per PD date/term pair and one EDC eCRF row per
+criterion code.
 }
 \keyword{internal}

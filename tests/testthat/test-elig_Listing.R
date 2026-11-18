@@ -81,3 +81,22 @@ test_that("overview cards follow the mode (#371)", {
   expect_match(pilot, "Total risk", fixed = TRUE)
   expect_match(pilot, ELIG_POTENTIAL, fixed = TRUE)
 })
+
+test_that("a source with no level 2 records for a participant falls back to Mapped_EXCLUSION (#371)", {
+  dfElig <- elig_ClassifyParticipants(elig_Fixture(bPilot = TRUE))
+  recs <- elig_ParticipantRecords(dfElig, elig_FixtureRecords())
+  p05 <- recs[recs$subjid == "P05", ]
+  expect_equal(c(p05$source, p05$Date, p05$Description), c("Protocol Deviation", "2026-04-05", "PD four"))
+  expect_setequal(recs$source[recs$subjid == "P01"], c("EDC Query", "EDC eCRF", "EDC eCRF"))
+  # Level 2 wins where it has the source: P02 keeps PD-9 only.
+  expect_equal(recs$ID[recs$subjid == "P02"], "PD-9")
+})
+
+test_that("the CSV keeps a details column for a source outside the known four (#371)", {
+  dfElig <- elig_ClassifyParticipants(elig_Fixture(bPilot = TRUE))
+  dfRecords <- elig_FixtureRecords()
+  dfRecords$source[dfRecords$record_id == "Q1"] <- "Other Source"
+  ex <- elig_ExportData(elig_ListingData(dfElig), elig_ParticipantRecords(dfElig, dfRecords))
+  expect_equal(tail(names(ex), 5), c(paste(ELIG_RECORD_SOURCES, "details"), "Other Source details"))
+  expect_match(ex$`Other Source details`[ex$`Participant ID` == "P03"], "^ID: Q1\n")
+})
