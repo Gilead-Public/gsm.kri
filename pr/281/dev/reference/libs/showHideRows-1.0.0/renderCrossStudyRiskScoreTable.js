@@ -443,7 +443,7 @@ function makeActionLegend() {
     legend.setAttribute('aria-label', 'Highlighted KRI legend');
     legend.style.cssText = 'display:flex; flex-wrap:wrap; align-items:center; gap:4px 12px;';
     [['Closed Action', 'Closed action'], ['Open Action', 'Open action'],
-        ['Awaiting Triage', 'Other action state']].forEach(([state, label]) => {
+        ['No Action', 'No Action']].forEach(([state, label]) => {
         const item = document.createElement('span');
         item.setAttribute('role', 'listitem');
         item.style.cssText = 'display:inline-flex; align-items:center; gap:4px;';
