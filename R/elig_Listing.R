@@ -261,13 +261,16 @@ elig_Listing <- function(dfListing, dfPartRecords, strID = "elig-listing") {
 #'
 #' @param dfListing `data.frame` from [elig_ListingData()].
 #' @param dfPartRecords `data.frame` from [elig_ParticipantRecords()].
-#' @param vSources `character` Sources that get a details column.
+#' @param bRecords `logical` Level 2 records delivered. Without them only
+#'   Protocol Deviation gets a details column: eCRF details would only repeat
+#'   Which I/E.
 #'
 #' @return `data.frame`.
 #'
 #' @keywords internal
 #' @export
-elig_ExportData <- function(dfListing, dfPartRecords, vSources) {
+elig_ExportData <- function(dfListing, dfPartRecords, bRecords = TRUE) {
+  vSources <- if (isTRUE(bRecords)) ELIG_RECORD_SOURCES else "Protocol Deviation"
   vFields <- setdiff(names(dfPartRecords), c("subjid", "source"))
   text <- vapply(seq_len(nrow(dfPartRecords)), function(i) {
     v <- vapply(vFields, function(f) as.character(dfPartRecords[[f]][[i]]), "")

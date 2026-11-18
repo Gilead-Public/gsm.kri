@@ -4,14 +4,16 @@
 \alias{elig_ExportData}
 \title{Ineligibility listing CSV data}
 \usage{
-elig_ExportData(dfListing, dfPartRecords, vSources)
+elig_ExportData(dfListing, dfPartRecords, bRecords = TRUE)
 }
 \arguments{
 \item{dfListing}{`data.frame` from [elig_ListingData()].}
 
 \item{dfPartRecords}{`data.frame` from [elig_ParticipantRecords()].}
 
-\item{vSources}{`character` Sources that get a details column.}
+\item{bRecords}{`logical` Level 2 records delivered. Without them only
+Protocol Deviation gets a details column: eCRF details would only repeat
+Which I/E.}
 }
 \value{
 `data.frame`.

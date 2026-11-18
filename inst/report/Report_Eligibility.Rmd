@@ -60,8 +60,7 @@ has_criteria <- length(criteria_data$order) > 0
 
 dfListing <- elig_ListingData(dfElig)
 dfPartRecords <- elig_ParticipantRecords(dfElig, if (bRecords) dfRecords)
-# Without level 2 records, the eCRF details would only repeat Which I/E.
-dfExport <- elig_ExportData(dfListing, dfPartRecords, if (bRecords) ELIG_RECORD_SOURCES else "Protocol Deviation")
+dfExport <- elig_ExportData(dfListing, dfPartRecords, bRecords)
 
 vDelivered <- unname(c(
   "EDC eCRF",

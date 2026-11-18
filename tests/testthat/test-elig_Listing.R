@@ -52,7 +52,7 @@ test_that("the expanded row shows one table per source with only the fields used
 test_that("the CSV export adds one details column per source, one Field: value per line (#371)", {
   dfElig <- elig_ClassifyParticipants(elig_Fixture(bPilot = TRUE, bEdcPd = FALSE))
   recs <- elig_ParticipantRecords(dfElig, elig_FixtureRecords())
-  ex <- elig_ExportData(elig_ListingData(dfElig), recs, ELIG_RECORD_SOURCES)
+  ex <- elig_ExportData(elig_ListingData(dfElig), recs)
   expect_equal(tail(names(ex), 4), paste(ELIG_RECORD_SOURCES, "details"))
   row <- function(id) ex[ex$`Participant ID` == id, ]
   expect_equal(row("P02")$`Protocol Deviation details`, "ID: PD-9\nDate: 2026-01-02\nDescription: PD one")
@@ -63,7 +63,8 @@ test_that("the CSV export adds one details column per source, one Field: value p
   expect_equal(row("P01")$`EDC PD details`, "")
 
   dfBasic <- elig_ClassifyParticipants(elig_Fixture())
-  basic <- elig_ExportData(elig_ListingData(dfBasic), elig_ParticipantRecords(dfBasic), "Protocol Deviation")
+  # Without level 2 records the eCRF details would only repeat Which I/E.
+  basic <- elig_ExportData(elig_ListingData(dfBasic), elig_ParticipantRecords(dfBasic), bRecords = FALSE)
   expect_equal(tail(names(basic), 1), "Protocol Deviation details")
   expect_equal(
     basic$`Protocol Deviation details`[basic$`Participant ID` == "P02"],
