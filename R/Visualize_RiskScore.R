@@ -12,6 +12,8 @@
 #'   data. Default is 'Site'.
 #' @param strRiskScoreMetric `character` Risk score MetricID to display.
 #'   Defaults to `"Analysis_srs0001"`.
+#' @param ... Passed to [Widget_CrossStudyRiskScore()], e.g. the comparison
+#'   risk score and its action detail.
 #'
 #' @export
 
@@ -20,7 +22,8 @@ Visualize_RiskScore <- function(
   dfMetrics,
   dfGroups,
   strGroupLevel = "Site",
-  strRiskScoreMetric = "Analysis_srs0001"
+  strRiskScoreMetric = "Analysis_srs0001",
+  ...
 ) {
   # For cross-study functionality, use the cross-study widget
   Widget_CrossStudyRiskScore(
@@ -28,6 +31,7 @@ Visualize_RiskScore <- function(
     dfMetrics,
     dfGroups,
     strGroupLevel,
-    strRiskScoreMetric
+    strRiskScoreMetric,
+    ...
   )
 }

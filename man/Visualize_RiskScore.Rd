@@ -9,7 +9,8 @@ Visualize_RiskScore(
   dfMetrics,
   dfGroups,
   strGroupLevel = "Site",
-  strRiskScoreMetric = "Analysis_srs0001"
+  strRiskScoreMetric = "Analysis_srs0001",
+  ...
 )
 }
 \arguments{
@@ -24,6 +25,9 @@ data. Default is 'Site'.}
 
 \item{strRiskScoreMetric}{`character` Risk score MetricID to display.
 Defaults to `"Analysis_srs0001"`.}
+
+\item{...}{Passed to [Widget_CrossStudyRiskScore()], e.g. the comparison
+risk score and its action detail.}
 }
 \description{
 Creates an interactive risk score widget for cross-study visualization.

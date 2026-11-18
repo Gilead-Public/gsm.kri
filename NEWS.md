@@ -7,10 +7,12 @@
   adjusted scores and detail from results and ActionLog inputs (#280).
 - Added configurable recency windows, action-state weighting and snapshot-date
   scoring (#280).
-- Extended `Report_KRI()` with adjacent comparison scores, review detail,
-  action highlighting and CSV downloads (#280).
+- Extended `Report_KRI()` with adjacent comparison scores, review detail and
+  action highlighting with a color legend (#280).
 - Added configurable risk-score MetricIDs to cross-study summaries and widgets
   (#280).
+- Added the adjacent Adjusted Risk Score column, recent-action highlighting and
+  legend to `Widget_CrossStudyRiskScore()` and the cross-study example (#280).
 - Updated the site report example to use core's synthetic ActionLog (#280).
 
 # gsm.kri v1.8.0

@@ -182,3 +182,68 @@ test_that("Cross-study SRS report widget allows filtering on multiple studies (#
     )
   )
 })
+
+local_cross_study_summary <- function(env = parent.frame()) {
+  testthat::local_mocked_bindings(
+    SummarizeCrossStudy = function(dfResults, strGroupLevel, dfGroups, strRiskScoreMetric) {
+      data.frame(GroupID = "SiteA", AvgRiskScore = 50, MaxRiskScore = 50)
+    },
+    .env = env
+  )
+}
+
+make_cross_study_detail <- function() {
+  data.frame(
+    StudyID = "S1", GroupID = "SiteA", MetricID = "Analysis_kri0001",
+    ActionState = "Closed Action", LastActionedDate = as.Date("2025-05-01"),
+    DaysSinceAction = 31L, ActionWindowDays = 90L, Weight = 4, EffectiveWeight = 4
+  )
+}
+
+test_that("Widget_CrossStudyRiskScore forwards the comparison score and action detail (#280)", {
+  local_cross_study_summary()
+  results <- data.frame(MetricID = c("Analysis_srs0001", "Analysis_srs0002"), Score = c(50, 25))
+  widget <- Widget_CrossStudyRiskScore(
+    results, data.frame(MetricID = "Analysis_srs0001"), data.frame(GroupID = "SiteA"),
+    dfComparisonRiskDetail = make_cross_study_detail()
+  )
+
+  expect_equal(jsonlite::fromJSON(widget$x$strComparisonRiskMetric), "Analysis_srs0002")
+  expect_equal(jsonlite::fromJSON(widget$x$strComparisonRiskLabel), "Adjusted Risk Score")
+  detail <- jsonlite::fromJSON(widget$x$dfComparisonRiskDetail)
+  expect_named(detail, c("StudyID", "GroupID", "MetricID", "ActionState",
+    "LastActionedDate", "DaysSinceAction", "ActionWindowDays"))
+  expect_equal(detail$LastActionedDate, "2025-05-01")
+})
+
+test_that("Widget_CrossStudyRiskScore omits an absent or duplicate comparison score (#280)", {
+  local_cross_study_summary()
+  metrics <- data.frame(MetricID = "Analysis_srs0001")
+  groups <- data.frame(GroupID = "SiteA")
+  absent <- Widget_CrossStudyRiskScore(
+    data.frame(MetricID = "Analysis_srs0001", Score = 50), metrics, groups,
+    dfComparisonRiskDetail = make_cross_study_detail()
+  )
+  expect_null(jsonlite::fromJSON(absent$x$strComparisonRiskMetric))
+  expect_null(jsonlite::fromJSON(absent$x$dfComparisonRiskDetail))
+
+  duplicate <- Widget_CrossStudyRiskScore(
+    data.frame(MetricID = "Analysis_srs0002", Score = 25), metrics, groups,
+    strRiskScoreMetric = "Analysis_srs0002"
+  )
+  expect_null(jsonlite::fromJSON(duplicate$x$strComparisonRiskMetric))
+})
+
+test_that("Widget_CrossStudyRiskScore requires the highlight fields in action detail (#280)", {
+  local_cross_study_summary()
+  results <- data.frame(MetricID = c("Analysis_srs0001", "Analysis_srs0002"), Score = c(50, 25))
+  detail <- make_cross_study_detail()
+  detail$DaysSinceAction <- NULL
+  expect_error(
+    Widget_CrossStudyRiskScore(
+      results, data.frame(MetricID = "Analysis_srs0001"), data.frame(GroupID = "SiteA"),
+      dfComparisonRiskDetail = detail
+    ),
+    "missing required columns: DaysSinceAction"
+  )
+})

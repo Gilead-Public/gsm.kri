@@ -26,6 +26,7 @@ library(htmlwidgets)
 
 # Source utility functions
 source("util/Sim_Studies.R")
+source("util/Sim_ActionScores.R")
 ```
 
 ```{r simulate-data}
@@ -42,12 +43,26 @@ sim_data <- Sim_Studies(
 )
 ```
 
+```{r simulate-actions}
+#### Step 2: Simulate ActionLogs and Adjusted Risk Scores ####
+
+# Synthetic actions on flagged site KRIs, scored per study with the same
+# Analyze_ActionRiskScore() call as the Site KRI Report. Action dates are
+# labelled snapshot-date proxies, not verified human-action timestamps.
+action_scores <- Sim_ActionScores(
+  dfResults = sim_data$dfResults,
+  dfMetrics = gsm.core::reportingMetrics
+)
+cross_study_results <- dplyr::bind_rows(sim_data$dfResults, action_scores$dfScores)
+```
+
 ```{r create-widget, results='asis'}
 #### Step 3: Create Cross-Study Widgets ####
 cross_study_widget <- Widget_CrossStudyRiskScore(
-  dfResults = sim_data$dfResults,
+  dfResults = cross_study_results,
   dfMetrics = gsm.core::reportingMetrics,
-  dfGroups = sim_data$dfGroups
+  dfGroups = sim_data$dfGroups,
+  dfComparisonRiskDetail = action_scores$dfDetail
 )
 
 # Display the widget directly in the document

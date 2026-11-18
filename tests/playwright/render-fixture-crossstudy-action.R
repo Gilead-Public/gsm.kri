@@ -49,3 +49,40 @@ htmlwidgets::saveWidget(
   selfcontained = TRUE
 )
 cat("Rendered: tests/playwright/fixture/CrossStudyActionSRS.html\n")
+# Render the default srs0001 view with srs0002 as the adjacent comparison
+# column and dated action detail for the recent-action highlights.
+comparison_results <- dplyr::bind_rows(
+  dplyr::filter(sim_data$dfResults, .data$MetricID != "Analysis_srs0002"),
+  dplyr::mutate(action_scores, Score = 125 / 3, Metric = 125 / 3)
+)
+flagged <- sim_data$dfResults |>
+  dplyr::filter(grepl("^Analysis_kri", .data$MetricID), .data$Flag %in% c(-2, 2)) |>
+  dplyr::arrange(.data$StudyID, .data$GroupID, .data$MetricID) |>
+  dplyr::slice_head(n = 3)
+detail <- flagged |>
+  dplyr::transmute(
+    .data$StudyID, .data$GroupID, .data$MetricID,
+    ActionState = c("Closed Action", "Open Action", "No Action"),
+    DaysSinceAction = c(20L, 10L, 120L),
+    LastActionedDate = .data$SnapshotDate - .data$DaysSinceAction,
+    ActionWindowDays = 90L
+  )
+write.csv(detail[c("StudyID", "GroupID", "MetricID", "ActionState")],
+  file.path(normalizePath("tests/playwright/fixture"), "CrossStudyActionHighlight.csv"),
+  row.names = FALSE)
+
+highlight_widget <- Widget_CrossStudyRiskScore(
+  dfResults = comparison_results,
+  dfMetrics = gsm.core::reportingMetrics,
+  dfGroups = sim_data$dfGroups,
+  dfComparisonRiskDetail = detail
+)
+htmlwidgets::saveWidget(
+  highlight_widget,
+  file.path(
+    normalizePath("tests/playwright/fixture"),
+    "CrossStudyActionHighlight.html"
+  ),
+  selfcontained = TRUE
+)
+cat("Rendered: tests/playwright/fixture/CrossStudyActionHighlight.html\n")
