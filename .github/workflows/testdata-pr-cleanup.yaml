@@ -7,7 +7,7 @@ on:
   # pull_request_target, not pull_request: fork PRs get a read-only token
   # under pull_request, so they couldn't delete their bundles. This is safe
   # because the job never checks out or runs PR code.
-  pull_request_target:
+  pull_request: # TEST ONLY: pull_request_target uses the base branch copy
     types: [closed]
 
 name: testdata-pr-cleanup
@@ -23,10 +23,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: needs
-        uses: gilead-public/gsm.datasim/needs-testdata@test-gsm-utils-158
+        uses: gilead-public/gsm.datasim/needs-testdata@feat-183-readiness-checks
       - id: delete
         if: steps.needs.outputs.needed == 'true'
-        uses: gilead-public/gsm.datasim/delete-pr-bundles@test-gsm-utils-158
+        uses: gilead-public/gsm.datasim/delete-pr-bundles@feat-183-readiness-checks
       - name: Report leftover bundles
         if: steps.needs.outputs.needed == 'true' && (failure() || steps.delete.outputs.failed != '0')
         shell: bash
