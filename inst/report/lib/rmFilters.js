@@ -617,7 +617,8 @@
         var ne = f === null || f === undefined;
         var color = ne ? NE_BG : FLAG_COLORS[f];
         var name = ne ? 'Not evaluated' : ['Green', 'Amber', 'Red'][f];
-        sf = '<span class="rm-sf rm-dot' + (kri ? '' : ' rm-o') + '" data-rm-site-flag="' + name + '" title="Site flag: ' + name + (kri ? ' (' + esc(v.metric) + ')' : ' (calculated)') + '" style="background:' + color + ';border-color:' + (ne ? NE_BORDER : color) + '"></span>';
+        // The hover card describes the dot, so it has no native title to overlap the card.
+        sf = '<span class="rm-sf rm-dot' + (kri ? '' : ' rm-o') + '" data-rm-site-flag="' + name + '" role="img" aria-label="Site flag: ' + name + (kri ? ' (' + esc(v.metric) + ')' : ' (calculated)') + '" style="background:' + color + ';border-color:' + (ne ? NE_BORDER : color) + '"></span>';
         extra = '<div style="margin-bottom:3px">Site flag: ' + tipDot(color, !kri) + '<b>' + name + '</b>' +
           (x.D ? ' \u00b7 ' + x.N + ' of ' + x.D + ' windows repeating (' + pct(x.N, x.D) + ')' : '') +
           '<span style="color:#c9d1d9"> \u00b7 ' + (kri ? esc(v.metric) : 'calculated') + '</span></div>';
@@ -625,8 +626,13 @@
       tip = tipHtml(head + ' \u00b7 participants', 'Evaluable', n, x.enr, a, r, true, extra);
       summary = a + ' Amber, ' + r + ' Red of ' + n + ' evaluable participants';
     }
+    if (!isStudy) tip += '<div class="sub rm-tip-hint">' + esc(distPickHint(g)) + '</div>';
     return '<td class="rm-sep rm-cell" data-rm-dist-vital="' + esc(v.vital) + '" data-rm-n="' + n + '" data-rm-amber="' + a + '" data-rm-red="' + r +
       '" data-rm-tip="' + esc(tip) + '">' + sf + distBar(n, a, r, summary) + '</td>';
+  }
+
+  function distPickHint(g) {
+    return 'Click to filter the report to ' + (state.distLevel === 'site' ? 'site ' : '') + g.label + '; click again to clear';
   }
 
   // Sort keys: a vital (% flagged), or _np / _ns (enrolled participants / sites).
@@ -728,8 +734,9 @@
       var on = selected === g.key;
       var cls = on ? 'rm-on' : selected ? 'rm-dim' : '';
       body += '<tr data-rm-dist-row="' + state.distLevel + '" data-rm-dist-key="' + esc(g.key) + '"' +
-        (cls ? ' class="' + cls + '"' : '') + ' aria-selected="' + on + '" title="Click to filter the report to ' + (isSite ? 'site ' : '') + esc(g.label) + '; click again to clear">' +
-        '<td class="rm-l rm-stick"><button type="button" class="rm-dist-pick" aria-pressed="' + on + '">' + esc(g.label) + '</button></td>' +
+        (cls ? ' class="' + cls + '"' : '') + ' aria-selected="' + on + '">' +
+        // The row has no title: it would overlap the cells' hover cards, which carry the hint.
+        '<td class="rm-l rm-stick"><button type="button" class="rm-dist-pick" aria-pressed="' + on + '" title="' + esc(distPickHint(g)) + '">' + esc(g.label) + '</button></td>' +
         (isSite ? '<td class="rm-l rm-stick2">' + esc(g.country) + '</td>' : '') + counts(g);
       vitals.forEach(function (v) {
         body += distCell(g, v, false);
@@ -1059,7 +1066,8 @@
     });
   }
 
-  function syncDataTable() {
+  // Wide and Long each have a Search box; a shape switch passes the text on.
+  function syncDataTable(carrySearch) {
     document.querySelectorAll('[data-rm-shape]').forEach(function (b) {
       b.setAttribute('aria-pressed', String(b.getAttribute('data-rm-shape') === state.shape));
     });
@@ -1067,6 +1075,11 @@
       div.style.display = div.getAttribute('data-rm-shape-view') === state.shape ? '' : 'none';
     });
     if (state.shape === 'long') initLong();
+    if (typeof carrySearch === 'string') {
+      var to = dtApi('rm-dt-' + state.shape);
+      // The draw below applies it and updates the Search box.
+      if (to && to.search() !== carrySearch) to.search(carrySearch);
+    }
     var only = byId('rm-dt-only');
     if (only) only.checked = state.dtOnly;
     var missing = byId('rm-dt-missing');
@@ -1349,8 +1362,9 @@
       }
       setSubj(null);
     } else if (t.closest('[data-rm-shape]')) {
+      var from = dtApi('rm-dt-' + state.shape);
       state.shape = t.closest('[data-rm-shape]').getAttribute('data-rm-shape');
-      syncDataTable();
+      syncDataTable(from ? from.search() : null);
       return;
     } else {
       // A measure listing or data table row click toggles the participant filter.

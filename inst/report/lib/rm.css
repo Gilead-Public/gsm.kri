@@ -85,6 +85,7 @@
 .rm-tip .h, .rm-tip .sub { color: #c9d1d9; }
 .rm-tip .h { margin-bottom: 3px; }
 .rm-tip .sub { margin-top: 3px; }
+.rm-tip .rm-tip-hint { margin-top: 5px; padding-top: 4px; border-top: 1px solid #484f58; font-style: italic; }
 .rm-tip table { border-collapse: collapse; margin-top: 2px; }
 .rm-tip td { padding: 1px 10px 1px 0; border: 0; color: #ffffff; }
 .rm-tip td.n { text-align: right; font-variant-numeric: tabular-nums; }
