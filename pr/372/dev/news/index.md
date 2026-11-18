@@ -5,15 +5,17 @@
 - The Eligibility report has a new layout for every study: study
   overview cards, a sticky country/site filter, Study / Country / Site
   sections with Status, Flag Sources and EDC I/E criteria tabs, a
-  criteria map, a per-criterion site spread chart, an expandable
-  Ineligibility Listing (renamed from Inclusion/Exclusion Listing) with
-  a CSV of the on-screen rows, and an Eligibility Logic table. Colour
-  now encodes only status or Inclusion vs Exclusion. Studies without the
-  new data keep two statuses, computed as before. Studies that deliver
-  the optional pilot data (an `edc_query` column on `Mapped_EXCLUSION`,
-  `lListings$IE_records` and the `Analysis_elig0001` history metric)
-  also get a Potentially Ineligible status, a Deep Dive listing and a
-  Status over Time chart; see the data contract in
+  criteria map, a per-criterion site spread chart, an Ineligibility
+  Listing (renamed from Inclusion/Exclusion Listing) whose rows expand
+  to the records behind each participant’s status, with a CSV of the
+  on-screen rows and their records, and an Eligibility Logic table.
+  Colour now encodes only status or Inclusion vs Exclusion. Studies
+  without the new data keep two statuses, computed as before. Studies
+  that deliver the optional pilot data (an `edc_query` column on
+  `Mapped_EXCLUSION`, `lListings$IE_records` and the `Analysis_elig0001`
+  history metric) also get a Potentially Ineligible status, records from
+  those sources in the listing and a Status over Time chart; see the
+  data contract in
   [`?Report_Eligibility`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_Eligibility.md).
   The report no longer uses gsm.qtl and now imports reactable
   ([\#371](https://github.com/Gilead-Public/gsm.kri/issues/371),
