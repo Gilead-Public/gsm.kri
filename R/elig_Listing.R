@@ -1,6 +1,7 @@
 # Eligibility report overview cards, listings and logic table (gsm.roadmap#113).
 
-ELIG_DEEP_DIVE_SOURCES <- c("EDC eCRF", "Protocol Deviation", "EDC Query", "EDC PD")
+# Order of the expanded row's tables and the CSV details columns.
+ELIG_RECORD_SOURCES <- c("Protocol Deviation", "EDC eCRF", "EDC Query", "EDC PD")
 
 # Listing column names of the flag sources; the single PD source is "PD".
 ELIG_LISTING_SOURCES <- c(
@@ -87,8 +88,7 @@ elig_SplitPD <- function(x) {
 #' `r lifecycle::badge("experimental")`
 #'
 #' Flagged participants only (Ineligible first). Flag columns are Y/N; EDC PD
-#' is `"N/A"` when the source is not delivered. PD dates and terms spread into
-#' `PD Date 1..n` / `PD Term 1..n`.
+#' is `"N/A"` when the source is not delivered.
 #'
 #' @param dfElig `data.frame` from [elig_ClassifyParticipants()].
 #'
@@ -110,12 +110,6 @@ elig_ListingData <- function(dfElig) {
     out[[ELIG_LISTING_SOURCES[[f]]]] <- if (all(is.na(df[[f]]))) rep("N/A", nrow(df)) else df[[f]]
   }
   out$`Which I/E` <- gsub(",", ", ", df$criteria, fixed = TRUE)
-  dates <- lapply(df$pd_dates, elig_SplitPD)
-  terms <- lapply(df$pd_terms, elig_SplitPD)
-  for (i in seq_len(max(c(0, lengths(dates), lengths(terms))))) {
-    out[[paste("PD Date", i)]] <- vapply(dates, function(x) if (length(x) >= i) x[[i]] else NA_character_, "")
-    out[[paste("PD Term", i)]] <- vapply(terms, function(x) if (length(x) >= i) x[[i]] else NA_character_, "")
-  }
   as.data.frame(out, check.names = FALSE)
 }
 
@@ -137,49 +131,74 @@ elig_TruncatedCell <- function(value) {
   htmltools::div(class = "elig-truncate", title = value, value)
 }
 
-elig_RecordText <- function(dfRecords) {
-  vKey <- setdiff(names(dfRecords), c("studyid", "subjid", "source", "record_id", "record_date"))
-  vapply(seq_len(nrow(dfRecords)), function(i) {
-    r <- dfRecords[i, ]
-    fields <- vapply(vKey, function(k) {
-      v <- as.character(r[[k]])
-      if (is.na(v) || !nzchar(v)) NA_character_ else paste0(k, ": ", v)
-    }, "")
-    head <- sprintf("[%s]%s", r$record_id, if (is.na(r$record_date)) "" else paste0(" ", r$record_date))
-    paste(c(head, stats::na.omit(fields)), collapse = "\n")
-  }, "")
+#' Records behind each flagged participant's status
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#'
+#' One row per record: the level 2 records when delivered, otherwise one
+#' Protocol Deviation row per PD date/term pair and one EDC eCRF row per
+#' criterion code of `Mapped_EXCLUSION`.
+#'
+#' @param dfElig `data.frame` from [elig_ClassifyParticipants()].
+#' @param dfRecords `data.frame` Level 2 records, or `NULL`.
+#'
+#' @return `data.frame` with `subjid`, `source`, `ID`, `Date` and the key
+#'   fields.
+#'
+#' @keywords internal
+#' @export
+elig_ParticipantRecords <- function(dfElig, dfRecords = NULL) {
+  flagged <- dfElig[dfElig$status != ELIG_NO_RISK, ]
+  vHead <- c("subjid", "source", "ID", "Date")
+  if (!is.null(dfRecords)) {
+    recs <- as.data.frame(dfRecords[dfRecords$subjid %in% flagged$subjid, ])
+    recs$studyid <- NULL
+    names(recs)[match(c("record_id", "record_date"), names(recs))] <- c("ID", "Date")
+    return(recs[c(vHead, setdiff(names(recs), vHead))])
+  }
+  # Mapped_EXCLUSION carries no PD record IDs.
+  pd <- lapply(seq_len(nrow(flagged)), function(i) {
+    dates <- elig_SplitPD(flagged$pd_dates[[i]])
+    terms <- elig_SplitPD(flagged$pd_terms[[i]])
+    n <- max(length(dates), length(terms))
+    if (n == 0) return(NULL)
+    data.frame(
+      subjid = flagged$subjid[[i]], source = "Protocol Deviation", ID = NA_character_,
+      Date = substr(dates[seq_len(n)], 1, 10), Description = terms[seq_len(n)]
+    )
+  })
+  ecrf <- flagged[!is.na(flagged$criteria) & nzchar(flagged$criteria), c("subjid", "criteria")] %>%
+    tidyr::separate_longer_delim("criteria", delim = ",") %>%
+    dplyr::transmute(
+      subjid = .data$subjid, source = "EDC eCRF", ID = NA_character_, Date = NA_character_,
+      Criterion = trimws(.data$criteria)
+    )
+  empty <- data.frame(subjid = character(), source = character(), ID = character(), Date = character())
+  as.data.frame(dplyr::bind_rows(empty, pd, ecrf))
 }
 
-elig_ParticipantDetail <- function(strSubjid, dfElig, dfRecords) {
-  if (!is.null(dfRecords)) {
-    recs <- dfRecords[dfRecords$subjid == strSubjid, ]
-    if (nrow(recs) > 0) {
-      vKey <- setdiff(names(recs), c("studyid", "subjid"))
-      recs <- recs[vKey]
-      recs <- recs[, vapply(recs, function(x) any(!is.na(x) & nzchar(as.character(x))), logical(1)), drop = FALSE]
-      return(htmltools::div(
-        class = "elig-detail",
-        htmltools::tags$strong("Records behind this status"),
-        reactable::reactable(as.data.frame(recs), compact = TRUE, bordered = TRUE, fullWidth = TRUE, wrap = TRUE)
-      ))
-    }
+elig_RecordSourceOrder <- function(vSources) {
+  c(intersect(ELIG_RECORD_SOURCES, vSources), sort(setdiff(vSources, ELIG_RECORD_SOURCES)))
+}
+
+elig_HasValue <- function(x) !is.na(x) & nzchar(as.character(x))
+
+elig_ParticipantDetail <- function(strSubjid, dfPartRecords) {
+  recs <- dfPartRecords[dfPartRecords$subjid == strSubjid, , drop = FALSE]
+  if (nrow(recs) == 0) {
+    return(htmltools::div(class = "elig-detail", htmltools::tags$p("No records.")))
   }
-  p <- dfElig[dfElig$subjid == strSubjid, ][1, ]
-  dates <- elig_SplitPD(p$pd_dates)
-  terms <- elig_SplitPD(p$pd_terms)
-  nPD <- max(length(dates), length(terms))
-  pd <- data.frame(`PD Date` = dates[seq_len(nPD)], `PD Term` = terms[seq_len(nPD)], check.names = FALSE)
   htmltools::div(
     class = "elig-detail",
-    htmltools::tags$p(htmltools::tags$strong("EDC I/E criteria: "), if (is.na(p$criteria)) "none" else gsub(",", ", ", p$criteria)),
-    if (nrow(pd) > 0) {
+    lapply(elig_RecordSourceOrder(unique(recs$source)), function(s) {
+      r <- recs[recs$source == s, setdiff(names(recs), c("subjid", "source")), drop = FALSE]
+      r <- r[, vapply(r, function(x) any(elig_HasValue(x)), logical(1)), drop = FALSE]
       htmltools::tagList(
-        htmltools::tags$strong("Eligibility protocol deviations"),
-        reactable::reactable(pd, compact = TRUE, bordered = TRUE, fullWidth = TRUE, wrap = TRUE)
+        htmltools::tags$strong(sprintf("%s (%d)", s, nrow(r))),
+        reactable::reactable(r, compact = TRUE, bordered = TRUE, fullWidth = TRUE, wrap = TRUE)
       )
-    } else {
-      htmltools::tags$p("No eligibility protocol deviation terms.")
-    }
+    })
   )
 }
 
@@ -188,19 +207,18 @@ elig_ParticipantDetail <- function(strSubjid, dfElig, dfRecords) {
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' Expanding a row shows the participant's level 2 records when delivered,
-#' otherwise the PD dates/terms and criterion codes of `Mapped_EXCLUSION`.
+#' Expanding a row shows the records behind the participant's status, one
+#' table per source.
 #'
 #' @param dfListing `data.frame` from [elig_ListingData()].
-#' @param dfElig `data.frame` from [elig_ClassifyParticipants()].
-#' @param dfRecords `data.frame` Level 2 records, or `NULL`.
+#' @param dfPartRecords `data.frame` from [elig_ParticipantRecords()].
 #' @param strID `character` Element ID.
 #'
 #' @return `reactable` widget.
 #'
 #' @keywords internal
 #' @export
-elig_Listing <- function(dfListing, dfElig, dfRecords = NULL, strID = "elig-listing") {
+elig_Listing <- function(dfListing, dfPartRecords, strID = "elig-listing") {
   vFlags <- intersect(unname(ELIG_LISTING_SOURCES), names(dfListing))
   vText <- setdiff(names(dfListing), c("Country", "Site", "Participant ID", "Eligibility Status", vFlags))
   columns <- c(
@@ -219,7 +237,7 @@ elig_Listing <- function(dfListing, dfElig, dfRecords = NULL, strID = "elig-list
       )
     }), vFlags),
     stats::setNames(lapply(vText, function(col) {
-      reactable::colDef(minWidth = if (grepl("^PD Date", col)) 100 else 160, cell = elig_TruncatedCell)
+      reactable::colDef(minWidth = 160, cell = elig_TruncatedCell)
     }), vText)
   )
   reactable::reactable(
@@ -229,88 +247,46 @@ elig_Listing <- function(dfListing, dfElig, dfRecords = NULL, strID = "elig-list
     pageSizeOptions = c(15, 30, 50, 100),
     elementId = strID,
     columns = columns,
-    details = function(index) elig_ParticipantDetail(dfListing$`Participant ID`[index], dfElig, dfRecords)
+    details = function(index) elig_ParticipantDetail(dfListing$`Participant ID`[index], dfPartRecords)
   )
 }
 
-#' Deep dive listing data
+#' Ineligibility listing CSV data
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' One row per flagged participant and one column per source. Each cell lists
-#' the participant's records as `[record id] date` followed by the source's
-#' key fields; a blank cell means no records.
+#' The listing plus one `"<source> details"` column per source: each record
+#' as one `Field: value` per line, a blank line between records.
 #'
-#' @param dfElig `data.frame` from [elig_ClassifyParticipants()].
-#' @param dfRecords `data.frame` Level 2 records: `studyid`, `subjid`,
-#'   `source`, `record_id`, `record_date` and key fields.
+#' @param dfListing `data.frame` from [elig_ListingData()].
+#' @param dfPartRecords `data.frame` from [elig_ParticipantRecords()].
+#' @param vSources `character` Sources that get a details column.
 #'
 #' @return `data.frame`.
 #'
 #' @keywords internal
 #' @export
-elig_DeepDiveData <- function(dfElig, dfRecords) {
-  flagged <- dfElig[dfElig$status != ELIG_NO_RISK, ]
-  recs <- dfRecords[dfRecords$subjid %in% flagged$subjid, ]
-  recs$text <- elig_RecordText(recs)
-  vSources <- c(ELIG_DEEP_DIVE_SOURCES, sort(setdiff(unique(recs$source), ELIG_DEEP_DIVE_SOURCES)))
-  out <- data.frame(
-    Country = flagged$country,
-    Site = flagged$invid,
-    `Participant ID` = flagged$subjid,
-    `Eligibility Status` = flagged$status,
-    check.names = FALSE
-  )
+elig_ExportData <- function(dfListing, dfPartRecords, vSources) {
+  vFields <- setdiff(names(dfPartRecords), c("subjid", "source"))
+  text <- vapply(seq_len(nrow(dfPartRecords)), function(i) {
+    v <- vapply(vFields, function(f) as.character(dfPartRecords[[f]][[i]]), "")
+    keep <- elig_HasValue(v)
+    paste0(vFields[keep], ": ", v[keep], collapse = "\n")
+  }, "")
   for (s in vSources) {
-    r <- recs[recs$source == s, ]
-    out[[s]] <- vapply(flagged$subjid, function(id) {
-      x <- r$text[r$subjid == id]
-      if (length(x)) paste(x, collapse = "\n\n") else NA_character_
+    bSource <- dfPartRecords$source == s
+    dfListing[[paste(s, "details")]] <- vapply(dfListing$`Participant ID`, function(id) {
+      paste(text[bSource & dfPartRecords$subjid == id], collapse = "\n\n")
     }, "", USE.NAMES = FALSE)
   }
-  out[order(match(out$`Eligibility Status`, c(ELIG_INELIGIBLE, ELIG_POTENTIAL)), out$Country, out$Site, out$`Participant ID`), ]
-}
-
-#' Deep dive listing
-#'
-#' @param dfDeepDive `data.frame` from [elig_DeepDiveData()].
-#' @param strID `character` Element ID.
-#'
-#' @return `reactable` widget.
-#'
-#' @keywords internal
-#' @export
-elig_DeepDive <- function(dfDeepDive, strID = "elig-deep-dive") {
-  vSources <- setdiff(names(dfDeepDive), c("Country", "Site", "Participant ID", "Eligibility Status"))
-  reactable::reactable(
-    dfDeepDive,
-    filterable = TRUE, searchable = TRUE, striped = TRUE, highlight = TRUE,
-    compact = TRUE, defaultPageSize = 10, showPageSizeOptions = TRUE,
-    pageSizeOptions = c(10, 25, 50, 100),
-    elementId = strID, wrap = TRUE,
-    columns = c(
-      list(
-        Country = reactable::colDef(minWidth = 90, filterMethod = elig_ExactFilter()),
-        Site = reactable::colDef(minWidth = 80, filterMethod = elig_ExactFilter()),
-        `Participant ID` = reactable::colDef(minWidth = 120),
-        `Eligibility Status` = reactable::colDef(
-          minWidth = 170, cell = function(value) elig_StatusBadge(value), filterMethod = elig_ExactFilter()
-        )
-      ),
-      stats::setNames(lapply(vSources, function(s) {
-        reactable::colDef(minWidth = 260, cell = function(value) {
-          if (is.na(value)) return("")
-          htmltools::div(class = "elig-records", value)
-        })
-      }), vSources)
-    )
-  )
+  dfListing
 }
 
 #' CSV download of a listing's on-screen rows
 #'
-#' Exports the rows left by the listing's filters and search.
+#' Exports the rows left by the listing's filters and search, with the
+#' details columns of the report's precomputed export data.
 #'
 #' @param strID `character` reactable element ID.
 #' @param strFile `character` Download file name.
@@ -323,7 +299,7 @@ elig_CsvButton <- function(strID, strFile) {
   htmltools::tags$p(
     htmltools::tags$button(
       type = "button", class = "btn btn-primary btn-sm",
-      onclick = sprintf("Reactable.downloadDataCSV('%s', '%s')", strID, strFile),
+      onclick = sprintf("eligDownloadCsv('%s', '%s')", strID, strFile),
       "\u2b07\ufe0f Download CSV"
     )
   )

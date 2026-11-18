@@ -7,7 +7,7 @@
 (function () {
   var LEVELS = ['study', 'country', 'site'];
   var KINDS = ['sources', 'criteria'];
-  var LISTINGS = ['elig-listing', 'elig-deep-dive'];
+  var LISTINGS = ['elig-listing'];
   var state = { country: null, site: null, statuses: { country: [], site: [] } };
   var data = null;
 
@@ -176,6 +176,34 @@
     });
     host.innerHTML = html + '</div>';
   }
+
+  function csvCell(v) {
+    var s = v == null ? '' : String(v);
+    return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+
+  // Not Reactable.downloadDataCSV: the details columns are not on screen, so
+  // R precomputes the export rows and this keeps the listing's filtered order.
+  function downloadCsv(listingId, file) {
+    var exp = eligData().export || { columns: [], rows: [] };
+    var byId = {};
+    exp.rows.forEach(function (r) { byId[r['Participant ID']] = r; });
+    var lines = [exp.columns.map(csvCell).join(',')];
+    Reactable.getState(listingId).sortedData.forEach(function (shown) {
+      var r = byId[shown['Participant ID']];
+      if (r) lines.push(exp.columns.map(function (c) { return csvCell(r[c]); }).join(','));
+    });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([lines.join('\r\n') + '\r\n'], { type: 'text/csv;charset=utf-8' }));
+    a.download = file;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () {
+      URL.revokeObjectURL(a.href);
+      a.remove();
+    }, 0);
+  }
+  window.eligDownloadCsv = downloadCsv;
 
   // Pure helpers, exposed for tests.
   window.eligFilters = {

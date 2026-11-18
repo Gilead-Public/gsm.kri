@@ -15,6 +15,7 @@ elig_CsvButton(strID, strFile)
 `htmltools` tag.
 }
 \description{
-Exports the rows left by the listing's filters and search.
+Exports the rows left by the listing's filters and search, with the
+details columns of the report's precomputed export data.
 }
 \keyword{internal}

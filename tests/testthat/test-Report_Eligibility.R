@@ -29,16 +29,17 @@ test_that("basic mode renders with two statuses and no pilot sections (#371, #16
   expect_false(grepl("Inclusion/Exclusion Listing", html, fixed = TRUE))
 })
 
-test_that("pilot mode renders the third status, deep dive and status over time (#371, #160)", {
+test_that("pilot mode renders the third status, the listing's records and status over time (#371, #160)", {
   html <- render_eligibility(
     elig_listings(elig_Fixture(bPilot = TRUE), IE_records = elig_FixtureRecords()),
     dfResults = elig_FixtureResults(bRisk = TRUE)
   )
   expect_false(grepl("plotly", html, ignore.case = TRUE))
   expect_true(grepl("Potentially Ineligible", html, fixed = TRUE))
-  expect_true(grepl("Deep Dive Listing", html, fixed = TRUE))
+  expect_false(grepl("Deep Dive Listing", html, fixed = TRUE))
   expect_true(grepl("Status over Time", html, fixed = TRUE))
-  expect_true(grepl('id="elig-deep-dive"', html, fixed = TRUE))
+  expect_true(grepl("Please check I/E", html, fixed = TRUE))
+  expect_true(grepl("EDC Query details", html, fixed = TRUE))
 })
 
 test_that("pilot mode degrades without site groups, history metric, records or EDC PD (#371)", {

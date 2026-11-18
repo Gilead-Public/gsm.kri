@@ -27,6 +27,31 @@ const categories = (page, id) => page.evaluate((id) =>
 const listingRows = (page, id = 'elig-listing') => page.evaluate((id) => Reactable.getState(id).sortedData.length, id);
 const tabs = (page, section) => page.locator(`#${section} > .nav-pills a`).allTextContents();
 const showButtons = (page, level) => page.locator(`#elig-${level}-status-filter button`).allTextContents();
+const DETAILS = ['Protocol Deviation details', 'EDC eCRF details', 'EDC Query details', 'EDC PD details'];
+
+// Quote-aware, so details cells with line breaks stay one cell.
+function parseCsv(text) {
+  const rows = [[]];
+  let cell = '';
+  let quoted = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (quoted) {
+      if (c === '"' && text[i + 1] === '"') { cell += '"'; i++; } else if (c === '"') quoted = false; else cell += c;
+    } else if (c === '"') quoted = true;
+    else if (c === ',') { rows[rows.length - 1].push(cell); cell = ''; } else if (c === '\n') { rows[rows.length - 1].push(cell); cell = ''; rows.push([]); } else if (c !== '\r') cell += c;
+  }
+  rows[rows.length - 1].push(cell);
+  return rows.filter((r) => r.length > 1 || r[0] !== '');
+}
+
+async function downloadCsv(page) {
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    page.locator('#ineligibility-listing button', { hasText: 'Download CSV' }).click(),
+  ]);
+  return parseCsv(require('fs').readFileSync(await download.path(), 'utf8'));
+}
 
 async function open(page, url) {
   const errors = [];
@@ -157,16 +182,16 @@ test.describe('basic mode', () => {
   test('listing rows expand and the CSV exports the on-screen rows (#371)', async ({ page }) => {
     await open(page, BASIC);
     await page.locator('#elig-listing .rt-expander-button').first().click();
-    await expect(page.locator('#elig-listing .elig-detail').first()).toContainText('EDC I/E criteria');
+    await expect(page.locator('#elig-listing .elig-detail strong').first()).toHaveText(/^(Protocol Deviation|EDC eCRF) \(\d+\)$/);
+    const headers = await page.locator('#elig-listing .rt-th').allTextContents();
+    expect(headers.filter((h) => /^PD (Date|Term)/.test(h))).toEqual([]);
 
     await clickBar(page, 'elig-country-status', { GroupID: 'UK', OuterGroupID: null });
     const shown = await listingRows(page);
-    const [download] = await Promise.all([
-      page.waitForEvent('download'),
-      page.locator('#ineligibility-listing button', { hasText: 'Download CSV' }).click(),
-    ]);
-    const csv = require('fs').readFileSync(await download.path(), 'utf8').trim().split('\n');
-    expect(csv.length - 1).toBe(shown);
+    const [header, ...rows] = await downloadCsv(page);
+    expect(header).toEqual(['Country', 'Site', 'Investigator Name', 'Participant ID', 'Eligibility Status', 'PD', 'EDC eCRF', 'Which I/E', 'Protocol Deviation details']);
+    expect(rows.length).toBe(shown);
+    expect(new Set(rows.map((r) => r[0]))).toEqual(new Set(['UK']));
   });
 });
 
@@ -179,7 +204,8 @@ test.describe('pilot mode', () => {
     expect(await showButtons(page, 'country')).toEqual(['All', 'With any risk', 'With Ineligible']);
     expect(await categories(page, 'elig-study-sources')).toEqual(['Important PD', 'Non-important PD', 'EDC eCRF', 'EDC Query', 'EDC PD']);
     await expect(page.locator('#status-over-time canvas')).toHaveCount(1);
-    await expect(page.locator('#elig-deep-dive')).toHaveCount(1);
+    await expect(page.locator('#elig-deep-dive')).toHaveCount(0);
+    await expect(page.locator('h2', { hasText: 'Deep Dive' })).toHaveCount(0);
     const headers = await page.locator('#elig-listing .rt-th').allTextContents();
     expect(headers).toEqual(expect.arrayContaining(['Important PD', 'Non-important PD', 'EDC Query', 'EDC PD']));
     expect(errors).toEqual([]);
@@ -200,14 +226,16 @@ test.describe('pilot mode', () => {
   test('expanding a listing row shows the records behind the status (#371)', async ({ page }) => {
     await open(page, PILOT);
     await page.locator('#elig-listing .rt-expander-button').first().click();
-    await expect(page.locator('#elig-listing .elig-detail').first()).toContainText('Records behind this status');
+    await expect(page.locator('#elig-listing .elig-detail strong').first()).toHaveText(/^(Protocol Deviation|EDC eCRF|EDC Query|EDC PD) \(\d+\)$/);
   });
 
-  test('a site click filters the deep dive (#371)', async ({ page }) => {
+  test('the CSV adds one details column per source (#371)', async ({ page }) => {
     await open(page, PILOT);
-    const site = await page.evaluate(() => Reactable.getState('elig-deep-dive').sortedData[0]);
-    await clickBar(page, 'elig-site-status', { GroupID: site.Site, OuterGroupID: site.Country });
-    const sites = await page.evaluate(() => Reactable.getState('elig-deep-dive').sortedData.map((r) => r.Site));
-    expect(new Set(sites)).toEqual(new Set([site.Site]));
+    const shown = await listingRows(page);
+    const [header, ...rows] = await downloadCsv(page);
+    expect(header.slice(-4)).toEqual(DETAILS);
+    expect(rows.length).toBe(shown);
+    const details = rows.flatMap((r) => r.slice(-4));
+    expect(details.some((d) => /^ID: .+\n/.test(d))).toBe(true);
   });
 });

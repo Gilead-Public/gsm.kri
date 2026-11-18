@@ -4,14 +4,12 @@
 \alias{elig_Listing}
 \title{Ineligibility listing}
 \usage{
-elig_Listing(dfListing, dfElig, dfRecords = NULL, strID = "elig-listing")
+elig_Listing(dfListing, dfPartRecords, strID = "elig-listing")
 }
 \arguments{
 \item{dfListing}{`data.frame` from [elig_ListingData()].}
 
-\item{dfElig}{`data.frame` from [elig_ClassifyParticipants()].}
-
-\item{dfRecords}{`data.frame` Level 2 records, or `NULL`.}
+\item{dfPartRecords}{`data.frame` from [elig_ParticipantRecords()].}
 
 \item{strID}{`character` Element ID.}
 }
@@ -21,7 +19,7 @@ elig_Listing(dfListing, dfElig, dfRecords = NULL, strID = "elig-listing")
 \description{
 `r lifecycle::badge("experimental")`
 
-Expanding a row shows the participant's level 2 records when delivered,
-otherwise the PD dates/terms and criterion codes of `Mapped_EXCLUSION`.
+Expanding a row shows the records behind the participant's status, one
+table per source.
 }
 \keyword{internal}

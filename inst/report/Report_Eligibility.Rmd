@@ -21,7 +21,7 @@ params:
 ```{r setup, include=FALSE}
 # Data contract (see ?Report_Eligibility): lListings$IE_denom is
 # Mapped_EXCLUSION; optional level 1 columns on it switch on pilot mode,
-# optional lListings$IE_records (level 2) adds the deep dive, and the optional
+# optional lListings$IE_records (level 2) fills the listing's records, and the optional
 # level 3 metric in dfResults adds Status over Time. R derives every status and
 # count; eligFilters.js only filters.
 library(gsm.kri)
@@ -38,7 +38,7 @@ bPilot <- elig_Mode(dfExclusion) == "pilot"
 dfElig <- elig_ClassifyParticipants(dfExclusion, dfGroups)
 vSources <- elig_Sources(dfElig)
 bHasEdcPd <- elig_HasSource(dfElig, "flag_edc_pd")
-bDeepDive <- bPilot && is.data.frame(dfRecords) && nrow(dfRecords) > 0
+bRecords <- bPilot && is.data.frame(dfRecords) && nrow(dfRecords) > 0
 
 strRateID <- elig_RateMetricID(dfResults)
 dfRate <- dfResults[dfResults$MetricID == strRateID, ]
@@ -59,6 +59,9 @@ vCriterionColors <- c(Inclusion = "#3C587F", Exclusion = "#8FB3DE", Other = "#B8
 has_criteria <- length(criteria_data$order) > 0
 
 dfListing <- elig_ListingData(dfElig)
+dfPartRecords <- elig_ParticipantRecords(dfElig, if (bRecords) dfRecords)
+# Without level 2 records, the eCRF details would only repeat Which I/E.
+dfExport <- elig_ExportData(dfListing, dfPartRecords, if (bRecords) ELIG_RECORD_SOURCES else "Protocol Deviation")
 
 vDelivered <- unname(c(
   "EDC eCRF",
@@ -146,7 +149,6 @@ div.main-container { max-width: none; padding-left: 24px; padding-right: 24px; }
 .elig-spread-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 8px; color: #5b6575; }
 .elig-spread-legend i { display: inline-block; width: 12px; height: 12px; margin-right: 4px; vertical-align: -1px; }
 .elig-truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px; cursor: help; }
-.elig-records { white-space: pre-line; max-height: 240px; overflow-y: auto; }
 .elig-detail { padding: 8px 16px; background-color: #f8fafc; }
 #map-wrap-country, #map-wrap-site, #elig-site-spread { overflow-x: auto; }
 /* Clears the navbar and the sticky strip when a contents link jumps to a section. */
@@ -414,33 +416,17 @@ cat("\n> One bar per EDC I/E criterion in scope, split by site. A segment's widt
 
 ```{r listing-note, results='asis'}
 cat(sprintf(
-  '<p class="elig-note">%s participants (%d). Expand a row to see %s. Long text is cut; hover for the full value.%s</p>',
+  '<p class="elig-note">%s participants (%d). Expand a row to see the records behind the status, one table per source. Download CSV adds one details column per source. Long text is cut; hover for the full value.%s</p>',
   if (bPilot) "Ineligible and Potentially Ineligible" else "Ineligible",
   nrow(dfListing),
-  if (bDeepDive) "the records behind the status" else "the participant\'s PD dates and terms and EDC I/E criteria",
   if (bPilot && !bHasEdcPd) " &dagger; EDC PD is N/A: the source is not delivered for this study." else ""
 ))
 ```
 
 ```{r listing}
 htmltools::tagList(
-  elig_Listing(dfListing, dfElig, if (bDeepDive) dfRecords),
+  elig_Listing(dfListing, dfPartRecords),
   elig_CsvButton("elig-listing", sprintf("eligibility_listing_%s.csv", strStudyID))
-)
-```
-
-```{r deep-dive-title, results='asis', eval=bDeepDive}
-dfDeepDive <- elig_DeepDiveData(dfElig, dfRecords)
-cat(sprintf(
-  '\n## Deep Dive Listing\n\n<p class="elig-note">One row per flagged participant, one column per source. Each cell lists the records as <code>[record id] date</code> followed by the source\'s key fields; a blank cell means no records from that source. %d participants.</p>\n\n',
-  nrow(dfDeepDive)
-))
-```
-
-```{r deep-dive, eval=bDeepDive}
-htmltools::tagList(
-  elig_DeepDive(dfDeepDive),
-  elig_CsvButton("elig-deep-dive", sprintf("eligibility_deep_dive_%s.csv", strStudyID))
 )
 ```
 
@@ -456,7 +442,8 @@ elig_DataScript(list(
   sources = source_data,
   criteria = criteria_data,
   map = elig_CriteriaMapRows(dfElig),
-  spread = elig_SiteSpreadRows(dfElig)
+  spread = elig_SiteSpreadRows(dfElig),
+  export = list(columns = names(dfExport), rows = dfExport)
 ))
 ```
 
