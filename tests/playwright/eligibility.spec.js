@@ -50,7 +50,10 @@ async function downloadCsv(page) {
     page.waitForEvent('download'),
     page.locator('#ineligibility-listing button', { hasText: 'Download CSV' }).click(),
   ]);
-  return parseCsv(require('fs').readFileSync(await download.path(), 'utf8'));
+  const text = require('fs').readFileSync(await download.path(), 'utf8');
+  // UTF-8 BOM, so Excel imports accented names correctly.
+  expect(text.charCodeAt(0)).toBe(0xfeff);
+  return parseCsv(text.slice(1));
 }
 
 async function open(page, url) {
@@ -236,6 +239,8 @@ test.describe('pilot mode', () => {
     expect(header.slice(-4)).toEqual(DETAILS);
     expect(rows.length).toBe(shown);
     const details = rows.flatMap((r) => r.slice(-4));
-    expect(details.some((d) => /^ID: .+\n/.test(d))).toBe(true);
+    expect(details.some((d) => /^ID: [^;]+; /.test(d))).toBe(true);
+    // Excel's text import splits rows at line breaks even inside quotes.
+    expect(rows.flat().filter((c) => /[\r\n]/.test(c))).toEqual([]);
   });
 });

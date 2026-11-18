@@ -260,8 +260,10 @@ elig_Listing <- function(dfListing, dfPartRecords, strID = "elig-listing") {
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' The listing plus one `"<source> details"` column per source: each record
-#' as one `Field: value` per line, a blank line between records.
+#' The listing plus one `"<source> details"` column per source: each record's
+#' `Field: value` pairs joined by `"; "`, records joined by `" | "`. One line
+#' per cell, because Excel's text import splits rows at line breaks even
+#' inside quotes.
 #'
 #' @param dfListing `data.frame` from [elig_ListingData()].
 #' @param dfPartRecords `data.frame` from [elig_ParticipantRecords()].
@@ -284,12 +286,12 @@ elig_ExportData <- function(dfListing, dfPartRecords, bRecords = TRUE) {
   text <- vapply(seq_len(nrow(dfPartRecords)), function(i) {
     v <- vapply(vFields, function(f) as.character(dfPartRecords[[f]][[i]]), "")
     keep <- elig_HasValue(v)
-    paste0(vFields[keep], ": ", v[keep], collapse = "\n")
+    paste0(vFields[keep], ": ", gsub("[\r\n]+", " ", v[keep]), collapse = "; ")
   }, "")
   for (s in vSources) {
     bSource <- dfPartRecords$source == s
     dfListing[[paste(s, "details")]] <- vapply(dfListing$`Participant ID`, function(id) {
-      paste(text[bSource & dfPartRecords$subjid == id], collapse = "\n\n")
+      paste(text[bSource & dfPartRecords$subjid == id], collapse = " | ")
     }, "", USE.NAMES = FALSE)
   }
   dfListing

@@ -49,16 +49,16 @@ test_that("the expanded row shows one table per source with only the fields used
   expect_no_match(html, "Description")
 })
 
-test_that("the CSV export adds one details column per source, one Field: value per line (#371)", {
+test_that("the CSV export adds one single-line details column per source (#371)", {
   dfElig <- elig_ClassifyParticipants(elig_Fixture(bPilot = TRUE, bEdcPd = FALSE))
   recs <- elig_ParticipantRecords(dfElig, elig_FixtureRecords())
   ex <- elig_ExportData(elig_ListingData(dfElig), recs)
   expect_equal(tail(names(ex), 4), paste(ELIG_RECORD_SOURCES, "details"))
   row <- function(id) ex[ex$`Participant ID` == id, ]
-  expect_equal(row("P02")$`Protocol Deviation details`, "ID: PD-9\nDate: 2026-01-02\nDescription: PD one")
+  expect_equal(row("P02")$`Protocol Deviation details`, "ID: PD-9; Date: 2026-01-02; Description: PD one")
   expect_equal(
     row("P01")$`EDC Query details`,
-    "ID: Q2\nDate: 2026-09-01\nFolder: ENROLL\nForm: IE\nQueryText: Check criterion\nStatus: Answered"
+    "ID: Q2; Date: 2026-09-01; Folder: ENROLL; Form: IE; QueryText: Check criterion; Status: Answered"
   )
   expect_equal(row("P01")$`EDC PD details`, "")
 
@@ -68,7 +68,7 @@ test_that("the CSV export adds one details column per source, one Field: value p
   expect_equal(tail(names(basic), 1), "Protocol Deviation details")
   expect_equal(
     basic$`Protocol Deviation details`[basic$`Participant ID` == "P02"],
-    "Date: 2026-01-02\nDescription: PD one\n\nDate: 2026-02-03\nDescription: PD two"
+    "Date: 2026-01-02; Description: PD one | Date: 2026-02-03; Description: PD two"
   )
 })
 
@@ -98,5 +98,14 @@ test_that("the CSV keeps a details column for a source outside the known four (#
   dfRecords$source[dfRecords$record_id == "Q1"] <- "Other Source"
   ex <- elig_ExportData(elig_ListingData(dfElig), elig_ParticipantRecords(dfElig, dfRecords))
   expect_equal(tail(names(ex), 5), c(paste(ELIG_RECORD_SOURCES, "details"), "Other Source details"))
-  expect_match(ex$`Other Source details`[ex$`Participant ID` == "P03"], "^ID: Q1\n")
+  expect_match(ex$`Other Source details`[ex$`Participant ID` == "P03"], "^ID: Q1; ")
+})
+
+test_that("CSV details flatten line breaks inside record values (#371)", {
+  dfElig <- elig_ClassifyParticipants(elig_Fixture(bPilot = TRUE))
+  dfRecords <- elig_FixtureRecords()
+  dfRecords$QueryText[dfRecords$record_id == "Q1"] <- "Line one\r\nline two"
+  ex <- elig_ExportData(elig_ListingData(dfElig), elig_ParticipantRecords(dfElig, dfRecords))
+  expect_match(ex$`EDC Query details`[ex$`Participant ID` == "P03"], "QueryText: Line one line two", fixed = TRUE)
+  expect_false(any(grepl("[\r\n]", unlist(ex))))
 })

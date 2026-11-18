@@ -194,7 +194,8 @@
       if (r) lines.push(exp.columns.map(function (c) { return csvCell(r[c]); }).join(','));
     });
     var a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([lines.join('\r\n') + '\r\n'], { type: 'text/csv;charset=utf-8' }));
+    // The BOM tells Excel the file is UTF-8, so accented names import intact.
+    a.href = URL.createObjectURL(new Blob(['\ufeff' + lines.join('\r\n') + '\r\n'], { type: 'text/csv;charset=utf-8' }));
     a.download = file;
     document.body.appendChild(a);
     a.click();

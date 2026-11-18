@@ -42,7 +42,7 @@ for (const [mode, { file, other, label }] of Object.entries(PAGES)) {
       const pd = await page.evaluate(() => JSON.parse(document.getElementById('elig-data').textContent)
         .export.rows.map((r) => r['Protocol Deviation details']));
       expect(pd.filter((d) => d.includes(';;;'))).toEqual([]);
-      expect(pd.some((d) => d.includes('\n\nID: PD-') || d.includes('\n\nDate: '))).toBe(true);
+      expect(pd.some((d) => d.includes(' | ID: PD-') || d.includes(' | Date: '))).toBe(true);
     });
   });
 }
