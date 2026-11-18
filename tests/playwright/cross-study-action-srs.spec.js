@@ -41,7 +41,7 @@ test('cross-study rows show the adjusted score and recent-action highlights (#28
 
   const legend = page.getByRole('list', { name: 'Highlighted KRI legend' });
   expect(await legend.getByRole('listitem').allTextContents())
-    .toEqual(['Closed action', 'Open action', 'No Action']);
+    .toEqual(['Closed Action', 'Open Action', 'No Action']);
 
   const cellStyle = (row) => page.locator('td.group-overview--metric').evaluateAll((cells, [study, site, metric]) => {
     const cell = cells.find((candidate) => candidate.__data__.GroupID === `${study} ${site}` &&
