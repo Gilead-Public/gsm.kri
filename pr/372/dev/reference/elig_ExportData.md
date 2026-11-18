@@ -3,7 +3,9 @@
 \`r lifecycle::badge("experimental")\`
 
 The listing plus one \`"\<source\> details"\` column per source: each
-record as one \`Field: value\` per line, a blank line between records.
+record's \`Field: value\` pairs joined by \`"; "\`, records joined by
+\`" \| "\`. One line per cell, because Excel's text import splits rows
+at line breaks even inside quotes.
 
 ## Usage
 
