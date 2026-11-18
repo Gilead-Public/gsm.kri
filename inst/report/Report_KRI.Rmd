@@ -99,8 +99,10 @@ GroupOverViz <- Widget_GroupOverview(
 
 overview_viz <- list(groupOverview = GroupOverViz)
 
-# Add FlagOverTime Table if dfResults contains delta data
-if (any(grepl("_Change", names(params$dfResults)))) {
+# Add FlagOverTime Table if dfResults contains delta data. Delta columns that
+# are all NA (no previous snapshot) do not count.
+if (any(grepl("_Change", names(params$dfResults))) &&
+    any(!is.na(params$dfResults$Flag_Previous))) {
   intSnapshots <- 12L # consider adding this as a parameter
   strSnapshotDates <- unique(params$dfResults$SnapshotDate) %>%
     sort(decreasing = TRUE) %>%

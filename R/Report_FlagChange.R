@@ -10,6 +10,8 @@
 #'
 #' @details
 #'
+#' - Nothing is rendered when `Flag_Previous` is entirely missing, i.e. the
+#'   results carry delta columns but no previous snapshot.
 #' - Only rows where the flag value has changed (including NA transitions) are included.
 #' - Rows where the flag went from NA to green (0) are excluded.
 #' - Results are grouped and color-coded by the absolute value of the new flag (red, amber, green).
@@ -49,6 +51,13 @@ Report_FlagChange <- function(dfResults) {
       paste(missing_cols, collapse = ", "),
       ". Not rendering list of newly changed flags."
     ))
+    return(NULL)
+  }
+  # Results without history (e.g. a single snapshot) can still carry the delta
+  # columns, all NA. Without a previous flag every current flag would read as a
+  # new change, so treat these like missing delta columns.
+  if (all(is.na(dfResults$Flag_Previous))) {
+    cat("No previous snapshot values in dfResults. Not rendering list of newly changed flags.")
     return(NULL)
   }
   # if GroupLabel/MetricLabel columns are missing use GroupID/MetricID
