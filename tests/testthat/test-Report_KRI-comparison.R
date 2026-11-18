@@ -222,7 +222,9 @@ test_that("Report_KRI renders without an action-weighted score (#280)", {
     MetricID = "Analysis_kri0001",
     Weight = 4,
     EffectiveWeight = 0,
-    ActionState = "No Action"
+    # A marker no widget code contains, unlike state names such as "No Action"
+    # that the bundled widget JavaScript (e.g. its legend) can include.
+    ActionState = "Undisplayed-Detail-Marker"
   )
 
   output_dir <- withr::local_tempdir()
@@ -239,6 +241,6 @@ test_that("Report_KRI renders without an action-weighted score (#280)", {
     html <- paste(readLines(file.path(output_dir, "no_srs0002.html"), warn = FALSE), collapse = "\n")
     expect_true(grepl("Widget_GroupOverview", html, fixed = TRUE))
     # Detail for a score that is not displayed never reaches the widget.
-    expect_false(grepl("No Action", html, fixed = TRUE))
+    expect_false(grepl("Undisplayed-Detail-Marker", html, fixed = TRUE))
   }
 })
