@@ -70,7 +70,10 @@ Shows a summary view with click-to-expand details for each site.</p>
 <span>  <span class="va">dfMetrics</span>,</span>
 <span>  <span class="va">dfGroups</span>,</span>
 <span>  strGroupLevel <span class="op">=</span> <span class="st">"Site"</span>,</span>
-<span>  strRiskScoreMetric <span class="op">=</span> <span class="st">"Analysis_srs0001"</span></span>
+<span>  strRiskScoreMetric <span class="op">=</span> <span class="st">"Analysis_srs0001"</span>,</span>
+<span>  strComparisonRiskMetric <span class="op">=</span> <span class="st">"Analysis_srs0002"</span>,</span>
+<span>  strComparisonRiskLabel <span class="op">=</span> <span class="st">"Adjusted Risk Score"</span>,</span>
+<span>  dfComparisonRiskDetail <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -97,6 +100,30 @@ Shows a summary view with click-to-expand details for each site.</p>
 <dt id="arg-strriskscoremetric">strRiskScoreMetric<a class="anchor" aria-label="anchor" href="#arg-strriskscoremetric"></a></dt>
 <dd><p>`character` Risk score MetricID to display.
 Defaults to `"Analysis_srs0001"`.</p></dd>
+
+
+<dt id="arg-strcomparisonriskmetric">strComparisonRiskMetric<a class="anchor" aria-label="anchor" href="#arg-strcomparisonriskmetric"></a></dt>
+<dd><p>Optional metric ID displayed immediately
+after the risk score in each site's per-study rows, as in the site report.
+The column is omitted when the metric is absent from `dfResults` or is
+the same as `strRiskScoreMetric`.
+Default: `"Analysis_srs0002"`.</p></dd>
+
+
+<dt id="arg-strcomparisonrisklabel">strComparisonRiskLabel<a class="anchor" aria-label="anchor" href="#arg-strcomparisonrisklabel"></a></dt>
+<dd><p>Column label for the comparison risk score.
+Default: `"Adjusted Risk Score"`.</p></dd>
+
+
+<dt id="arg-dfcomparisonriskdetail">dfComparisonRiskDetail<a class="anchor" aria-label="anchor" href="#arg-dfcomparisonriskdetail"></a></dt>
+<dd><p>Optional per-KRI detail behind the comparison
+score, e.g. stacked `Analysis_ActionRiskScoreDetail` outputs of
+[Analyze_ActionRiskScore()] with `StudyID`, `GroupID`, `MetricID`,
+`ActionState`, `LastActionedDate`, `DaysSinceAction`, and
+`ActionWindowDays`. Each study/site/KRI cell with an action recorded
+0 through 90 days before its assessment date is highlighted with the same
+colors and legend as the site report. Scores and flag colors are never
+changed. Ignored when the comparison metric is absent. Default: `NULL`.</p></dd>
 
 </dl></div>
     <div class="section level2">

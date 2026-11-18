@@ -10,7 +10,8 @@ Visualize_RiskScore(
   dfMetrics,
   dfGroups,
   strGroupLevel = "Site",
-  strRiskScoreMetric = "Analysis_srs0001"
+  strRiskScoreMetric = "Analysis_srs0001",
+  ...
 )
 ```
 
@@ -37,6 +38,11 @@ Visualize_RiskScore(
 
   \`character\` Risk score MetricID to display. Defaults to
   \`"Analysis_srs0001"\`.
+
+- ...:
+
+  Passed to \[Widget_CrossStudyRiskScore()\], e.g. the comparison risk
+  score and its action detail.
 
 ## Details
 

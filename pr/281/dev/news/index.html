@@ -54,9 +54,12 @@
 <ul><li>Added <code><a href="../reference/CalculateActionRiskScore.html">CalculateActionRiskScore()</a></code>, <code><a href="../reference/MakeActionRiskScoreDetail.html">MakeActionRiskScoreDetail()</a></code> and <code><a href="../reference/MakeActionSummary.html">MakeActionSummary()</a></code> for action-aware Site Risk Scores and per-KRI review detail (<a href="https://github.com/Gilead-Public/gsm.kri/issues/280" class="external-link">#280</a>).</li>
 <li>Added <code><a href="../reference/Analyze_ActionRiskScore.html">Analyze_ActionRiskScore()</a></code> and the <code>srs0002</code> workflow to calculate adjusted scores and detail from results and ActionLog inputs (<a href="https://github.com/Gilead-Public/gsm.kri/issues/280" class="external-link">#280</a>).</li>
 <li>Added configurable recency windows, action-state weighting and snapshot-date scoring (<a href="https://github.com/Gilead-Public/gsm.kri/issues/280" class="external-link">#280</a>).</li>
-<li>Extended <code><a href="../reference/Report_KRI.html">Report_KRI()</a></code> with adjacent comparison scores, review detail, action highlighting and CSV downloads (<a href="https://github.com/Gilead-Public/gsm.kri/issues/280" class="external-link">#280</a>).</li>
+<li>Extended <code><a href="../reference/Report_KRI.html">Report_KRI()</a></code> with adjacent comparison scores, review detail and action highlighting with a color legend (<a href="https://github.com/Gilead-Public/gsm.kri/issues/280" class="external-link">#280</a>).</li>
 <li>Added configurable risk-score MetricIDs to cross-study summaries and widgets (<a href="https://github.com/Gilead-Public/gsm.kri/issues/280" class="external-link">#280</a>).</li>
+<li>Added the adjacent Adjusted Risk Score column, recent-action highlighting and legend to <code><a href="../reference/Widget_CrossStudyRiskScore.html">Widget_CrossStudyRiskScore()</a></code> and the cross-study example (<a href="https://github.com/Gilead-Public/gsm.kri/issues/280" class="external-link">#280</a>).</li>
 <li>Updated the site report example to use core’s synthetic ActionLog (<a href="https://github.com/Gilead-Public/gsm.kri/issues/280" class="external-link">#280</a>).</li>
+<li>
+<code><a href="../reference/Report_FlagChange.html">Report_FlagChange()</a></code> and the KRI report skip flag-change output when delta columns hold no previous snapshot, instead of listing every flag as changed (<a href="https://github.com/Gilead-Public/gsm.kri/issues/280" class="external-link">#280</a>).</li>
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.8.0" id="gsmkri-v180">gsm.kri v1.8.0<a class="anchor" aria-label="anchor" href="#gsmkri-v180"></a></h2>

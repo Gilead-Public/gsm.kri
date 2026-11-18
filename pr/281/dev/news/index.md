@@ -19,13 +19,22 @@
   ([\#280](https://github.com/Gilead-Public/gsm.kri/issues/280)).
 - Extended
   [`Report_KRI()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_KRI.md)
-  with adjacent comparison scores, review detail, action highlighting
-  and CSV downloads
+  with adjacent comparison scores, review detail and action highlighting
+  with a color legend
   ([\#280](https://github.com/Gilead-Public/gsm.kri/issues/280)).
 - Added configurable risk-score MetricIDs to cross-study summaries and
   widgets
   ([\#280](https://github.com/Gilead-Public/gsm.kri/issues/280)).
+- Added the adjacent Adjusted Risk Score column, recent-action
+  highlighting and legend to
+  [`Widget_CrossStudyRiskScore()`](https://gilead-public.github.io/gsm.kri/dev/reference/Widget_CrossStudyRiskScore.md)
+  and the cross-study example
+  ([\#280](https://github.com/Gilead-Public/gsm.kri/issues/280)).
 - Updated the site report example to use core’s synthetic ActionLog
+  ([\#280](https://github.com/Gilead-Public/gsm.kri/issues/280)).
+- [`Report_FlagChange()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_FlagChange.md)
+  and the KRI report skip flag-change output when delta columns hold no
+  previous snapshot, instead of listing every flag as changed
   ([\#280](https://github.com/Gilead-Public/gsm.kri/issues/280)).
 
 ## gsm.kri v1.8.0

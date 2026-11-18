@@ -29,6 +29,21 @@ function renderCrossStudyRiskScoreTable(el, input) {
     
     const resultsArray = input.dfResults;
     const siteRiskScoreMetric = input.strSiteRiskMetric || 'Analysis_srs0001';
+    // Adjacent comparison score and recent-action highlighting, as in the
+    // site report's group overview.
+    const comparisonMetric = typeof input.strComparisonRiskMetric === 'string' &&
+        resultsArray.some(d => d.MetricID === input.strComparisonRiskMetric)
+        ? input.strComparisonRiskMetric : null;
+    const comparisonLabel = input.strComparisonRiskLabel || 'Adjusted Risk Score';
+    const actionDetail = comparisonMetric && Array.isArray(input.dfComparisonRiskDetail)
+        ? input.dfComparisonRiskDetail : [];
+    // Keyed like the per-study rows below, whose GroupID is "{StudyID} {GroupID}".
+    const actionByCell = {};
+    actionDetail.forEach(row => {
+        actionByCell[`${row.StudyID} ${row.GroupID}|${row.MetricID}`] = row;
+    });
+    const showActionControls = actionDetail.some(row => !isMissingActionValue(row.ActionWindowDays));
+    let highlightRecentActions = true;
 
     // Get unique study IDs for the study filter
     const uniqueStudies = [...new Set(resultsArray.map(d => d.StudyID))].sort();
@@ -48,6 +63,7 @@ function renderCrossStudyRiskScoreTable(el, input) {
     // match this file's other widget classes (.gsm-srs, .site-summary, etc.),
     // since the table itself ends up outside the .cross-study-container div.
     html += '<style>.study-row-selected { background-color: #fff3cd !important; border-left: 4px solid #f5a623; }</style>';
+    html += '<style>.group-overview--recent-action { background-color: var(--gsm-action-fill) !important; box-shadow: inset 0 0 0 3px var(--gsm-action-border) !important; }</style>';
     html += '<h3>Cross-Study Site Risk Score Summary</h3>';
     
     // Add filter controls
@@ -123,6 +139,9 @@ function renderCrossStudyRiskScoreTable(el, input) {
     html += '<button id="expand-all" style="padding:6px 12px; background:#f5f5f5; color:#333; border:1px solid #ccc; border-radius:3px; cursor:pointer; font-size:13px;">+ Expand All</button>';
     html += '<button id="collapse-all" style="padding:6px 12px; background:#f5f5f5; color:#333; border:1px solid #ccc; border-radius:3px; cursor:pointer; font-size:13px;">− Collapse All</button>';
     html += '</div>';
+    if (showActionControls) {
+        html += '<div class="group-overview--action-controls" style="display:flex; flex-wrap:wrap; align-items:center; gap:8px 16px; padding:8px 0;"></div>';
+    }
     
     html += '</div>';
     
@@ -266,7 +285,9 @@ function renderCrossStudyRiskScoreTable(el, input) {
                     {
                         GroupLevel: 'Site',
                         groupLabelKey: 'nickname',
-                        SiteRiskScoreMetricID: siteRiskScoreMetric
+                        SiteRiskScoreMetricID: siteRiskScoreMetric,
+                        ComparisonRiskScoreMetricID: comparisonMetric,
+                        ComparisonRiskScoreLabel: comparisonLabel
                     },
                     studyGroups,
                     input.dfMetrics
@@ -317,6 +338,7 @@ function renderCrossStudyRiskScoreTable(el, input) {
                         rows.forEach(row => {
                             siteTbody.appendChild(row);
                         });
+                        markRecentActions(siteTbody, actionByCell, highlightRecentActions);
                     }
                 }
                 
@@ -335,8 +357,106 @@ function renderCrossStudyRiskScoreTable(el, input) {
         }
     });
     
+    const actionControls = el.querySelector('.group-overview--action-controls');
+    if (actionControls) {
+        const highlightLabel = document.createElement('label');
+        highlightLabel.style.cssText = 'max-width:100%; min-width:0; margin:0;';
+        const highlightCheckbox = document.createElement('input');
+        highlightCheckbox.type = 'checkbox';
+        highlightCheckbox.checked = highlightRecentActions;
+        highlightCheckbox.addEventListener('change', () => {
+            highlightRecentActions = highlightCheckbox.checked;
+            el.querySelectorAll('tbody[id^="site-tbody-"]').forEach(tbody =>
+                markRecentActions(tbody, actionByCell, highlightRecentActions));
+        });
+        highlightLabel.append(highlightCheckbox, document.createTextNode(' Highlight actions within 90 days'));
+        actionControls.append(highlightLabel, makeActionLegend());
+    }
+
     // Set up filter event listeners
     setupFilters(el, input.dfSummary);
+}
+
+// Recent-action highlighting, matching the site report (gsm.vizr
+// addComparisonRiskDetail.js): an action recorded 0 through 90 days before the
+// assessment date tints and borders that KRI cell by its action state.
+const ACTION_WINDOW_DAYS = 90;
+
+function isMissingActionValue(value) {
+    return value === null || value === undefined || value === 'NA' || value === '';
+}
+
+function isRecentAction(row) {
+    return !isMissingActionValue(row.LastActionedDate) &&
+        !isMissingActionValue(row.DaysSinceAction) &&
+        Number.isFinite(Number(row.DaysSinceAction)) &&
+        Number(row.DaysSinceAction) >= 0 && Number(row.DaysSinceAction) <= ACTION_WINDOW_DAYS;
+}
+
+function displayedActionState(row) {
+    return isMissingActionValue(row.ActionState) ||
+        ['Not flagged', 'Not assessed'].includes(row.ActionState) ? 'Not recorded' : row.ActionState;
+}
+
+function actionFillColor(row) {
+    const state = displayedActionState(row);
+    return state === 'Closed Action' ? '#e8f5e9' : state === 'Open Action' ? '#ffebee' : '#f2f2f2';
+}
+
+function actionBorderColor(row) {
+    const state = displayedActionState(row);
+    return state === 'Closed Action' ? '#2da44e' : state === 'Open Action' ? '#cf222e' : '#666666';
+}
+
+function latestActionText(row) {
+    return `Latest action: ${displayedActionState(row)}. ` +
+        `Last addressed: ${isMissingActionValue(row.LastActionedDate) ? '-' : row.LastActionedDate}. ` +
+        `Days ago: ${isMissingActionValue(row.DaysSinceAction) ? '-' : row.DaysSinceAction}.`;
+}
+
+function markRecentActions(container, actionByCell, highlight) {
+    container.querySelectorAll('td.group-overview--metric').forEach(cell => {
+        const datum = cell.__data__;
+        const row = datum && actionByCell[`${datum.GroupID}|${datum.MetricID}`];
+        const highlighted = Boolean(highlight && row && isRecentAction(row));
+        cell.classList.toggle('group-overview--recent-action', highlighted);
+        if (highlighted) {
+            cell.style.setProperty('--gsm-action-fill', actionFillColor(row));
+            cell.style.setProperty('--gsm-action-border', actionBorderColor(row));
+        } else {
+            cell.style.removeProperty('--gsm-action-fill');
+            cell.style.removeProperty('--gsm-action-border');
+        }
+        if (row && !cell.dataset.actionTitled) {
+            const action = latestActionText(row);
+            cell.title = [datum.tooltipContent, action].filter(Boolean).join('\n');
+            cell.setAttribute('aria-description', action);
+            cell.dataset.actionTitled = 'true';
+        }
+    });
+}
+
+function makeActionLegend() {
+    const legend = document.createElement('div');
+    legend.className = 'group-overview--action-legend';
+    legend.setAttribute('role', 'list');
+    legend.setAttribute('aria-label', 'Highlighted KRI legend');
+    legend.style.cssText = 'display:flex; flex-wrap:wrap; align-items:center; gap:4px 12px;';
+    [['Closed Action', 'Closed action'], ['Open Action', 'Open action'],
+        ['Awaiting Triage', 'Other action state']].forEach(([state, label]) => {
+        const item = document.createElement('span');
+        item.setAttribute('role', 'listitem');
+        item.style.cssText = 'display:inline-flex; align-items:center; gap:4px;';
+        const swatch = document.createElement('span');
+        swatch.className = 'group-overview--action-legend-swatch';
+        swatch.setAttribute('aria-hidden', 'true');
+        swatch.style.cssText = 'display:inline-block; width:16px; height:16px; box-sizing:border-box;' +
+            `background-color:${actionFillColor({ ActionState: state })};` +
+            `box-shadow:inset 0 0 0 3px ${actionBorderColor({ ActionState: state })};`;
+        item.append(swatch, document.createTextNode(label));
+        legend.appendChild(item);
+    });
+    return legend;
 }
 
 function setupFilters(el, dfSummary) {
