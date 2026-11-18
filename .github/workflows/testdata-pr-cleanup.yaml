@@ -23,10 +23,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: needs
-        uses: gilead-public/gsm.datasim/needs-testdata@feat-183-readiness-checks
+        uses: gilead-public/gsm.datasim/needs-testdata@test-gsm-utils-158
       - id: delete
         if: steps.needs.outputs.needed == 'true'
-        uses: gilead-public/gsm.datasim/delete-pr-bundles@feat-183-readiness-checks
+        uses: gilead-public/gsm.datasim/delete-pr-bundles@test-gsm-utils-158
       - name: Report leftover bundles
         if: steps.needs.outputs.needed == 'true' && (failure() || steps.delete.outputs.failed != '0')
         shell: bash

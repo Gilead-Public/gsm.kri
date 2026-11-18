@@ -32,7 +32,7 @@ jobs:
   testdata:
     runs-on: ubuntu-latest
     steps:
-      - uses: gilead-public/gsm.datasim/trigger-build@feat-183-readiness-checks
+      - uses: gilead-public/gsm.datasim/trigger-build@test-gsm-utils-158
         with:
           app-id: ${{ secrets.CM_BOT_APP_ID }}
           app-private-key: ${{ secrets.CM_BOT_PRIVATE_KEY }}

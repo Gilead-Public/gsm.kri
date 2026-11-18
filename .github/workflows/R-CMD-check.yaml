@@ -17,7 +17,7 @@ jobs:
     steps:
       - name: Define matrix based on target branch
         id: set-matrix
-        uses: gilead-public/gsm.utils/setup-matrix-with-dev@feat-156-157-158-testdata
+        uses: gilead-public/gsm.utils/setup-matrix-with-dev@test-gsm-utils-158-wiring
         with:
           pkg-use: 'public'
   R-CMD-check:
@@ -32,18 +32,18 @@ jobs:
       R_KEEP_PKG_SOURCE: yes
     steps:
       - name: Generate token
-        uses: gilead-public/gsm.utils/generate-token@feat-156-157-158-testdata
+        uses: gilead-public/gsm.utils/generate-token@test-gsm-utils-158-wiring
         id: token
         with:
           app-id: ${{ secrets.CM_BOT_APP_ID }}
           app-private-key: ${{ secrets.CM_BOT_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
       - name: Check out repo
-        uses: gilead-public/gsm.utils/checkout@feat-156-157-158-testdata
+        uses: gilead-public/gsm.utils/checkout@test-gsm-utils-158-wiring
         with:
           token: ${{ steps.token.outputs.token }}
       - name: Install R and dependencies
-        uses: gilead-public/gsm.utils/install@feat-156-157-158-testdata
+        uses: gilead-public/gsm.utils/install@test-gsm-utils-158-wiring
         with:
           token: ${{ steps.token.outputs.token }}
           r-version: ${{ matrix.config.r }}
@@ -55,8 +55,8 @@ jobs:
         shell: bash
         run: echo "GITHUB_PAT=${{ steps.token.outputs.token }}" >> $GITHUB_ENV
       - name: Wait for test data
-        uses: gilead-public/gsm.utils/wait-for-testdata@feat-156-157-158-testdata
+        uses: gilead-public/gsm.utils/wait-for-testdata@test-gsm-utils-158-wiring
       - name: Check package
-        uses: gilead-public/gsm.utils/check-r-package@feat-156-157-158-testdata
+        uses: gilead-public/gsm.utils/check-r-package@test-gsm-utils-158-wiring
         with:
           error-on: ${{ matrix.config.error-on || '"warning"' }}

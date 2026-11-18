@@ -31,7 +31,7 @@ permissions:
   actions: read
 jobs:
   call-pkgdown-core:
-    uses: gilead-public/gsm.utils/.github/workflows/pkgdown-core.yaml@feat-156-157-158-testdata
+    uses: gilead-public/gsm.utils/.github/workflows/pkgdown-core.yaml@test-gsm-utils-158-wiring
     with:
       # These inputs only actually matter for workflow_dispatch; otherwise
       # they're automatically determined.
