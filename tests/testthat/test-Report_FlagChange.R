@@ -19,10 +19,19 @@ dfResults <- data.frame(
 )
 
 test_that("returns NULL if required columns are missing (#75)", {
-  df <- gsm.core::reportingResults
+  df <- dfResults[, !grepl("_(Previous|Change)$", names(dfResults))]
   output <- capture.output(result <- Report_FlagChange(df))
   expect_null(result)
   expect_true(any(grepl("Missing delta columns", output)))
+})
+
+test_that("returns NULL when delta columns have no previous snapshot (#280)", {
+  df <- dfResults
+  df[grepl("_(Previous|Change)$", names(df))] <- NA
+  output <- capture.output(result <- Report_FlagChange(df))
+  expect_null(result)
+  expect_true(any(grepl("No previous snapshot values", output)))
+  expect_false(any(grepl("flag-change-list", output)))
 })
 
 test_that("GroupLabel and MetricLabel default to IDs when missing (#75)", {
@@ -53,6 +62,12 @@ test_that("No output if only change is NA -> 0 (green) (#75)", {
     GroupLabel = "Group A",
     MetricLabel = "Metric A"
   )
+  # An unchanged row with history, so the results are not history-free.
+  unchanged <- dfResults
+  unchanged$GroupID <- "G2"
+  unchanged$Flag_Previous <- 0
+  unchanged$Flag_Change <- 0
+  dfResults <- rbind(dfResults, unchanged)
 
   output <- capture.output(Report_FlagChange(dfResults))
   expect_true(any(grepl("Found 0 Risk Signals", output)))

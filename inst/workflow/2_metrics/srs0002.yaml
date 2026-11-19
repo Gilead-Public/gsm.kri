@@ -1,0 +1,64 @@
+meta:
+  Active: true
+  Type: Analysis
+  ID: srs0002
+  GroupLevel: Site
+  Abbreviation: Adjusted SRS
+  Metric: Adjusted Site Risk Score
+  Numerator: Disposition-adjusted KRI weights
+  Denominator: Maximum Weights
+  Model: Identity
+  Score: Adjusted Site Risk Score
+  AnalysisType: identity
+  Priority: 4
+  GenerateRiskSignal: true
+  ActionWindowDays: 90
+  ActionHistoryComplete: false
+  ActionPolicy: disposition
+  UseSnapshotDate: true
+  ScoreSnapshotNoAction: true
+  ActionAsOfDate: null
+  ActionExtractionDate: null
+spec:
+  Analysis_Summary:
+    _all:
+      required: true
+  Reporting_ActionLog:
+    _all:
+      required: true
+steps:
+  - output: dfResults
+    name: workr::RunQuery
+    params:
+      df: Analysis_Summary
+      strQuery: |
+        SELECT *
+        FROM df
+        WHERE GroupLevel = 'Site'
+          AND MetricID LIKE 'Analysis_kri%'
+  - output: lWorkflows
+    name: workr::MakeWorkflowList
+    params:
+      strPath: ./workflow/2_metrics
+      strPackage: null
+  - output: dfMetrics
+    name: gsm.reporting::MakeMetric
+    params:
+      lWorkflows: lWorkflows
+  - output: dfWeights
+    name: gsm.kri::MakeWeights
+    params:
+      dfMetrics: dfMetrics
+  - output: lAnalysis
+    name: gsm.kri::Analyze_ActionRiskScore
+    params:
+      dfResults: dfResults
+      dfWeights: dfWeights
+      dfActionLog: Reporting_ActionLog
+      bUseSnapshotDate: UseSnapshotDate
+      bScoreSnapshotNoAction: ScoreSnapshotNoAction
+      strActionPolicy: ActionPolicy
+      intActionWindowDays: ActionWindowDays
+      dActionAsOfDate: ActionAsOfDate
+      dActionExtractionDate: ActionExtractionDate
+      bActionHistoryComplete: ActionHistoryComplete

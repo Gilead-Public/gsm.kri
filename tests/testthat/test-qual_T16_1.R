@@ -7,7 +7,7 @@ testthat::test_that("Qual: Given summarized analytics data, all appropriate aspe
     "lSource predates drv_drg_completion"
   )
   kri_workflows <- workr::MakeWorkflowList(
-    strNames = c(paste0("kri000", 1:9), paste0("kri00", 10:12), "srs"),
+    strNames = c(paste0("kri000", 1:9), paste0("kri00", 10:12), "srs0001"),
     strPath = GetDefaultKRIPath()
   )
   # Exclude pk/pd and exclusion since thats not counting to SRS

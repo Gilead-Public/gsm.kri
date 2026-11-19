@@ -28,6 +28,22 @@ function renderCrossStudyRiskScoreTable(el, input) {
     }
     
     const resultsArray = input.dfResults;
+    const siteRiskScoreMetric = input.strSiteRiskMetric || 'Analysis_srs0001';
+    // Adjacent comparison score and recent-action highlighting, as in the
+    // site report's group overview.
+    const comparisonMetric = typeof input.strComparisonRiskMetric === 'string' &&
+        resultsArray.some(d => d.MetricID === input.strComparisonRiskMetric)
+        ? input.strComparisonRiskMetric : null;
+    const comparisonLabel = input.strComparisonRiskLabel || 'Adjusted Risk Score';
+    const actionDetail = comparisonMetric && Array.isArray(input.dfComparisonRiskDetail)
+        ? input.dfComparisonRiskDetail : [];
+    // Keyed like the per-study rows below, whose GroupID is "{StudyID} {GroupID}".
+    const actionByCell = {};
+    actionDetail.forEach(row => {
+        actionByCell[`${row.StudyID} ${row.GroupID}|${row.MetricID}`] = row;
+    });
+    const showActionControls = actionDetail.some(row => !isMissingActionValue(row.ActionWindowDays));
+    let highlightRecentActions = true;
 
     // Get unique study IDs for the study filter
     const uniqueStudies = [...new Set(resultsArray.map(d => d.StudyID))].sort();
@@ -47,6 +63,7 @@ function renderCrossStudyRiskScoreTable(el, input) {
     // match this file's other widget classes (.gsm-srs, .site-summary, etc.),
     // since the table itself ends up outside the .cross-study-container div.
     html += '<style>.study-row-selected { background-color: #fff3cd !important; border-left: 4px solid #f5a623; }</style>';
+    html += '<style>.group-overview--recent-action { background-color: var(--gsm-action-fill) !important; box-shadow: inset 0 0 0 3px var(--gsm-action-border) !important; }</style>';
     html += '<h3>Cross-Study Site Risk Score Summary</h3>';
     
     // Add filter controls
@@ -122,6 +139,19 @@ function renderCrossStudyRiskScoreTable(el, input) {
     html += '<button id="expand-all" style="padding:6px 12px; background:#f5f5f5; color:#333; border:1px solid #ccc; border-radius:3px; cursor:pointer; font-size:13px;">+ Expand All</button>';
     html += '<button id="collapse-all" style="padding:6px 12px; background:#f5f5f5; color:#333; border:1px solid #ccc; border-radius:3px; cursor:pointer; font-size:13px;">− Collapse All</button>';
     html += '</div>';
+    // Downloads follow the current view: visible sites, their order and the
+    // displayed (study-filtered) badge values.
+    const downloadButtonStyle = 'padding:4px 10px; background:#f5f5f5; color:#333; border:1px solid #ccc; border-radius:3px; cursor:pointer; font-size:13px;';
+    html += '<div class="cross-study-downloads" style="margin:0 0 10px; display:flex; flex-wrap:wrap; align-items:center; gap:8px 16px; font-size:13px;">';
+    [['summary', 'Download site summary (XLSX)', 'One row per visible site: Site, Studies, Enrolled, Avg SRS, Max SRS'],
+        ['detail', 'Download site/study detail (XLSX)', 'One row per visible site, study and KRI, as in the expanded rows']]
+        .forEach(([table, label, title]) => {
+            html += `<button type="button" data-export="${table}" title="${title}" style="${downloadButtonStyle}">⬇ ${label}</button>`;
+        });
+    html += '</div>';
+    if (showActionControls) {
+        html += '<div class="group-overview--action-controls" style="display:flex; flex-wrap:wrap; align-items:center; gap:8px 16px; padding:8px 0;"></div>';
+    }
     
     html += '</div>';
     
@@ -222,7 +252,7 @@ function renderCrossStudyRiskScoreTable(el, input) {
         // for just the studies selected in the "Filter by Study" control.
         const srsByStudy = {};
         siteResults
-            .filter(d => d.MetricID === 'Analysis_srs0001')
+            .filter(d => d.MetricID === siteRiskScoreMetric)
             .forEach(d => { srsByStudy[d.StudyID] = parseFloat(d.Score); });
 
         const enrollmentByStudy = {};
@@ -265,7 +295,9 @@ function renderCrossStudyRiskScoreTable(el, input) {
                     {
                         GroupLevel: 'Site',
                         groupLabelKey: 'nickname',
-                        SiteRiskScoreMetricID: 'Analysis_srs0001'
+                        SiteRiskScoreMetricID: siteRiskScoreMetric,
+                        ComparisonRiskScoreMetricID: comparisonMetric,
+                        ComparisonRiskScoreLabel: comparisonLabel
                     },
                     studyGroups,
                     input.dfMetrics
@@ -316,6 +348,7 @@ function renderCrossStudyRiskScoreTable(el, input) {
                         rows.forEach(row => {
                             siteTbody.appendChild(row);
                         });
+                        markRecentActions(siteTbody, actionByCell, highlightRecentActions);
                     }
                 }
                 
@@ -334,8 +367,310 @@ function renderCrossStudyRiskScoreTable(el, input) {
         }
     });
     
+    const actionControls = el.querySelector('.group-overview--action-controls');
+    if (actionControls) {
+        const highlightLabel = document.createElement('label');
+        highlightLabel.style.cssText = 'max-width:100%; min-width:0; margin:0;';
+        const highlightCheckbox = document.createElement('input');
+        highlightCheckbox.type = 'checkbox';
+        highlightCheckbox.checked = highlightRecentActions;
+        highlightCheckbox.addEventListener('change', () => {
+            highlightRecentActions = highlightCheckbox.checked;
+            el.querySelectorAll('tbody[id^="site-tbody-"]').forEach(tbody =>
+                markRecentActions(tbody, actionByCell, highlightRecentActions));
+        });
+        highlightLabel.append(highlightCheckbox, document.createTextNode(' Highlight actions within 90 days'));
+        actionControls.append(highlightLabel, makeActionLegend());
+    }
+
     // Set up filter event listeners
     setupFilters(el, input.dfSummary);
+
+    const exportContext = {
+        results: resultsArray, metrics: input.dfMetrics || [], groups: input.dfGroups || [],
+        siteRiskScoreMetric, comparisonMetric, comparisonLabel, actionByCell,
+        hasActions: actionDetail.length > 0
+    };
+    el.querySelectorAll('.cross-study-downloads button[data-export]').forEach(button => {
+        button.addEventListener('click', () => {
+            const summary = button.dataset.export === 'summary';
+            const rows = summary ? crossStudySummaryRows(el) : crossStudyDetailRows(el, exportContext);
+            const name = summary ? 'cross-study-site-summary' : 'cross-study-site-study-detail';
+            downloadBlob(new Blob([makeXlsx(rows, summary ? 'Site Summary' : 'Site Study Detail')], {
+                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            }), `${name}.xlsx`);
+        });
+    });
+}
+
+// ---- Downloads -------------------------------------------------------------
+// Rows are arrays with the header first; cells are numbers, strings or null.
+
+function visibleSiteBodies(el) {
+    return [...el.querySelectorAll('tbody[id^="site-tbody-"]')]
+        .filter(tbody => tbody.style.display !== 'none' && tbody.querySelector('.site-summary'));
+}
+
+function exportNumber(value, digits) {
+    if (isMissingActionValue(value)) return null;
+    const number = Number(value);
+    if (!Number.isFinite(number)) return null;
+    return digits === undefined ? number : Number(number.toFixed(digits));
+}
+
+// The collapsed view: one row per visible site with its badge values as shown.
+function crossStudySummaryRows(el) {
+    const rows = [['Site', 'Studies', 'Enrolled', 'Avg SRS', 'Max SRS']];
+    visibleSiteBodies(el).forEach(tbody => {
+        const summary = tbody.querySelector('.site-summary').dataset;
+        const hasEnrollment = Boolean(tbody.querySelector('.gsm-enrollmentCount'));
+        rows.push([
+            `${summary.siteId} (${summary.investigatorName})`,
+            exportNumber(summary.numStudies),
+            hasEnrollment ? exportNumber(summary.enrollmentCount) : null,
+            exportNumber(summary.avgRiskScore, 1),
+            exportNumber(summary.maxRiskScore, 1)
+        ]);
+    });
+    return rows;
+}
+
+// The expanded view in long form: one row per visible site, study and KRI, in
+// the order shown, repeating the per-study columns of the matrix on each row.
+function crossStudyDetailRows(el, ctx) {
+    const header = ['Site', 'Investigator', 'Study', 'Snapshot Date', 'Enrolled', 'Red Flags', 'Amber Flags', 'Risk Score'];
+    if (ctx.comparisonMetric) header.push(ctx.comparisonLabel);
+    header.push('KRI', 'KRI Name', 'Metric ID', 'Flag', 'Score', 'Numerator', 'Denominator', 'Metric');
+    if (ctx.hasActions) header.push('Action State', 'Last Addressed', 'Days Ago', 'Action Within 90 Days');
+    const rows = [header];
+
+    const scoreMetrics = [ctx.siteRiskScoreMetric, ctx.comparisonMetric].filter(Boolean);
+    const byCell = {};
+    ctx.results.forEach(result => {
+        if (result.GroupLevel === 'Site') byCell[`${result.StudyID}|${result.GroupID}|${result.MetricID}`] = result;
+    });
+    const kris = ctx.metrics.filter(metric => !scoreMetrics.includes(metric.MetricID));
+
+    visibleSiteBodies(el).forEach(tbody => {
+        const summary = tbody.querySelector('.site-summary').dataset;
+        const site = summary.siteId;
+        tbody.querySelectorAll('tr:not(.site-summary)').forEach(studyRow => {
+            const study = studyRow.dataset.studyId;
+            if (!study) return;
+            const studyResults = ctx.results.filter(result =>
+                result.GroupLevel === 'Site' && result.StudyID === study && result.GroupID === site);
+            const signals = studyResults.filter(result => !scoreMetrics.includes(result.MetricID));
+            const flagCount = level => signals.filter(result => Math.abs(parseInt(result.Flag)) === level).length;
+            const enrolled = ctx.groups.find(group => group.GroupLevel === 'Site' && group.StudyID === study &&
+                group.GroupID === site && group.Param === 'ParticipantCount');
+            const score = metric => byCell[`${study}|${site}|${metric}`]?.Score;
+            const studyColumns = [
+                site, summary.investigatorName, study,
+                studyResults.find(result => !isMissingActionValue(result.SnapshotDate))?.SnapshotDate ?? null,
+                exportNumber(enrolled?.Value), flagCount(2), flagCount(1),
+                exportNumber(score(ctx.siteRiskScoreMetric), 0)
+            ];
+            if (ctx.comparisonMetric) studyColumns.push(exportNumber(score(ctx.comparisonMetric), 0));
+
+            kris.forEach(metric => {
+                const result = byCell[`${study}|${site}|${metric.MetricID}`];
+                if (!result) return;
+                const row = [...studyColumns,
+                    metric.Abbreviation || metric.MetricID, metric.Metric || null, metric.MetricID,
+                    exportNumber(result.Flag), exportNumber(result.Score), exportNumber(result.Numerator),
+                    exportNumber(result.Denominator), exportNumber(result.Metric)];
+                if (ctx.hasActions) {
+                    const action = ctx.actionByCell[`${study} ${site}|${metric.MetricID}`];
+                    row.push(
+                        action ? displayedActionState(action) : null,
+                        action && !isMissingActionValue(action.LastActionedDate) ? action.LastActionedDate : null,
+                        action ? exportNumber(action.DaysSinceAction) : null,
+                        action && isRecentAction(action) ? 'Yes' : 'No'
+                    );
+                }
+                rows.push(row);
+            });
+        });
+    });
+    return rows;
+}
+
+function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+// Minimal single-sheet .xlsx: SpreadsheetML parts in an uncompressed (stored)
+// zip, with inline strings, a bold header and a frozen first row. Avoids a
+// spreadsheet library dependency in self-contained reports.
+function makeXlsx(rows, sheetName) {
+    const escapeXml = text => String(text)
+        .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const columnName = index => {
+        let name = '';
+        for (let n = index + 1; n > 0; n = Math.floor((n - 1) / 26)) name = String.fromCharCode(65 + (n - 1) % 26) + name;
+        return name;
+    };
+    const sheetRows = rows.map((row, r) => {
+        const cells = row.map((value, c) => {
+            if (value === null || value === undefined || value === '') return '';
+            const ref = `${columnName(c)}${r + 1}`;
+            const style = r === 0 ? ' s="1"' : '';
+            if (typeof value === 'number' && Number.isFinite(value)) return `<c r="${ref}"${style}><v>${value}</v></c>`;
+            // Only mark whitespace-significant text; some readers mis-parse the attribute.
+            const space = /^\s|\s$/.test(String(value)) ? ' xml:space="preserve"' : '';
+            return `<c r="${ref}"${style} t="inlineStr"><is><t${space}>${escapeXml(value)}</t></is></c>`;
+        }).join('');
+        return `<row r="${r + 1}">${cells}</row>`;
+    }).join('');
+    const main = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main';
+    const rel = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+    const xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+    const files = [
+        ['[Content_Types].xml', `${xml}<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`],
+        ['_rels/.rels', `${xml}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${rel}/officeDocument" Target="xl/workbook.xml"/></Relationships>`],
+        ['xl/workbook.xml', `${xml}<workbook xmlns="${main}" xmlns:r="${rel}"><sheets><sheet name="${escapeXml(sheetName)}" sheetId="1" r:id="rId1"/></sheets></workbook>`],
+        ['xl/_rels/workbook.xml.rels', `${xml}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${rel}/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="${rel}/styles" Target="styles.xml"/></Relationships>`],
+        ['xl/styles.xml', `${xml}<styleSheet xmlns="${main}"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`],
+        ['xl/worksheets/sheet1.xml', `${xml}<worksheet xmlns="${main}" xmlns:r="${rel}"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><sheetData>${sheetRows}</sheetData></worksheet>`]
+    ];
+    return makeStoredZip(files);
+}
+
+function makeStoredZip(files) {
+    const encoder = new TextEncoder();
+    const crcTable = Array.from({ length: 256 }, (_, n) => {
+        let c = n;
+        for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1;
+        return c >>> 0;
+    });
+    const crc32 = bytes => {
+        let crc = 0xFFFFFFFF;
+        for (let i = 0; i < bytes.length; i++) crc = crcTable[(crc ^ bytes[i]) & 0xFF] ^ (crc >>> 8);
+        return (crc ^ 0xFFFFFFFF) >>> 0;
+    };
+    const now = new Date();
+    const dosTime = (now.getHours() << 11) | (now.getMinutes() << 5) | Math.floor(now.getSeconds() / 2);
+    const dosDate = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
+    const parts = [];
+    const central = [];
+    let offset = 0;
+    files.forEach(([name, content]) => {
+        const nameBytes = encoder.encode(name);
+        const data = encoder.encode(content);
+        const crc = crc32(data);
+        const local = new DataView(new ArrayBuffer(30));
+        [[0, 0x04034b50, 4], [4, 20, 2], [6, 0x0800, 2], [8, 0, 2], [10, dosTime, 2], [12, dosDate, 2],
+            [14, crc, 4], [18, data.length, 4], [22, data.length, 4], [26, nameBytes.length, 2], [28, 0, 2]]
+            .forEach(([at, value, size]) => size === 4 ? local.setUint32(at, value, true) : local.setUint16(at, value, true));
+        const entry = new DataView(new ArrayBuffer(46));
+        [[0, 0x02014b50, 4], [4, 20, 2], [6, 20, 2], [8, 0x0800, 2], [10, 0, 2], [12, dosTime, 2], [14, dosDate, 2],
+            [16, crc, 4], [20, data.length, 4], [24, data.length, 4], [28, nameBytes.length, 2], [30, 0, 2],
+            [32, 0, 2], [34, 0, 2], [36, 0, 2], [38, 0, 4], [42, offset, 4]]
+            .forEach(([at, value, size]) => size === 4 ? entry.setUint32(at, value, true) : entry.setUint16(at, value, true));
+        parts.push(new Uint8Array(local.buffer), nameBytes, data);
+        central.push(new Uint8Array(entry.buffer), nameBytes);
+        offset += 30 + nameBytes.length + data.length;
+    });
+    const centralSize = central.reduce((total, part) => total + part.length, 0);
+    const end = new DataView(new ArrayBuffer(22));
+    [[0, 0x06054b50, 4], [4, 0, 2], [6, 0, 2], [8, files.length, 2], [10, files.length, 2],
+        [12, centralSize, 4], [16, offset, 4], [20, 0, 2]]
+        .forEach(([at, value, size]) => size === 4 ? end.setUint32(at, value, true) : end.setUint16(at, value, true));
+    const all = [...parts, ...central, new Uint8Array(end.buffer)];
+    const output = new Uint8Array(all.reduce((total, part) => total + part.length, 0));
+    let position = 0;
+    all.forEach(part => { output.set(part, position); position += part.length; });
+    return output;
+}
+
+// Recent-action highlighting, matching the site report (gsm.vizr
+// addComparisonRiskDetail.js): an action recorded 0 through 90 days before the
+// assessment date tints and borders that KRI cell by its action state.
+const ACTION_WINDOW_DAYS = 90;
+
+function isMissingActionValue(value) {
+    return value === null || value === undefined || value === 'NA' || value === '';
+}
+
+function isRecentAction(row) {
+    return !isMissingActionValue(row.LastActionedDate) &&
+        !isMissingActionValue(row.DaysSinceAction) &&
+        Number.isFinite(Number(row.DaysSinceAction)) &&
+        Number(row.DaysSinceAction) >= 0 && Number(row.DaysSinceAction) <= ACTION_WINDOW_DAYS;
+}
+
+function displayedActionState(row) {
+    return isMissingActionValue(row.ActionState) ||
+        ['Not flagged', 'Not assessed'].includes(row.ActionState) ? 'Not recorded' : row.ActionState;
+}
+
+function actionFillColor(row) {
+    const state = displayedActionState(row);
+    return state === 'Closed Action' ? '#e8f5e9' : state === 'Open Action' ? '#ffebee' : '#f2f2f2';
+}
+
+function actionBorderColor(row) {
+    const state = displayedActionState(row);
+    return state === 'Closed Action' ? '#2da44e' : state === 'Open Action' ? '#cf222e' : '#666666';
+}
+
+function latestActionText(row) {
+    return `Latest action: ${displayedActionState(row)}. ` +
+        `Last addressed: ${isMissingActionValue(row.LastActionedDate) ? '-' : row.LastActionedDate}. ` +
+        `Days ago: ${isMissingActionValue(row.DaysSinceAction) ? '-' : row.DaysSinceAction}.`;
+}
+
+function markRecentActions(container, actionByCell, highlight) {
+    container.querySelectorAll('td.group-overview--metric').forEach(cell => {
+        const datum = cell.__data__;
+        const row = datum && actionByCell[`${datum.GroupID}|${datum.MetricID}`];
+        const highlighted = Boolean(highlight && row && isRecentAction(row));
+        cell.classList.toggle('group-overview--recent-action', highlighted);
+        if (highlighted) {
+            cell.style.setProperty('--gsm-action-fill', actionFillColor(row));
+            cell.style.setProperty('--gsm-action-border', actionBorderColor(row));
+        } else {
+            cell.style.removeProperty('--gsm-action-fill');
+            cell.style.removeProperty('--gsm-action-border');
+        }
+        if (row && !cell.dataset.actionTitled) {
+            const action = latestActionText(row);
+            cell.title = [datum.tooltipContent, action].filter(Boolean).join('\n');
+            cell.setAttribute('aria-description', action);
+            cell.dataset.actionTitled = 'true';
+        }
+    });
+}
+
+function makeActionLegend() {
+    const legend = document.createElement('div');
+    legend.className = 'group-overview--action-legend';
+    legend.setAttribute('role', 'list');
+    legend.setAttribute('aria-label', 'Highlighted KRI legend');
+    legend.style.cssText = 'display:flex; flex-wrap:wrap; align-items:center; gap:4px 12px;';
+    [['Closed Action', 'Closed Action'], ['Open Action', 'Open Action'],
+        ['No Action', 'No Action']].forEach(([state, label]) => {
+        const item = document.createElement('span');
+        item.setAttribute('role', 'listitem');
+        item.style.cssText = 'display:inline-flex; align-items:center; gap:4px;';
+        const swatch = document.createElement('span');
+        swatch.className = 'group-overview--action-legend-swatch';
+        swatch.setAttribute('aria-hidden', 'true');
+        swatch.style.cssText = 'display:inline-block; width:16px; height:16px; box-sizing:border-box;' +
+            `background-color:${actionFillColor({ ActionState: state })};` +
+            `box-shadow:inset 0 0 0 3px ${actionBorderColor({ ActionState: state })};`;
+        item.append(swatch, document.createTextNode(label));
+        legend.appendChild(item);
+    });
+    return legend;
 }
 
 function setupFilters(el, dfSummary) {
