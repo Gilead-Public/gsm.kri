@@ -2,7 +2,7 @@ meta:
   Active: true
   Type: Analysis
   ID: ctq0002
-  GroupLevel: Study
+  GroupLevel: Site
   Abbreviation: WD
   Metric: Withdrawal Rate
   Numerator: Withdrawal by Participant
@@ -10,9 +10,9 @@ meta:
   GenerateRiskSignal: false
 spec:
   Mapped_DISP:
-    studyid:
-      type: character
     subjid:
+      type: character
+    invid:
       type: character
     disp_enrolled:
       type: character
@@ -36,7 +36,7 @@ steps:
       dfNumerator: Temp_WITHDRAWAL
       dfDenominator: Temp_ENROLLED
       strSubjectCol: subjid
-      strGroupCol: studyid
+      strGroupCol: invid
       strGroupLevel: GroupLevel
       strNumeratorMethod: Count
       strDenominatorMethod: Count
