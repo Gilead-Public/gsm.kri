@@ -17,13 +17,14 @@ params:
   dfGroups: NA
   lListings: NA
   strMode: basic
+  dfStatusHistory: NA
 ---
 
 ```{r setup, include=FALSE}
 # Data contract (see ?Report_Eligibility): lListings$IE_denom is
 # Mapped_EXCLUSION; params$strMode picks basic or pilot mode,
 # optional lListings$IE_records (level 2) fills the listing's records, and the optional
-# level 3 metric in dfResults adds Status over Time. R derives every status and
+# params$dfStatusHistory (level 3) adds Status over Time. R derives every status and
 # count; eligFilters.js only filters.
 library(gsm.kri)
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
@@ -47,7 +48,7 @@ bRecords <- bPilot && is.data.frame(dfRecords) && nrow(dfRecords) > 0
 strRateID <- elig_RateMetricID(dfResults)
 dfRate <- dfResults[dfResults$MetricID == strRateID, ]
 dfRateMetric <- dfMetrics[dfMetrics$MetricID == strRateID, ]
-dfTrend <- elig_TrendRows(dfResults)
+dfTrend <- elig_TrendRows(params$dfStatusHistory)
 latest_snapshot <- max(as.Date(dfResults$SnapshotDate))
 strStudyID <- paste(unique(stats::na.omit(dfElig$studyid)), collapse = ", ")
 
@@ -219,7 +220,7 @@ gsm.vizr::bars(
 
 ```{r ts-status-note, results='asis', eval=bPilot && nrow(dfTrend) > 0}
 cat(sprintf(
-  '<p class="elig-note">Enrolled participants by eligibility status at each snapshot with the eligibility risk metric, from %s. History starts at the study\'s go-live and is never back-filled. The Ineligibility Rate can step up at go-live because the eligibility PD categories widened.</p>',
+  '<p class="elig-note">Enrolled participants by eligibility status at each snapshot, from %s. History starts at the study\'s go-live and is never back-filled. The Ineligibility Rate can step up at go-live because the eligibility PD categories widened.</p>',
   min(dfTrend$GroupID)
 ))
 ```

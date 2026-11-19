@@ -4,18 +4,16 @@
 \alias{elig_TrendRows}
 \title{Status over time rows}
 \usage{
-elig_TrendRows(dfResults)
+elig_TrendRows(dfStatusHistory)
 }
 \arguments{
-\item{dfResults}{`data.frame` Reporting results.}
+\item{dfStatusHistory}{`data.frame` Rows of [elig_StatusCounts()] from every
+snapshot, with `SnapshotDate`, or `NULL`.}
 }
 \value{
 `tibble` with `GroupID` (snapshot date), `Status` and `n`.
 }
 \description{
-One bar per snapshot that has both the rate metric (qtl0001) and the level 3
-risk metric: Ineligible = qtl0001 numerator; Potentially Ineligible = risk
-numerator - qtl0001 numerator; No Eligibility Risk = denominator - risk
-numerator.
+One bar per snapshot of the study's status history.
 }
 \keyword{internal}

@@ -12,12 +12,13 @@ Report_Eligibility(
   strOutputDir = getwd(),
   strOutputFile = NULL,
   strInputPath = system.file("report", "Report_Eligibility.Rmd", package = "gsm.kri"),
-  strMode = c("basic", "pilot")
+  strMode = c("basic", "pilot"),
+  dfStatusHistory = NULL
 )
 }
 \arguments{
 \item{dfResults}{`data.frame` Analysis results: the study-level eligibility
-rate (qtl0001) and, optionally, `Analysis_elig0001`.}
+rate (qtl0001).}
 
 \item{dfMetrics}{`data.frame` Analysis metrics data.}
 
@@ -35,6 +36,9 @@ the report will be named `Report_Eligibility.html`.}
 \item{strInputPath}{`string` or `fs_path` Path to the template `Rmd` file.}
 
 \item{strMode}{`character` `"basic"` (default) or `"pilot"`.}
+
+\item{dfStatusHistory}{`data.frame` Status history (level 3). Default:
+`NULL`.}
 }
 \value{
 File path of the saved report html is returned invisibly. Save to object to view absolute output path.
@@ -68,9 +72,9 @@ Each level is optional and unlocks more of the report.
    `"EDC Query"`, `"EDC PD"`), `record_id`, `record_date` and the source's
    key fields as further columns. Fills the listing's expanded rows and the
    CSV details columns (pilot mode).
-3. **History metric**: `Analysis_elig0001` rows in `dfResults`, the
-   study-level rate (Ineligible + Potentially Ineligible) / enrolled. Adds
-   the Status over Time tab (pilot mode).
+3. **Status history**: `dfStatusHistory`, the rows of
+   [elig_StatusCounts()] that the study saves every snapshot, with
+   `SnapshotDate`. Adds the Status over Time tab (pilot mode).
 
 Site-level rows of `dfGroups` (`InvestigatorFirstName`,
 `InvestigatorLastName`) fill the listing's Investigator Name; with

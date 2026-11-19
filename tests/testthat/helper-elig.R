@@ -51,19 +51,25 @@ elig_FixtureRecords <- function() {
   )
 }
 
-elig_FixtureResults <- function(bRisk = FALSE) {
-  rate <- tibble::tibble(
+elig_FixtureResults <- function() {
+  tibble::tibble(
     GroupID = "S1", GroupLevel = "Study", MetricID = "Analysis_qtl0001",
     SnapshotDate = as.Date(c("2026-09-01", "2026-10-01", "2026-11-01")),
     Numerator = c(2L, 3L, 4L), Denominator = c(6L, 7L, 8L),
     Metric = c(2 / 6, 3 / 7, 4 / 8), Score = NA_real_, Flag = NA_real_
   )
-  if (!bRisk) return(rate)
-  risk <- rate[2:3, ]
-  risk$MetricID <- "Analysis_elig0001"
-  risk$Numerator <- c(4L, 6L)
-  risk$Metric <- risk$Numerator / risk$Denominator
-  dplyr::bind_rows(rate, risk)
+}
+
+# Reporting_EligStatus_Longitudinal: the pipeline adds StudyID and SnapshotDate.
+# History starts in October; November matches elig_Fixture(bPilot = TRUE).
+elig_FixtureStatusHistory <- function() {
+  tibble::tibble(
+    GroupLevel = "Study", GroupID = "S1",
+    Status = rep(c(ELIG_INELIGIBLE, ELIG_POTENTIAL, ELIG_NO_RISK), 2),
+    n = c(3L, 1L, 3L, 4L, 2L, 2L),
+    StudyID = "S1",
+    SnapshotDate = rep(as.Date(c("2026-10-01", "2026-11-01")), each = 3)
+  )
 }
 
 elig_FixtureMetrics <- function() {

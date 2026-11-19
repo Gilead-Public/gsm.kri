@@ -114,13 +114,31 @@ test_that("criterion codes are split and typed as Inclusion or Exclusion (#371)"
   expect_equal(elig_CriterionType(c("I001", "E010", "INCL3", "x9")), c("Inclusion", "Exclusion", "Inclusion", "Other"))
 })
 
-test_that("the history slices Potentially Ineligible as the risk numerator minus qtl0001 (#371)", {
-  rows <- elig_TrendRows(elig_FixtureResults(bRisk = TRUE))
+test_that("status counts give the snapshot's participants per study and status, as the report classifies them (#371)", {
+  pilot <- elig_StatusCounts(elig_Fixture(bPilot = TRUE), strMode = "pilot")
+  expect_equal(names(pilot), c("GroupLevel", "GroupID", "Status", "n"))
+  expect_equal(unique(pilot$GroupLevel), "Study")
+  n <- stats::setNames(pilot$n, pilot$Status)
+  expect_equal(n[[ELIG_INELIGIBLE]], 4L)
+  expect_equal(n[[ELIG_POTENTIAL]], 2L)
+  expect_equal(n[[ELIG_NO_RISK]], 2L)
+
+  basic <- elig_StatusCounts(elig_Fixture())
+  expect_equal(basic$Status, c(ELIG_INELIGIBLE, ELIG_NO_RISK))
+  expect_equal(sum(basic$n), 8L)
+})
+
+test_that("Status over Time has one bar per snapshot of the study's status history (#371)", {
+  rows <- elig_TrendRows(elig_FixtureStatusHistory())
+  expect_equal(unique(rows$GroupID), c("2026-10-01", "2026-11-01"))
   oct <- rows[rows$GroupID == "2026-10-01", ]
-  expect_equal(oct$n[oct$Status == ELIG_INELIGIBLE], 3)
-  expect_equal(oct$n[oct$Status == ELIG_POTENTIAL], 1)
-  expect_equal(oct$n[oct$Status == ELIG_NO_RISK], 3)
-  # September has no risk metric: no Status over Time bar for it.
-  expect_false("2026-09-01" %in% rows$GroupID)
-  expect_equal(nrow(elig_TrendRows(elig_FixtureResults())), 0)
+  expect_equal(oct$Status, c(ELIG_INELIGIBLE, ELIG_POTENTIAL, ELIG_NO_RISK))
+  expect_equal(oct$n, c(3L, 1L, 3L))
+
+  # Only study rows draw the chart, and a zero count draws no segment.
+  dfHistory <- elig_FixtureStatusHistory()
+  dfHistory$n[2] <- 0L
+  dfHistory <- dplyr::bind_rows(dfHistory, dplyr::mutate(dfHistory[1, ], GroupLevel = "Site", GroupID = "0X001"))
+  expect_equal(nrow(elig_TrendRows(dfHistory)), 5)
+  expect_equal(nrow(elig_TrendRows(NULL)), 0)
 })

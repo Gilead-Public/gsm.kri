@@ -2,8 +2,8 @@
 # - fixture/Report_Eligibility.html: basic mode, gsm.mapping's EXCLUSION on
 #   gsm.core::lSource (two statuses);
 # - fixture/Report_Eligibility_pilot.html: pilot mode, the same participants
-#   plus the optional level 1 columns, level 2 records and the level 3 history
-#   metric of gsm.roadmap#113 (three statuses);
+#   plus the optional level 1 columns, level 2 records and the level 3 status
+#   history of gsm.roadmap#113 (three statuses);
 # - fixture/Report_Eligibility_pilot_noquery.html: pilot mode with the EDC Query
 #   source not delivered.
 # Source this with the gsm.kri package loaded and the working directory at the
@@ -78,22 +78,25 @@ dfRecords <- bind_rows(
     )
 )
 
-# Level 3: the risk metric from the third snapshot on (no back-fill), with a
-# Potentially Ineligible share of about a tenth of enrolled.
-dfRisk <- dfResults %>%
-  arrange(SnapshotDate) %>%
-  slice(-(1:2)) %>%
-  mutate(
-    MetricID = "Analysis_elig0001",
-    Numerator = Numerator + round(Denominator / 10),
-    Metric = Numerator / Denominator
-  )
+# Level 3: the status history from the second snapshot on (no back-fill). The
+# earlier snapshot splits Potentially Ineligible off as a tenth of enrolled; the
+# latest is this snapshot's counts, as the pipeline saves them.
+dfSnapshots <- dfResults %>% arrange(SnapshotDate)
+dfStatusHistory <- dfSnapshots %>%
+  slice(2) %>%
+  reframe(
+    GroupLevel = "Study", GroupID = GroupID,
+    Status = c("Ineligible", "Potentially Ineligible", "No Eligibility Risk"),
+    n = as.integer(c(Numerator, round(Denominator / 10), Denominator - Numerator - round(Denominator / 10))),
+    .by = SnapshotDate
+  ) %>%
+  bind_rows(mutate(elig_StatusCounts(dfPilot, "pilot"), SnapshotDate = max(dfSnapshots$SnapshotDate)))
 
 Report_Eligibility(
-  dfResults = bind_rows(dfResults, dfRisk), dfMetrics = dfMetrics, dfGroups = dfGroups,
+  dfResults = dfResults, dfMetrics = dfMetrics, dfGroups = dfGroups,
   lListings = lListings(dfPilot, IE_records = dfRecords),
   strOutputDir = out_dir, strOutputFile = "Report_Eligibility_pilot.html",
-  strMode = "pilot"
+  strMode = "pilot", dfStatusHistory = dfStatusHistory
 )
 
 # Pilot with EDC Query not delivered: the mapping leaves edc_query NULL.

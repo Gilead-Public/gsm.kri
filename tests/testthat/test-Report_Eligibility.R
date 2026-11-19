@@ -1,4 +1,4 @@
-render_eligibility <- function(lListings, dfResults = elig_FixtureResults(), dfGroups = elig_FixtureGroups(), strMode = "basic") {
+render_eligibility <- function(lListings, dfResults = elig_FixtureResults(), dfGroups = elig_FixtureGroups(), strMode = "basic", dfStatusHistory = NULL) {
   dir <- withr::local_tempdir()
   out <- quiet_render(Report_Eligibility(
     dfResults = dfResults,
@@ -6,7 +6,8 @@ render_eligibility <- function(lListings, dfResults = elig_FixtureResults(), dfG
     dfGroups = dfGroups,
     lListings = lListings,
     strOutputDir = dir,
-    strMode = strMode
+    strMode = strMode,
+    dfStatusHistory = dfStatusHistory
   ))
   expect_true(file.exists(out))
   paste(readLines(out, warn = FALSE), collapse = "\n")
@@ -33,8 +34,8 @@ test_that("basic mode renders with two statuses and no pilot sections (#371, #16
 test_that("pilot mode renders the third status, the listing's records and status over time (#371, #160)", {
   html <- render_eligibility(
     elig_listings(elig_Fixture(bPilot = TRUE), IE_records = elig_FixtureRecords()),
-    dfResults = elig_FixtureResults(bRisk = TRUE),
-    strMode = "pilot"
+    strMode = "pilot",
+    dfStatusHistory = elig_FixtureStatusHistory()
   )
   expect_false(grepl("plotly", html, ignore.case = TRUE))
   expect_true(grepl("Potentially Ineligible", html, fixed = TRUE))
@@ -44,7 +45,7 @@ test_that("pilot mode renders the third status, the listing's records and status
   expect_true(grepl("EDC Query details", html, fixed = TRUE))
 })
 
-test_that("pilot mode degrades without site groups, history metric, records or EDC PD (#371)", {
+test_that("pilot mode degrades without site groups, status history, records or EDC PD (#371)", {
   html <- render_eligibility(
     elig_listings(elig_Fixture(bPilot = TRUE, bEdcPd = FALSE)),
     dfGroups = elig_FixtureGroups(bSites = FALSE),

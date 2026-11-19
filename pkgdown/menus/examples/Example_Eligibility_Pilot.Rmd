@@ -14,7 +14,7 @@ output:
     css: styles.css
 ---
 # Set Up 
-This page provides a sample Eligibility Report generated using `gsm.kri` package, with the optional pilot data simulated on top of the basic example: open EDC queries and active EDC PDs (level 1), the records behind each flag (level 2) and the `Analysis_elig0001` risk metric history (level 3). These add a Potentially Ineligible status, the records behind each flag in the listing's expanded rows and CSV, and Status over Time; see the data contract in `?Report_Eligibility`. Switch to **Basic** to see the same participants without the pilot data. Expand the "Setup" section below to see the code used to generate the report. Or scroll down for the standard report output.
+This page provides a sample Eligibility Report generated using `gsm.kri` package, with the optional pilot data simulated on top of the basic example: open EDC queries and active EDC PDs (level 1), the records behind each flag (level 2) and the status history saved every snapshot (level 3). These add a Potentially Ineligible status, the records behind each flag in the listing's expanded rows and CSV, and Status over Time; see the data contract in `?Report_Eligibility`. Switch to **Basic** to see the same participants without the pilot data. Expand the "Setup" section below to see the code used to generate the report. Or scroll down for the standard report output.
 
 <nav class="elig-view-switch" aria-label="Report mode">
 <a href="Example_Eligibility.html">Basic</a>
@@ -109,17 +109,19 @@ dfRecords <- bind_rows(
     )
 )
 
-# Level 3: the risk metric from the third snapshot on, with a Potentially
-# Ineligible share of about a tenth of enrolled.
-dfRisk <- dfResults %>%
-  arrange(SnapshotDate) %>%
-  slice(-(1:2)) %>%
-  mutate(
-    MetricID = "Analysis_elig0001",
-    Numerator = Numerator + round(Denominator / 10),
-    Metric = Numerator / Denominator
-  )
-dfResults <- bind_rows(dfResults, dfRisk)
+# Level 3: the status history from the second snapshot on (no back-fill). The
+# earlier snapshot splits Potentially Ineligible off as a tenth of enrolled; the
+# latest is this snapshot's counts, as the pipeline saves them.
+dfSnapshots <- dfResults %>% arrange(SnapshotDate)
+dfStatusHistory <- dfSnapshots %>%
+  slice(2) %>%
+  reframe(
+    GroupLevel = "Study", GroupID = GroupID,
+    Status = c("Ineligible", "Potentially Ineligible", "No Eligibility Risk"),
+    n = as.integer(c(Numerator, round(Denominator / 10), Denominator - Numerator - round(Denominator / 10))),
+    .by = SnapshotDate
+  ) %>%
+  bind_rows(mutate(elig_StatusCounts(dfPilot, "pilot"), SnapshotDate = max(dfSnapshots$SnapshotDate)))
 
 lListings <- list(
   IE_num = dfPilot %>% filter(Source != "Neither"),
@@ -139,7 +141,8 @@ child_env <- list2env(
       dfMetrics = dfMetrics,
       dfGroups = dfGroups,
       lListings = lListings,
-      strMode = "pilot"
+      strMode = "pilot",
+      dfStatusHistory = dfStatusHistory
     )
   ),
   parent = environment()

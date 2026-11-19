@@ -6,9 +6,6 @@ ELIG_INELIGIBLE <- "Ineligible"
 ELIG_POTENTIAL <- "Potentially Ineligible"
 ELIG_NO_RISK <- "No Eligibility Risk"
 
-# Study-level history metric of the pilot studies (data contract level 3):
-# (Ineligible + Potentially Ineligible) / enrolled. qtl0001 stays the rate.
-ELIG_RISK_METRIC_ID <- "Analysis_elig0001"
 ELIG_RATE_METRIC_ID <- "Analysis_qtl0001"
 
 ELIG_UNKNOWN <- "Unknown"
@@ -252,47 +249,60 @@ elig_CriteriaLong <- function(dfElig) {
     tibble::as_tibble()
 }
 
+#' Eligibility status counts of a snapshot
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#'
+#' Participants per study and status, classified as the report does. A pilot
+#' study saves it every snapshot as `Reporting_EligStatus`; the snapshots
+#' together are the report's `dfStatusHistory`.
+#'
+#' @inheritParams elig_ClassifyParticipants
+#' @param strMode `character` `"basic"` (default) or `"pilot"`, resolved by
+#'   [elig_Mode()].
+#'
+#' @return `tibble` with `GroupLevel` (`"Study"`), `GroupID` (study ID),
+#'   `Status` and `n`.
+#'
+#' @export
+elig_StatusCounts <- function(dfExclusion, strMode = c("basic", "pilot")) {
+  dfElig <- elig_ClassifyParticipants(dfExclusion, strMode = elig_Mode(dfExclusion, strMode))
+  dfElig %>%
+    dplyr::count(GroupID = .data$studyid, Status = .data$status, name = "n") %>%
+    dplyr::mutate(GroupLevel = "Study", n = as.integer(.data$n)) %>%
+    dplyr::arrange(.data$GroupID, match(.data$Status, names(elig_StatusColors()))) %>%
+    dplyr::select("GroupLevel", "GroupID", "Status", "n")
+}
+
 #' Status over time rows
 #'
-#' One bar per snapshot that has both the rate metric (qtl0001) and the level 3
-#' risk metric: Ineligible = qtl0001 numerator; Potentially Ineligible = risk
-#' numerator - qtl0001 numerator; No Eligibility Risk = denominator - risk
-#' numerator.
+#' One bar per snapshot of the study's status history.
 #'
-#' @param dfResults `data.frame` Reporting results.
+#' @param dfStatusHistory `data.frame` Rows of [elig_StatusCounts()] from every
+#'   snapshot, with `SnapshotDate`, or `NULL`.
 #'
 #' @return `tibble` with `GroupID` (snapshot date), `Status` and `n`.
 #'
 #' @keywords internal
 #' @export
-elig_TrendRows <- function(dfResults) {
+elig_TrendRows <- function(dfStatusHistory) {
   empty <- tibble::tibble(GroupID = character(), Status = character(), n = integer())
-  if (is.null(dfResults) || !ELIG_RISK_METRIC_ID %in% dfResults$MetricID) return(empty)
-  pick <- function(id, cols) dfResults[dfResults$MetricID == id, cols]
-  wide <- dplyr::inner_join(
-    pick(elig_RateMetricID(dfResults), c("SnapshotDate", "Numerator", "Denominator")),
-    pick(ELIG_RISK_METRIC_ID, c("SnapshotDate", "Numerator")),
-    by = "SnapshotDate", suffix = c("_inel", "_risk")
-  ) %>%
-    dplyr::filter(.data$Denominator > 0) %>%
-    dplyr::arrange(.data$SnapshotDate)
-  if (nrow(wide) == 0) return(empty)
-  out <- tibble::tibble(
-    GroupID = rep(format(as.Date(wide$SnapshotDate), "%Y-%m-%d"), each = 3),
-    Status = rep(names(elig_StatusColors()), times = nrow(wide)),
-    n = as.integer(c(rbind(
-      wide$Numerator_inel,
-      wide$Numerator_risk - wide$Numerator_inel,
-      wide$Denominator - wide$Numerator_risk
-    )))
-  )
-  out[out$n > 0, ]
+  if (!is.data.frame(dfStatusHistory)) return(empty)
+  dfStatusHistory %>%
+    dplyr::filter(.data$GroupLevel == "Study", .data$n > 0) %>%
+    dplyr::arrange(as.Date(.data$SnapshotDate), match(.data$Status, names(elig_StatusColors()))) %>%
+    dplyr::transmute(
+      GroupID = format(as.Date(.data$SnapshotDate), "%Y-%m-%d"),
+      Status = as.character(.data$Status),
+      n = as.integer(.data$n)
+    )
 }
 
 #' Rate metric of the eligibility results
 #'
 #' The module passes qtl0001 only; older callers rename it (for example
-#' `"study_eligibility"`), so the rate is whichever metric is not the risk one.
+#' `"study_eligibility"`), so otherwise the rate is the first metric.
 #'
 #' @param dfResults `data.frame` Reporting results.
 #'
@@ -303,5 +313,5 @@ elig_TrendRows <- function(dfResults) {
 elig_RateMetricID <- function(dfResults) {
   ids <- unique(dfResults$MetricID)
   if (ELIG_RATE_METRIC_ID %in% ids) return(ELIG_RATE_METRIC_ID)
-  setdiff(ids, ELIG_RISK_METRIC_ID)[1]
+  ids[1]
 }

@@ -200,6 +200,21 @@ test.describe('pilot mode', () => {
     expect(errors).toEqual([]);
   });
 
+  test('Status over Time ends on the snapshot the study status chart shows (#371)', async ({ page }) => {
+    await open(page, PILOT);
+    // Totals per status for one category; the study chart is horizontal, the trend vertical.
+    const counts = (page, id, category) => page.evaluate(({ id, category }) => {
+      const c = document.getElementById(id).gsmChart;
+      const h = c.data._spec_.orientation === 'horizontal';
+      const cat = category ?? c.data.labels[c.data.labels.length - 1];
+      return Object.fromEntries(c.data.datasets.map((d) => [d.label,
+        d.data.filter((p) => (h ? p.y : p.x) === cat).reduce((s, p) => s + Number(h ? p.x : p.y), 0)]));
+    }, { id, category });
+    expect(await categories(page, 'elig-trend-status')).toHaveLength(2);
+    const study = (await categories(page, 'elig-study-status'))[0];
+    expect(await counts(page, 'elig-trend-status')).toEqual(await counts(page, 'elig-study-status', study));
+  });
+
   test('bar charts show no zero-count category on load, after a site filter or a legend click (#371)', async ({ page }) => {
     const errors = await open(page, PILOT);
     expect(await zeroCategories(page)).toEqual([]);

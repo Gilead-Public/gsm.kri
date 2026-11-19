@@ -28,16 +28,16 @@
 #'    `"EDC Query"`, `"EDC PD"`), `record_id`, `record_date` and the source's
 #'    key fields as further columns. Fills the listing's expanded rows and the
 #'    CSV details columns (pilot mode).
-#' 3. **History metric**: `Analysis_elig0001` rows in `dfResults`, the
-#'    study-level rate (Ineligible + Potentially Ineligible) / enrolled. Adds
-#'    the Status over Time tab (pilot mode).
+#' 3. **Status history**: `dfStatusHistory`, the rows of
+#'    [elig_StatusCounts()] that the study saves every snapshot, with
+#'    `SnapshotDate`. Adds the Status over Time tab (pilot mode).
 #'
 #' Site-level rows of `dfGroups` (`InvestigatorFirstName`,
 #' `InvestigatorLastName`) fill the listing's Investigator Name; with
 #' Study-level groups only, the column is blank.
 #'
 #' @param dfResults `data.frame` Analysis results: the study-level eligibility
-#'   rate (qtl0001) and, optionally, `Analysis_elig0001`.
+#'   rate (qtl0001).
 #' @param dfMetrics `data.frame` Analysis metrics data.
 #' @param dfGroups `data.frame` Analysis groups data.
 #' @param lListings `list` with `IE_denom` (`Mapped_EXCLUSION`), `IE_num`
@@ -48,6 +48,8 @@
 #'  the report will be named `Report_Eligibility.html`.
 #' @param strInputPath `string` or `fs_path` Path to the template `Rmd` file.
 #' @param strMode `character` `"basic"` (default) or `"pilot"`.
+#' @param dfStatusHistory `data.frame` Status history (level 3). Default:
+#'   `NULL`.
 #'
 #' @return File path of the saved report html is returned invisibly. Save to object to view absolute output path.
 #' @examples
@@ -93,7 +95,8 @@ Report_Eligibility <- function(
     "Report_Eligibility.Rmd",
     package = "gsm.kri"
   ),
-  strMode = c("basic", "pilot")
+  strMode = c("basic", "pilot"),
+  dfStatusHistory = NULL
 ) {
   rlang::check_installed("rmarkdown", reason = "to run `Report_Eligibility()`")
   rlang::check_installed("knitr", reason = "to run `Report_Eligibility()`")
@@ -116,7 +119,8 @@ Report_Eligibility <- function(
       dfMetrics = dfMetrics,
       dfGroups = dfGroups,
       lListings = lListings,
-      strMode = strMode
+      strMode = strMode,
+      dfStatusHistory = dfStatusHistory
     )
   )
 }
