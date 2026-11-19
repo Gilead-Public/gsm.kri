@@ -33,8 +33,10 @@ metric changes, and numerator/denominator details. Optionally, if
 \`GroupLabel\` or \`MetricLabel\` columns are present, they will be used
 for display; otherwise, \`GroupID\` and \`MetricID\` are used.
 
-\- Only rows where the flag value has changed (including NA transitions)
-are included. - Rows where the flag went from NA to green (0) are
+\- Nothing is rendered when \`Flag_Previous\` is entirely missing, i.e.
+the results carry delta columns but no previous snapshot. - Only rows
+where the flag value has changed (including NA transitions) are
+included. - Rows where the flag went from NA to green (0) are
 excluded. - Results are grouped and color-coded by the absolute value of
 the new flag (red, amber, green). - For each change, the function
 displays: - Group and metric (using labels if available) - Flag
