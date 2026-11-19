@@ -386,57 +386,6 @@ elig_CriteriaMapRows <- function(dfElig) {
   )
 }
 
-#' Criteria site spread slices (criteria view C)
-#'
-#' One row per criterion: participants, sites and countries, with the
-#' per-site counts behind them; for the study, each country and each country's
-#' sites. Criteria with the most participants at one site come first (then
-#' the largest share), so a site problem stands out from a protocol-wide one.
-#'
-#' @param dfElig `data.frame` from [elig_ClassifyParticipants()].
-#'
-#' @return `list` with `study`, `country` and `site` (by country, then site)
-#'   slices; each slice is a `tibble` with one row per criterion and the
-#'   per-site counts, largest first, in the `by_site` list column.
-#'
-#' @keywords internal
-#' @export
-elig_SiteSpreadRows <- function(dfElig) {
-  long <- elig_CriteriaLong(dfElig)
-  vOrder <- elig_CriteriaOrder(long)
-  slice <- function(df) {
-    bySite <- df %>%
-      dplyr::count(.data$criterion, .data$country, .data$invid, name = "n") %>%
-      dplyr::mutate(n = as.integer(.data$n)) %>%
-      dplyr::arrange(dplyr::desc(.data$n), .data$country, .data$invid)
-    rows <- purrr::map_dfr(intersect(vOrder, unique(df$criterion)), function(k) {
-      s <- bySite[bySite$criterion == k, ]
-      tibble::tibble(
-        criterion = k,
-        type = elig_CriterionType(k),
-        participants = dplyr::n_distinct(df$subjid[df$criterion == k]),
-        sites = nrow(s),
-        countries = dplyr::n_distinct(s$country),
-        by_site = list(data.frame(site = s$invid, country = s$country, n = s$n))
-      )
-    })
-    if (nrow(rows) == 0) return(rows)
-    # Count before share: 1 of 2 participants at one site is not a cluster.
-    # A participant belongs to one site, so the top site's share is n / participants.
-    top <- purrr::map_int(rows$by_site, ~ .x$n[[1]])
-    rows[order(-top, -top / rows$participants, seq_len(nrow(rows))), ]
-  }
-  vCountries <- sort(unique(long$country), method = "radix")
-  list(
-    study = slice(long),
-    country = stats::setNames(lapply(vCountries, function(c) slice(long[long$country == c, ])), vCountries),
-    site = stats::setNames(lapply(vCountries, function(c) {
-      vSites <- sort(unique(long$invid[long$country == c]), method = "radix")
-      stats::setNames(lapply(vSites, function(s) slice(long[long$country == c & long$invid == s, ])), vSites)
-    }), vCountries)
-  )
-}
-
 #' Precomputed eligibility slices as a JSON script block
 #'
 #' Read by `inst/report/lib/eligFilters.js`.

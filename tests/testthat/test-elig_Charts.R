@@ -82,28 +82,6 @@ test_that("criteria views count EDC I/E criterion cases and keep only groups wit
   b <- elig_CriteriaMapRows(df)
   expect_equal(unique(b$country$GroupID), "US")
   expect_setequal(b$site$GroupID, c("0X001", "0X002"))
-
-  c <- elig_SiteSpreadRows(df)
-  excl <- c$study[c$study$criterion == "excl2", ]
-  expect_equal(excl$participants, 2)
-  expect_equal(excl$sites, 2)
-  expect_equal(nrow(c$country$US), 2)
-})
-
-test_that("site spread puts the criterion most held by one site first (#371)", {
-  df <- elig_ClassifyParticipants(elig_Fixture())
-  # incl1: one participant at each of 3 sites; excl2: both participants at 0X001.
-  df$criteria <- c(
-    P01 = "incl1,excl2",
-    P02 = "excl2",
-    P04 = "incl1",
-    P05 = "incl1"
-  )[df$subjid]
-  s <- elig_SiteSpreadRows(df)$study
-  expect_equal(s$criterion, c("excl2", "incl1"))
-  expect_equal(s$by_site[[1]]$n, 2)
-  expect_equal(s$sites, c(1, 3))
-  expect_false(any(c("top_site", "top_country", "top_n") %in% names(s)))
 })
 
 test_that("criteria slices hold only the criteria with cases in each scope (#371)", {

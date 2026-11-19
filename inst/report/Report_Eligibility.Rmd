@@ -119,7 +119,6 @@ div.main-container { max-width: none; padding-left: 24px; padding-right: 24px; }
 .elig-chip button { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; padding: 0; border: none; border-radius: 50%; background-color: transparent; color: #3C587F; font-size: 13px; line-height: 1; cursor: pointer; }
 .elig-chip button:hover { background-color: #3C587F; color: #ffffff; }
 .elig-chip button:focus-visible { outline: 2px solid #3C587F; outline-offset: 2px; }
-.elig-scope { display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5b7193; background-color: #eef2f7; border-radius: 10px; padding: 1px 8px; margin-bottom: 6px; }
 .elig-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin: 8px 0 18px; }
 .elig-card { background-color: #ffffff; border: 1px solid #e3e8ef; border-radius: 6px; padding: 10px 14px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04); }
 .elig-card-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: #5b7193; }
@@ -143,17 +142,9 @@ div.main-container { max-width: none; padding-left: 24px; padding-right: 24px; }
 .elig-map th, .elig-map td { border: 1px solid #e3e8ef; padding: 4px 8px; text-align: center; }
 .elig-map tbody th { text-align: left; }
 .elig-map-total { font-weight: 600; background-color: #f6f8fb; }
-.elig-spread { display: grid; grid-template-columns: max-content minmax(240px, 1fr) max-content; gap: 4px 12px; align-items: center; font-variant-numeric: tabular-nums; }
-.elig-spread-hd { font-weight: 600; }
-.elig-spread-bar { display: flex; gap: 2px; height: 16px; }
-.elig-spread-seg { min-width: 3px; border-radius: 1px; }
-.elig-spread-seg:focus { outline: 2px solid #1f2937; outline-offset: 1px; }
-.elig-spread-sites { color: #5b6575; white-space: nowrap; }
-.elig-spread-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 8px; color: #5b6575; }
-.elig-spread-legend i { display: inline-block; width: 12px; height: 12px; margin-right: 4px; vertical-align: -1px; }
 .elig-truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px; cursor: help; }
 .elig-detail { padding: 8px 16px; background-color: #f8fafc; }
-#map-wrap-country, #map-wrap-site, #elig-site-spread { overflow-x: auto; }
+#map-wrap-country, #map-wrap-site { overflow-x: auto; }
 /* Clears the navbar and the sticky strip when a contents link jumps to a section. */
 .section.level2, .section.level3 { scroll-margin-top: 100px; }
 </style>
@@ -195,8 +186,6 @@ htmltools::tags$div(
 
 ## Study Overview
 
-<span class="elig-scope">Study-wide</span>
-
 ```{r overview}
 elig_OverviewCards(dfElig, bPilot)
 ```
@@ -204,8 +193,6 @@ elig_OverviewCards(dfElig, bPilot)
 ## Time Series {.tabset .tabset-pills}
 
 ### Ineligibility Rate
-
-<span class="elig-scope">Study-wide</span>
 
 ```{r ts}
 gsm.kri::Widget_TimeSeries(
@@ -219,7 +206,7 @@ gsm.kri::Widget_TimeSeries(
 ```
 
 ```{r ts-status-tab, results='asis', eval=bPilot && nrow(dfTrend) > 0}
-cat("\n### Status over Time\n\n<span class=\"elig-scope\">Study-wide</span>\n\n")
+cat("\n### Status over Time\n\n")
 ```
 
 ```{r ts-status, eval=bPilot && nrow(dfTrend) > 0}
@@ -405,16 +392,6 @@ htmltools::div(id = "map-wrap-site", htmltools::div(id = "elig-site-map"))
 cat("\n> Sites with at least one criterion case, most affected first; columns are the criteria present in the rows shown. Shade shows the participant count. Follows the country filter.", criteria_note)
 ```
 
-### Criteria Spread (EDC I/E only)
-
-```{r site-spread}
-htmltools::div(id = "elig-site-spread")
-```
-
-```{r site-spread-note, results='asis'}
-cat("\n> One bar per EDC I/E criterion in scope, split by site. A segment's width is the site's share of the criterion's participants; its shade is the participant count, on the Criteria Map's scale. Criteria with the most participants at one site come first. Hover or focus a segment for the site and count. Follows the country filter.", criteria_note)
-```
-
 ## Ineligibility Listing
 
 ```{r listing-note, results='asis'}
@@ -445,7 +422,6 @@ elig_DataScript(list(
   sources = source_data,
   criteria = criteria_data,
   map = elig_CriteriaMapRows(dfElig),
-  spread = elig_SiteSpreadRows(dfElig),
   export = list(columns = names(dfExport), rows = dfExport)
 ))
 ```

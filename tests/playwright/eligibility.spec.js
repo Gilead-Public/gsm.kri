@@ -84,7 +84,7 @@ test.describe('basic mode', () => {
     await open(page, BASIC);
     expect(await tabs(page, 'study')).toEqual(['Status', 'Flag Sources', 'Criteria (EDC I/E only)']);
     expect(await tabs(page, 'country')).toEqual(['Status', 'Flag Sources', 'Criteria (EDC I/E only)', 'Criteria Map (EDC I/E only)']);
-    expect(await tabs(page, 'site')).toEqual(['Status', 'Flag Sources', 'Criteria (EDC I/E only)', 'Criteria Map (EDC I/E only)', 'Criteria Spread (EDC I/E only)']);
+    expect(await tabs(page, 'site')).toEqual(['Status', 'Flag Sources', 'Criteria (EDC I/E only)', 'Criteria Map (EDC I/E only)']);
     expect(await categories(page, 'elig-study-sources')).toEqual(['Protocol Deviation', 'EDC eCRF']);
     const headers = await page.locator('#elig-listing .rt-th').allTextContents();
     expect(headers).toEqual(expect.arrayContaining(['PD', 'EDC eCRF', 'Which I/E', 'Investigator Name']));
@@ -111,38 +111,6 @@ test.describe('basic mode', () => {
     await page.click('#elig-chip-country button');
     expect(await listingRows(page)).toBe(allRows);
     expect((await categories(page, 'elig-site-status')).length).toBe(allSites);
-  });
-
-  test('site spread splits each criterion by site, shades by count and follows the country filter (#371)', async ({ page }) => {
-    const errors = await open(page, BASIC);
-    const spread = () => page.evaluate(() => Array.from(document.querySelectorAll('#elig-site-spread .elig-spread-bar')).map((bar) => {
-      const segs = Array.from(bar.querySelectorAll('.elig-spread-seg'));
-      return {
-        sites: segs.length,
-        label: bar.nextElementSibling.textContent,
-        n: segs.map((s) => Number(s.dataset.n)),
-        alpha: segs.map((s) => Number(getComputedStyle(s).backgroundColor.match(/[\d.]+\)$/)[0].slice(0, -1))),
-        share: segs[0] && Number(segs[0].dataset.n) / segs.reduce((a, s) => a + Number(s.dataset.n), 0),
-      };
-    }));
-    const all = await spread();
-    expect(all.length).toBeGreaterThan(0);
-    for (const r of all) expect(r.label).toMatch(new RegExp(`^${r.sites} sites?, `));
-    // Most participants at one site first, then the largest share.
-    const keys = all.map((r) => [r.n[0], r.share]);
-    expect(keys).toEqual([...keys].sort((a, b) => b[0] - a[0] || b[1] - a[1]));
-    // More participants at a site, darker segment.
-    const segs = all.flatMap((r) => r.n.map((n, i) => [n, r.alpha[i]]));
-    const darkest = Math.max(...segs.map((s) => s[0]));
-    expect(darkest).toBeGreaterThan(1);
-    expect(segs.find((s) => s[0] === darkest)[1]).toBeGreaterThan(segs.find((s) => s[0] === 1)[1]);
-    await expect(page.locator('body')).not.toContainText('most cases');
-
-    await clickBar(page, 'elig-country-status', { GroupID: 'Japan', OuterGroupID: null });
-    const japan = await spread();
-    expect(japan.length).toBeGreaterThan(0);
-    for (const r of japan) expect(r.label).toMatch(/, 1 country$/);
-    expect(errors).toEqual([]);
   });
 
   test('the criteria map shows no empty column (#371)', async ({ page }) => {
@@ -208,6 +176,7 @@ test.describe('pilot mode', () => {
     expect(await showButtons(page, 'country')).toEqual(['All', 'With any risk', 'With Ineligible']);
     expect(await categories(page, 'elig-study-sources')).toEqual(['Important PD', 'Non-important PD', 'EDC eCRF', 'EDC Query', 'EDC PD']);
     await expect(page.locator('#status-over-time canvas')).toHaveCount(1);
+    await expect(page.locator('body')).not.toContainText('Study-wide', { ignoreCase: true });
     await expect(page.locator('#elig-deep-dive')).toHaveCount(0);
     await expect(page.locator('h2', { hasText: 'Deep Dive' })).toHaveCount(0);
     const headers = await page.locator('#elig-listing .rt-th').allTextContents();

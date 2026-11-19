@@ -2,7 +2,7 @@
 // report (ipmFilters.js) and gsm.stratification (stratFilters.js). R
 // precomputes every slice into the #elig-data JSON block; this script only
 // keeps the reviewer's selection, hands each widget the matching slice and
-// draws the criteria map and site spread from the precomputed rows.
+// draws the criteria map from the precomputed rows.
 // No participant is classified or counted here.
 (function () {
   var LEVELS = ['study', 'country', 'site'];
@@ -137,44 +137,8 @@
     host.innerHTML = html + '</tbody></table>';
   }
 
-  function spreadRows() {
-    var c = eligData().spread;
-    if (!c) return [];
-    if (state.site && state.country) return ((c.site[state.country] || {})[state.site]) || [];
-    if (state.country) return c.country[state.country] || [];
-    return c.study || [];
-  }
-
-  // The criteria map's shade, so a colour means the same count in both views.
   function mapShade(n, max) {
     return 'rgba(60, 88, 127, ' + (0.15 + 0.75 * n / max).toFixed(2) + ')';
-  }
-
-  function renderSpread() {
-    var host = document.getElementById('elig-site-spread');
-    if (!host) return;
-    var rows = spreadRows();
-    if (!rows.length) {
-      host.innerHTML = '<p class="elig-empty">No criterion cases in scope.</p>';
-      return;
-    }
-    var max = 1;
-    rows.forEach(function (r) { r.by_site.forEach(function (s) { max = Math.max(max, s.n); }); });
-    var legend = '<div class="elig-spread-legend"><span>Participants at site</span>';
-    for (var n = 1; n <= max; n++) legend += '<span><i style="background-color: ' + mapShade(n, max) + ';"></i>' + n + '</span>';
-    var html = legend + '</div><div class="elig-spread"><span class="elig-spread-hd">Criterion</span>' +
-      '<span class="elig-spread-hd">Participants by site</span><span class="elig-spread-hd">Spread</span>';
-    rows.forEach(function (r) {
-      var segs = r.by_site.map(function (s) {
-        var label = escapeHtml(s.site + ' (' + s.country + '): ' + s.n + ' of ' + r.participants + ' participants');
-        return '<span class="elig-spread-seg" tabindex="0" data-n="' + s.n + '" title="' + label + '" aria-label="' + label +
-          '" style="flex: ' + s.n + '; background-color: ' + mapShade(s.n, max) + ';"></span>';
-      }).join('');
-      html += '<span>' + escapeHtml(r.criterion) + '</span><div class="elig-spread-bar">' + segs + '</div>' +
-        '<span class="elig-spread-sites">' + r.sites + (r.sites === 1 ? ' site, ' : ' sites, ') +
-        r.countries + (r.countries === 1 ? ' country' : ' countries') + '</span>';
-    });
-    host.innerHTML = html + '</div>';
   }
 
   function csvCell(v) {
@@ -291,7 +255,6 @@
     });
     renderMap('country');
     renderMap('site');
-    renderSpread();
     syncListings();
   }
 
@@ -341,7 +304,6 @@
   function init() {
     renderMap('country');
     renderMap('site');
-    renderSpread();
     ['country', 'site'].forEach(function (level) {
       var scoped = scopedStatusRows(level);
       setStatusCount(level, countGroups(scoped), countGroups(scoped));
