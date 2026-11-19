@@ -1,0 +1,62 @@
+meta:
+  Active: true
+  Type: Analysis
+  ID: ctq0001
+  GroupLevel: Study
+  Abbreviation: SF
+  Metric: Screen Failure Rate
+  Numerator: Screen Failures
+  Denominator: Screened Participants
+  GenerateRiskSignal: false
+spec:
+  Mapped_DISP:
+    studyid:
+      type: character
+    subjid:
+      type: character
+    disp_screened:
+      type: character
+    disp_screen_failure:
+      type: character
+steps:
+  - output: Temp_SCREENED
+    name: workr::RunQuery
+    params:
+      df: Mapped_DISP
+      strQuery: "SELECT * FROM df WHERE disp_screened = 'Y'"
+  - output: Temp_SCREEN_FAILURE
+    name: workr::RunQuery
+    params:
+      df: Mapped_DISP
+      strQuery: "SELECT * FROM df WHERE disp_screen_failure = 'Y'"
+  - output: Analysis_Input
+    name: gsm.core::Input_Rate
+    params:
+      dfSubjects: Mapped_DISP
+      dfNumerator: Temp_SCREEN_FAILURE
+      dfDenominator: Temp_SCREENED
+      strSubjectCol: subjid
+      strGroupCol: studyid
+      strGroupLevel: GroupLevel
+      strNumeratorMethod: Count
+      strDenominatorMethod: Count
+  - output: Analysis_Transformed
+    name: gsm.core::Transform_Rate
+    params:
+      dfInput: Analysis_Input
+  - output: Analysis_Unscored
+    name: workr::RunQuery
+    params:
+      df: Analysis_Transformed
+      strQuery: "SELECT *, CAST(NULL AS DOUBLE) AS Score, CAST(NULL AS INTEGER) AS Flag FROM df"
+  - output: Analysis_Summary
+    name: gsm.core::Summarize
+    params:
+      dfFlagged: Analysis_Unscored
+  - output: lAnalysis
+    name: list
+    params:
+      ID: ID
+      Analysis_Input: Analysis_Input
+      Analysis_Transformed: Analysis_Transformed
+      Analysis_Summary: Analysis_Summary

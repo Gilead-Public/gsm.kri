@@ -1,0 +1,62 @@
+meta:
+  Active: true
+  Type: Analysis
+  ID: ctq0002
+  GroupLevel: Study
+  Abbreviation: WD
+  Metric: Withdrawal Rate
+  Numerator: Withdrawal by Participant
+  Denominator: Enrolled Participants
+  GenerateRiskSignal: false
+spec:
+  Mapped_DISP:
+    studyid:
+      type: character
+    subjid:
+      type: character
+    disp_enrolled:
+      type: character
+    disp_withdrawal:
+      type: character
+steps:
+  - output: Temp_ENROLLED
+    name: workr::RunQuery
+    params:
+      df: Mapped_DISP
+      strQuery: "SELECT * FROM df WHERE disp_enrolled = 'Y'"
+  - output: Temp_WITHDRAWAL
+    name: workr::RunQuery
+    params:
+      df: Mapped_DISP
+      strQuery: "SELECT * FROM df WHERE disp_withdrawal = 'Y'"
+  - output: Analysis_Input
+    name: gsm.core::Input_Rate
+    params:
+      dfSubjects: Mapped_DISP
+      dfNumerator: Temp_WITHDRAWAL
+      dfDenominator: Temp_ENROLLED
+      strSubjectCol: subjid
+      strGroupCol: studyid
+      strGroupLevel: GroupLevel
+      strNumeratorMethod: Count
+      strDenominatorMethod: Count
+  - output: Analysis_Transformed
+    name: gsm.core::Transform_Rate
+    params:
+      dfInput: Analysis_Input
+  - output: Analysis_Unscored
+    name: workr::RunQuery
+    params:
+      df: Analysis_Transformed
+      strQuery: "SELECT *, CAST(NULL AS DOUBLE) AS Score, CAST(NULL AS INTEGER) AS Flag FROM df"
+  - output: Analysis_Summary
+    name: gsm.core::Summarize
+    params:
+      dfFlagged: Analysis_Unscored
+  - output: lAnalysis
+    name: list
+    params:
+      ID: ID
+      Analysis_Input: Analysis_Input
+      Analysis_Transformed: Analysis_Transformed
+      Analysis_Summary: Analysis_Summary
