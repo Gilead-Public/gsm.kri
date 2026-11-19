@@ -240,8 +240,6 @@ lCharts <- RunWorkflow(
   : Flag Over Time Widget
 - [`add_Groups_metadata()`](https://gilead-public.github.io/gsm.kri/dev/reference/add_Groups_metadata.md)
   : Add group meta data for report
-- [`elig_StatusCounts()`](https://gilead-public.github.io/gsm.kri/dev/reference/elig_StatusCounts.md)
-  : Eligibility status counts of a snapshot
 - [`pd_BucketBarSpec()`](https://gilead-public.github.io/gsm.kri/dev/reference/pd_BucketBarSpec.md)
   : Serializable gsm.viz \`bars\` spec for the premature-death bucket
   chart

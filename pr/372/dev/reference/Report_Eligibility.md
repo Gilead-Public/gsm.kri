@@ -24,8 +24,7 @@ Report_Eligibility(
   strOutputDir = getwd(),
   strOutputFile = NULL,
   strInputPath = system.file("report", "Report_Eligibility.Rmd", package = "gsm.kri"),
-  strMode = c("basic", "pilot"),
-  dfStatusHistory = NULL
+  strMode = c("basic", "pilot")
 )
 ```
 
@@ -34,7 +33,7 @@ Report_Eligibility(
 - dfResults:
 
   \`data.frame\` Analysis results: the study-level eligibility rate
-  (qtl0001).
+  (qtl0001) and, optionally, \`Analysis_elig0001\`.
 
 - dfMetrics:
 
@@ -67,10 +66,6 @@ Report_Eligibility(
 
   \`character\` \`"basic"\` (default) or \`"pilot"\`.
 
-- dfStatusHistory:
-
-  \`data.frame\` Status history (level 3). Default: \`NULL\`.
-
 ## Value
 
 File path of the saved report html is returned invisibly. Save to object
@@ -91,10 +86,10 @@ one row per record behind a flag, with \`studyid\`, \`subjid\`,
 \`source\` (\`"EDC eCRF"\`, \`"Protocol Deviation"\`, \`"EDC Query"\`,
 \`"EDC PD"\`), \`record_id\`, \`record_date\` and the source's key
 fields as further columns. Fills the listing's expanded rows and the CSV
-details columns (pilot mode). 3. \*\*Status history\*\*:
-\`dfStatusHistory\`, the rows of \[elig_StatusCounts()\] that the study
-saves every snapshot, with \`SnapshotDate\`. Adds the Status over Time
-tab (pilot mode).
+details columns (pilot mode). 3. \*\*History metric\*\*:
+\`Analysis_elig0001\` rows in \`dfResults\`, the study-level rate
+(Ineligible + Potentially Ineligible) / enrolled. Adds the Status over
+Time tab (pilot mode).
 
 Site-level rows of \`dfGroups\` (\`InvestigatorFirstName\`,
 \`InvestigatorLastName\`) fill the listing's Investigator Name; with
