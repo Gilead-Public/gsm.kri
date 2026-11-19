@@ -363,6 +363,20 @@ test.describe('Repeat Measurements report', () => {
     expect(d.cells['Study weight'].dot).toBe(null);
     await page.hover('#rm-dist tr[data-rm-dist-key="S1"] td[data-rm-dist-vital="weight"]');
     await expect(page.locator('#rm-dist-tip')).toContainText('Site flag: Red \u00b7 2 of 4 windows repeating (50%) \u00b7 kri0020a');
+    // The hover card carries the click hint; no native title on the row or
+    // site-flag dot shows on top of it, and the dot keeps its accessible name.
+    await expect(page.locator('#rm-dist-tip .rm-tip-hint')).toHaveText('Click to filter the report to site S1; click again to clear');
+    const s1 = page.locator('#rm-dist tr[data-rm-dist-key="S1"]');
+    await expect(s1).not.toHaveAttribute('title', /./);
+    const s1Dot = s1.locator('td[data-rm-dist-vital="weight"] .rm-sf');
+    await expect(s1Dot).not.toHaveAttribute('title', /./);
+    await expect(s1Dot).toHaveAttribute('aria-label', 'Site flag: Red (kri0020a)');
+    await expect(page.locator('#rm-dist td[data-rm-tip] [title]')).toHaveCount(0);
+    await expect(s1.locator('.rm-dist-pick')).toHaveAttribute('title', 'Click to filter the report to site S1; click again to clear');
+    // The Study row is not a filter, so its card has no hint.
+    await page.hover('#rm-dist tr[data-rm-dist-study] td[data-rm-dist-vital="weight"]');
+    await expect(page.locator('#rm-dist-tip')).toContainText('Study \u00b7 Weight');
+    await expect(page.locator('#rm-dist-tip .rm-tip-hint')).toHaveCount(0);
 
     await page.fill('#rm-dist-search', 's2');
     d = await dist(page);
@@ -635,6 +649,31 @@ test.describe('Repeat Measurements report', () => {
     expect(pulse.length).toBeLessThan(all);
     expect(pulse.every((x) => x !== null && x !== '')).toBe(true);
     expect(await downloadCsv(page, '#rm-dt-wide .buttons-csv')).toHaveLength(1 + pulse.length);
+  });
+
+  test('the data table keeps its search text when switching between Wide and Long (#346)', async ({ page }) => {
+    const box = (shape) => page.locator('#rm-dt-' + shape + ' input[type="search"]');
+    await box('wide').fill('D');
+    await expect.poll(async () => [...new Set((await state(page)).wide)]).toEqual(['D']);
+    await page.click('[data-rm-shape="long"]');
+    await expect(box('long')).toHaveValue('D');
+    let s = await state(page);
+    // D weight 6, D height 3.
+    expect(s.long).toHaveLength(9);
+    expect(s.long.every((x) => x.startsWith('D '))).toBe(true);
+
+    await box('long').fill('B');
+    await expect.poll(async () => [...new Set((await state(page)).long)]).toEqual(['B pulse']);
+    await page.click('[data-rm-shape="wide"]');
+    await expect(box('wide')).toHaveValue('B');
+    expect([...new Set((await state(page)).wide)]).toEqual(['B']);
+
+    // Clearing the search in one shape clears it in the other.
+    await box('wide').fill('');
+    await expect.poll(async () => [...new Set((await state(page)).wide)].sort()).toEqual(['A', 'B', 'D']);
+    await page.click('[data-rm-shape="long"]');
+    await expect(box('long')).toHaveValue('');
+    expect((await state(page)).long).toHaveLength(17);
   });
 
   test('the data table fits its column without horizontal scrolling (#346)', async ({ page }) => {
