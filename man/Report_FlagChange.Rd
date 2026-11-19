@@ -20,6 +20,8 @@ This function compares the current and previous snapshot for each group/metric a
 
 
 
+- Nothing is rendered when `Flag_Previous` is entirely missing, i.e. the
+  results carry delta columns but no previous snapshot.
 - Only rows where the flag value has changed (including NA transitions) are included.
 - Rows where the flag went from NA to green (0) are excluded.
 - Results are grouped and color-coded by the absolute value of the new flag (red, amber, green).

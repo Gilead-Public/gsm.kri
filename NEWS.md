@@ -13,6 +13,9 @@
   (#280).
 - Added the adjacent Adjusted Risk Score column, recent-action highlighting and
   legend to `Widget_CrossStudyRiskScore()` and the cross-study example (#280).
+- Added CSV and XLSX downloads to `Widget_CrossStudyRiskScore()`: a site summary
+  of the collapsed view and a long site/study/KRI detail of the expanded rows,
+  both following the current filters and sort (#280).
 - Updated the site report example to use core's synthetic ActionLog (#280).
 - `Report_FlagChange()` and the KRI report skip flag-change output when delta
   columns hold no previous snapshot, instead of listing every flag as changed

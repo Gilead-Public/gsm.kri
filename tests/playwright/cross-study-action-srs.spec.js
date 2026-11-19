@@ -65,3 +65,51 @@ test('cross-study rows show the adjusted score and recent-action highlights (#28
   await expect(page.locator('td.group-overview--recent-action')).toHaveCount(0);
   await expect(page.locator('td.group-overview--comparisonRiskScore').first()).toHaveText('42');
 });
+
+test('cross-study downloads export the visible summary and long detail (#280)', async ({ page }) => {
+  const fixture = path.resolve(__dirname, 'fixture', 'CrossStudyActionHighlight');
+  await page.goto('file://' + `${fixture}.html`);
+  await page.waitForSelector('.site-summary', { timeout: 20000 });
+  const download = async (name) => {
+    const pending = page.waitForEvent('download');
+    await page.getByRole('button', { name }).click();
+    const file = await pending;
+    return { name: file.suggestedFilename(), bytes: require('fs').readFileSync(await file.path()) };
+  };
+  const parseCsv = (bytes) => bytes.toString('utf8').replace(/^\uFEFF/, '').trim().split('\r\n')
+    .map((line) => line.split(',').map((value) => value.replace(/^"|"$/g, '')));
+  const visibleSites = () => page.locator('tbody[id^="site-tbody-"]').evaluateAll((bodies) => bodies
+    .filter((body) => body.style.display !== 'none')
+    .map((body) => body.querySelector('.site-summary').dataset));
+
+  const summary = await download('Download site summary as CSV');
+  expect(summary.name).toBe('cross-study-site-summary.csv');
+  const summaryRows = parseCsv(summary.bytes);
+  expect(summaryRows[0]).toEqual(['Site', 'Studies', 'Enrolled', 'Avg SRS', 'Max SRS']);
+  const sites = await visibleSites();
+  expect(summaryRows.slice(1).map((row) => row[0]))
+    .toEqual(sites.map((site) => `${site.siteId} (${site.investigatorName})`));
+  expect(summaryRows.slice(1).map((row) => row[3]))
+    .toEqual(sites.map((site) => String(Number(Number(site.avgRiskScore).toFixed(1)))));
+
+  const detail = parseCsv((await download('Download site/study detail as CSV')).bytes);
+  expect(detail[0]).toEqual(['Site', 'Investigator', 'Study', 'Snapshot Date', 'Enrolled', 'Red Flags',
+    'Amber Flags', 'Risk Score', 'Adjusted Risk Score', 'KRI', 'KRI Name', 'Metric ID', 'Flag', 'Score',
+    'Numerator', 'Denominator', 'Metric', 'Action State', 'Last Addressed', 'Days Ago', 'Action Within 90 Days']);
+  const columns = Object.fromEntries(detail[0].map((name, index) => [name, index]));
+  const body = detail.slice(1);
+  expect(new Set(body.map((row) => row[columns.Site]))).toEqual(new Set(sites.map((site) => site.siteId)));
+  expect(body.every((row) => row[columns['Adjusted Risk Score']] === '42')).toBe(true);
+  const highlighted = await page.locator('td.group-overview--recent-action').count();
+  expect(body.filter((row) => row[columns['Action Within 90 Days']] === 'Yes')).toHaveLength(highlighted);
+
+  const xlsx = await download('Download site/study detail as XLSX');
+  expect(xlsx.name).toBe('cross-study-site-study-detail.xlsx');
+  expect(xlsx.bytes.subarray(0, 2).toString()).toBe('PK');
+  // Parts are stored uncompressed, so the sheet XML is readable as text.
+  expect(xlsx.bytes.toString('utf8')).toContain('<t>Adjusted Risk Score</t>');
+
+  await page.locator('#site-search').fill(sites[0].siteId);
+  const filtered = parseCsv((await download('Download site summary as CSV')).bytes);
+  expect(filtered.slice(1).map((row) => row[0])).toEqual([`${sites[0].siteId} (${sites[0].investigatorName})`]);
+});
