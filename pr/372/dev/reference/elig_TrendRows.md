@@ -1,21 +1,19 @@
 # Status over time rows
 
-One bar per snapshot that has both the rate metric (qtl0001) and the
-level 3 risk metric: Ineligible = qtl0001 numerator; Potentially
-Ineligible = risk numerator - qtl0001 numerator; No Eligibility Risk =
-denominator - risk numerator.
+One bar per snapshot of the study's status history.
 
 ## Usage
 
 ``` r
-elig_TrendRows(dfResults)
+elig_TrendRows(dfStatusHistory)
 ```
 
 ## Arguments
 
-- dfResults:
+- dfStatusHistory:
 
-  \`data.frame\` Reporting results.
+  \`data.frame\` Rows of \[elig_StatusCounts()\] from every snapshot,
+  with \`SnapshotDate\`, or \`NULL\`.
 
 ## Value
 

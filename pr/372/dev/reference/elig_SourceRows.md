@@ -1,8 +1,9 @@
 # Flag source slices
 
-One bar per delivered source counting the participants it flagged,
-stacked by their overall status (Ineligible wins). A participant counts
-under every source that flagged them.
+One bar per delivered source that flagged a participant in scope,
+counting the participants it flagged, stacked by their overall status
+(Ineligible wins). A participant counts under every source that flagged
+them.
 
 ## Usage
 
