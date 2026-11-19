@@ -2,6 +2,13 @@
 
 ## gsm.kri (development version)
 
+- Added site-level Screen Failure, Withdrawal and Lost to Follow-Up Rate
+  workflows (`ctq0001`-`ctq0003`) driven by `Mapped_DISP`. They have no
+  thresholds, flags or risk signals; CtQ Oversight Dashboard reporting
+  rolls their site numerators and denominators up to study level, and
+  the site KRI report and Site Risk Score exclude them
+  ([\#326](https://github.com/Gilead-Public/gsm.kri/issues/326)).
+
 ## gsm.kri v1.8.0
 
 This minor release adds the IP Monitoring report and metrics (IP
