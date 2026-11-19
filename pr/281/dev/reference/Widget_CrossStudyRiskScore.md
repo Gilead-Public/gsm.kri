@@ -5,15 +5,14 @@
 A widget that generates an interactive cross-study risk score table.
 Shows a summary view with click-to-expand details for each site.
 
-Two downloads, each as CSV or XLSX, export the current view: the visible
-sites in their displayed order, with study-filtered badge values. \*
-\*\*Site summary\*\*: one row per site with Site, Studies, Enrolled, Avg
-SRS and Max SRS, as in the collapsed view. \* \*\*Site/study detail\*\*:
-one row per site, study and KRI, repeating the per-study enrollment,
-flag counts and risk scores, with the KRI's flag, score, numerator,
-denominator and metric, plus its action state, last addressed date, days
-ago and whether it falls within 90 days when \`dfComparisonRiskDetail\`
-is supplied.
+Two XLSX downloads export the current view: the visible sites in their
+displayed order, with study-filtered badge values. \* \*\*Site
+summary\*\*: one row per site with Site, Studies, Enrolled, Avg SRS and
+Max SRS, as in the collapsed view. \* \*\*Site/study detail\*\*: one row
+per site, study and KRI, repeating the per-study enrollment, flag counts
+and risk scores, with the KRI's flag, score, numerator, denominator and
+metric, plus its action state, last addressed date, days ago and whether
+it falls within 90 days when \`dfComparisonRiskDetail\` is supplied.
 
 Files are generated in the browser; no data is uploaded.
 

@@ -30,7 +30,7 @@
   [`Widget_CrossStudyRiskScore()`](https://gilead-public.github.io/gsm.kri/dev/reference/Widget_CrossStudyRiskScore.md)
   and the cross-study example
   ([\#280](https://github.com/Gilead-Public/gsm.kri/issues/280)).
-- Added CSV and XLSX downloads to
+- Added XLSX downloads to
   [`Widget_CrossStudyRiskScore()`](https://gilead-public.github.io/gsm.kri/dev/reference/Widget_CrossStudyRiskScore.md):
   a site summary of the collapsed view and a long site/study/KRI detail
   of the expanded rows, both following the current filters and sort
