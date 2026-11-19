@@ -7,6 +7,7 @@ const path = require('path');
 
 const BASIC = 'file://' + path.resolve(__dirname, 'fixture', 'Report_Eligibility.html');
 const PILOT = 'file://' + path.resolve(__dirname, 'fixture', 'Report_Eligibility_pilot.html');
+const PILOT_NOQUERY = 'file://' + path.resolve(__dirname, 'fixture', 'Report_Eligibility_pilot_noquery.html');
 const CHARTS = ['study', 'country', 'site'].flatMap((l) => ['status', 'sources', 'criteria'].map((k) => `elig-${l}-${k}`));
 
 // The bubbling event gsm.vizr's bars() dispatches on a bar click, so the test
@@ -242,5 +243,18 @@ test.describe('pilot mode', () => {
     expect(details.some((d) => /^ID: [^;]+; /.test(d))).toBe(true);
     // Excel's text import splits rows at line breaks even inside quotes.
     expect(rows.flat().filter((c) => /[\r\n]/.test(c))).toEqual([]);
+  });
+});
+
+test.describe('pilot mode, EDC Query not delivered', () => {
+  test('shows EDC Query as N/A with a footnote and no source bar (#371)', async ({ page }) => {
+    const errors = await open(page, PILOT_NOQUERY);
+    expect(await datasetLabels(page, 'elig-site-status')).toEqual(['Ineligible', 'Potentially Ineligible', 'No Eligibility Risk']);
+    expect(await categories(page, 'elig-study-sources')).not.toContain('EDC Query');
+    const headers = await page.locator('#elig-listing .rt-th').allTextContents();
+    expect(headers).toContain('EDC Query \u2020');
+    expect(headers).toContain('EDC PD');
+    await expect(page.locator('.elig-note', { hasText: 'EDC Query is N/A' })).toHaveCount(1);
+    expect(errors).toEqual([]);
   });
 });

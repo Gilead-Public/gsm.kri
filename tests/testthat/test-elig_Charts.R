@@ -46,7 +46,7 @@ test_that("Flag Sources count a participant under each source, stacked by overal
 
   pilot <- elig_SourceRows(elig_ClassifyParticipants(elig_Fixture(
     bPilot = TRUE
-  )))
+  ), strMode = "pilot"))
   expect_equal(
     pilot$order,
     c("Important PD", "Non-important PD", "EDC eCRF", "EDC Query", "EDC PD")
@@ -61,8 +61,15 @@ test_that("Flag Sources count a participant under each source, stacked by overal
   noPD <- elig_SourceRows(elig_ClassifyParticipants(elig_Fixture(
     bPilot = TRUE,
     bEdcPd = FALSE
-  )))
+  ), strMode = "pilot"))
   expect_false("EDC PD" %in% noPD$order)
+
+  # EDC Query not delivered: no bar, and EDC PD still yields Potentially Ineligible.
+  dfNoQuery <- elig_Fixture(bPilot = TRUE)
+  dfNoQuery$edc_query <- NA_character_
+  noQuery <- elig_SourceRows(elig_ClassifyParticipants(dfNoQuery, strMode = "pilot"))
+  expect_false("EDC Query" %in% noQuery$order)
+  expect_true(ELIG_POTENTIAL %in% noQuery$study$Status)
 })
 
 test_that("criteria views count EDC I/E criterion cases and keep only groups with cases (#371)", {

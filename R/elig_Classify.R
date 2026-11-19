@@ -52,17 +52,29 @@ elig_StatusColors <- function(bPilot = TRUE) {
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' `"pilot"` when `Mapped_EXCLUSION` carries the optional `edc_query` flag
-#' column (data contract level 1), otherwise `"basic"`.
+#' The study picks the mode with `strMode`. Pilot mode falls back to basic,
+#' with a warning, when neither `edc_query` nor `edc_pd` has data: a pilot
+#' report with no EDC source would show only N/A columns.
 #'
 #' @param dfExclusion `data.frame` `Mapped_EXCLUSION`.
+#' @param strMode `character` `"basic"` (default) or `"pilot"`.
 #'
 #' @return `character` `"basic"` or `"pilot"`.
 #'
 #' @keywords internal
 #' @export
-elig_Mode <- function(dfExclusion) {
-  if ("edc_query" %in% names(dfExclusion)) "pilot" else "basic"
+elig_Mode <- function(dfExclusion, strMode = c("basic", "pilot")) {
+  strMode <- match.arg(strMode)
+  bData <- any(vapply(
+    c("edc_query", "edc_pd"),
+    function(x) x %in% names(dfExclusion) && !all(is.na(dfExclusion[[x]])),
+    logical(1)
+  ))
+  if (strMode == "pilot" && !bData) {
+    cli::cli_warn("Pilot mode needs EDC Query or EDC PD data; neither has any, so the basic report is rendered.")
+    return("basic")
+  }
+  strMode
 }
 
 #' Classify enrolled participants by eligibility status
@@ -83,10 +95,12 @@ elig_Mode <- function(dfExclusion) {
 #'
 #' @param dfExclusion `data.frame` `Mapped_EXCLUSION`, optionally with the
 #'   level 1 columns `pd_important`, `pd_nonimportant`, `edc_query` and
-#'   `edc_pd` (`"Y"`/`"N"`; `edc_pd` is `NA` when not delivered).
+#'   `edc_pd` (`"Y"`/`"N"`; `NA` throughout when the source is not delivered).
 #' @param dfGroups `data.frame` Reporting groups. Site-level
 #'   `InvestigatorFirstName` / `InvestigatorLastName` give the investigator.
 #'   Default: `NULL`.
+#' @param strMode `character` Mode resolved by [elig_Mode()]: `"basic"`
+#'   (default) or `"pilot"`.
 #'
 #' @return `tibble` with `studyid`, `subjid`, `country`, `invid`,
 #'   `investigator`, `status`, the `flag_*` columns of the delivered sources
@@ -94,8 +108,8 @@ elig_Mode <- function(dfExclusion) {
 #'
 #' @keywords internal
 #' @export
-elig_ClassifyParticipants <- function(dfExclusion, dfGroups = NULL) {
-  bPilot <- elig_Mode(dfExclusion) == "pilot"
+elig_ClassifyParticipants <- function(dfExclusion, dfGroups = NULL, strMode = c("basic", "pilot")) {
+  bPilot <- match.arg(strMode) == "pilot"
   col <- function(name) {
     if (name %in% names(dfExclusion)) as.character(dfExclusion[[name]]) else rep(NA_character_, nrow(dfExclusion))
   }
@@ -127,11 +141,11 @@ elig_ClassifyParticipants <- function(dfExclusion, dfGroups = NULL) {
 
   bPotential <- rep(FALSE, nrow(df))
   if (bPilot) {
-    df$flag_edc_query <- yn(col("edc_query"))
-    edc_pd <- col("edc_pd")
     # NA throughout means the source is not delivered ("N/A"), not "no records".
-    df$flag_edc_pd <- if (all(is.na(edc_pd))) NA_character_ else yn(edc_pd)
-    bPotential <- df$flag_edc_query == "Y" | df$flag_edc_pd %in% "Y"
+    delivered <- function(x) if (all(is.na(x))) NA_character_ else yn(x)
+    df$flag_edc_query <- delivered(col("edc_query"))
+    df$flag_edc_pd <- delivered(col("edc_pd"))
+    bPotential <- df$flag_edc_query %in% "Y" | df$flag_edc_pd %in% "Y"
   }
 
   df$status <- dplyr::case_when(
@@ -167,8 +181,8 @@ elig_HasSource <- function(dfElig, strFlag) {
 #'
 #' @return Named `character`: flag column = display name, in display order.
 #'   The PD split replaces the single PD source when delivered, unless a PD is
-#'   neither important nor non-important; EDC PD stays listed when not
-#'   delivered, so the listing can show "N/A".
+#'   neither important nor non-important; EDC Query and EDC PD stay listed
+#'   when not delivered, so the listing can show "N/A".
 #'
 #' @keywords internal
 #' @export

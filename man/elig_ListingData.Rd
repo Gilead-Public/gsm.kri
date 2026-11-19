@@ -15,7 +15,7 @@ elig_ListingData(dfElig)
 \description{
 `r lifecycle::badge("experimental")`
 
-Flagged participants only (Ineligible first). Flag columns are Y/N; EDC PD
-is `"N/A"` when the source is not delivered.
+Flagged participants only (Ineligible first). Flag columns are Y/N; EDC
+Query and EDC PD are `"N/A"` when the source is not delivered.
 }
 \keyword{internal}

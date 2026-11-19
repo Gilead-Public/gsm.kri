@@ -16,11 +16,12 @@ params:
   dfMetrics: NA
   dfGroups: NA
   lListings: NA
+  strMode: basic
 ---
 
 ```{r setup, include=FALSE}
 # Data contract (see ?Report_Eligibility): lListings$IE_denom is
-# Mapped_EXCLUSION; optional level 1 columns on it switch on pilot mode,
+# Mapped_EXCLUSION; params$strMode picks basic or pilot mode,
 # optional lListings$IE_records (level 2) fills the listing's records, and the optional
 # level 3 metric in dfResults adds Status over Time. R derives every status and
 # count; eligFilters.js only filters.
@@ -34,10 +35,13 @@ lListings <- params$lListings
 dfExclusion <- if (!is.null(lListings$IE_denom)) lListings$IE_denom else lListings$IE_num
 dfRecords <- lListings$IE_records
 
-bPilot <- elig_Mode(dfExclusion) == "pilot"
-dfElig <- elig_ClassifyParticipants(dfExclusion, dfGroups)
+strMode <- elig_Mode(dfExclusion, params$strMode)
+bPilot <- strMode == "pilot"
+dfElig <- elig_ClassifyParticipants(dfExclusion, dfGroups, strMode)
 vSources <- elig_Sources(dfElig)
+bHasEdcQuery <- elig_HasSource(dfElig, "flag_edc_query")
 bHasEdcPd <- elig_HasSource(dfElig, "flag_edc_pd")
+vNotDelivered <- if (bPilot) c("EDC Query", "EDC PD")[!c(bHasEdcQuery, bHasEdcPd)] else character()
 bRecords <- bPilot && is.data.frame(dfRecords) && nrow(dfRecords) > 0
 
 strRateID <- elig_RateMetricID(dfResults)
@@ -65,7 +69,7 @@ dfExport <- elig_ExportData(dfListing, dfPartRecords, bRecords)
 vDelivered <- unname(c(
   "EDC eCRF",
   if (any(names(vSources) %in% c("flag_pd", "flag_pd_important"))) "Protocol Deviation",
-  if (bPilot) "EDC Query",
+  if (bHasEdcQuery) "EDC Query",
   if (bHasEdcPd) "EDC PD"
 ))
 
@@ -87,7 +91,7 @@ sources_note <- paste0(
   "\n> Participants in scope flagged by each source, by their overall status",
   if (bPilot) " (Ineligible wins over Potentially Ineligible)" else "",
   ". A participant can count under several sources. Hover for % of enrolled.",
-  if (bPilot && !bHasEdcPd) " EDC PD is not delivered for this study." else "",
+  paste(sprintf(" %s is not delivered for this study.", vNotDelivered), collapse = ""),
   "\n"
 )
 criteria_note <- "\n> EDC I/E eCRF criteria only. Participants flagged only by a PD, a query or an EDC PD have no criterion codes and do not appear here.\n"
@@ -418,7 +422,7 @@ cat(sprintf(
   '<p class="elig-note">%s participants (%d). Expand a row to see the records behind the status, one table per source. Download CSV adds one details column per source. Long text is cut; hover for the full value.%s</p>',
   if (bPilot) "Ineligible and Potentially Ineligible" else "Ineligible",
   nrow(dfListing),
-  if (bPilot && !bHasEdcPd) " &dagger; EDC PD is N/A: the source is not delivered for this study." else ""
+  paste(sprintf(" &dagger; %s is N/A: the source is not delivered for this study.", vNotDelivered), collapse = "")
 ))
 ```
 

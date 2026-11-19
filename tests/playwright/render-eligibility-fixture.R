@@ -3,7 +3,9 @@
 #   gsm.core::lSource (two statuses);
 # - fixture/Report_Eligibility_pilot.html: pilot mode, the same participants
 #   plus the optional level 1 columns, level 2 records and the level 3 history
-#   metric of gsm.roadmap#113 (three statuses).
+#   metric of gsm.roadmap#113 (three statuses);
+# - fixture/Report_Eligibility_pilot_noquery.html: pilot mode with the EDC Query
+#   source not delivered.
 # Source this with the gsm.kri package loaded and the working directory at the
 # package root so the relative fixture path resolves.
 library(dplyr)
@@ -90,6 +92,15 @@ dfRisk <- dfResults %>%
 Report_Eligibility(
   dfResults = bind_rows(dfResults, dfRisk), dfMetrics = dfMetrics, dfGroups = dfGroups,
   lListings = lListings(dfPilot, IE_records = dfRecords),
-  strOutputDir = out_dir, strOutputFile = "Report_Eligibility_pilot.html"
+  strOutputDir = out_dir, strOutputFile = "Report_Eligibility_pilot.html",
+  strMode = "pilot"
+)
+
+# Pilot with EDC Query not delivered: the mapping leaves edc_query NULL.
+Report_Eligibility(
+  dfResults = dfResults, dfMetrics = dfMetrics, dfGroups = dfGroups,
+  lListings = lListings(mutate(dfPilot, edc_query = NA_character_)),
+  strOutputDir = out_dir, strOutputFile = "Report_Eligibility_pilot_noquery.html",
+  strMode = "pilot"
 )
 cat("Rendered:", list.files(out_dir, "Report_Eligibility", full.names = TRUE), sep = "\n")

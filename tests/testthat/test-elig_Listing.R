@@ -8,11 +8,17 @@ test_that("the listing has flagged participants only, with basic or pilot column
   )
   expect_false(any(grepl("Potentially", unlist(basic))))
 
-  pilot <- elig_ListingData(elig_ClassifyParticipants(elig_Fixture(bPilot = TRUE, bEdcPd = FALSE)))
+  pilot <- elig_ListingData(elig_ClassifyParticipants(elig_Fixture(bPilot = TRUE, bEdcPd = FALSE), strMode = "pilot"))
   expect_true(all(c("Important PD", "Non-important PD", "EDC Query", "EDC PD") %in% names(pilot)))
   expect_false("PD" %in% names(pilot))
   expect_true(all(pilot$`EDC PD` == "N/A"))
   expect_equal(pilot$`Eligibility Status`[pilot$`Participant ID` == "P03"], ELIG_POTENTIAL)
+
+  dfNoQuery <- elig_Fixture(bPilot = TRUE)
+  dfNoQuery$edc_query <- NA_character_
+  noQuery <- elig_ListingData(elig_ClassifyParticipants(dfNoQuery, strMode = "pilot"))
+  expect_true(all(noQuery$`EDC Query` == "N/A"))
+  expect_false("P03" %in% noQuery$`Participant ID`)
 })
 
 test_that("participant records come from level 2 records, else from the PD dates/terms and criteria (#371)", {
@@ -25,7 +31,7 @@ test_that("participant records come from level 2 records, else from the PD dates
   expect_false("P03" %in% basic$subjid)
 
   pilot <- elig_ParticipantRecords(
-    elig_ClassifyParticipants(elig_Fixture(bPilot = TRUE)),
+    elig_ClassifyParticipants(elig_Fixture(bPilot = TRUE), strMode = "pilot"),
     elig_FixtureRecords()
   )
   q <- pilot[pilot$subjid == "P03", ]
@@ -40,7 +46,7 @@ test_that("the expanded row shows one table per source with only the fields used
   expect_no_match(html, "Protocol Deviation")
 
   pilot <- elig_ParticipantRecords(
-    elig_ClassifyParticipants(elig_Fixture(bPilot = TRUE)),
+    elig_ClassifyParticipants(elig_Fixture(bPilot = TRUE), strMode = "pilot"),
     elig_FixtureRecords()
   )
   html <- as.character(elig_ParticipantDetail("P03", pilot))
@@ -50,7 +56,7 @@ test_that("the expanded row shows one table per source with only the fields used
 })
 
 test_that("the CSV export adds one single-line details column per source (#371)", {
-  dfElig <- elig_ClassifyParticipants(elig_Fixture(bPilot = TRUE, bEdcPd = FALSE))
+  dfElig <- elig_ClassifyParticipants(elig_Fixture(bPilot = TRUE, bEdcPd = FALSE), strMode = "pilot")
   recs <- elig_ParticipantRecords(dfElig, elig_FixtureRecords())
   ex <- elig_ExportData(elig_ListingData(dfElig), recs)
   expect_equal(tail(names(ex), 4), paste(ELIG_RECORD_SOURCES, "details"))
@@ -77,13 +83,13 @@ test_that("overview cards follow the mode (#371)", {
   expect_match(basic, ELIG_NO_RISK, fixed = TRUE)
   expect_no_match(basic, "Potentially", fixed = TRUE)
 
-  pilot <- as.character(elig_OverviewCards(elig_ClassifyParticipants(elig_Fixture(bPilot = TRUE)), bPilot = TRUE))
+  pilot <- as.character(elig_OverviewCards(elig_ClassifyParticipants(elig_Fixture(bPilot = TRUE), strMode = "pilot"), bPilot = TRUE))
   expect_match(pilot, "Total risk", fixed = TRUE)
   expect_match(pilot, ELIG_POTENTIAL, fixed = TRUE)
 })
 
 test_that("a source with no level 2 records for a participant falls back to Mapped_EXCLUSION (#371)", {
-  dfElig <- elig_ClassifyParticipants(elig_Fixture(bPilot = TRUE))
+  dfElig <- elig_ClassifyParticipants(elig_Fixture(bPilot = TRUE), strMode = "pilot")
   recs <- elig_ParticipantRecords(dfElig, elig_FixtureRecords())
   p05 <- recs[recs$subjid == "P05", ]
   expect_equal(c(p05$source, p05$Date, p05$Description), c("Protocol Deviation", "2026-04-05", "PD four"))
@@ -93,7 +99,7 @@ test_that("a source with no level 2 records for a participant falls back to Mapp
 })
 
 test_that("the CSV keeps a details column for a source outside the known four (#371)", {
-  dfElig <- elig_ClassifyParticipants(elig_Fixture(bPilot = TRUE))
+  dfElig <- elig_ClassifyParticipants(elig_Fixture(bPilot = TRUE), strMode = "pilot")
   dfRecords <- elig_FixtureRecords()
   dfRecords$source[dfRecords$record_id == "Q1"] <- "Other Source"
   ex <- elig_ExportData(elig_ListingData(dfElig), elig_ParticipantRecords(dfElig, dfRecords))
@@ -102,7 +108,7 @@ test_that("the CSV keeps a details column for a source outside the known four (#
 })
 
 test_that("CSV details flatten line breaks inside record values (#371)", {
-  dfElig <- elig_ClassifyParticipants(elig_Fixture(bPilot = TRUE))
+  dfElig <- elig_ClassifyParticipants(elig_Fixture(bPilot = TRUE), strMode = "pilot")
   dfRecords <- elig_FixtureRecords()
   dfRecords$QueryText[dfRecords$record_id == "Q1"] <- "Line one\r\nline two"
   ex <- elig_ExportData(elig_ListingData(dfElig), elig_ParticipantRecords(dfElig, dfRecords))

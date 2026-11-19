@@ -15,11 +15,13 @@ test_that("Ineligible is Source != 'Neither' whatever the Source wording (#371)"
   expect_equal(out$status[out$subjid == "P03"], ELIG_NO_RISK)
 })
 
-test_that("pilot mode is triggered by the edc_query column and Ineligible wins (#371)", {
+test_that("pilot mode is set by strMode, not by the edc_query column, and Ineligible wins (#371)", {
   dfIn <- elig_Fixture(bPilot = TRUE)
-  df <- elig_ClassifyParticipants(dfIn)
+  df <- elig_ClassifyParticipants(dfIn, strMode = "pilot")
 
-  expect_equal(elig_Mode(dfIn), "pilot")
+  expect_equal(elig_Mode(dfIn), "basic")
+  expect_equal(elig_Mode(dfIn, "pilot"), "pilot")
+  expect_false(ELIG_POTENTIAL %in% elig_ClassifyParticipants(dfIn)$status)
   status <- stats::setNames(df$status, df$subjid)
   expect_equal(status[["P01"]], ELIG_INELIGIBLE)
   expect_equal(status[["P03"]], ELIG_POTENTIAL)
@@ -53,15 +55,37 @@ test_that("a PD that is neither important nor non-important keeps the PD flag (#
   expect_equal(elig_ListingData(df)$PD[elig_ListingData(df)$`Participant ID` == "P05"], "Y")
 
   # Every PD classified: the split replaces the PD flag.
-  expect_false("flag_pd" %in% names(elig_Sources(elig_ClassifyParticipants(elig_Fixture(bPilot = TRUE)))))
+  expect_false("flag_pd" %in% names(elig_Sources(elig_ClassifyParticipants(elig_Fixture(bPilot = TRUE), strMode = "pilot"))))
 })
 
 test_that("EDC PD is NA when the source is not delivered (#371)", {
-  df <- elig_ClassifyParticipants(elig_Fixture(bPilot = TRUE, bEdcPd = FALSE))
+  df <- elig_ClassifyParticipants(elig_Fixture(bPilot = TRUE, bEdcPd = FALSE), strMode = "pilot")
   expect_true(all(is.na(df$flag_edc_pd)))
   expect_false(elig_HasSource(df, "flag_edc_pd"))
   expect_true(elig_HasSource(df, "flag_edc_query"))
   expect_equal(df$status[df$subjid == "P06"], ELIG_NO_RISK)
+})
+
+test_that("EDC Query is NA when the source is not delivered (#371)", {
+  dfIn <- elig_Fixture(bPilot = TRUE)
+  dfIn$edc_query <- NA_character_
+  df <- elig_ClassifyParticipants(dfIn, strMode = "pilot")
+  expect_true(all(is.na(df$flag_edc_query)))
+  expect_false(elig_HasSource(df, "flag_edc_query"))
+  expect_equal(df$status[df$subjid == "P03"], ELIG_NO_RISK)
+  expect_equal(df$status[df$subjid == "P06"], ELIG_POTENTIAL)
+})
+
+test_that("pilot mode falls back to basic with a warning when neither EDC source has data (#371)", {
+  dfIn <- elig_Fixture(bPilot = TRUE)
+  dfIn$edc_query <- NA_character_
+  dfIn$edc_pd <- NA_character_
+  expect_warning(expect_equal(elig_Mode(dfIn, "pilot"), "basic"), "basic")
+  expect_warning(expect_equal(elig_Mode(elig_Fixture(), "pilot"), "basic"), "basic")
+
+  dfIn$edc_pd <- "N"
+  expect_no_warning(expect_equal(elig_Mode(dfIn, "pilot"), "pilot"))
+  expect_error(elig_Mode(dfIn, "full"))
 })
 
 test_that("investigator names come from Site groups and are blank without them (#371)", {

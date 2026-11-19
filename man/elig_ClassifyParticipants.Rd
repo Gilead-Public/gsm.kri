@@ -4,16 +4,23 @@
 \alias{elig_ClassifyParticipants}
 \title{Classify enrolled participants by eligibility status}
 \usage{
-elig_ClassifyParticipants(dfExclusion, dfGroups = NULL)
+elig_ClassifyParticipants(
+  dfExclusion,
+  dfGroups = NULL,
+  strMode = c("basic", "pilot")
+)
 }
 \arguments{
 \item{dfExclusion}{`data.frame` `Mapped_EXCLUSION`, optionally with the
 level 1 columns `pd_important`, `pd_nonimportant`, `edc_query` and
-`edc_pd` (`"Y"`/`"N"`; `edc_pd` is `NA` when not delivered).}
+`edc_pd` (`"Y"`/`"N"`; `NA` throughout when the source is not delivered).}
 
 \item{dfGroups}{`data.frame` Reporting groups. Site-level
 `InvestigatorFirstName` / `InvestigatorLastName` give the investigator.
 Default: `NULL`.}
+
+\item{strMode}{`character` Mode resolved by [elig_Mode()]: `"basic"`
+(default) or `"pilot"`.}
 }
 \value{
 `tibble` with `studyid`, `subjid`, `country`, `invid`,

@@ -7,18 +7,19 @@
 #' status at study, country and site level, flag sources, EDC I/E criteria
 #' views, the Ineligibility listing and the eligibility rules.
 #'
-#' The report picks its mode from the data it receives:
-#' - **Basic** (every study): two statuses, Ineligible (`Source != 'Neither'`)
-#'   and No Eligibility Risk, computed as before.
-#' - **Pilot**: `Mapped_EXCLUSION` carries the optional `edc_query` column, and
-#'   a third status, Potentially Ineligible, appears (gsm.roadmap#113).
+#' The study picks the mode with `strMode`:
+#' - **Basic** (default, every study): two statuses, Ineligible
+#'   (`Source != 'Neither'`) and No Eligibility Risk, computed as before.
+#' - **Pilot**: a third status, Potentially Ineligible, from the `edc_query`
+#'   and `edc_pd` columns (gsm.roadmap#113). With no data in either, the report
+#'   warns and falls back to basic.
 #'
 #' @section Data contract:
 #' Each level is optional and unlocks more of the report.
 #' 1. **Columns** on `lListings$IE_denom` (`Mapped_EXCLUSION`), `"Y"`/`"N"`:
 #'    `pd_important` and `pd_nonimportant` (split the PD source),
-#'    `edc_query` (switches on pilot mode) and `edc_pd` (`NA` throughout when
-#'    the EDC PD source is not delivered; the listing shows "N/A"). A
+#'    `edc_query` and `edc_pd` (pilot mode; `NA` throughout when the source
+#'    is not delivered, and the listing shows "N/A"). A
 #'    participant is Ineligible when `Source != 'Neither'`, otherwise
 #'    Potentially Ineligible when `edc_query` or `edc_pd` is `"Y"`, otherwise
 #'    No Eligibility Risk. `Source` itself never carries Potentially Ineligible.
@@ -46,6 +47,7 @@
 #' @param strOutputFile The output file name for the generated report. If not provided,
 #'  the report will be named `Report_Eligibility.html`.
 #' @param strInputPath `string` or `fs_path` Path to the template `Rmd` file.
+#' @param strMode `character` `"basic"` (default) or `"pilot"`.
 #'
 #' @return File path of the saved report html is returned invisibly. Save to object to view absolute output path.
 #' @examples
@@ -90,7 +92,8 @@ Report_Eligibility <- function(
     "report",
     "Report_Eligibility.Rmd",
     package = "gsm.kri"
-  )
+  ),
+  strMode = c("basic", "pilot")
 ) {
   rlang::check_installed("rmarkdown", reason = "to run `Report_Eligibility()`")
   rlang::check_installed("knitr", reason = "to run `Report_Eligibility()`")
@@ -100,6 +103,10 @@ Report_Eligibility <- function(
     strOutputFile <- "Report_Eligibility.html"
   }
 
+  # Resolved here, not in the Rmd: warnings raised while knitting never reach the caller.
+  dfExclusion <- if (!is.null(lListings$IE_denom)) lListings$IE_denom else lListings$IE_num
+  strMode <- elig_Mode(dfExclusion, strMode)
+
   gsm.kri::RenderRmd(
     strInputPath = strInputPath,
     strOutputFile = strOutputFile,
@@ -108,7 +115,8 @@ Report_Eligibility <- function(
       dfResults = dfResults,
       dfMetrics = dfMetrics,
       dfGroups = dfGroups,
-      lListings = lListings
+      lListings = lListings,
+      strMode = strMode
     )
   )
 }

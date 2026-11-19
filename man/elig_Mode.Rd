@@ -4,10 +4,12 @@
 \alias{elig_Mode}
 \title{Eligibility report mode}
 \usage{
-elig_Mode(dfExclusion)
+elig_Mode(dfExclusion, strMode = c("basic", "pilot"))
 }
 \arguments{
 \item{dfExclusion}{`data.frame` `Mapped_EXCLUSION`.}
+
+\item{strMode}{`character` `"basic"` (default) or `"pilot"`.}
 }
 \value{
 `character` `"basic"` or `"pilot"`.
@@ -15,7 +17,8 @@ elig_Mode(dfExclusion)
 \description{
 `r lifecycle::badge("experimental")`
 
-`"pilot"` when `Mapped_EXCLUSION` carries the optional `edc_query` flag
-column (data contract level 1), otherwise `"basic"`.
+The study picks the mode with `strMode`. Pilot mode falls back to basic,
+with a warning, when neither `edc_query` nor `edc_pd` has data: a pilot
+report with no EDC source would show only N/A columns.
 }
 \keyword{internal}

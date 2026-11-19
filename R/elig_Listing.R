@@ -87,8 +87,8 @@ elig_SplitPD <- function(x) {
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' Flagged participants only (Ineligible first). Flag columns are Y/N; EDC PD
-#' is `"N/A"` when the source is not delivered.
+#' Flagged participants only (Ineligible first). Flag columns are Y/N; EDC
+#' Query and EDC PD are `"N/A"` when the source is not delivered.
 #'
 #' @param dfElig `data.frame` from [elig_ClassifyParticipants()].
 #'
@@ -237,7 +237,7 @@ elig_Listing <- function(dfListing, dfPartRecords, strID = "elig-listing") {
     stats::setNames(lapply(vFlags, function(f) {
       reactable::colDef(
         align = "center", minWidth = 90, filterMethod = elig_ExactFilter(),
-        header = if (identical(f, "EDC PD") && all(dfListing[[f]] == "N/A")) "EDC PD \u2020" else f
+        header = if (nrow(dfListing) > 0 && all(dfListing[[f]] == "N/A")) paste(f, "\u2020") else f
       )
     }), vFlags),
     stats::setNames(lapply(vText, function(col) {

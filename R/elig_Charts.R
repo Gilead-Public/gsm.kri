@@ -270,7 +270,8 @@ elig_SourceRows <- function(dfElig) {
     tibble::tibble(subjid = hit$subjid, key = unname(vSources[[f]]), status = hit$status)
   })
   if (nrow(long) == 0) long <- tibble::tibble(subjid = character(), key = character(), status = character())
-  vStatuses <- names(elig_StatusColors(elig_HasSource(dfElig, "flag_edc_query")))
+  # Pilot frames always carry flag_edc_query, NA when the source is not delivered.
+  vStatuses <- names(elig_StatusColors("flag_edc_query" %in% names(dfElig)))
   elig_BreakdownRows(dfElig, long, unname(vSources), setdiff(vStatuses, ELIG_NO_RISK))
 }
 

@@ -138,7 +138,8 @@ child_env <- list2env(
       dfResults = dfResults,
       dfMetrics = dfMetrics,
       dfGroups = dfGroups,
-      lListings = lListings
+      lListings = lListings,
+      strMode = "pilot"
     )
   ),
   parent = environment()
