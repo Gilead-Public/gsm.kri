@@ -18,5 +18,5 @@ elig_Sources(dfElig)
 
 Named \`character\`: flag column = display name, in display order. The
 PD split replaces the single PD source when delivered, unless a PD is
-neither important nor non-important; EDC PD stays listed when not
-delivered, so the listing can show "N/A".
+neither important nor non-important; EDC Query and EDC PD stay listed
+when not delivered, so the listing can show "N/A".

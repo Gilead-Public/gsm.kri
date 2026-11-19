@@ -3,7 +3,7 @@
 \`r lifecycle::badge("experimental")\`
 
 Flagged participants only (Ineligible first). Flag columns are Y/N; EDC
-PD is \`"N/A"\` when the source is not delivered.
+Query and EDC PD are \`"N/A"\` when the source is not delivered.
 
 ## Usage
 

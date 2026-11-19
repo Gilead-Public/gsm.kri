@@ -6,11 +6,12 @@ Generates the Eligibility report: enrolled participants by eligibility
 status at study, country and site level, flag sources, EDC I/E criteria
 views, the Ineligibility listing and the eligibility rules.
 
-The report picks its mode from the data it receives: - \*\*Basic\*\*
-(every study): two statuses, Ineligible (\`Source != 'Neither'\`) and No
-Eligibility Risk, computed as before. - \*\*Pilot\*\*:
-\`Mapped_EXCLUSION\` carries the optional \`edc_query\` column, and a
-third status, Potentially Ineligible, appears (gsm.roadmap#113).
+The study picks the mode with \`strMode\`: - \*\*Basic\*\* (default,
+every study): two statuses, Ineligible (\`Source != 'Neither'\`) and No
+Eligibility Risk, computed as before. - \*\*Pilot\*\*: a third status,
+Potentially Ineligible, from the \`edc_query\` and \`edc_pd\` columns
+(gsm.roadmap#113). With no data in either, the report warns and falls
+back to basic.
 
 ## Usage
 
@@ -22,7 +23,8 @@ Report_Eligibility(
   lListings = lListings,
   strOutputDir = getwd(),
   strOutputFile = NULL,
-  strInputPath = system.file("report", "Report_Eligibility.Rmd", package = "gsm.kri")
+  strInputPath = system.file("report", "Report_Eligibility.Rmd", package = "gsm.kri"),
+  strMode = c("basic", "pilot")
 )
 ```
 
@@ -60,6 +62,10 @@ Report_Eligibility(
 
   \`string\` or \`fs_path\` Path to the template \`Rmd\` file.
 
+- strMode:
+
+  \`character\` \`"basic"\` (default) or \`"pilot"\`.
+
 ## Value
 
 File path of the saved report html is returned invisibly. Save to object
@@ -70,11 +76,11 @@ to view absolute output path.
 Each level is optional and unlocks more of the report. 1.
 \*\*Columns\*\* on \`lListings\$IE_denom\` (\`Mapped_EXCLUSION\`),
 \`"Y"\`/\`"N"\`: \`pd_important\` and \`pd_nonimportant\` (split the PD
-source), \`edc_query\` (switches on pilot mode) and \`edc_pd\` (\`NA\`
-throughout when the EDC PD source is not delivered; the listing shows
-"N/A"). A participant is Ineligible when \`Source != 'Neither'\`,
-otherwise Potentially Ineligible when \`edc_query\` or \`edc_pd\` is
-\`"Y"\`, otherwise No Eligibility Risk. \`Source\` itself never carries
+source), \`edc_query\` and \`edc_pd\` (pilot mode; \`NA\` throughout
+when the source is not delivered, and the listing shows "N/A"). A
+participant is Ineligible when \`Source != 'Neither'\`, otherwise
+Potentially Ineligible when \`edc_query\` or \`edc_pd\` is \`"Y"\`,
+otherwise No Eligibility Risk. \`Source\` itself never carries
 Potentially Ineligible. 2. \*\*Records\*\*: \`lListings\$IE_records\`,
 one row per record behind a flag, with \`studyid\`, \`subjid\`,
 \`source\` (\`"EDC eCRF"\`, \`"Protocol Deviation"\`, \`"EDC Query"\`,

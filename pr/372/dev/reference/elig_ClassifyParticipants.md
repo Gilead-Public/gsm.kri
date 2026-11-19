@@ -17,7 +17,11 @@ terms (\`eligibility_criteria\`) when a study's EXCLUSION has no
 ## Usage
 
 ``` r
-elig_ClassifyParticipants(dfExclusion, dfGroups = NULL)
+elig_ClassifyParticipants(
+  dfExclusion,
+  dfGroups = NULL,
+  strMode = c("basic", "pilot")
+)
 ```
 
 ## Arguments
@@ -26,12 +30,18 @@ elig_ClassifyParticipants(dfExclusion, dfGroups = NULL)
 
   \`data.frame\` \`Mapped_EXCLUSION\`, optionally with the level 1
   columns \`pd_important\`, \`pd_nonimportant\`, \`edc_query\` and
-  \`edc_pd\` (\`"Y"\`/\`"N"\`; \`edc_pd\` is \`NA\` when not delivered).
+  \`edc_pd\` (\`"Y"\`/\`"N"\`; \`NA\` throughout when the source is not
+  delivered).
 
 - dfGroups:
 
   \`data.frame\` Reporting groups. Site-level \`InvestigatorFirstName\`
   / \`InvestigatorLastName\` give the investigator. Default: \`NULL\`.
+
+- strMode:
+
+  \`character\` Mode resolved by \[elig_Mode()\]: \`"basic"\` (default)
+  or \`"pilot"\`.
 
 ## Value
 
