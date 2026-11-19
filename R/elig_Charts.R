@@ -116,13 +116,14 @@ elig_StatusBarSpec <- function(strLevel = c("study", "country", "site"), vOrder 
     ),
     labels = list(title = "Enrolled participants by eligibility status"),
     annotations = list(labels = list(segment = segment)),
-    tooltip = list(formatter = elig_PctCountTooltip())
+    tooltip = list(formatter = elig_PctCountTooltip()),
+    # Drops a group a legend click leaves at 0, and brings it back with the series.
+    theme = list(dynamicCategoryAxis = TRUE)
   )
   if (strLevel != "study") {
     spec$zoom <- list(enabled = TRUE, mode = "x")
     spec$labels$captions <- "Scroll to zoom in; drag to pan."
   }
-  if (strLevel == "site") spec$theme <- list(dynamicCategoryAxis = TRUE)
   spec
 }
 
@@ -199,8 +200,9 @@ elig_StatusFilter <- function(strLevel = c("country", "site"), bPilot = FALSE) {
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' One row per key and fill value with the number of rows of `dfRecords` in
-#' scope, for the study, each country and each country's sites. The caller
+#' One row per key and fill value with at least one row of `dfRecords` in
+#' scope, for the study, each country and each country's sites, so a chart
+#' draws no empty category. The caller
 #' passes one row per participant, key and fill value. `pct` is over enrolled
 #' participants in scope.
 #'
@@ -208,15 +210,13 @@ elig_StatusFilter <- function(strLevel = c("country", "site"), bPilot = FALSE) {
 #' @param dfRecords `data.frame` with `subjid`, `key` and `status`.
 #' @param vOrder `character` Key order.
 #' @param vStatuses `character` Fill values, in stack order.
-#' @param bKeepEmpty `logical` Keep the rows with no record, so every key shows
-#'   in every scope. Default: `TRUE`.
 #'
-#' @return `list` with `order`, `study`, `country`, `site` (by country, then
-#'   site) and `zero`. `pct` is rounded to 1 decimal.
+#' @return `list` with `order`, `study`, `country` and `site` (by country, then
+#'   site). `pct` is rounded to 1 decimal.
 #'
 #' @keywords internal
 #' @export
-elig_BreakdownRows <- function(dfElig, dfRecords, vOrder, vStatuses, bKeepEmpty = TRUE) {
+elig_BreakdownRows <- function(dfElig, dfRecords, vOrder, vStatuses) {
   dfRecords <- dfRecords[c("subjid", "key", "status")] %>%
     dplyr::left_join(dfElig[c("subjid", "country", "invid")], by = "subjid")
   grid <- tidyr::expand_grid(key = vOrder, Status = vStatuses)
@@ -229,7 +229,7 @@ elig_BreakdownRows <- function(dfElig, dfRecords, vOrder, vStatuses, bKeepEmpty 
         n = dplyr::coalesce(as.integer(.data$n), 0L),
         pct = if (nEnrolled > 0) round(100 * .data$n / nEnrolled, 1) else 0
       ) %>%
-      dplyr::filter(bKeepEmpty | .data$n > 0)
+      dplyr::filter(.data$n > 0)
   }
   vCountries <- sort(unique(dfElig$country), method = "radix")
   lSites <- lapply(vCountries, function(c) {
@@ -245,14 +245,14 @@ elig_BreakdownRows <- function(dfElig, dfRecords, vOrder, vStatuses, bKeepEmpty 
       lapply(vCountries, function(c) slice(dfElig$country == c, dfRecords$country %in% c)),
       vCountries
     ),
-    site = stats::setNames(lSites, vCountries),
-    zero = dplyr::mutate(grid, n = 0L, pct = 0) %>% dplyr::filter(bKeepEmpty)
+    site = stats::setNames(lSites, vCountries)
   )
 }
 
 #' Flag source slices
 #'
-#' One bar per delivered source counting the participants it flagged, stacked
+#' One bar per delivered source that flagged a participant in scope, counting
+#' the participants it flagged, stacked
 #' by their overall status (Ineligible wins). A participant counts under every
 #' source that flagged them.
 #'
@@ -293,8 +293,7 @@ elig_CriteriaRows <- function(dfElig) {
     dfElig,
     dplyr::transmute(long, .data$subjid, key = .data$criterion, status = .data$type),
     vOrder,
-    if (length(vTypes)) vTypes else c("Inclusion", "Exclusion"),
-    bKeepEmpty = FALSE
+    if (length(vTypes)) vTypes else c("Inclusion", "Exclusion")
   )
 }
 
@@ -325,6 +324,7 @@ elig_BreakdownBarSpec <- function(vOrder, strAxisLabel, vColors) {
     orientation = "horizontal",
     position = "stack",
     stat = "identity",
+    theme = list(dynamicCategoryAxis = TRUE),
     scales = list(
       x = list(label = strAxisLabel, order = as.list(vOrder)),
       y = list(label = "Participants flagged"),

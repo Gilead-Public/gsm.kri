@@ -13,7 +13,8 @@ elig_SourceRows(dfElig)
 `list` from [elig_BreakdownRows()].
 }
 \description{
-One bar per delivered source counting the participants it flagged, stacked
+One bar per delivered source that flagged a participant in scope, counting
+the participants it flagged, stacked
 by their overall status (Ineligible wins). A participant counts under every
 source that flagged them.
 }

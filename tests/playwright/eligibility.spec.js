@@ -27,6 +27,22 @@ const categories = (page, id) => page.evaluate((id) =>
   document.getElementById(id).gsmChart.data.labels.slice(), id);
 const listingRows = (page, id = 'elig-listing') => page.evaluate((id) => Reactable.getState(id).sortedData.length, id);
 const tabs = (page, section) => page.locator(`#${section} > .nav-pills a`).allTextContents();
+// Categories whose visible series sum to 0, i.e. empty bars on the category axis.
+const zeroCategories = (page) => page.evaluate((ids) => ids.flatMap((id) => {
+  const c = document.getElementById(id).gsmChart;
+  const h = c.data._spec_.orientation === 'horizontal';
+  const total = Object.fromEntries(c.data.labels.map((l) => [l, 0]));
+  c.data.datasets.forEach((d, i) => {
+    if (!c.isDatasetVisible(i)) return;
+    d.data.forEach((p) => { if ((h ? p.y : p.x) in total) total[h ? p.y : p.x] += Number(h ? p.x : p.y) || 0; });
+  });
+  return Object.keys(total).filter((k) => total[k] === 0).map((k) => `${id}: ${k}`);
+}), CHARTS);
+const toggleLegend = (page, id, label) => page.evaluate(({ id, label }) => {
+  const c = document.getElementById(id).gsmChart;
+  const item = c.legend.legendItems.find((it) => it.text === label);
+  c.legend.options.onClick.call(c.legend, { native: null }, item, c.legend);
+}, { id, label });
 const showButtons = (page, level) => page.locator(`#elig-${level}-status-filter button`).allTextContents();
 const DETAILS = ['Protocol Deviation details', 'EDC eCRF details', 'EDC Query details', 'EDC PD details'];
 
@@ -181,6 +197,31 @@ test.describe('pilot mode', () => {
     await expect(page.locator('h2', { hasText: 'Deep Dive' })).toHaveCount(0);
     const headers = await page.locator('#elig-listing .rt-th').allTextContents();
     expect(headers).toEqual(expect.arrayContaining(['Important PD', 'Non-important PD', 'EDC Query', 'EDC PD']));
+    expect(errors).toEqual([]);
+  });
+
+  test('bar charts show no zero-count category on load, after a site filter or a legend click (#371)', async ({ page }) => {
+    const errors = await open(page, PILOT);
+    expect(await zeroCategories(page)).toEqual([]);
+
+    const site = await page.evaluate(() => JSON.parse(document.getElementById('elig-data').textContent)
+      .status.site.find((r) => r.Status === 'Ineligible' && r.n === 1));
+    await clickBar(page, 'elig-site-status', site);
+    expect(await zeroCategories(page)).toEqual([]);
+    await clickBar(page, 'elig-site-status', site);
+
+    const sources = (await categories(page, 'elig-study-sources')).length;
+    await toggleLegend(page, 'elig-study-sources', 'Ineligible');
+    await toggleLegend(page, 'elig-study-criteria', 'Inclusion');
+    await toggleLegend(page, 'elig-country-status', 'No Eligibility Risk');
+    expect((await categories(page, 'elig-study-sources')).length).toBeLessThan(sources);
+    expect(await zeroCategories(page)).toEqual([]);
+    // The filter redraws the charts; the hidden series and their empty categories stay hidden.
+    await clickBar(page, 'elig-country-status', { GroupID: 'Japan', OuterGroupID: null });
+    expect(await zeroCategories(page)).toEqual([]);
+
+    await toggleLegend(page, 'elig-study-sources', 'Ineligible');
+    expect((await categories(page, 'elig-study-sources')).length).toBe(sources);
     expect(errors).toEqual([]);
   });
 

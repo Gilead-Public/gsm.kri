@@ -31,7 +31,7 @@
   }
 
   // Breakdown totals sit past the bar end, so the chart keeps room on the right.
-  // A scope with few criteria keeps its bars at the study chart's thickness
+  // A scope with few categories keeps its bars at the study chart's thickness
   // instead of stretching them over the fixed chart height.
   var PAD = 80;
   var MAX_BAR = 24;
@@ -43,7 +43,7 @@
         var opts = c.config.options;
         if (opts.layout && opts.layout.padding && opts.layout.padding.right === PAD) return;
         opts.layout = { padding: { right: PAD } };
-        if (kind === 'criteria') opts.datasets = { bar: { maxBarThickness: MAX_BAR } };
+        opts.datasets = { bar: { maxBarThickness: MAX_BAR } };
         c.update('none');
       });
     });
@@ -187,9 +187,9 @@
   function breakdownRows(kind, level) {
     var b = eligData()[kind];
     if (level === 'site' && state.site && state.country) {
-      return (b.site[state.country] || {})[state.site] || b.zero;
+      return (b.site[state.country] || {})[state.site] || [];
     }
-    if (level !== 'study' && state.country) return b.country[state.country] || b.zero;
+    if (level !== 'study' && state.country) return b.country[state.country] || [];
     return b.study;
   }
 
