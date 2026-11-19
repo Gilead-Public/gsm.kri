@@ -1,0 +1,62 @@
+meta:
+  Active: true
+  Type: Analysis
+  ID: ctq0003
+  GroupLevel: Site
+  Abbreviation: LTFU
+  Metric: Lost to Follow-Up Rate
+  Numerator: Lost to Follow-Up
+  Denominator: Enrolled Participants
+  GenerateRiskSignal: false
+spec:
+  Mapped_DISP:
+    subjid:
+      type: character
+    invid:
+      type: character
+    disp_enrolled:
+      type: character
+    disp_ltfu:
+      type: character
+steps:
+  - output: Temp_ENROLLED
+    name: workr::RunQuery
+    params:
+      df: Mapped_DISP
+      strQuery: "SELECT * FROM df WHERE disp_enrolled = 'Y'"
+  - output: Temp_LTFU
+    name: workr::RunQuery
+    params:
+      df: Mapped_DISP
+      strQuery: "SELECT * FROM df WHERE disp_ltfu = 'Y'"
+  - output: Analysis_Input
+    name: gsm.core::Input_Rate
+    params:
+      dfSubjects: Mapped_DISP
+      dfNumerator: Temp_LTFU
+      dfDenominator: Temp_ENROLLED
+      strSubjectCol: subjid
+      strGroupCol: invid
+      strGroupLevel: GroupLevel
+      strNumeratorMethod: Count
+      strDenominatorMethod: Count
+  - output: Analysis_Transformed
+    name: gsm.core::Transform_Rate
+    params:
+      dfInput: Analysis_Input
+  - output: Analysis_Unscored
+    name: workr::RunQuery
+    params:
+      df: Analysis_Transformed
+      strQuery: "SELECT *, CAST(NULL AS DOUBLE) AS Score, CAST(NULL AS INTEGER) AS Flag FROM df"
+  - output: Analysis_Summary
+    name: gsm.core::Summarize
+    params:
+      dfFlagged: Analysis_Unscored
+  - output: lAnalysis
+    name: list
+    params:
+      ID: ID
+      Analysis_Input: Analysis_Input
+      Analysis_Transformed: Analysis_Transformed
+      Analysis_Summary: Analysis_Summary

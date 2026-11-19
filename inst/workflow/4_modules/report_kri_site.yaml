@@ -39,16 +39,18 @@ spec:
     Metric:
       type: numeric
 steps:
+  # ctq* metrics are unflagged site-level inputs that CtQ Oversight Dashboard
+  # reports roll up to study level; they are not shown as site KRIs here.
   - output: Reporting_Results_Site
     name: workr::RunQuery
     params:
       df: Reporting_Results
-      strQuery: "SELECT * FROM df WHERE GroupLevel == 'Site'"
+      strQuery: "SELECT * FROM df WHERE GroupLevel == 'Site' AND MetricID NOT LIKE 'Analysis_ctq%'"
   - output: Reporting_Metrics_Site
     name: workr::RunQuery
     params:
       df: Reporting_Metrics
-      strQuery: "SELECT * FROM df WHERE GroupLevel == 'Site'"
+      strQuery: "SELECT * FROM df WHERE GroupLevel == 'Site' AND MetricID NOT LIKE 'Analysis_ctq%'"
   - output: lCharts_Site
     name: gsm.kri::MakeCharts
     params:
