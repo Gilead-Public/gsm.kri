@@ -6,7 +6,7 @@
 #' A widget that generates an interactive cross-study risk score table.
 #' Shows a summary view with click-to-expand details for each site.
 #'
-#' Two downloads, each as CSV or XLSX, export the current view: the visible
+#' Two XLSX downloads export the current view: the visible
 #' sites in their displayed order, with study-filtered badge values.
 #' * **Site summary**: one row per site with Site, Studies, Enrolled, Avg SRS
 #'   and Max SRS, as in the collapsed view.

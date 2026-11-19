@@ -143,14 +143,10 @@ function renderCrossStudyRiskScoreTable(el, input) {
     // displayed (study-filtered) badge values.
     const downloadButtonStyle = 'padding:4px 10px; background:#f5f5f5; color:#333; border:1px solid #ccc; border-radius:3px; cursor:pointer; font-size:13px;';
     html += '<div class="cross-study-downloads" style="margin:0 0 10px; display:flex; flex-wrap:wrap; align-items:center; gap:8px 16px; font-size:13px;">';
-    [['summary', 'Download site summary', 'One row per visible site: Site, Studies, Enrolled, Avg SRS, Max SRS'],
-        ['detail', 'Download site/study detail', 'One row per visible site, study and KRI, as in the expanded rows']]
+    [['summary', 'Download site summary (XLSX)', 'One row per visible site: Site, Studies, Enrolled, Avg SRS, Max SRS'],
+        ['detail', 'Download site/study detail (XLSX)', 'One row per visible site, study and KRI, as in the expanded rows']]
         .forEach(([table, label, title]) => {
-            html += `<span role="group" aria-label="${label}" title="${title}" style="display:inline-flex; align-items:center; gap:6px;">⬇ ${label}:`;
-            ['CSV', 'XLSX'].forEach(format => {
-                html += `<button type="button" data-export="${table}" data-format="${format.toLowerCase()}" aria-label="${label} as ${format}" style="${downloadButtonStyle}">${format}</button>`;
-            });
-            html += '</span>';
+            html += `<button type="button" data-export="${table}" title="${title}" style="${downloadButtonStyle}">⬇ ${label}</button>`;
         });
     html += '</div>';
     if (showActionControls) {
@@ -400,13 +396,9 @@ function renderCrossStudyRiskScoreTable(el, input) {
             const summary = button.dataset.export === 'summary';
             const rows = summary ? crossStudySummaryRows(el) : crossStudyDetailRows(el, exportContext);
             const name = summary ? 'cross-study-site-summary' : 'cross-study-site-study-detail';
-            if (button.dataset.format === 'xlsx') {
-                downloadBlob(new Blob([makeXlsx(rows, summary ? 'Site Summary' : 'Site Study Detail')], {
-                    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-                }), `${name}.xlsx`);
-            } else {
-                downloadBlob(new Blob(['﻿', makeCsv(rows)], { type: 'text/csv;charset=utf-8' }), `${name}.csv`);
-            }
+            downloadBlob(new Blob([makeXlsx(rows, summary ? 'Site Summary' : 'Site Study Detail')], {
+                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            }), `${name}.xlsx`);
         });
     });
 }
@@ -501,18 +493,6 @@ function crossStudyDetailRows(el, ctx) {
         });
     });
     return rows;
-}
-
-function makeCsv(rows) {
-    const cell = value => {
-        if (value === null || value === undefined) return '';
-        if (typeof value === 'number') return String(value);
-        let text = String(value);
-        // Keep spreadsheet apps from evaluating text as a formula.
-        if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
-        return `"${text.replace(/"/g, '""')}"`;
-    };
-    return rows.map(row => row.map(cell).join(',')).join('\r\n') + '\r\n';
 }
 
 function downloadBlob(blob, filename) {
