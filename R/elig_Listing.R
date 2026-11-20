@@ -118,7 +118,8 @@ elig_ExactFilter <- function() {
     "function (rows, columnId, filterValue) {
       var v = String(filterValue).toLowerCase();
       var exact = rows.filter(function (r) { return String(r.values[columnId]).toLowerCase() === v; });
-      return exact.length ? exact : rows.filter(function (r) {
+      var picked = (window.eligChartFilter || {})[columnId];
+      return exact.length || filterValue === picked ? exact : rows.filter(function (r) {
         return String(r.values[columnId]).toLowerCase().indexOf(v) >= 0;
       });
     }"

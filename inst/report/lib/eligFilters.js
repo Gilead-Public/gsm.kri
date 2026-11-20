@@ -195,6 +195,9 @@
 
   function syncListings() {
     if (!window.Reactable) return;
+    // elig_ExactFilter() matches these values exactly, so a pick never shows
+    // another group whose ID contains it.
+    window.eligChartFilter = { Country: state.country, Site: state.site };
     LISTINGS.forEach(function (id) {
       if (!document.getElementById(id)) return;
       try {

@@ -129,6 +129,18 @@ test.describe('basic mode', () => {
     expect((await categories(page, 'elig-site-status')).length).toBe(allSites);
   });
 
+  test('a chart pick matches the listing exactly; a typed filter still matches part of the ID (#371)', async ({ page }) => {
+    await open(page, BASIC);
+    const row = await page.evaluate(() => Reactable.getState('elig-listing').sortedData[0]);
+    const part = row.Site.slice(0, 4);
+    await clickBar(page, 'elig-site-status', { GroupID: part, OuterGroupID: row.Country });
+    expect(await listingRows(page)).toBe(0);
+
+    await page.click('#elig-chip-site button');
+    await page.locator('#elig-listing input[aria-label="Filter Site"]').fill(part);
+    await expect.poll(() => listingRows(page)).toBeGreaterThan(0);
+  });
+
   test('the criteria map shows no empty column (#371)', async ({ page }) => {
     await open(page, BASIC);
     await clickBar(page, 'elig-country-status', { GroupID: 'UK', OuterGroupID: null });
