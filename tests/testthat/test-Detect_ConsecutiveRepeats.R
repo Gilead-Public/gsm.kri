@@ -230,8 +230,6 @@ test_that("fixture date tie is resolved by visit, not input order (#307)", {
   }
 })
 
-# MarkConsecutiveRepeats(): the shared windowing engine (#342)
-
 test_that("worked examples mark every value inside a repeat window (#342)", {
   df <- rbind(
     make_vs(c(10, 10, 5, 3, 10), "A"),
@@ -359,7 +357,7 @@ test_that("measure filtering applies to long data (#342)", {
   expect_true(all(res$.rep_in_window))
 })
 
-test_that("records with a missing subject are dropped with a warning, not a crash", {
+test_that("records with a missing subject are dropped with a warning, not a crash (#342)", {
   df <- rbind(
     make_vs(c(1, 1, 1), "A"),
     make_vs(c(2, 2, 2, 2), NA),

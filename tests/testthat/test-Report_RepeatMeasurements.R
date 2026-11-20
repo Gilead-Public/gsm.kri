@@ -1,17 +1,3 @@
-# Each render takes several seconds, so share the default render across tests.
-rep_default_html <- local({
-  html <- NULL
-  function() {
-    if (is.null(html)) {
-      html <<- render_rm(
-        dfResults = rep_FixtureResults(),
-        dfMetrics = rep_FixtureMetrics()
-      )
-    }
-    html
-  }
-})
-
 test_that("Report_RepeatMeasurements renders the filter strip and study overview (#344)", {
   html <- rep_default_html()
   # The header card holds the title, outside the contents list, and the study facts.

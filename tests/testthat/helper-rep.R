@@ -180,6 +180,21 @@ render_rm <- function(lListings = rep_Fixture(), ...) {
   paste(readLines(out, warn = FALSE), collapse = "\n")
 }
 
+# Each render takes several seconds, so the default render is cached on first
+# use and shared across tests.
+rep_default_html <- local({
+  html <- NULL
+  function() {
+    if (is.null(html)) {
+      html <<- render_rm(
+        dfResults = rep_FixtureResults(),
+        dfMetrics = rep_FixtureMetrics()
+      )
+    }
+    html
+  }
+})
+
 rep_DataBlock <- function(html) {
   jsonlite::fromJSON(sub(
     '.*<script type="application/json" id="rm-data">(.*?)</script>.*',
