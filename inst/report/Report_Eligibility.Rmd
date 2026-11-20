@@ -395,15 +395,6 @@ cat("\n> Sites with at least one criterion case, most affected first; columns ar
 
 ## Ineligibility Listing
 
-```{r listing-note, results='asis'}
-cat(sprintf(
-  '<p class="elig-note">%s participants (%d). Expand a row to see the records behind the status, one table per source. Download CSV adds one details column per source. Long text is cut; hover for the full value.%s</p>',
-  if (bPilot) "Ineligible and Potentially Ineligible" else "Ineligible",
-  nrow(dfListing),
-  paste(sprintf(" &dagger; %s is N/A: the source is not delivered for this study.", vNotDelivered), collapse = "")
-))
-```
-
 ```{r listing}
 htmltools::tagList(
   elig_Listing(dfListing, dfPartRecords),

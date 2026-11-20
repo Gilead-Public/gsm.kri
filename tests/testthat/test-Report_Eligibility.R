@@ -54,7 +54,7 @@ test_that("pilot mode degrades without site groups, status history, records or E
   expect_true(grepl("Potentially Ineligible", html, fixed = TRUE))
   expect_false(grepl("Status over Time", html, fixed = TRUE))
   expect_false(grepl("Deep Dive Listing", html, fixed = TRUE))
-  expect_true(grepl("EDC PD is N/A", html, fixed = TRUE))
+  expect_true(grepl("EDC PD is not", html, fixed = TRUE))
 })
 
 test_that("pilot mode shows EDC Query as N/A when the source is not delivered (#371)", {
@@ -62,8 +62,8 @@ test_that("pilot mode shows EDC Query as N/A when the source is not delivered (#
   df$edc_query <- NA_character_
   html <- render_eligibility(elig_listings(df), strMode = "pilot")
   expect_true(grepl("Potentially Ineligible", html, fixed = TRUE))
-  expect_true(grepl("EDC Query is N/A", html, fixed = TRUE))
-  expect_false(grepl("EDC PD is N/A", html, fixed = TRUE))
+  expect_true(grepl("EDC Query is not", html, fixed = TRUE))
+  expect_false(grepl("EDC PD is not", html, fixed = TRUE))
 })
 
 test_that("pilot mode without EDC source data warns the caller and renders the basic report (#371)", {

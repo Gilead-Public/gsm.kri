@@ -272,14 +272,14 @@ test.describe('pilot mode', () => {
 });
 
 test.describe('pilot mode, EDC Query not delivered', () => {
-  test('shows EDC Query as N/A with a footnote and no source bar (#371)', async ({ page }) => {
+  test('shows EDC Query as N/A and no source bar (#371)', async ({ page }) => {
     const errors = await open(page, PILOT_NOQUERY);
     expect(await datasetLabels(page, 'elig-site-status')).toEqual(['Ineligible', 'Potentially Ineligible', 'No Eligibility Risk']);
     expect(await categories(page, 'elig-study-sources')).not.toContain('EDC Query');
     const headers = await page.locator('#elig-listing .rt-th').allTextContents();
-    expect(headers).toContain('EDC Query \u2020');
+    expect(headers).toContain('EDC Query');
     expect(headers).toContain('EDC PD');
-    await expect(page.locator('.elig-note', { hasText: 'EDC Query is N/A' })).toHaveCount(1);
+    await expect(page.locator('#elig-listing .rt-td', { hasText: 'N/A' }).first()).toBeVisible();
     expect(errors).toEqual([]);
   });
 });

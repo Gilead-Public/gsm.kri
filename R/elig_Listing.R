@@ -235,10 +235,7 @@ elig_Listing <- function(dfListing, dfPartRecords, strID = "elig-listing") {
       )
     ),
     stats::setNames(lapply(vFlags, function(f) {
-      reactable::colDef(
-        align = "center", minWidth = 90, filterMethod = elig_ExactFilter(),
-        header = if (nrow(dfListing) > 0 && all(dfListing[[f]] == "N/A")) paste(f, "\u2020") else f
-      )
+      reactable::colDef(align = "center", minWidth = 90, filterMethod = elig_ExactFilter())
     }), vFlags),
     stats::setNames(lapply(vText, function(col) {
       reactable::colDef(minWidth = 160, cell = elig_TruncatedCell)
