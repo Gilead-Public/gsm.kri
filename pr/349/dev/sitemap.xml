@@ -9,13 +9,11 @@
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/examples/Cookbook_AdverseEventKRI.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/examples/Cookbook_AdverseEventWorkflow.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/examples/Cookbook_ReportingWorkflow.html</loc></url>
-<url><loc>https://gilead-public.github.io/gsm.kri/dev/examples/Example_CountryReport.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/examples/Example_CrossStudySRS.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/examples/Example_Eligibility.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/examples/Example_IPMonitoring.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/examples/Example_PrematureDeaths.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/examples/Example_RepeatMeasurements.html</loc></url>
-<url><loc>https://gilead-public.github.io/gsm.kri/dev/examples/Example_SiteReport.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/index.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/news/index.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/CalculateRiskScore.html</loc></url>
@@ -56,7 +54,6 @@
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/add_Groups_metadata.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/cols_label_month.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/gsm.kri-package.html</loc></url>
-<url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/gsm_gt.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/gt-shared.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/gt_style.html</loc></url>
 <url><loc>https://gilead-public.github.io/gsm.kri/dev/reference/index.html</loc></url>
