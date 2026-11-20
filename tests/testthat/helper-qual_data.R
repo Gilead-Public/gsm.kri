@@ -17,29 +17,31 @@ if (requireNamespace("gsm.reporting", quietly = TRUE)) {
 set.seed(123)
 
 ## Declare all the data
-lSource <- gsm.core::lSource
+# Not `lSource`: gsm.core now exports it as a read-only active binding, which
+# load_all() copies into this environment via import(gsm.core).
+lRawSource <- gsm.core::lSource
 
 # Step 0 - Data Ingestion - standardize tables/columns names
 lData <- list(
-  Raw_SUBJ = lSource$Raw_SUBJ,
-  Raw_AE = lSource$Raw_AE,
-  Raw_PD = lSource$Raw_PD %>%
+  Raw_SUBJ = lRawSource$Raw_SUBJ,
+  Raw_AE = lRawSource$Raw_AE,
+  Raw_PD = lRawSource$Raw_PD %>%
     rename(subjid = subjectenrollmentnumber) %>%
     rename(dvdecod = crocategory) %>%
     rename(dvterm = description) %>%
     rename(dvdtm = deviationdate),
-  Raw_LB = lSource$Raw_LB,
-  Raw_STUDCOMP = lSource$Raw_STUDCOMP,
-  Raw_SDRGCOMP = lSource$Raw_SDRGCOMP %>%
+  Raw_LB = lRawSource$Raw_LB,
+  Raw_STUDCOMP = lRawSource$Raw_STUDCOMP,
+  Raw_SDRGCOMP = lRawSource$Raw_SDRGCOMP %>%
     mutate(phase = as.character(phase)),
-  Raw_DATACHG = lSource$Raw_DATACHG %>%
+  Raw_DATACHG = lRawSource$Raw_DATACHG %>%
     rename(subject_nsv = subjectname),
-  Raw_DATAENT = lSource$Raw_DATAENT %>%
+  Raw_DATAENT = lRawSource$Raw_DATAENT %>%
     rename(subject_nsv = subjectname),
-  Raw_QUERY = lSource$Raw_QUERY %>%
+  Raw_QUERY = lRawSource$Raw_QUERY %>%
     rename(subject_nsv = subjectname),
-  Raw_ENROLL = lSource$Raw_ENROLL,
-  Raw_SITE = lSource$Raw_SITE %>%
+  Raw_ENROLL = lRawSource$Raw_ENROLL,
+  Raw_SITE = lRawSource$Raw_SITE %>%
     rename(studyid = protocol) %>%
     rename(invid = pi_number) %>%
     rename(InvestigatorFirstName = pi_first_name) %>%
@@ -47,18 +49,18 @@ lData <- list(
     rename(City = city) %>%
     rename(State = state) %>%
     rename(Country = country),
-  Raw_STUDY = lSource$Raw_STUDY %>%
+  Raw_STUDY = lRawSource$Raw_STUDY %>%
     rename(studyid = protocol_number),
-  Raw_PK = lSource$Raw_PK %>%
+  Raw_PK = lRawSource$Raw_PK %>%
     rename(visit = foldername),
-  Raw_IE = lSource$Raw_IE,
-  Raw_VISIT = lSource$Raw_VISIT %>%
+  Raw_IE = lRawSource$Raw_IE,
+  Raw_VISIT = lRawSource$Raw_VISIT %>%
     rename(visit = foldername),
-  Raw_OverallResponse = lSource$Raw_OverallResponse %>%
+  Raw_OverallResponse = lRawSource$Raw_OverallResponse %>%
     rename(response_folder = foldername),
-  Raw_Death = lSource$Raw_Death,
-  Raw_Randomization = lSource$Raw_Randomization,
-  Raw_VS = lSource$Raw_VS %>%
+  Raw_Death = lRawSource$Raw_Death,
+  Raw_Randomization = lRawSource$Raw_Randomization,
+  Raw_VS = lRawSource$Raw_VS %>%
     rename(studyid = project) %>%
     rename(visit = foldername) %>%
     rename(bsa = bsaentry)
@@ -88,7 +90,7 @@ GetDefaultKRIPath <- function() {
 }
 
 ## Get Mapped data
-domains <- c(gsub("Raw_", "", names(lSource)), "COUNTRY", "EXCLUSION")
+domains <- c(gsub("Raw_", "", names(lRawSource)), "COUNTRY", "EXCLUSION")
 mappings_wf <- workr::MakeWorkflowList(
   strNames = domains,
   strPath = "workflow/1_mappings",
