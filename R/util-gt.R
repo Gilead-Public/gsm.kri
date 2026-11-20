@@ -22,7 +22,9 @@ NULL
 #' @inherit gt-shared return
 #' @keywords internal
 gt_style <- function(data) {
-  rlang::check_installed("gt")
+  if (!inherits(data, "gt_tbl")) {
+    data <- gt::gt(data)
+  }
   gt::opt_vertical_padding(data, 0.5)
 }
 
