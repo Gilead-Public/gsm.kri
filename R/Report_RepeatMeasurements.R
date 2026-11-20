@@ -103,7 +103,7 @@ Report_RepeatMeasurements <- function(
     strOutputFile <- "Report_RepeatMeasurements.html"
   }
 
-  gsm.kri::RenderRmd(
+  RenderRmd(
     strInputPath = strInputPath,
     strOutputFile = strOutputFile,
     strOutputDir = strOutputDir,

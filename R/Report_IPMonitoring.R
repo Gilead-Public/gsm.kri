@@ -51,7 +51,7 @@ Report_IPMonitoring <- function(
     strOutputFile <- "Report_IPMonitoring.html"
   }
 
-  gsm.kri::RenderRmd(
+  RenderRmd(
     strInputPath = strInputPath,
     strOutputFile = strOutputFile,
     strOutputDir = strOutputDir,

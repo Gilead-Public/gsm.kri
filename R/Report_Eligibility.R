@@ -91,7 +91,7 @@ Report_Eligibility <- function(
     strOutputFile <- "Report_Eligibility.html"
   }
 
-  gsm.kri::RenderRmd(
+  RenderRmd(
     strInputPath = strInputPath,
     strOutputFile = strOutputFile,
     strOutputDir = strOutputDir,

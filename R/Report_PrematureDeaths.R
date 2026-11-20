@@ -57,7 +57,7 @@ Report_PrematureDeaths <- function(
     strOutputFile <- "Report_PrematureDeaths.html"
   }
 
-  gsm.kri::RenderRmd(
+  RenderRmd(
     strInputPath = strInputPath,
     strOutputFile = strOutputFile,
     strOutputDir = strOutputDir,
