@@ -13,9 +13,9 @@
   no participants, also after a legend click. Studies without the new
   data keep two statuses, computed as before. Studies that deliver the
   optional pilot data (an `edc_query` column on `Mapped_EXCLUSION`,
-  `lListings$IE_records` and the `Analysis_elig0001` history metric)
-  also get a Potentially Ineligible status, records from those sources
-  in the listing and a Status over Time chart; see the data contract in
+  `lListings$IE_records` and a status history saved every snapshot) also
+  get a Potentially Ineligible status, records from those sources in the
+  listing and a Status over Time chart; see the data contract in
   [`?Report_Eligibility`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_Eligibility.md).
   The report no longer uses gsm.qtl and now imports reactable
   ([\#371](https://github.com/Gilead-Public/gsm.kri/issues/371),

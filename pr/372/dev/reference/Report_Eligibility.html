@@ -92,7 +92,8 @@ views, the Ineligibility listing and the eligibility rules.</p>
 <span>  strOutputDir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/getwd.html" class="external-link">getwd</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  strOutputFile <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  strInputPath <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"report"</span>, <span class="st">"Report_Eligibility.Rmd"</span>, package <span class="op">=</span> <span class="st">"gsm.kri"</span><span class="op">)</span>,</span>
-<span>  strMode <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"basic"</span>, <span class="st">"pilot"</span><span class="op">)</span></span>
+<span>  strMode <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"basic"</span>, <span class="st">"pilot"</span><span class="op">)</span>,</span>
+<span>  dfStatusHistory <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -102,7 +103,7 @@ views, the Ineligibility listing and the eligibility rules.</p>
 
 <dl><dt id="arg-dfresults">dfResults<a class="anchor" aria-label="anchor" href="#arg-dfresults"></a></dt>
 <dd><p>`data.frame` Analysis results: the study-level eligibility
-rate (qtl0001) and, optionally, `Analysis_elig0001`.</p></dd>
+rate (qtl0001).</p></dd>
 
 
 <dt id="arg-dfmetrics">dfMetrics<a class="anchor" aria-label="anchor" href="#arg-dfmetrics"></a></dt>
@@ -135,6 +136,11 @@ the report will be named `Report_Eligibility.html`.</p></dd>
 <dt id="arg-strmode">strMode<a class="anchor" aria-label="anchor" href="#arg-strmode"></a></dt>
 <dd><p>`character` `"basic"` (default) or `"pilot"`.</p></dd>
 
+
+<dt id="arg-dfstatushistory">dfStatusHistory<a class="anchor" aria-label="anchor" href="#arg-dfstatushistory"></a></dt>
+<dd><p>`data.frame` Status history (level 3). Default:
+`NULL`.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -157,9 +163,9 @@ the report will be named `Report_Eligibility.html`.</p></dd>
    `"EDC Query"`, `"EDC PD"`), `record_id`, `record_date` and the source's
    key fields as further columns. Fills the listing's expanded rows and the
    CSV details columns (pilot mode).
-3. **History metric**: `Analysis_elig0001` rows in `dfResults`, the
-   study-level rate (Ineligible + Potentially Ineligible) / enrolled. Adds
-   the Status over Time tab (pilot mode).</p>
+3. **Status history**: `dfStatusHistory`, the rows of
+   [elig_StatusCounts()] that the study saves every snapshot, with
+   `SnapshotDate`. Adds the Status over Time tab (pilot mode).</p>
 <p>Site-level rows of `dfGroups` (`InvestigatorFirstName`,
 `InvestigatorLastName`) fill the listing's Investigator Name; with
 Study-level groups only, the column is blank.</p>
