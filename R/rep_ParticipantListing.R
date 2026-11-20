@@ -1,18 +1,4 @@
-#' Participant Listing data for the Repeat Measurements report
-#'
-#' @description
-#' `r lifecycle::badge("experimental")`
-#'
-#' One tile per participant and measure, with the three tile labels the
-#' report switches between. [Widget_RepeatMeasurementsTiles()] draws them.
-#'
-#' @param lClass `list` Output of [rep_Classify()].
-#'
-#' @return A `tibble` with `subjid`, `invid`, `country`, `vital`, `column`,
-#'   `flag`, `severity`, `Numerator`, `Denominator`, `rate`, `n`,
-#'   `label_rate`, `label_nd` and `label_both`, sorted by the participant's
-#'   worst flag, then most repeating windows, then participant.
-#' @keywords internal
+#' @rdname Report_RepeatMeasurements
 #' @export
 rep_ParticipantTiles <- function(lClass) {
   dfVitals <- lClass$vitals

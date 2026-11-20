@@ -1,28 +1,4 @@
-#' Site flags for the Repeat Measurements report
-#'
-#' @description
-#' `r lifecycle::badge("experimental")`
-#'
-#' One flag per site and measure. A KRI measure with `kri0020a`–`f` site results
-#' takes the latest KRI flag (`source = "KRI"`). Every other
-#' measure (height, BSA, paired BP, or a KRI measure without results) is flagged
-#' in the report with the `kri0020` workflow steps (`source = "report"`):
-#' [gsm.core::Input_Rate()], [gsm.core::Transform_Rate()],
-#' [gsm.core::Analyze_Identity()] and [gsm.core::Flag()] on the participants'
-#' windows, with the site rule of [rep_SiteRule()]. A site is not evaluated
-#' (`flag` `NA`) without windows, below the accrual threshold or without a
-#' KRI result.
-#'
-#' @param lClass `list` Output of [rep_Classify()].
-#' @param dfResults `data.frame` Reporting results. Optional.
-#' @param dfMetrics `data.frame` Reporting metrics. Optional.
-#'
-#' @return A `tibble` with `vital`, `country`, `invid`, `Numerator`,
-#'   `Denominator`, `flag` (`0` Green, `1` Amber, `2` Red, `NA` not evaluated)
-#'   and `source`, one row per measure and site with enrolled participants. A
-#'   site whose participants have more than one country lists them in
-#'   `country`, comma-separated.
-#' @keywords internal
+#' @rdname Report_RepeatMeasurements
 #' @export
 rep_SiteFlagRows <- function(lClass, dfResults = NULL, dfMetrics = NULL) {
   lRule <- rep_SiteRule(dfMetrics)
@@ -95,19 +71,7 @@ rep_SiteFlagPipeline <- function(dfParticipants, lRule) {
   dfAnalyzed[c("GroupID", "Flag")]
 }
 
-#' Site flag rule for the Repeat Measurements report
-#'
-#' @description
-#' `r lifecycle::badge("experimental")`
-#'
-#' The `kri0020` / `cou0020` site rule: Amber and Red at the metric `Threshold` (default
-#' 20\% and 30\% of windows repeat) for sites with at least the metric
-#' `AccrualThreshold` windows (default 3).
-#'
-#' @param dfMetrics `data.frame` Reporting metrics. Optional.
-#'
-#' @return A `list` with `thresholds` (Amber, Red; fractions) and `accrual`.
-#' @keywords internal
+#' @rdname Report_RepeatMeasurements
 #' @export
 rep_SiteRule <- function(dfMetrics = NULL) {
   nAccrual <- rep_MetricMeta(dfMetrics, "AccrualThreshold")

@@ -1,22 +1,4 @@
-#' Measure listing rows for the Repeat Measurements report
-#'
-#' @description
-#' `r lifecycle::badge("experimental")`
-#'
-#' The measure listing: one row per participant and measure, for
-#' every measure in `Mapped_VS`, with the measurements in order. `values` and
-#' `in_repeat_window` are space-separated and aligned: `"72 72 72 80"` and
-#' `"1 1 1 0"`; `visits` is aligned and `|`-separated: the measurement's
-#' position, visit and date, such as `"#1 · V1 · 2024-01-01"`.
-#'
-#' @param lClass `list` Output of [rep_Classify()].
-#'
-#' @return A `tibble` in display order (worst flag, then most repeat
-#'   windows) with `country`, `invid`, `subjid`, `label`, `metric`,
-#'   `n_unique` (distinct values), `flag`, `measured`, `Numerator`,
-#'   `Denominator`, `rate`, `values`, `in_repeat_window`, `visits`, and the
-#'   hidden `vital` and `has_repeat` columns.
-#' @keywords internal
+#' @rdname Report_RepeatMeasurements
 #' @export
 rep_VitalRows <- function(lClass) {
   dfVitals <- lClass$vitals
@@ -73,31 +55,7 @@ rep_VitalRows <- function(lClass) {
     dplyr::select(-"severity")
 }
 
-#' Measure listing table for the Repeat Measurements report
-#'
-#' @description
-#' `r lifecycle::badge("experimental")`
-#'
-#' The `rm-vitals` `DT` table: one row per participant and measure with the
-#' measure name (metric ID on hover, `*` for a measure with no KRI), the
-#' distinct / non-missing values, a single "Flag and rate" column
-#' (measured, N and D on hover; sorts by flag, then rate) and the
-#' measurements in order with values in a repeating window highlighted and each
-#' value's position, visit and date on hover.
-#' The report's filter script toggles the numbers, filters the named `vital`,
-#' `country`, `invid`, `subjid` and `has_repeat` columns, and turns a row
-#' click into the participant filter. The CSV holds the rows the filters show
-#' with every column, including the metric, flag, measured, N, D, rate and
-#' visits. The filter script also rewrites the flag column when the
-#' reviewer changes the flag rule.
-#'
-#' @param dfVitalRows `data.frame` Output of [rep_VitalRows()].
-#' @param nWindowLength `numeric` Window length, shown in the measurements
-#'   header. Optional.
-#' @param bExport `logical` Show the CSV button.
-#'
-#' @return A `DT` htmlwidget.
-#' @keywords internal
+#' @rdname Report_RepeatMeasurements
 #' @export
 rep_VitalsListing <- function(
   dfVitalRows,

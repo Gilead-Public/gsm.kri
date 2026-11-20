@@ -1,20 +1,4 @@
-#' Vital sign measures known to the Repeat Measurements report
-#'
-#' @description
-#' `r lifecycle::badge("experimental")`
-#'
-#' The six measures scored by `kri0020a`–`f` / `cou0020a`–`f`, paired blood
-#' pressure, then height and BSA. Every measure is flagged the same way; only
-#' the six have a KRI.
-#'
-#' Paired blood pressure (`bp`) is report-only: one value per visit record
-#' with both systolic and diastolic BP, so a window repeats only when both
-#' repeat over the same visits. It has no metric and does not reconcile with
-#' `kri0020c` / `kri0020d`.
-#'
-#' @return A `tibble` with `vital` (the `Mapped_VS` column), `label`, `short`
-#'   and `metric` (the site workflow ID; `NA` without a KRI).
-#' @keywords internal
+#' @rdname Report_RepeatMeasurements
 #' @export
 rep_Vitals <- function() {
   tibble::tibble(
@@ -74,33 +58,7 @@ rep_FlagSeverity <- function(vFlag) {
   unname(vSeverity[as.character(vFlag)])
 }
 
-#' Repeat Measurements participant flag thresholds
-#'
-#' @description
-#' `r lifecycle::badge("experimental")`
-#'
-#' Amber and Red thresholds for a participant flag rule. Count thresholds
-#' default to 2 and 3 repeating windows. Rate thresholds default to the
-#' `Threshold` of the `kri0020` / `cou0020` metrics, or 0.2 and 0.3 without
-#' them.
-#'
-#' The rate defaults are the site-level KRI thresholds reused at the
-#' participant grain, so a participant is flagged at the same share of
-#' repeating windows as a site. That is a starting point rather than a
-#' participant-level calibration: a participant has far fewer windows than a
-#' site, so one repeating window moves the rate a lot. Pass
-#' `vFlagThresholds` (or `vFlagThresholds` to [Report_RepeatMeasurements()],
-#' or the report's Settings panel) to use participant-specific thresholds.
-#'
-#' @param strFlagRule `character` `"count"` (repeating windows) or `"rate"`
-#'   (share of windows that repeat).
-#' @param vFlagThresholds `numeric` Amber then Red threshold, or `NULL` for
-#'   the defaults. Rates are fractions.
-#' @param dfMetrics `data.frame` Metric metadata with `ID` and `Threshold`.
-#'
-#' @return A `numeric` vector: Amber, then Red.
-#'
-#' @keywords internal
+#' @rdname Report_RepeatMeasurements
 #' @export
 rep_FlagThresholds <- function(
   strFlagRule = c("count", "rate"),

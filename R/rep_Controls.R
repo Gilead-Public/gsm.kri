@@ -1,23 +1,4 @@
-#' Header card of the Repeat Measurements report
-#'
-#' @description
-#' `r lifecycle::badge("experimental")`
-#'
-#' The card at the top of the report: an optional context line, the title, the
-#' study, snapshot, window length and participant flag rule, and the
-#' collapsible "How to read" notes. `rmFilters.js` rewrites the rule text
-#' (`.rm-rule-text`) when the reviewer changes the settings.
-#'
-#' @param lClass `list` Output of [rep_Classify()].
-#' @param strStudy `character` Study ID(s) shown in the header, comma-separated.
-#'   Missing and empty IDs are dropped; the Study pill is omitted when none
-#'   remain.
-#' @param dSnapshotDate `Date` Snapshot date. Optional; omitted when `NULL`.
-#' @param strContext `character` HTML for a line above the title, such as a
-#'   link back to the page that embeds the report. Omitted when empty.
-#'
-#' @return An `htmltools` tag.
-#' @keywords internal
+#' @rdname Report_RepeatMeasurements
 #' @export
 rep_Header <- function(
   lClass,
@@ -78,27 +59,7 @@ rep_Header <- function(
   )
 }
 
-#' Segmented control for the Repeat Measurements report
-#'
-#' @description
-#' `r lifecycle::badge("experimental")`
-#'
-#' A group of toggle buttons, one per value, with `aria-pressed` on the
-#' selected one. `rmFilters.js` finds the buttons by their data attribute.
-#'
-#' @param strLabel `character` Accessible label of the group.
-#' @param vValues `character` Button labels, named by value.
-#' @param strSelected `character` The value pressed initially.
-#' @param strAttr `character` Data attribute the script reads, such as
-#'   `"data-rm-ov"`.
-#' @param strGroup `character` Optional. When given, every button sets
-#'   `strAttr` to `strGroup` and carries its value in `value`; otherwise
-#'   `strAttr` holds the value.
-#' @param strIdPrefix `character` Optional prefix of each button's `id`,
-#'   followed by its value.
-#'
-#' @return An `htmltools` tag.
-#' @keywords internal
+#' @rdname Report_RepeatMeasurements
 #' @export
 rep_Seg <- function(
   strLabel,
@@ -132,24 +93,7 @@ rep_Seg <- function(
   )
 }
 
-#' Filter strip of the Repeat Measurements report
-#'
-#' @description
-#' `r lifecycle::badge("experimental")`
-#'
-#' The sticky bar under the header: the measure picker, the country, site and
-#' participant filter chips, Reset filters, and the Settings popover, which
-#' `rmFilters.js` fills from the settings in `#rm-data`.
-#'
-#' @param dfVitals `data.frame` The measures, `vitals` of [rep_Classify()]. An
-#'   optional logical `kri` column limits the KRI badge to measures whose KRI is
-#'   in the study's reporting results; without it, every measure with a
-#'   `metric` gets the badge.
-#' @param lSettings `list` The initial settings: `rule`, `thresholds`,
-#'   `minWindows` and `bp`.
-#'
-#' @return An `htmltools` tag.
-#' @keywords internal
+#' @rdname Report_RepeatMeasurements
 #' @export
 rep_Toolbar <- function(dfVitals, lSettings) {
   # htmltools, not raw HTML, so pandoc does not wrap the controls in a <p>.

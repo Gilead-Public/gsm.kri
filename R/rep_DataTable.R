@@ -1,24 +1,4 @@
-#' Data table rows for the Repeat Measurements report
-#'
-#' @description
-#' `r lifecycle::badge("experimental")`
-#'
-#' The Wide data table: one row per `Mapped_VS` record with one column per
-#' measure (blank when not measured) and a `<vital>_in_repeat_window` column
-#' (`"Y"`, `"N"` or `""`) per measure. `repeat_vitals` lists the
-#' participant's measures with at least one repeating window. Participants
-#' follow the Participant listing order (worst flag, then most repeating
-#' windows, then participant); each participant's records are in measurement
-#' order (date, visit, record). The report builds the Long table in the
-#' browser from these rows, so the data are embedded once.
-#'
-#' @param lClass `list` Output of [rep_Classify()].
-#'
-#' @return A `tibble` with `country`, `invid`, `subjid`, `visit`, `vs_dt`,
-#'   `performed` (`"Y"`/`"N"`), one column per measure, one
-#'   `<vital>_in_repeat_window` column per measure and the hidden
-#'   `repeat_vitals` column.
-#' @keywords internal
+#' @rdname Report_RepeatMeasurements
 #' @export
 rep_DataTableWide <- function(lClass) {
   vVitals <- lClass$vitals$vital
@@ -91,29 +71,7 @@ rep_DataTableWide <- function(lClass) {
   ))
 }
 
-#' Data table for the Repeat Measurements report
-#'
-#' @description
-#' `r lifecycle::badge("experimental")`
-#'
-#' The Wide `DT` table of the Data table, `rm-dt-wide`. Values in a repeating
-#' window are dark red. To fit without horizontal scrolling, it abbreviates
-#' the measure headers (name and metric on hover), shows the country on hover
-#' over the site and greys the records not performed; the CSV keeps the full
-#' headers and the country and performed columns. Every column is named so
-#' the report's filter script can find it: the script filters `country`,
-#' `invid`, `subjid` and `repeat_vitals`, hides the measure columns that are
-#' not selected, can hide records with no value in any shown measure, turns a
-#' row click into the participant filter and builds the Long table from these
-#' rows. The CSV holds the rows the filters show, with
-#' the shown measures and their `<vital>_in_repeat_window` columns.
-#'
-#' @param dfWide `data.frame` Output of [rep_DataTableWide()].
-#' @param dfVitals `data.frame` `vitals` from [rep_Classify()].
-#' @param bExport `logical` Show the CSV button.
-#'
-#' @return A `DT` htmlwidget.
-#' @keywords internal
+#' @rdname Report_RepeatMeasurements
 #' @export
 rep_DataTable <- function(dfWide, dfVitals, bExport = TRUE) {
   idx <- function(df, col) match(col, names(df)) - 1L
