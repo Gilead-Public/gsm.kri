@@ -68,3 +68,12 @@ test_that("HTML output is generated for valid changed flags (#75)", {
   expect_true(any(grepl("G1", output)))
   expect_true(any(grepl("amber", output)))
 })
+
+test_that("output is a raw HTML block without TeX math", {
+  # Pandoc's markdown reader stalls on large inline HTML lists (pkgdown build).
+  output <- paste(capture.output(Report_FlagChange(dfResults)), collapse = "\n")
+  expect_match(output, "```{=html}", fixed = TRUE)
+  expect_match(output, "\n```\n?$")
+  expect_match(output, "&Delta; Score", fixed = TRUE)
+  expect_no_match(output, "\\(\\Delta\\)", fixed = TRUE)
+})

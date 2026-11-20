@@ -73,6 +73,10 @@ Report_FlagChange <- function(dfResults) {
     dplyr::arrange(dplyr::desc(abs(.data$Flag))) %>%
     mutate(absolute_flag = abs(.data$Flag))
 
+  # Raw HTML block: pandoc's markdown reader stalls parsing this large list
+  cat("\n```{=html}\n")
+  on.exit(cat("\n```\n"), add = TRUE)
+
   # Split by absolute_flag and generate separate lists
   cat(glue::glue("<h3>Flags Changes</h3>"))
   cat(cli::pluralize(
@@ -114,10 +118,10 @@ Report_FlagChange <- function(dfResults) {
           "{row['SnapshotDate']} | {flag} | Score: {row['Score']} | Rate: {row['Numerator']} / {row['Denominator']} ({round(as.numeric(row['Metric']), 2)})"
         )
         delta <- glue::glue(
-          "\\(\\Delta\\) Score: {sprintf('%+.2f', as.numeric(row['Score_Change']))} | ",
-          "\\(\\Delta\\) Metric: {sprintf('%+.2f', as.numeric(row['Metric_Change']))} | ",
-          "\\(\\Delta\\) Numerator: {sprintf('%+d', as.integer(row['Numerator_Change']))} | ",
-          "\\(\\Delta\\) Denominator: {sprintf('%+d', as.integer(row['Denominator_Change']))}"
+          "&Delta; Score: {sprintf('%+.2f', as.numeric(row['Score_Change']))} | ",
+          "&Delta; Metric: {sprintf('%+.2f', as.numeric(row['Metric_Change']))} | ",
+          "&Delta; Numerator: {sprintf('%+d', as.integer(row['Numerator_Change']))} | ",
+          "&Delta; Denominator: {sprintf('%+d', as.integer(row['Denominator_Change']))}"
         )
         cat(glue::glue(
           "<li class='flag-change-item'>{group} | {metric} | {flagChange}<ul class='flag-change-details'>"
