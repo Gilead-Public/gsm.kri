@@ -52,6 +52,7 @@ Suggests:
     qcthat,
     testthat (>= 3.0.0),
     withr,
+    xml2,
     yaml
 VignetteBuilder: 
     knitr

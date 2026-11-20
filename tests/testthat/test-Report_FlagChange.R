@@ -19,7 +19,9 @@ dfResults <- data.frame(
 )
 
 test_that("returns NULL if required columns are missing (#75)", {
+  # Test data from gsm.datasim now includes delta columns; drop them explicitly.
   df <- gsm.core::reportingResults
+  df <- df[, !grepl("_(Previous|Change)$", names(df))]
   output <- capture.output(result <- Report_FlagChange(df))
   expect_null(result)
   expect_true(any(grepl("Missing delta columns", output)))
