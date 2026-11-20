@@ -12,16 +12,19 @@ rep_listings <- function(dfVS, dfSubj = NULL) {
 }
 
 rep_vs <- function(lValues, strCol = "weight") {
-  do.call(rbind, lapply(names(lValues), function(id) {
-    x <- lValues[[id]]
-    df <- data.frame(
-      subjid = id,
-      vs_dt = as.Date("2024-01-01") + seq_along(x) - 1,
-      visit = paste0("V", seq_along(x))
-    )
-    df[[strCol]] <- x
-    df
-  }))
+  do.call(
+    rbind,
+    lapply(names(lValues), function(id) {
+      x <- lValues[[id]]
+      df <- data.frame(
+        subjid = id,
+        vs_dt = as.Date("2024-01-01") + seq_along(x) - 1,
+        visit = paste0("V", seq_along(x))
+      )
+      df[[strCol]] <- x
+      df
+    })
+  )
 }
 
 rep_metrics <- function(nWindow = 3, strThreshold = "0.2,0.3") {
@@ -95,7 +98,11 @@ rep_FixtureEdge <- function() {
 # the default count rule A's weight is Amber (2/2), B's Green (0/2) and C's
 # Red (3/3); S2's weight is 3/5 windows.
 rep_FixtureSplit <- function() {
-  dfVS <- rep_vs(list(A = c(70, 70, 70, 70), B = c(80, 81, 82, 83), C = c(1, 1, 1, 1, 1)))
+  dfVS <- rep_vs(list(
+    A = c(70, 70, 70, 70),
+    B = c(80, 81, 82, 83),
+    C = c(1, 1, 1, 1, 1)
+  ))
   dfVS$vsperf_std <- "Y"
   dfSubj <- data.frame(
     studyid = "STUDY1",
@@ -118,7 +125,12 @@ rep_FixtureResults <- function() {
     Flag = c(-2, 0, 1, 2, 0, 0),
     SnapshotDate = as.Date("2024-03-01")
   )
-  older <- transform(latest, Numerator = 0, Flag = 0, SnapshotDate = as.Date("2024-02-01"))
+  older <- transform(
+    latest,
+    Numerator = 0,
+    Flag = 0,
+    SnapshotDate = as.Date("2024-02-01")
+  )
   rbind(older, latest)
 }
 
@@ -140,13 +152,22 @@ rep_FixtureMetrics <- function(nWindow = 3, strThreshold = "0.2,0.3") {
 # reverse.
 rep_FixtureTies <- function() {
   dfVS <- rep_vs(list(
-    E = c(1, 1, 1, 1, 1), D = c(2, 2, 2, 2, 2), C = c(3, 3, 3, 3, 3),
-    B = c(4, 4, 4, 4, 4, 4), A = c(5, 5, 5, 5, 5)
+    E = c(1, 1, 1, 1, 1),
+    D = c(2, 2, 2, 2, 2),
+    C = c(3, 3, 3, 3, 3),
+    B = c(4, 4, 4, 4, 4, 4),
+    A = c(5, 5, 5, 5, 5)
   ))
   dfVS$vsperf_std <- "Y"
-  rep_listings(dfVS, data.frame(
-    studyid = "STUDY1", subjid = c("E", "D", "C", "B", "A"), invid = "S1", country = "US"
-  ))
+  rep_listings(
+    dfVS,
+    data.frame(
+      studyid = "STUDY1",
+      subjid = c("E", "D", "C", "B", "A"),
+      invid = "S1",
+      country = "US"
+    )
+  )
 }
 
 # One participant with 12 visits, so V10 to V12 follow V9 (not V1). Weight
@@ -164,9 +185,15 @@ rep_FixtureHTML <- function() {
   vIDs <- c("</script><b>x", "P&2")
   dfVS <- rep_vs(stats::setNames(list(c(1, 1, 1, 1), c(5, 6, 7, 8)), vIDs))
   dfVS$vsperf_std <- "Y"
-  rep_listings(dfVS, data.frame(
-    studyid = "STUDY1", subjid = vIDs, invid = "S<b>", country = c("US", "JP")
-  ))
+  rep_listings(
+    dfVS,
+    data.frame(
+      studyid = "STUDY1",
+      subjid = vIDs,
+      invid = "S<b>",
+      country = c("US", "JP")
+    )
+  )
 }
 
 render_rm <- function(lListings = rep_Fixture(), ...) {

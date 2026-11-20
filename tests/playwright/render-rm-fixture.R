@@ -27,7 +27,11 @@ Report_RepeatMeasurements(
 # Paired BP: A's SBP repeats in both windows, DBP and the pair in one.
 fBP <- f
 fBP$Mapped_VS$sysbp <- ifelse(fBP$Mapped_VS$subjid == "A", 120, NA)
-fBP$Mapped_VS$diabp <- ifelse(fBP$Mapped_VS$subjid == "A", c(80, 80, 80, 81), NA)
+fBP$Mapped_VS$diabp <- ifelse(
+  fBP$Mapped_VS$subjid == "A",
+  c(80, 80, 80, 81),
+  NA
+)
 Report_RepeatMeasurements(
   dfMetrics = rep_FixtureMetrics(),
   lListings = fBP,
@@ -38,7 +42,13 @@ Report_RepeatMeasurements(
 fEdge <- rep_FixtureEdge()
 fEdge$Mapped_VS <- rbind(
   fEdge$Mapped_VS,
-  data.frame(subjid = "G", visit = "V6", vs_dt = as.Date("2024-01-06"), vsperf_std = "N", weight = NA)
+  data.frame(
+    subjid = "G",
+    visit = "V6",
+    vs_dt = as.Date("2024-01-06"),
+    vsperf_std = "N",
+    weight = NA
+  )
 )
 Report_RepeatMeasurements(
   dfMetrics = rep_FixtureMetrics(),

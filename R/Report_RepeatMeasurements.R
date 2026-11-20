@@ -79,13 +79,16 @@ Report_RepeatMeasurements <- function(
     package = "gsm.kri"
   )
 ) {
-  rlang::check_installed("rmarkdown", reason = "to run `Report_RepeatMeasurements()`")
-  rlang::check_installed("knitr", reason = "to run `Report_RepeatMeasurements()`")
-  rlang::check_installed("DT", reason = "to run `Report_RepeatMeasurements()`")
+  rlang::check_installed(
+    "knitr",
+    reason = "to run `Report_RepeatMeasurements()`"
+  )
   strFlagRule <- match.arg(strFlagRule)
   strBPMode <- match.arg(strBPMode)
   gsm.core::stop_if(
-    cnd = !is.character(strContext) || length(strContext) != 1 || is.na(strContext),
+    cnd = !is.character(strContext) ||
+      length(strContext) != 1 ||
+      is.na(strContext),
     message = "strContext must be a single character string"
   )
   gsm.core::stop_if(

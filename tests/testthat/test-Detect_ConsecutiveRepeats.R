@@ -300,7 +300,10 @@ test_that("a run never continues across subjects (#342)", {
 
 test_that("arguments are validated by the engine (#342)", {
   df <- make_vs(c(1, 1, 1))
-  expect_error(MarkConsecutiveRepeats(df, "weight", nWindowLength = 1), "nWindowLength")
+  expect_error(
+    MarkConsecutiveRepeats(df, "weight", nWindowLength = 1),
+    "nWindowLength"
+  )
   expect_error(MarkConsecutiveRepeats(df, "pulse"), "not found")
   expect_error(MarkConsecutiveRepeats(list(), "weight"), "data frame")
 })
@@ -308,7 +311,9 @@ test_that("arguments are validated by the engine (#342)", {
 test_that("empty input returns an empty frame with the marking columns (#342)", {
   res <- MarkConsecutiveRepeats(make_vs(1)[0, ], "weight")
   expect_equal(nrow(res), 0)
-  expect_true(all(c(".rep_seq", ".rep_in_window", ".rep_window_start") %in% names(res)))
+  expect_true(all(
+    c(".rep_seq", ".rep_in_window", ".rep_window_start") %in% names(res)
+  ))
 })
 
 test_that("Detect_ConsecutiveRepeats() counts equal the marked window starts for all six vitals (#342)", {
@@ -317,7 +322,11 @@ test_that("Detect_ConsecutiveRepeats() counts equal the marked window starts for
   for (strCol in c("weight", "pulse", "sysbp", "diabp", "resp", "temp")) {
     dfDetect <- Detect_ConsecutiveRepeats(dfVS, strCol, strOrderCol = "visit")
     dfMark <- MarkConsecutiveRepeats(dfVS, strCol, strOrderCol = "visit")
-    vN <- tapply(dfMark$.rep_window_start, factor(dfMark$subjid, dfDetect$subjid), sum)
+    vN <- tapply(
+      dfMark$.rep_window_start,
+      factor(dfMark$subjid, dfDetect$subjid),
+      sum
+    )
     vN[is.na(vN)] <- 0
     expect_equal(unname(as.numeric(vN)), dfDetect$Numerator, label = strCol)
     vMeasured <- table(factor(dfMark$subjid, dfDetect$subjid))
@@ -336,7 +345,11 @@ test_that("Detect_ConsecutiveRepeats() counts equal the marked window starts for
   for (strMeasure in unique(dfExpected$measure)) {
     dfExp <- dfExpected[dfExpected$measure == strMeasure, ]
     dfMark <- MarkConsecutiveRepeats(dfVS, strMeasure)
-    vN <- tapply(dfMark$.rep_window_start, factor(dfMark$subjid, dfExp$subjid), sum)
+    vN <- tapply(
+      dfMark$.rep_window_start,
+      factor(dfMark$subjid, dfExp$subjid),
+      sum
+    )
     vN[is.na(vN)] <- 0
     expect_equal(unname(as.numeric(vN)), dfExp$Numerator, label = strMeasure)
   }
@@ -350,8 +363,10 @@ test_that("measure filtering applies to long data (#342)", {
     value = c(1, 1, 1, 60, 70, 80)
   )
   res <- MarkConsecutiveRepeats(
-    df, "value",
-    strMeasureCol = "test", strMeasureVal = "WT"
+    df,
+    "value",
+    strMeasureCol = "test",
+    strMeasureVal = "WT"
   )
   expect_equal(res$test, rep("WT", 3))
   expect_true(all(res$.rep_in_window))
@@ -407,8 +422,11 @@ test_that("columns named like the engine's marks work as input columns (#342)", 
   )
   expect_identical(
     Detect_ConsecutiveRepeats(
-      dfNamed, "window_start",
-      strSubjectCol = "seq", strDateCol = "in_repeat_window", strOrderCol = "visit"
+      dfNamed,
+      "window_start",
+      strSubjectCol = "seq",
+      strDateCol = "in_repeat_window",
+      strOrderCol = "visit"
     ),
     stats::setNames(dfExpected, c("seq", "Numerator", "Denominator"))
   )
@@ -440,10 +458,31 @@ test_that("text values, date ties, missing values and window lengths give the ex
     subjid = c(rep("A", 9), "B", "B"),
     vs_dt = d + c(1, 1, 2, 2, 3, 4, 4, 5, 6, 1, 2),
     visit = c("V1", "V2", "V3", "V3", "V4", "V5", "V5", "V6", "V7", "V1", "V2"),
-    measure = c("BP", "BP", "BP", "HR", "BP", "BP", "HR", "BP", "BP", "BP", "BP"),
+    measure = c(
+      "BP",
+      "BP",
+      "BP",
+      "HR",
+      "BP",
+      "BP",
+      "HR",
+      "BP",
+      "BP",
+      "BP",
+      "BP"
+    ),
     value = c(
-      "110/70", "120/80", "120/80", "60", NA, "120/80", "60", "118/76", "118/76",
-      "130/85", "130/85"
+      "110/70",
+      "120/80",
+      "120/80",
+      "60",
+      NA,
+      "120/80",
+      "60",
+      "118/76",
+      "118/76",
+      "130/85",
+      "130/85"
     )
   )
   # In visit order, A's BP values are 110/70, 120/80, 120/80, 120/80, 118/76,
@@ -458,18 +497,32 @@ test_that("text values, date ties, missing values and window lengths give the ex
   dfShuffled <- df[c(9, 2, 11, 4, 1, 7, 5, 10, 3, 8, 6), ]
   for (nW in 2:4) {
     res <- Detect_ConsecutiveRepeats(
-      dfShuffled, "value",
-      strOrderCol = "visit", strMeasureCol = "measure", strMeasureVal = "BP",
+      dfShuffled,
+      "value",
+      strOrderCol = "visit",
+      strMeasureCol = "measure",
+      strMeasureVal = "BP",
       nWindowLength = nW
     )
     expect_equal(res$subjid, c("A", "B"), label = paste("W =", nW))
-    expect_equal(res$Numerator, lExpected[[as.character(nW)]]$Numerator, label = paste("W =", nW))
-    expect_equal(res$Denominator, lExpected[[as.character(nW)]]$Denominator, label = paste("W =", nW))
+    expect_equal(
+      res$Numerator,
+      lExpected[[as.character(nW)]]$Numerator,
+      label = paste("W =", nW)
+    )
+    expect_equal(
+      res$Denominator,
+      lExpected[[as.character(nW)]]$Denominator,
+      label = paste("W =", nW)
+    )
     # Zero-padded ISO text dates give the same result as Date input.
     expect_identical(
       Detect_ConsecutiveRepeats(
-        transform(dfShuffled, vs_dt = format(vs_dt)), "value",
-        strOrderCol = "visit", strMeasureCol = "measure", strMeasureVal = "BP",
+        transform(dfShuffled, vs_dt = format(vs_dt)),
+        "value",
+        strOrderCol = "visit",
+        strMeasureCol = "measure",
+        strMeasureVal = "BP",
         nWindowLength = nW
       ),
       res,
@@ -494,8 +547,17 @@ test_that("character dates are read as ISO dates, not sorted as text", {
 
   dfDate <- transform(df, vs_dt = as.Date(vs_dt))
   expect_identical(Detect_ConsecutiveRepeats(dfDate, "weight"), res)
-  expect_identical(Detect_ConsecutiveRepeats(transform(df, vs_dt = factor(vs_dt)), "weight"), res)
-  expect_identical(Detect_ConsecutiveRepeats(transform(df, vs_dt = as.POSIXct(dfDate$vs_dt)), "weight"), res)
+  expect_identical(
+    Detect_ConsecutiveRepeats(transform(df, vs_dt = factor(vs_dt)), "weight"),
+    res
+  )
+  expect_identical(
+    Detect_ConsecutiveRepeats(
+      transform(df, vs_dt = as.POSIXct(dfDate$vs_dt)),
+      "weight"
+    ),
+    res
+  )
   # Blank and missing text dates are missing dates, sorted last.
   df$vs_dt[2] <- " "
   expect_equal(Detect_ConsecutiveRepeats(df, "weight")$Numerator, 1)
@@ -512,7 +574,10 @@ test_that("character dates that are not ISO dates are an error", {
     )
   }
   df$vs_dt <- c("x", "y", "2024-01-03")
-  expect_error(MarkConsecutiveRepeats(df, "weight"), "must be a Date, a POSIXct or ISO dates")
+  expect_error(
+    MarkConsecutiveRepeats(df, "weight"),
+    "must be a Date, a POSIXct or ISO dates"
+  )
 })
 
 test_that("missing dates sort last and still join windows", {
@@ -533,12 +598,22 @@ test_that("strMeasureVal must be one value, and subjects without that measure ar
     measure = c("HR", "HR", "HR", "WT", "WT", "WT"),
     value = c(60, 60, 60, 70, 70, 70)
   )
-  res <- Detect_ConsecutiveRepeats(df, "value", strMeasureCol = "measure", strMeasureVal = "HR")
+  res <- Detect_ConsecutiveRepeats(
+    df,
+    "value",
+    strMeasureCol = "measure",
+    strMeasureVal = "HR"
+  )
   expect_equal(res$subjid, "A")
   expect_equal(res$Numerator, 1)
   for (val in list(c("HR", "WT"), character(0), NA_character_)) {
     expect_error(
-      Detect_ConsecutiveRepeats(df, "value", strMeasureCol = "measure", strMeasureVal = val),
+      Detect_ConsecutiveRepeats(
+        df,
+        "value",
+        strMeasureCol = "measure",
+        strMeasureVal = val
+      ),
       "must be a single non-missing value"
     )
   }

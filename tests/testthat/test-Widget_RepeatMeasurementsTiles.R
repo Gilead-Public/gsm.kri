@@ -4,11 +4,19 @@ test_that("tiles widget is an in-repo htmlwidget with no gsm.viz bundle (#347)",
   expect_s3_class(w, "Widget_RepeatMeasurementsTiles")
   expect_s3_class(w, "htmlwidget")
   expect_equal(w$elementId, "rm-tiles")
-  deps <- htmlwidgets::getDependency("Widget_RepeatMeasurementsTiles", "gsm.kri")
+  deps <- htmlwidgets::getDependency(
+    "Widget_RepeatMeasurementsTiles",
+    "gsm.kri"
+  )
   vNames <- vapply(deps, `[[`, character(1), "name")
   expect_false("gsmViz" %in% vNames)
-  expect_true("renderRepeatMeasurementsTiles.js" %in% unlist(lapply(deps, `[[`, "script")))
-  expect_true("renderRepeatMeasurementsTiles.css" %in% unlist(lapply(deps, `[[`, "stylesheet")))
+  expect_true(
+    "renderRepeatMeasurementsTiles.js" %in% unlist(lapply(deps, `[[`, "script"))
+  )
+  expect_true(
+    "renderRepeatMeasurementsTiles.css" %in%
+      unlist(lapply(deps, `[[`, "stylesheet"))
+  )
 })
 
 test_that("tiles widget payload keeps the tile order, labels and KRI columns (#347)", {
@@ -17,10 +25,27 @@ test_that("tiles widget payload keeps the tile order, labels and KRI columns (#3
   x <- w$x
   dfPayload <- jsonlite::fromJSON(x$tiles)
   expect_equal(unique(dfPayload$subjid), c("A", "B", "D", "C", "E"))
-  expect_true(all(c("subjid", "vital", "column", "flag", "label_rate", "label_nd", "label_both") %in% names(dfPayload)))
-  expect_equal(dfPayload$label_nd[dfPayload$subjid == "D" & dfPayload$vital == "weight"], "1/4")
+  expect_true(all(
+    c(
+      "subjid",
+      "vital",
+      "column",
+      "flag",
+      "label_rate",
+      "label_nd",
+      "label_both"
+    ) %in%
+      names(dfPayload)
+  ))
+  expect_equal(
+    dfPayload$label_nd[dfPayload$subjid == "D" & dfPayload$vital == "weight"],
+    "1/4"
+  )
   dfColumns <- jsonlite::fromJSON(x$columns)
-  expect_equal(dfColumns$column, c("WT", "HR", "SBP", "DBP", "RR", "Temp", "Ht"))
+  expect_equal(
+    dfColumns$column,
+    c("WT", "HR", "SBP", "DBP", "RR", "Temp", "Ht")
+  )
   expect_equal(dfColumns$metric, c(paste0("kri0020", letters[1:6]), NA))
   expect_equal(x$label, "nd")
   expect_equal(x$pageSize, 10)
@@ -30,7 +55,13 @@ test_that("tiles widget payload keeps the tile order, labels and KRI columns (#3
 test_that("tiles widget rejects unknown labels and missing columns (#347)", {
   dfTiles <- rep_ParticipantTiles(rep_Classify(rep_Fixture()))
   expect_error(Widget_RepeatMeasurementsTiles(dfTiles, strLabel = "pct"))
-  expect_error(Widget_RepeatMeasurementsTiles(dfTiles[setdiff(names(dfTiles), "label_both")]), "label_both")
+  expect_error(
+    Widget_RepeatMeasurementsTiles(dfTiles[setdiff(
+      names(dfTiles),
+      "label_both"
+    )]),
+    "label_both"
+  )
 })
 
 test_that("tiles widget names the allowed labels and needs a data frame (#347)", {
@@ -39,19 +70,26 @@ test_that("tiles widget names the allowed labels and needs a data frame (#347)",
     Widget_RepeatMeasurementsTiles(dfTiles, strLabel = "pct"),
     "'arg' should be one of"
   )
-  expect_error(Widget_RepeatMeasurementsTiles(as.list(dfTiles)), "dfTiles needs")
+  expect_error(
+    Widget_RepeatMeasurementsTiles(as.list(dfTiles)),
+    "dfTiles needs"
+  )
   expect_error(Widget_RepeatMeasurementsTiles(NULL), "dfTiles needs subjid")
 })
 
 test_that("tiles widget payload carries severity for the initial worst-flag sort (#347)", {
   dfTiles <- rep_ParticipantTiles(rep_Classify(rep_Fixture()))
   expect_true("severity" %in% names(dfTiles))
-  dfPayload <- jsonlite::fromJSON(Widget_RepeatMeasurementsTiles(dfTiles)$x$tiles)
+  dfPayload <- jsonlite::fromJSON(
+    Widget_RepeatMeasurementsTiles(dfTiles)$x$tiles
+  )
   expect_equal(dfPayload$severity, rep_FlagSeverity(dfPayload$flag))
   expect_equal(dfPayload$severity, dfTiles$severity)
 
   # Not required: an input without it gets it from flag.
   dfNoSeverity <- dfTiles[setdiff(names(dfTiles), "severity")]
-  dfPayload <- jsonlite::fromJSON(Widget_RepeatMeasurementsTiles(dfNoSeverity)$x$tiles)
+  dfPayload <- jsonlite::fromJSON(
+    Widget_RepeatMeasurementsTiles(dfNoSeverity)$x$tiles
+  )
   expect_equal(dfPayload$severity, dfTiles$severity)
 })

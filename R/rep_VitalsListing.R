@@ -25,7 +25,10 @@ rep_VitalRows <- function(lClass) {
     dplyr::group_by(.data$subjid, .data$vital) %>%
     dplyr::summarise(
       values = paste(.data$value_text, collapse = " "),
-      in_repeat_window = paste(as.integer(.data$in_repeat_window), collapse = " "),
+      in_repeat_window = paste(
+        as.integer(.data$in_repeat_window),
+        collapse = " "
+      ),
       visits = paste(
         sprintf(
           "#%s \u00b7 %s \u00b7 %s",
@@ -96,19 +99,33 @@ rep_VitalRows <- function(lClass) {
 #' @return A `DT` htmlwidget.
 #' @keywords internal
 #' @export
-rep_VitalsListing <- function(dfVitalRows, nWindowLength = NULL, bExport = TRUE) {
+rep_VitalsListing <- function(
+  dfVitalRows,
+  nWindowLength = NULL,
+  bExport = TRUE
+) {
   idx <- function(col) match(col, names(dfVitalRows)) - 1L
   vLabels <- c(
-    country = "Country", invid = "Site", subjid = "Participant", label = "Measure",
-    metric = "Metric", n_unique = "Distinct", flag = "Flag \u00b7 rate", measured = "Measured", Numerator = "Numerator",
-    Denominator = "Denominator", rate = "Rate",
+    country = "Country",
+    invid = "Site",
+    subjid = "Participant",
+    label = "Measure",
+    metric = "Metric",
+    n_unique = "Distinct",
+    flag = "Flag \u00b7 rate",
+    measured = "Measured",
+    Numerator = "Numerator",
+    Denominator = "Denominator",
+    rate = "Rate",
     values = if (is.null(nWindowLength)) {
       "Measurements in order"
     } else {
       paste0("Measurements in order (window ", nWindowLength, ")")
     },
-    in_repeat_window = "In repeating window", visits = "Visits",
-    vital = "vital", has_repeat = "has_repeat"
+    in_repeat_window = "In repeating window",
+    visits = "Visits",
+    vital = "vital",
+    has_repeat = "has_repeat"
   )
   DT::datatable(
     dfVitalRows,
@@ -123,12 +140,19 @@ rep_VitalsListing <- function(dfVitalRows, nWindowLength = NULL, bExport = TRUE)
       pageLength = 25,
       deferRender = TRUE,
       order = list(),
-      buttons = rep_CsvButton(bExport, "repeat-measurements-vitals", ":visible, .rm-export"),
+      buttons = rep_CsvButton(
+        bExport,
+        "repeat-measurements-vitals",
+        ":visible, .rm-export"
+      ),
       createdRow = DT::JS(
         "function (row) { row.title = 'Click to filter the report to this participant; click again to clear'; }"
       ),
       columnDefs = c(
-        lapply(c("country", "invid", "subjid", "Numerator", "Denominator"), function(col) list(targets = idx(col), name = col)),
+        lapply(
+          c("country", "invid", "subjid", "Numerator", "Denominator"),
+          function(col) list(targets = idx(col), name = col)
+        ),
         list(
           list(
             targets = idx("label"),
@@ -204,12 +228,22 @@ rep_VitalsListing <- function(dfVitalRows, nWindowLength = NULL, bExport = TRUE)
             ))
           ),
           list(
-            targets = idx(c("metric", "measured", "Numerator", "Denominator", "rate", "in_repeat_window", "visits")),
+            targets = idx(c(
+              "metric",
+              "measured",
+              "Numerator",
+              "Denominator",
+              "rate",
+              "in_repeat_window",
+              "visits"
+            )),
             visible = FALSE,
             className = "rm-export"
           )
         ),
-        lapply(c("vital", "has_repeat"), function(col) list(targets = idx(col), name = col, visible = FALSE))
+        lapply(c("vital", "has_repeat"), function(col) {
+          list(targets = idx(col), name = col, visible = FALSE)
+        })
       )
     )
   )

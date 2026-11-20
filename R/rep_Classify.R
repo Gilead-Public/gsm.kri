@@ -79,8 +79,11 @@ rep_Classify <- function(
   strFlagRule <- match.arg(strFlagRule)
   vThresholds <- rep_FlagThresholds(strFlagRule, vFlagThresholds, dfMetrics)
   gsm.core::stop_if(
-    cnd = !is.numeric(nMinWindows) || length(nMinWindows) != 1 || !is.finite(nMinWindows) ||
-      nMinWindows < 1 || nMinWindows != round(nMinWindows),
+    cnd = !is.numeric(nMinWindows) ||
+      length(nMinWindows) != 1 ||
+      !is.finite(nMinWindows) ||
+      nMinWindows < 1 ||
+      nMinWindows != round(nMinWindows),
     message = "nMinWindows must be a single whole number >= 1"
   )
   dfSubj <- lListings$Mapped_SUBJ
@@ -95,18 +98,25 @@ rep_Classify <- function(
   if (!"studyid" %in% names(dfSubj)) {
     dfSubj$studyid <- rep(NA_character_, nrow(dfSubj))
   }
-  dfSubj <- dfSubj[!duplicated(dfSubj$subjid), c("studyid", "country", "invid", "subjid")]
+  dfSubj <- dfSubj[
+    !duplicated(dfSubj$subjid),
+    c("studyid", "country", "invid", "subjid")
+  ]
   dfSubj$subjid <- rep_AsID(dfSubj$subjid)
   # A missing country or site becomes "(missing)" so the browser can filter it.
   for (strCol in c("country", "invid")) {
     dfSubj[[strCol]] <- as.character(dfSubj[[strCol]])
-    dfSubj[[strCol]][is.na(dfSubj[[strCol]]) | dfSubj[[strCol]] == ""] <- "(missing)"
+    dfSubj[[strCol]][
+      is.na(dfSubj[[strCol]]) | dfSubj[[strCol]] == ""
+    ] <- "(missing)"
   }
   # Country comes from each participant (as in the cou0020 KRIs), so a site
   # whose participants carry different countries is counted in each of them.
   # Participants without a site share "(missing)" but are not one site.
   bSite <- dfSubj$invid != "(missing)"
-  nCountries <- tapply(dfSubj$country[bSite], dfSubj$invid[bSite], function(x) length(unique(x)))
+  nCountries <- tapply(dfSubj$country[bSite], dfSubj$invid[bSite], function(x) {
+    length(unique(x))
+  })
   vSplitSites <- as.character(names(nCountries)[nCountries > 1])
   if (length(vSplitSites) > 0) {
     gsm.core::LogMessage(
@@ -117,14 +127,28 @@ rep_Classify <- function(
 
   dfVitals <- rep_Vitals()
   dfVS <- lListings$Mapped_VS
-  vIDCols <- c("studyid", "subjid", "invid", "country", "visit", "vs_dt", "vsperf_std")
+  vIDCols <- c(
+    "studyid",
+    "subjid",
+    "invid",
+    "country",
+    "visit",
+    "vs_dt",
+    "vsperf_std"
+  )
   vExtra <- if (is.null(dfVS)) {
     character(0)
   } else {
-    vNumeric <- setdiff(names(dfVS)[vapply(dfVS, is.numeric, logical(1))], c(dfVitals$vital, vIDCols))
+    vNumeric <- setdiff(
+      names(dfVS)[vapply(dfVS, is.numeric, logical(1))],
+      c(dfVitals$vital, vIDCols)
+    )
     # A constant study day or visit number would score as a repeating vital,
     # and the window marks would clash with the engine's own columns.
-    vNumeric <- setdiff(vNumeric, c("record", "in_repeat_window", "window_start"))
+    vNumeric <- setdiff(
+      vNumeric,
+      c("record", "in_repeat_window", "window_start")
+    )
     vNumeric <- vNumeric[!startsWith(vNumeric, ".rep_")]
     vNumeric[!grepl("^visit|(dy|num|seq|id)$", vNumeric, ignore.case = TRUE)]
   }
@@ -148,7 +172,11 @@ rep_Classify <- function(
   # Mapped_SUBJ is the source of truth for site and country.
   if (!is.null(dfVS) && nrow(dfVS) > 0) {
     dfVS$subjid <- rep_AsID(dfVS$subjid)
-    dfVS <- dfVS[dfVS$subjid %in% dfSubj$subjid, setdiff(names(dfVS), c("studyid", "invid", "country")), drop = FALSE]
+    dfVS <- dfVS[
+      dfVS$subjid %in% dfSubj$subjid,
+      setdiff(names(dfVS), c("studyid", "invid", "country")),
+      drop = FALSE
+    ]
     dfVS <- dplyr::left_join(dfVS, dfSubj, by = "subjid")
     dfVS$record <- seq_len(nrow(dfVS))
   }
@@ -169,7 +197,12 @@ rep_Classify <- function(
         strOrderCol = strOrderCol,
         nWindowLength = nW
       )
-      dfMetric <- SummarizeConsecutiveRepeats(dfMarked, unique(dfMarked$subjid), "subjid", nW)
+      dfMetric <- SummarizeConsecutiveRepeats(
+        dfMarked,
+        unique(dfMarked$subjid),
+        "subjid",
+        nW
+      )
       dfMetric$vital <- rep(strVital, nrow(dfMetric))
       x <- dfMarked[[strVital]]
       dfMeasurements <- tibble::tibble(
@@ -178,10 +211,18 @@ rep_Classify <- function(
         invid = dfMarked$invid,
         subjid = dfMarked$subjid,
         record = dfMarked$record,
-        visit = if (is.null(strOrderCol)) NA_character_ else as.character(dfMarked$visit),
+        visit = if (is.null(strOrderCol)) {
+          NA_character_
+        } else {
+          as.character(dfMarked$visit)
+        },
         vs_dt = dfMarked$vs_dt,
         vital = rep(strVital, nrow(dfMarked)),
-        value = if (is.character(x)) rep(NA_real_, length(x)) else as.numeric(x),
+        value = if (is.character(x)) {
+          rep(NA_real_, length(x))
+        } else {
+          as.numeric(x)
+        },
         value_text = if (is.character(x)) x else rep_FormatValue(as.numeric(x)),
         seq = dfMarked$.rep_seq,
         in_repeat_window = dfMarked$.rep_in_window,
@@ -193,10 +234,19 @@ rep_Classify <- function(
   dfMeasurements <- dplyr::bind_rows(lapply(lWindowed, `[[`, "measurements"))
   if (nrow(dfMeasurements) == 0) {
     dfMeasurements <- tibble::tibble(
-      studyid = character(), country = character(), invid = character(),
-      subjid = character(), record = integer(), visit = character(), vs_dt = as.Date(character()),
-      vital = character(), value = numeric(), value_text = character(), seq = integer(),
-      in_repeat_window = logical(), window_start = logical()
+      studyid = character(),
+      country = character(),
+      invid = character(),
+      subjid = character(),
+      record = integer(),
+      visit = character(),
+      vs_dt = as.Date(character()),
+      vital = character(),
+      value = numeric(),
+      value_text = character(),
+      seq = integer(),
+      in_repeat_window = logical(),
+      window_start = logical()
     )
   }
 
@@ -204,7 +254,12 @@ rep_Classify <- function(
     dplyr::group_by(.data$subjid, .data$vital) %>%
     dplyr::summarise(n_records = dplyr::n(), .groups = "drop")
   dfMetric <- dplyr::bind_rows(
-    tibble::tibble(subjid = dfSubj$subjid[0], vital = character(), Numerator = numeric(), Denominator = numeric()),
+    tibble::tibble(
+      subjid = dfSubj$subjid[0],
+      vital = character(),
+      Numerator = numeric(),
+      Denominator = numeric()
+    ),
     lapply(lWindowed, `[[`, "metric")
   )
   dfParticipants <- tidyr::crossing(
@@ -226,17 +281,23 @@ rep_Classify <- function(
       )
     )
   # crossing() sorts; keep Mapped_SUBJ order, then the vital order.
-  dfParticipants <- dfParticipants[order(
-    match(dfParticipants$subjid, dfSubj$subjid),
-    match(dfParticipants$vital, dfVitals$vital)
-  ), ]
+  dfParticipants <- dfParticipants[
+    order(
+      match(dfParticipants$subjid, dfSubj$subjid),
+      match(dfParticipants$vital, dfVitals$vital)
+    ),
+  ]
 
   vFlag <- rep_Flag(
     data.frame(
       GroupID = dfParticipants$subjid,
       Numerator = dfParticipants$Numerator,
       Denominator = dfParticipants$Denominator,
-      Score = if (strFlagRule == "count") dfParticipants$Numerator else dfParticipants$rate
+      Score = if (strFlagRule == "count") {
+        dfParticipants$Numerator
+      } else {
+        dfParticipants$rate
+      }
     ),
     vThresholds,
     nMinWindows
@@ -245,8 +306,17 @@ rep_Classify <- function(
   flag[is.na(flag)] <- "Not evaluable"
   dfParticipants$flag <- factor(flag, levels = names(rep_FlagColors()))
   dfParticipants <- dfParticipants[c(
-    "studyid", "country", "invid", "subjid", "vital", "metric",
-    "n_records", "Numerator", "Denominator", "rate", "flag"
+    "studyid",
+    "country",
+    "invid",
+    "subjid",
+    "vital",
+    "metric",
+    "n_records",
+    "Numerator",
+    "Denominator",
+    "rate",
+    "flag"
   )]
   rownames(dfParticipants) <- NULL
 
@@ -255,10 +325,15 @@ rep_Classify <- function(
     measurements = dfMeasurements,
     records = if (is.null(dfVS)) NULL else tibble::as_tibble(dfVS),
     vitals = dfVitals,
-    meta = c(lWindow, list(
-      rule = strFlagRule, thresholds = vThresholds, min_windows = nMinWindows,
-      split_sites = vSplitSites
-    ))
+    meta = c(
+      lWindow,
+      list(
+        rule = strFlagRule,
+        thresholds = vThresholds,
+        min_windows = nMinWindows,
+        split_sites = vSplitSites
+      )
+    )
   )
 }
 
@@ -281,5 +356,9 @@ rep_AsID <- function(x) {
   if (!is.numeric(x)) {
     return(as.character(x))
   }
-  ifelse(is.na(x), NA_character_, trimws(formatC(x, format = "fg", digits = 15)))
+  ifelse(
+    is.na(x),
+    NA_character_,
+    trimws(formatC(x, format = "fg", digits = 15))
+  )
 }

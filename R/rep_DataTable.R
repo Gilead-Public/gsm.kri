@@ -25,19 +25,28 @@ rep_DataTableWide <- function(lClass) {
   dfRecords <- lClass$records
   if (is.null(dfRecords) || nrow(dfRecords) == 0) {
     return(tibble::tibble(
-      country = character(), invid = character(), subjid = character(),
-      visit = character(), vs_dt = as.Date(character()), performed = character(),
+      country = character(),
+      invid = character(),
+      subjid = character(),
+      visit = character(),
+      vs_dt = as.Date(character()),
+      performed = character(),
       repeat_vitals = character()
     ))
   }
   vVitals <- intersect(vVitals, names(dfRecords))
   vOrder <- rep_ParticipantOrder(lClass)
   vRecordOrder <- intersect(c("vs_dt", "visit"), names(dfRecords))
-  dfRecords <- dfRecords[do.call(order, c(
-    list(match(dfRecords$subjid, vOrder)),
-    unname(as.list(dfRecords[vRecordOrder])),
-    list(dfRecords$record, method = "radix")
-  )), ]
+  dfRecords <- dfRecords[
+    do.call(
+      order,
+      c(
+        list(match(dfRecords$subjid, vOrder)),
+        unname(as.list(dfRecords[vRecordOrder])),
+        list(dfRecords$record, method = "radix")
+      )
+    ),
+  ]
 
   dfM <- lClass$measurements
   lRepeat <- lapply(vVitals, function(strVital) {
@@ -48,20 +57,35 @@ rep_DataTableWide <- function(lClass) {
   names(lRepeat) <- sprintf("%s_in_repeat_window", vVitals)
 
   dfRepeat <- rep_RepeatVitals(lClass)
-  vRepeat <- vapply(split(dfRepeat$vital, dfRepeat$subjid), paste, character(1), collapse = " ")
+  vRepeat <- vapply(
+    split(dfRepeat$vital, dfRepeat$subjid),
+    paste,
+    character(1),
+    collapse = " "
+  )
 
   tibble::as_tibble(c(
     list(
       country = as.character(dfRecords$country),
       invid = as.character(dfRecords$invid),
       subjid = dfRecords$subjid,
-      visit = if ("visit" %in% names(dfRecords)) as.character(dfRecords$visit) else NA_character_,
-      vs_dt = if ("vs_dt" %in% names(dfRecords)) dfRecords$vs_dt else as.Date(NA),
+      visit = if ("visit" %in% names(dfRecords)) {
+        as.character(dfRecords$visit)
+      } else {
+        NA_character_
+      },
+      vs_dt = if ("vs_dt" %in% names(dfRecords)) {
+        dfRecords$vs_dt
+      } else {
+        as.Date(NA)
+      },
       # [[ ]], because $ on a tibble warns when the optional column is absent.
       performed = rep_Performed(dfRecords[["vsperf_std"]])
     ),
     # Paired BP stays text ("120/80").
-    lapply(dfRecords[vVitals], function(x) if (is.character(x)) x else as.numeric(x)),
+    lapply(dfRecords[vVitals], function(x) {
+      if (is.character(x)) x else as.numeric(x)
+    }),
     lRepeat,
     list(repeat_vitals = dplyr::coalesce(unname(vRepeat[dfRecords$subjid]), ""))
   ))
@@ -101,24 +125,40 @@ rep_DataTable <- function(dfWide, dfVitals, bExport = TRUE) {
   vVitals <- intersect(dfVitals$vital, names(dfWide))
   vRW <- sprintf("%s_in_repeat_window", vVitals)
   vLabel <- stats::setNames(dfVitals$label, dfVitals$vital)[vVitals]
-  vShort <- stats::setNames(dplyr::coalesce(dfVitals$short, dfVitals$vital), dfVitals$vital)[vVitals]
+  vShort <- stats::setNames(
+    dplyr::coalesce(dfVitals$short, dfVitals$vital),
+    dfVitals$vital
+  )[vVitals]
   vMetric <- stats::setNames(dfVitals$metric, dfVitals$vital)[vVitals]
   vWide <- c(
-    country = "Country", invid = "Site", subjid = "Participant", visit = "Visit",
-    vs_dt = "Date", performed = "Performed",
+    country = "Country",
+    invid = "Site",
+    subjid = "Participant",
+    visit = "Visit",
+    vs_dt = "Date",
+    performed = "Performed",
     vShort,
     stats::setNames(vRW, vRW),
     repeat_vitals = "repeat_vitals"
   )
   vTitle <- stats::setNames(
-    paste0(vLabel, ifelse(is.na(vMetric), " (no KRI)", paste0(" (", vMetric, ")"))),
+    paste0(
+      vLabel,
+      ifelse(is.na(vMetric), " (no KRI)", paste0(" (", vMetric, ")"))
+    ),
     vVitals
   )
   wide_header <- htmltools::tags$table(
     class = "display",
-    htmltools::tags$thead(htmltools::tags$tr(lapply(names(dfWide), function(col) {
-      htmltools::tags$th(title = if (col %in% vVitals) vTitle[[col]], vWide[[col]])
-    })))
+    htmltools::tags$thead(htmltools::tags$tr(lapply(
+      names(dfWide),
+      function(col) {
+        htmltools::tags$th(
+          title = if (col %in% vVitals) vTitle[[col]],
+          vWide[[col]]
+        )
+      }
+    )))
   )
   # A <vital>_in_repeat_window column exports only while its measure is shown;
   # the country and performed columns always export.
@@ -215,7 +255,10 @@ rep_ParticipantOrder <- function(lClass) {
 # Participant x vital pairs with at least one repeating window.
 rep_RepeatVitals <- function(lClass) {
   vVitals <- lClass$vitals$vital
-  df <- lClass$participants[lClass$participants$Numerator > 0, c("subjid", "vital")]
+  df <- lClass$participants[
+    lClass$participants$Numerator > 0,
+    c("subjid", "vital")
+  ]
   df[order(df$subjid, match(df$vital, vVitals)), ]
 }
 

@@ -23,7 +23,11 @@ rep_ParticipantTiles <- function(lClass) {
     paste0(floor(100 * df$Numerator / df$Denominator + 0.5), "%"),
     "NE"
   )
-  strND <- ifelse(df$Denominator > 0, paste0(df$Numerator, "/", df$Denominator), "NE")
+  strND <- ifelse(
+    df$Denominator > 0,
+    paste0(df$Numerator, "/", df$Denominator),
+    "NE"
+  )
   dfTiles <- tibble::tibble(
     subjid = df$subjid,
     invid = as.character(df$invid),

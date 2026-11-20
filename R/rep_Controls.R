@@ -19,7 +19,12 @@
 #' @return An `htmltools` tag.
 #' @keywords internal
 #' @export
-rep_Header <- function(lClass, strStudy, dSnapshotDate = NULL, strContext = "") {
+rep_Header <- function(
+  lClass,
+  strStudy,
+  dSnapshotDate = NULL,
+  strContext = ""
+) {
   nW <- lClass$meta$window_length
   rule_text <- rep_RuleText(lClass$meta)
   vStudy <- setdiff(as.character(strStudy), c(NA, ""))
@@ -28,30 +33,47 @@ rep_Header <- function(lClass, strStudy, dSnapshotDate = NULL, strContext = "") 
   htmltools::tags$header(
     id = "rm-header",
     class = "rm-header",
-    if (nzchar(strContext)) htmltools::tags$div(class = "rm-ctx", htmltools::HTML(strContext)),
+    if (nzchar(strContext)) {
+      htmltools::tags$div(class = "rm-ctx", htmltools::HTML(strContext))
+    },
     htmltools::tags$div(
       class = "rm-title",
       htmltools::tags$h1(class = "toc-ignore", "Repeat Measurements"),
-      htmltools::tags$button(id = "rm-how-toggle", type = "button", class = "rm-btn", `aria-expanded` = "false", `aria-controls` = "rm-how", "How to read")
+      htmltools::tags$button(
+        id = "rm-how-toggle",
+        type = "button",
+        class = "rm-btn",
+        `aria-expanded` = "false",
+        `aria-controls` = "rm-how",
+        "How to read"
+      )
     ),
     htmltools::tags$div(
       class = "rm-meta",
       if (length(vStudy)) rep_Pill("Study", paste(vStudy, collapse = ", ")),
       if (!is.null(dSnapshotDate)) rep_Pill("Snapshot", format(dSnapshotDate)),
       rep_Pill("Window", paste(nW, "measurements")),
-      rep_Pill("Participant flag", htmltools::HTML(rule_text), class = "rm-pill-rule")
+      rep_Pill(
+        "Participant flag",
+        htmltools::HTML(rule_text),
+        class = "rm-pill-rule"
+      )
     ),
     htmltools::tags$div(
       id = "rm-how",
       class = "rm-how",
       hidden = NA,
-      htmltools::HTML(sprintf('<ul>
+      htmltools::HTML(sprintf(
+        '<ul>
 <li>A <strong>window</strong> is %1$s consecutive measurements of one measure for one participant, in date order (visit breaks ties; missing values skipped). A window <strong>repeats</strong> when all %1$s values are identical. Each participant and measure has <strong>N</strong> repeating windows of <strong>D</strong> windows; the KRIs <code>kri0020a</code>&ndash;<code>f</code> sum N and D by site.</li>
 <li>Participants are <strong>evaluable</strong> for a measure once they have enough windows. Flag rule: %2$s. Change the rule, thresholds and minimum windows under <strong>Settings</strong> in the bar below; participant flags in every section follow, while site flags keep the KRI rule.</li>
 <li><strong>Blood pressure</strong> (Settings): <em>Separate</em> shows systolic and diastolic BP (the KRIs); <em>Combined</em> shows paired BP, where a window repeats only when both readings repeat over the same visits (no KRI); <em>Both</em> shows all three.</li>
 <li>Pick measures under <strong>Measures</strong> in the bar below, or click a measure in the Study overview, to focus every section except the Study overview, which always covers the whole study. Click a country or site to filter; remove a filter with its &times; or all of them with <strong>Reset filters</strong>.</li>
 <li>The last three sections drill down from one row per participant (Participant listing) to one per participant and measure (Measure listing) to one per visit record or value (Data table). Click a participant, tile or row in any of them to filter the whole report to that participant; click it again to clear.</li>
-</ul>', nW, rule_text))
+</ul>',
+        nW,
+        rule_text
+      ))
     )
   )
 }
@@ -78,18 +100,33 @@ rep_Header <- function(lClass, strStudy, dSnapshotDate = NULL, strContext = "") 
 #' @return An `htmltools` tag.
 #' @keywords internal
 #' @export
-rep_Seg <- function(strLabel, vValues, strSelected, strAttr, strGroup = NULL, strIdPrefix = NULL) {
+rep_Seg <- function(
+  strLabel,
+  vValues,
+  strSelected,
+  strAttr,
+  strGroup = NULL,
+  strIdPrefix = NULL
+) {
   htmltools::tags$span(
     class = "rm-seg",
     role = "group",
     `aria-label` = strLabel,
     lapply(names(vValues), function(v) {
       lAttrs <- list()
-      if (!is.null(strIdPrefix)) lAttrs$id <- paste0(strIdPrefix, v)
+      if (!is.null(strIdPrefix)) {
+        lAttrs$id <- paste0(strIdPrefix, v)
+      }
       lAttrs$type <- "button"
       lAttrs[[strAttr]] <- if (is.null(strGroup)) v else strGroup
-      if (!is.null(strGroup)) lAttrs$value <- v
-      lAttrs[["aria-pressed"]] <- if (identical(v, strSelected)) "true" else "false"
+      if (!is.null(strGroup)) {
+        lAttrs$value <- v
+      }
+      lAttrs[["aria-pressed"]] <- if (identical(v, strSelected)) {
+        "true"
+      } else {
+        "false"
+      }
       do.call(htmltools::tags$button, c(lAttrs, list(vValues[[v]])))
     })
   )
@@ -127,11 +164,35 @@ rep_Toolbar <- function(dfVitals, lSettings) {
       rep_Chip("site", "Site"),
       rep_Chip("subj", "Participant")
     ),
-    htmltools::tags$span(id = "rm-count", class = "rm-count", title = "Filters apply to every section except the Study overview."),
-    htmltools::tags$button(id = "rm-reset", type = "button", class = "rm-ghost", title = "Clear the measure, country, site and participant filters", "Reset filters"),
+    htmltools::tags$span(
+      id = "rm-count",
+      class = "rm-count",
+      title = "Filters apply to every section except the Study overview."
+    ),
+    htmltools::tags$button(
+      id = "rm-reset",
+      type = "button",
+      class = "rm-ghost",
+      title = "Clear the measure, country, site and participant filters",
+      "Reset filters"
+    ),
     htmltools::tags$span(class = "rm-vr"),
-    htmltools::tags$button(id = "rm-settings-toggle", type = "button", class = "rm-btn", `aria-expanded` = "false", `aria-controls` = "rm-settings", "Settings"),
-    htmltools::tags$button(id = "rm-toc-toggle", type = "button", class = "rm-ghost", `aria-pressed` = "false", style = "display:none;", "Hide contents"),
+    htmltools::tags$button(
+      id = "rm-settings-toggle",
+      type = "button",
+      class = "rm-btn",
+      `aria-expanded` = "false",
+      `aria-controls` = "rm-settings",
+      "Settings"
+    ),
+    htmltools::tags$button(
+      id = "rm-toc-toggle",
+      type = "button",
+      class = "rm-ghost",
+      `aria-pressed` = "false",
+      style = "display:none;",
+      "Hide contents"
+    ),
     rep_SettingsPanel(lSettings)
   )
 }
@@ -141,9 +202,17 @@ rep_RuleText <- function(lMeta) {
   sprintf(
     "<span class=\"rm-rule-text\">%s; participants need %s window%s for a flag</span>",
     if (lMeta$rule == "rate") {
-      sprintf("%% of windows that repeat, Amber \u2265 %s%%, Red \u2265 %s%%", format(100 * th[1]), format(100 * th[2]))
+      sprintf(
+        "%% of windows that repeat, Amber \u2265 %s%%, Red \u2265 %s%%",
+        format(100 * th[1]),
+        format(100 * th[2])
+      )
     } else {
-      sprintf("repeating windows, Amber \u2265 %s, Red \u2265 %s", format(th[1]), format(th[2]))
+      sprintf(
+        "repeating windows, Amber \u2265 %s, Red \u2265 %s",
+        format(th[1]),
+        format(th[2])
+      )
     },
     lMeta$min_windows,
     if (lMeta$min_windows == 1) "" else "s"
@@ -151,7 +220,11 @@ rep_RuleText <- function(lMeta) {
 }
 
 rep_Pill <- function(label, ..., class = NULL) {
-  htmltools::tags$span(class = paste(c("rm-pill", class), collapse = " "), htmltools::tags$b(label), ...)
+  htmltools::tags$span(
+    class = paste(c("rm-pill", class), collapse = " "),
+    htmltools::tags$b(label),
+    ...
+  )
 }
 
 # A popover under the Settings button.
@@ -164,7 +237,10 @@ rep_SettingsPanel <- function(lSettings) {
     )
   }
   dot <- function(color) {
-    htmltools::tags$span(class = "rm-dot", style = sprintf("background:%1$s;border-color:%1$s", color))
+    htmltools::tags$span(
+      class = "rm-dot",
+      style = sprintf("background:%1$s;border-color:%1$s", color)
+    )
   }
   set_row <- function(label, control, help = NULL, `for` = NULL) {
     htmltools::tags$div(
@@ -183,30 +259,63 @@ rep_SettingsPanel <- function(lSettings) {
     htmltools::tags$div(
       class = "rm-set-head",
       htmltools::tags$b("Report settings"),
-      htmltools::tags$span(class = "rm-set-hint", "Participant flags follow; site flags keep the KRI rule \u00b7 Esc to close")
+      htmltools::tags$span(
+        class = "rm-set-hint",
+        "Participant flags follow; site flags keep the KRI rule \u00b7 Esc to close"
+      )
     ),
     set_row(
       "Blood pressure",
-      rep_Seg("Blood pressure", c(separate = "Separate", combined = "Combined", both = "Both"), lSettings$bp, "data-rm-set", strGroup = "bp"),
+      rep_Seg(
+        "Blood pressure",
+        c(separate = "Separate", combined = "Combined", both = "Both"),
+        lSettings$bp,
+        "data-rm-set",
+        strGroup = "bp"
+      ),
       "Separate: systolic and diastolic BP (the KRIs). Combined: paired BP, where a window repeats only when both readings repeat. Both: all three."
     ),
     set_row(
       "Participant flag",
-      rep_Seg("Flag rule", c(count = "# repeating", rate = "% repeating"), lSettings$rule, "data-rm-set", strGroup = "rule"),
+      rep_Seg(
+        "Flag rule",
+        c(count = "# repeating", rate = "% repeating"),
+        lSettings$rule,
+        "data-rm-set",
+        strGroup = "rule"
+      ),
       "Count repeating windows, or their share of the participant\u2019s windows."
     ),
     set_row(
       "Thresholds",
       htmltools::tagList(
-        num("rm-th-amber", htmltools::tagList(dot("#FEAA02"), "Amber \u2265"), 0, "any"),
-        num("rm-th-red", htmltools::tagList(dot("#FF5859"), "Red \u2265"), 0, "any")
+        num(
+          "rm-th-amber",
+          htmltools::tagList(dot("#FEAA02"), "Amber \u2265"),
+          0,
+          "any"
+        ),
+        num(
+          "rm-th-red",
+          htmltools::tagList(dot("#FF5859"), "Red \u2265"),
+          0,
+          "any"
+        )
       )
     ),
     set_row(
       "Minimum windows",
       htmltools::tagList(
-        htmltools::tags$input(id = "rm-min-windows", type = "number", min = 1, step = 1),
-        htmltools::tags$span(class = "rm-unit", `data-rm-unit` = "rm-min-windows"),
+        htmltools::tags$input(
+          id = "rm-min-windows",
+          type = "number",
+          min = 1,
+          step = 1
+        ),
+        htmltools::tags$span(
+          class = "rm-unit",
+          `data-rm-unit` = "rm-min-windows"
+        ),
         htmltools::tags$span(class = "rm-unit", "per participant and measure")
       ),
       "Participants with fewer windows are not evaluable.",
@@ -214,9 +323,23 @@ rep_SettingsPanel <- function(lSettings) {
     ),
     htmltools::tags$div(
       class = "rm-set-foot",
-      htmltools::tags$button(id = "rm-settings-defaults", type = "button", class = "rm-ghost", "Restore defaults"),
-      htmltools::tags$span(id = "rm-settings-msg", class = "rm-settings-msg", role = "status"),
-      htmltools::tags$button(id = "rm-settings-done", type = "button", class = "rm-btn rm-pri", "Done")
+      htmltools::tags$button(
+        id = "rm-settings-defaults",
+        type = "button",
+        class = "rm-ghost",
+        "Restore defaults"
+      ),
+      htmltools::tags$span(
+        id = "rm-settings-msg",
+        class = "rm-settings-msg",
+        role = "status"
+      ),
+      htmltools::tags$button(
+        id = "rm-settings-done",
+        type = "button",
+        class = "rm-btn rm-pri",
+        "Done"
+      )
     )
   )
 }
@@ -226,7 +349,11 @@ rep_Chip <- function(key, label) {
     id = paste0("rm-chip-", key),
     class = "rm-chip",
     style = "display:none;",
-    htmltools::tags$span(label, ": ", htmltools::tags$span(class = "rm-chip-value")),
+    htmltools::tags$span(
+      label,
+      ": ",
+      htmltools::tags$span(class = "rm-chip-value")
+    ),
     htmltools::tags$button(
       type = "button",
       `data-rm-clear` = key,
@@ -239,9 +366,15 @@ rep_Chip <- function(key, label) {
 # rmFilters.js hides the BP options the Blood pressure setting does not show.
 rep_MeasureSelect <- function(dfVitals) {
   # Without a `kri` column, every measure with a metric ID gets the badge.
-  bKRI <- if ("kri" %in% names(dfVitals)) dfVitals$kri %in% TRUE else !is.na(dfVitals$metric)
+  bKRI <- if ("kri" %in% names(dfVitals)) {
+    dfVitals$kri %in% TRUE
+  } else {
+    !is.na(dfVitals$metric)
+  }
   kri_badge <- function(i) {
-    if (bKRI[i]) htmltools::tags$span(class = "rm-kri", title = dfVitals$metric[i], "KRI")
+    if (bKRI[i]) {
+      htmltools::tags$span(class = "rm-kri", title = dfVitals$metric[i], "KRI")
+    }
   }
   htmltools::tags$span(
     class = "rm-ms",
@@ -263,14 +396,25 @@ rep_MeasureSelect <- function(dfVitals) {
       hidden = NA,
       htmltools::tags$label(
         class = "rm-ms-all",
-        htmltools::tags$input(id = "rm-vital-all", type = "checkbox", checked = NA),
+        htmltools::tags$input(
+          id = "rm-vital-all",
+          type = "checkbox",
+          checked = NA
+        ),
         " All measures"
       ),
       lapply(seq_len(nrow(dfVitals)), function(i) {
         htmltools::tags$label(
           `data-rm-vital-opt` = dfVitals$vital[i],
-          htmltools::tags$input(type = "checkbox", value = dfVitals$vital[i], `data-rm-vital-cb` = NA, checked = NA),
-          " ", dfVitals$label[i], " ",
+          htmltools::tags$input(
+            type = "checkbox",
+            value = dfVitals$vital[i],
+            `data-rm-vital-cb` = NA,
+            checked = NA
+          ),
+          " ",
+          dfVitals$label[i],
+          " ",
           kri_badge(i)
         )
       })

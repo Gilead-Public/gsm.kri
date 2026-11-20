@@ -30,8 +30,18 @@ Widget_RepeatMeasurementsTiles <- function(
 ) {
   strLabel <- match.arg(strLabel)
   vRequired <- c(
-    "subjid", "invid", "country", "vital", "column", "flag",
-    "Numerator", "Denominator", "rate", "label_rate", "label_nd", "label_both"
+    "subjid",
+    "invid",
+    "country",
+    "vital",
+    "column",
+    "flag",
+    "Numerator",
+    "Denominator",
+    "rate",
+    "label_rate",
+    "label_nd",
+    "label_both"
   )
   vMissing <- setdiff(vRequired, names(dfTiles))
   gsm.core::stop_if(
@@ -44,18 +54,28 @@ Widget_RepeatMeasurementsTiles <- function(
   }
   dfVitals <- rep_Vitals()
   vVitals <- unique(dfTiles$vital)
-  vVitals <- c(intersect(dfVitals$vital, vVitals), setdiff(vVitals, dfVitals$vital))
+  vVitals <- c(
+    intersect(dfVitals$vital, vVitals),
+    setdiff(vVitals, dfVitals$vital)
+  )
   dfColumns <- tibble::tibble(
     vital = vVitals,
     column = dfTiles$column[match(vVitals, dfTiles$vital)],
-    label = dplyr::coalesce(dfVitals$label[match(vVitals, dfVitals$vital)], vVitals),
+    label = dplyr::coalesce(
+      dfVitals$label[match(vVitals, dfVitals$vital)],
+      vVitals
+    ),
     metric = dfVitals$metric[match(vVitals, dfVitals$vital)]
   )
   vColors <- rep_FlagColors()
   htmlwidgets::createWidget(
     name = "Widget_RepeatMeasurementsTiles",
     x = list(
-      tiles = jsonlite::toJSON(dfTiles[c(vRequired, "severity")], dataframe = "rows", na = "null"),
+      tiles = jsonlite::toJSON(
+        dfTiles[c(vRequired, "severity")],
+        dataframe = "rows",
+        na = "null"
+      ),
       columns = jsonlite::toJSON(dfColumns, dataframe = "rows", na = "null"),
       colors = as.list(vColors[c("Red", "Amber", "Green", "Not evaluable")]),
       label = strLabel,

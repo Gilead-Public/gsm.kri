@@ -128,7 +128,10 @@ MarkConsecutiveRepeats <- function(
       "{.arg strMeasureVal} is required when {.arg strMeasureCol} is supplied."
     )
   }
-  if (!is.null(strMeasureCol) && (length(strMeasureVal) != 1 || is.na(strMeasureVal))) {
+  if (
+    !is.null(strMeasureCol) &&
+      (length(strMeasureVal) != 1 || is.na(strMeasureVal))
+  ) {
     cli::cli_abort(
       "{.arg strMeasureVal} must be a single non-missing value, not {.val {strMeasureVal}}."
     )
@@ -168,13 +171,19 @@ MarkConsecutiveRepeats <- function(
   # input column with it would be overwritten.
   strReserved <- lCols[startsWith(lCols, ".rep_")]
   if (length(strReserved)) {
-    cli::cli_abort("Column{?s} {.val {strReserved}} {?is/are} reserved for internal use.")
+    cli::cli_abort(
+      "Column{?s} {.val {strReserved}} {?is/are} reserved for internal use."
+    )
   }
 
   if (!is.null(strMeasureCol)) {
     df <- df[df[[strMeasureCol]] %in% strMeasureVal, , drop = FALSE]
   }
-  df <- df[!is.na(df[[strValueCol]]) & !is.na(df[[strSubjectCol]]), , drop = FALSE]
+  df <- df[
+    !is.na(df[[strValueCol]]) & !is.na(df[[strSubjectCol]]),
+    ,
+    drop = FALSE
+  ]
   df[[strDateCol]] <- ParseDateColumn(df[[strDateCol]], strDateCol)
   # arrange() is stable and sorts in the C locale, so full ties keep input order.
   df <- dplyr::arrange(
@@ -247,7 +256,12 @@ MarkColumns <- function() {
 #' @return A `data.frame` with the subject column, `Numerator` and
 #'   `Denominator`, one row per element of `vSubjects`.
 #' @noRd
-SummarizeConsecutiveRepeats <- function(dfMarked, vSubjects, strSubjectCol, nWindowLength) {
+SummarizeConsecutiveRepeats <- function(
+  dfMarked,
+  vSubjects,
+  strSubjectCol,
+  nWindowLength
+) {
   dfCounts <- dfMarked %>%
     dplyr::summarise(
       Numerator = as.numeric(sum(.data$.rep_window_start)),
@@ -260,7 +274,10 @@ SummarizeConsecutiveRepeats <- function(dfMarked, vSubjects, strSubjectCol, nWin
     dplyr::left_join(dfCounts, by = strSubjectCol) %>%
     dplyr::mutate(
       Numerator = dplyr::coalesce(.data$Numerator, 0),
-      Denominator = as.numeric(pmax(0, dplyr::coalesce(.data$.rep_n, 0L) - nWindowLength + 1))
+      Denominator = as.numeric(pmax(
+        0,
+        dplyr::coalesce(.data$.rep_n, 0L) - nWindowLength + 1
+      ))
     ) %>%
     dplyr::select(-".rep_n")
 }

@@ -35,14 +35,28 @@ test_that("measurements in order and their repeat-window mask match MarkConsecut
       d <- dfMarked[dfMarked$subjid == id, ]
       row <- df[df$subjid == id & df$vital == strVital, ]
       strLabel <- paste(id, strVital)
-      expect_equal(row$values, paste(d[[strVital]], collapse = " "), label = strLabel)
-      expect_equal(row$in_repeat_window, paste(as.integer(d$.rep_in_window), collapse = " "), label = strLabel)
-      expect_equal(row$has_repeat, if (any(d$.rep_in_window)) "Y" else "N", label = strLabel)
+      expect_equal(
+        row$values,
+        paste(d[[strVital]], collapse = " "),
+        label = strLabel
+      )
+      expect_equal(
+        row$in_repeat_window,
+        paste(as.integer(d$.rep_in_window), collapse = " "),
+        label = strLabel
+      )
+      expect_equal(
+        row$has_repeat,
+        if (any(d$.rep_in_window)) "Y" else "N",
+        label = strLabel
+      )
     }
   }
 
   # Known answers (see rep_Fixture()).
-  mask <- function(id, strVital) df$in_repeat_window[df$subjid == id & df$vital == strVital]
+  mask <- function(id, strVital) {
+    df$in_repeat_window[df$subjid == id & df$vital == strVital]
+  }
   expect_equal(mask("D", "weight"), "1 1 1 0 0 0")
   expect_equal(mask("A", "weight"), "1 1 1 1")
   expect_equal(mask("B", "pulse"), "1 1 1 0")
@@ -59,12 +73,20 @@ test_that("measurements past V9 follow V9 in the listing (#346)", {
   expect_equal(c(row$Numerator, row$Denominator), c(1, 10))
   expect_equal(
     strsplit(row$visits, "|", fixed = TRUE)[[1]][9:12],
-    c("#9 \u00b7 V9 \u00b7 2024-01-09", "#10 \u00b7 V10 \u00b7 2024-01-10", "#11 \u00b7 V11 \u00b7 2024-01-11", "#12 \u00b7 V12 \u00b7 2024-01-12")
+    c(
+      "#9 \u00b7 V9 \u00b7 2024-01-09",
+      "#10 \u00b7 V10 \u00b7 2024-01-10",
+      "#11 \u00b7 V11 \u00b7 2024-01-11",
+      "#12 \u00b7 V12 \u00b7 2024-01-12"
+    )
   )
   # Visits sorted as text would put V10 to V12 after V1, not V9.
   dfWide <- rep_DataTableWide(lClass)
   expect_equal(dfWide$visit, paste0("V", 1:12))
-  expect_equal(dfWide$weight_in_repeat_window, rep(c("N", "Y", "N"), c(8, 3, 1)))
+  expect_equal(
+    dfWide$weight_in_repeat_window,
+    rep(c("N", "Y", "N"), c(8, 3, 1))
+  )
 })
 
 test_that("vitals listing is one compact level with flag and rate in one column and CSV only when export is enabled (#346)", {
@@ -79,16 +101,37 @@ test_that("vitals listing is one compact level with flag and rate in one column 
   expect_equal(opts$buttons[[1]]$extend, "csv")
   expect_equal(opts$buttons[[1]]$exportOptions$columns, ":visible, .rm-export")
   vNames <- unlist(lapply(opts$columnDefs, `[[`, "name"))
-  expect_true(all(c("country", "invid", "subjid", "label", "vital", "has_repeat") %in% vNames))
+  expect_true(all(
+    c("country", "invid", "subjid", "label", "vital", "has_repeat") %in% vNames
+  ))
   # Visible: country, site, participant, vital, measures, flag \u00b7 rate, measurements.
-  vHidden <- unlist(lapply(Filter(function(d) isFALSE(d$visible), opts$columnDefs), `[[`, "targets"))
+  vHidden <- unlist(lapply(
+    Filter(function(d) isFALSE(d$visible), opts$columnDefs),
+    `[[`,
+    "targets"
+  ))
   vShown <- setdiff(seq_along(dfRows) - 1L, vHidden)
-  expect_equal(names(dfRows)[vShown + 1L], c("country", "invid", "subjid", "label", "n_unique", "flag", "values"))
+  expect_equal(
+    names(dfRows)[vShown + 1L],
+    c("country", "invid", "subjid", "label", "n_unique", "flag", "values")
+  )
   # Metric, measured, N, D, rate and visit details stay in the CSV.
-  vExport <- unlist(lapply(Filter(function(d) identical(d$className, "rm-export"), opts$columnDefs), `[[`, "targets"))
+  vExport <- unlist(lapply(
+    Filter(function(d) identical(d$className, "rm-export"), opts$columnDefs),
+    `[[`,
+    "targets"
+  ))
   expect_setequal(
     names(dfRows)[vExport + 1L],
-    c("metric", "measured", "Numerator", "Denominator", "rate", "in_repeat_window", "visits")
+    c(
+      "metric",
+      "measured",
+      "Numerator",
+      "Denominator",
+      "rate",
+      "in_repeat_window",
+      "visits"
+    )
   )
   expect_true("n_unique" %in% vNames)
   expect_match(w$x$container, "Distinct")

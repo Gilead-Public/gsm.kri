@@ -18,7 +18,10 @@ test_that("report_repeatmeasurements module is discoverable and wired to Report_
     c("Mapped_VS", "Mapped_SUBJ", "Reporting_Results", "Reporting_Metrics")
   )
   step_fns <- vapply(wf$steps, `[[`, character(1), "name")
-  expect_equal(step_fns, c("list", "getwd", "gsm.kri::Report_RepeatMeasurements"))
+  expect_equal(
+    step_fns,
+    c("list", "getwd", "gsm.kri::Report_RepeatMeasurements")
+  )
   expect_equal(
     wf$steps[[3]]$params,
     list(

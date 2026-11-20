@@ -18,13 +18,36 @@
 #' @export
 rep_Vitals <- function() {
   tibble::tibble(
-    vital = c("weight", "pulse", "sysbp", "diabp", "bp", "resp", "temp", "height", "bsa"),
+    vital = c(
+      "weight",
+      "pulse",
+      "sysbp",
+      "diabp",
+      "bp",
+      "resp",
+      "temp",
+      "height",
+      "bsa"
+    ),
     label = c(
-      "Weight", "Heart rate", "Systolic BP", "Diastolic BP", "Blood pressure (SBP/DBP)",
-      "Respiratory rate", "Temperature", "Height", "BSA"
+      "Weight",
+      "Heart rate",
+      "Systolic BP",
+      "Diastolic BP",
+      "Blood pressure (SBP/DBP)",
+      "Respiratory rate",
+      "Temperature",
+      "Height",
+      "BSA"
     ),
     short = c("WT", "HR", "SBP", "DBP", "BP", "RR", "Temp", "Ht", "BSA"),
-    metric = c(paste0("kri0020", letters[1:4]), NA, paste0("kri0020", letters[5:6]), NA, NA)
+    metric = c(
+      paste0("kri0020", letters[1:4]),
+      NA,
+      paste0("kri0020", letters[5:6]),
+      NA,
+      NA
+    )
   )
 }
 
@@ -79,7 +102,11 @@ rep_FlagSeverity <- function(vFlag) {
 #'
 #' @keywords internal
 #' @export
-rep_FlagThresholds <- function(strFlagRule = c("count", "rate"), vFlagThresholds = NULL, dfMetrics = NULL) {
+rep_FlagThresholds <- function(
+  strFlagRule = c("count", "rate"),
+  vFlagThresholds = NULL,
+  dfMetrics = NULL
+) {
   strFlagRule <- match.arg(strFlagRule)
   if (is.null(vFlagThresholds)) {
     if (strFlagRule == "count") {
@@ -89,11 +116,15 @@ rep_FlagThresholds <- function(strFlagRule = c("count", "rate"), vFlagThresholds
     if (is.null(strMetric)) {
       return(c(0.2, 0.3))
     }
-    vMetric <- suppressWarnings(as.numeric(strsplit(as.character(strMetric), ",")[[1]]))
+    vMetric <- suppressWarnings(as.numeric(strsplit(
+      as.character(strMetric),
+      ","
+    )[[1]]))
     gsm.core::stop_if(
       cnd = !rep_ValidThresholds(vMetric),
       message = paste0(
-        "The kri0020/cou0020 metric Threshold (\"", strMetric,
+        "The kri0020/cou0020 metric Threshold (\"",
+        strMetric,
         "\") must be two positive numbers, Amber then Red, with Amber <= Red"
       )
     )
@@ -108,7 +139,11 @@ rep_FlagThresholds <- function(strFlagRule = c("count", "rate"), vFlagThresholds
 }
 
 rep_ValidThresholds <- function(x) {
-  is.numeric(x) && length(x) == 2 && all(is.finite(x)) && all(x > 0) && x[1] <= x[2]
+  is.numeric(x) &&
+    length(x) == 2 &&
+    all(is.finite(x)) &&
+    all(x > 0) &&
+    x[1] <= x[2]
 }
 
 # Flags `Score` with gsm.core::Flag(), as the kri0020 workflow does: 0 below
@@ -191,7 +226,12 @@ rep_WindowLength <- function(dfMetrics, nWindowLength = NULL) {
 # column selector.
 # lHeaders: CSV headers by 0-based column index where the CSV should not use
 # the displayed header, such as an abbreviation.
-rep_CsvButton <- function(bExport, strFile, columns = ":visible", lHeaders = NULL) {
+rep_CsvButton <- function(
+  bExport,
+  strFile,
+  columns = ":visible",
+  lHeaders = NULL
+) {
   if (!isTRUE(bExport)) {
     return(list())
   }
@@ -201,10 +241,12 @@ rep_CsvButton <- function(bExport, strFile, columns = ":visible", lHeaders = NUL
     modifier = list(search = "applied")
   )
   if (length(lHeaders)) {
-    lOptions$format <- list(header = DT::JS(sprintf(
-      "function (data, idx) { var h = %s; return h[idx] !== undefined ? h[idx] : data; }",
-      jsonlite::toJSON(lHeaders, auto_unbox = TRUE)
-    )))
+    lOptions$format <- list(
+      header = DT::JS(sprintf(
+        "function (data, idx) { var h = %s; return h[idx] !== undefined ? h[idx] : data; }",
+        jsonlite::toJSON(lHeaders, auto_unbox = TRUE)
+      ))
+    )
   }
   list(list(
     extend = "csv",
