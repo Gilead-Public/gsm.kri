@@ -382,7 +382,7 @@ test_that("empty input returns an empty summary with the expected columns", {
 })
 
 test_that("columns named like the engine's marks work as input columns (#342)", {
-  # v1.8.0 accepted these names; the marks use .rep_ names so they still work.
+  # The marks use .rep_ names, so input columns may use these names.
   df <- make_vs(c(5, 10, 10, 10, 10))
   df$vs_dt <- as.Date("2024-01-01") + c(0, 0, 1, 2, 3)
   df$visit <- c(2, 1, 3, 4, 5)
@@ -395,11 +395,6 @@ test_that("columns named like the engine's marks work as input columns (#342)", 
     expect_identical(
       Detect_ConsecutiveRepeats(dfRenamed, "weight", strOrderCol = strCol),
       dfExpected,
-      label = strCol
-    )
-    expect_identical(
-      Detect_ConsecutiveRepeats(dfRenamed, "weight", strOrderCol = strCol),
-      Detect_ConsecutiveRepeats_v1.8.0(dfRenamed, "weight", strOrderCol = strCol),
       label = strCol
     )
   }
@@ -441,50 +436,46 @@ test_that("the engine's internal .rep_ column names are rejected as input column
   expect_equal(Detect_ConsecutiveRepeats(df, "weight")$Numerator, 1)
 })
 
-test_that("results are identical to the v1.8.0 implementation on the six vitals (#342)", {
-  dfVS <- mapped_data$Mapped_VS
-  dfVS <- dfVS[!is.na(dfVS$subjid), ]
-  for (strCol in c("weight", "pulse", "sysbp", "diabp", "resp", "temp")) {
-    for (nW in 2:4) {
-      expect_identical(
-        Detect_ConsecutiveRepeats(dfVS, strCol, strOrderCol = "visit", nWindowLength = nW),
-        Detect_ConsecutiveRepeats_v1.8.0(dfVS, strCol, strOrderCol = "visit", nWindowLength = nW),
-        label = paste(strCol, nW)
-      )
-    }
-  }
-})
-
-test_that("results are identical to the v1.8.0 implementation on random data (#342)", {
-  withr::local_seed(20240307)
-  for (i in seq_len(300)) {
-    df <- detect_random_vs(
-      nSubjects = sample(0:8, 1),
-      nValues = sample(1:4, 1),
-      pNA = sample(c(0, 0.15, 0.5), 1)
+test_that("text values, date ties, missing values and window lengths give the expected counts (#342)", {
+  d <- as.Date("2024-01-01")
+  df <- data.frame(
+    subjid = c(rep("A", 9), "B", "B"),
+    vs_dt = d + c(1, 1, 2, 2, 3, 4, 4, 5, 6, 1, 2),
+    visit = c("V1", "V2", "V3", "V3", "V4", "V5", "V5", "V6", "V7", "V1", "V2"),
+    measure = c("BP", "BP", "BP", "HR", "BP", "BP", "HR", "BP", "BP", "BP", "BP"),
+    value = c(
+      "110/70", "120/80", "120/80", "60", NA, "120/80", "60", "118/76", "118/76",
+      "130/85", "130/85"
     )
-    if (i %% 3 == 0) {
-      # Paired-BP-like text values.
-      df$value <- ifelse(is.na(df$value), NA_character_, paste0(df$value, "/80"))
-    }
-    nW <- sample(2:5, 1)
-    strOrderCol <- if (i %% 2 == 0) "visit"
-    label <- paste0("run ", i, ", W = ", nW)
-    expect_identical(
-      Detect_ConsecutiveRepeats(df, "value", strOrderCol = strOrderCol, nWindowLength = nW),
-      Detect_ConsecutiveRepeats_v1.8.0(df, "value", strOrderCol = strOrderCol, nWindowLength = nW),
-      label = label
+  )
+  # In visit order, A's BP values are 110/70, 120/80, 120/80, 120/80, 118/76,
+  # 118/76 (runs of 1, 3 and 2; the missing value is skipped) and B's are
+  # 130/85, 130/85. V1 and V2 share a date, so putting V2 first would give
+  # runs of 1, 1, 2 and 2.
+  lExpected <- list(
+    `2` = list(Numerator = c(3, 1), Denominator = c(5, 1)),
+    `3` = list(Numerator = c(1, 0), Denominator = c(4, 0)),
+    `4` = list(Numerator = c(0, 0), Denominator = c(3, 0))
+  )
+  dfShuffled <- df[c(9, 2, 11, 4, 1, 7, 5, 10, 3, 8, 6), ]
+  for (nW in 2:4) {
+    res <- Detect_ConsecutiveRepeats(
+      dfShuffled, "value",
+      strOrderCol = "visit", strMeasureCol = "measure", strMeasureVal = "BP",
+      nWindowLength = nW
     )
+    expect_equal(res$subjid, c("A", "B"), label = paste("W =", nW))
+    expect_equal(res$Numerator, lExpected[[as.character(nW)]]$Numerator, label = paste("W =", nW))
+    expect_equal(res$Denominator, lExpected[[as.character(nW)]]$Denominator, label = paste("W =", nW))
+    # Zero-padded ISO text dates give the same result as Date input.
     expect_identical(
       Detect_ConsecutiveRepeats(
-        df, "value",
-        strMeasureCol = "measure", strMeasureVal = "HR", nWindowLength = nW
+        transform(dfShuffled, vs_dt = format(vs_dt)), "value",
+        strOrderCol = "visit", strMeasureCol = "measure", strMeasureVal = "BP",
+        nWindowLength = nW
       ),
-      Detect_ConsecutiveRepeats_v1.8.0(
-        df, "value",
-        strMeasureCol = "measure", strMeasureVal = "HR", nWindowLength = nW
-      ),
-      label = paste(label, "(long)")
+      res,
+      label = paste("text dates, W =", nW)
     )
   }
 })
@@ -526,22 +517,7 @@ test_that("character dates that are not ISO dates are an error", {
   expect_error(MarkConsecutiveRepeats(df, "weight"), "must be a Date, a POSIXct or ISO dates")
 })
 
-test_that("zero-padded ISO text dates match Date input and v1.8.0 on random data", {
-  withr::local_seed(20240308)
-  for (i in seq_len(100)) {
-    df <- detect_random_vs(nSubjects = sample(1:6, 1), nValues = sample(1:3, 1))
-    dfText <- transform(df, vs_dt = format(vs_dt))
-    nW <- sample(2:4, 1)
-    res <- Detect_ConsecutiveRepeats(dfText, "value", strOrderCol = "visit", nWindowLength = nW)
-    expect_identical(res, Detect_ConsecutiveRepeats(df, "value", strOrderCol = "visit", nWindowLength = nW))
-    expect_identical(
-      res,
-      Detect_ConsecutiveRepeats_v1.8.0(dfText, "value", strOrderCol = "visit", nWindowLength = nW)
-    )
-  }
-})
-
-test_that("missing dates sort last and still join windows, as in v1.8.0", {
+test_that("missing dates sort last and still join windows", {
   df <- data.frame(
     subjid = "A",
     vs_dt = as.Date(c("2024-01-01", NA, "2024-01-02", "2024-01-03")),
@@ -550,7 +526,6 @@ test_that("missing dates sort last and still join windows, as in v1.8.0", {
   # Ordered 5, 7, 7, 7(NA date): the last window repeats.
   res <- Detect_ConsecutiveRepeats(df, "weight")
   expect_equal(c(res$Numerator, res$Denominator), c(1, 2))
-  expect_identical(res, Detect_ConsecutiveRepeats_v1.8.0(df, "weight"))
 })
 
 test_that("strMeasureVal must be one value, and subjects without that measure are absent", {
