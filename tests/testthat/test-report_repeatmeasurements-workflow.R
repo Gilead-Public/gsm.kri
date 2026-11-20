@@ -31,7 +31,6 @@ test_that("report_repeatmeasurements module is discoverable and wired to Report_
 })
 
 test_that("the report_repeatmeasurements module renders the report (#344)", {
-  testthat::skip_if_not_installed("DT")
   dir <- system.file("workflow/4_modules", package = "gsm.kri")
   wf <- workr::MakeWorkflowList(
     strNames = "report_repeatmeasurements",
