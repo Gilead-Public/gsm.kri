@@ -1,5 +1,7 @@
 # gsm.kri (development version)
 
+- The Eligibility report has a new layout with linked study, country and site views, a criteria map and an expandable Ineligibility Listing with CSV export. Studies that deliver the optional pilot data also get a Potentially Ineligible status and a Status over Time chart (#371).
+
 # gsm.kri v1.8.0
 
 This minor release adds the IP Monitoring report and metrics (IP non-starters and premature treatment discontinuation) and the repeat-measure vital-sign KRIs.

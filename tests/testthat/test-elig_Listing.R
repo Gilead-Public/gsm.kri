@@ -1,0 +1,117 @@
+test_that("the listing has flagged participants only, with basic or pilot columns (#371)", {
+  basic <- elig_ListingData(elig_ClassifyParticipants(elig_Fixture(), elig_FixtureGroups()))
+  expect_equal(nrow(basic), 4)
+  expect_false("Source" %in% names(basic))
+  expect_equal(
+    names(basic),
+    c("Country", "Site", "Investigator Name", "Participant ID", "Eligibility Status", "PD", "EDC eCRF", "Which I/E")
+  )
+  expect_false(any(grepl("Potentially", unlist(basic))))
+
+  pilot <- elig_ListingData(elig_ClassifyParticipants(elig_Fixture(bPilot = TRUE, bEdcPd = FALSE), strMode = "pilot"))
+  expect_true(all(c("Important PD", "Non-important PD", "EDC Query", "EDC PD") %in% names(pilot)))
+  expect_false("PD" %in% names(pilot))
+  expect_true(all(pilot$`EDC PD` == "N/A"))
+  expect_equal(pilot$`Eligibility Status`[pilot$`Participant ID` == "P03"], ELIG_POTENTIAL)
+
+  dfNoQuery <- elig_Fixture(bPilot = TRUE)
+  dfNoQuery$edc_query <- NA_character_
+  noQuery <- elig_ListingData(elig_ClassifyParticipants(dfNoQuery, strMode = "pilot"))
+  expect_true(all(noQuery$`EDC Query` == "N/A"))
+  expect_false("P03" %in% noQuery$`Participant ID`)
+})
+
+test_that("participant records come from level 2 records, else from the PD dates/terms and criteria (#371)", {
+  basic <- elig_ParticipantRecords(elig_ClassifyParticipants(elig_Fixture()))
+  pd <- basic[basic$subjid == "P02", ]
+  expect_equal(pd$source, rep("Protocol Deviation", 2))
+  expect_equal(pd$Date, c("2026-01-02", "2026-02-03"))
+  expect_equal(pd$Description, c("PD one", "PD two"))
+  expect_equal(basic$Criterion[basic$subjid == "P01"], c("incl1", "excl2"))
+  expect_false("P03" %in% basic$subjid)
+
+  pilot <- elig_ParticipantRecords(
+    elig_ClassifyParticipants(elig_Fixture(bPilot = TRUE), strMode = "pilot"),
+    elig_FixtureRecords()
+  )
+  q <- pilot[pilot$subjid == "P03", ]
+  expect_equal(c(q$source, q$ID, q$Date), c("EDC Query", "Q1", "2026-10-01"))
+  expect_false(any(c("studyid", "record_id", "record_date") %in% names(pilot)))
+})
+
+test_that("the expanded row shows one table per source with only the fields used (#371)", {
+  basic <- elig_ParticipantRecords(elig_ClassifyParticipants(elig_Fixture()))
+  html <- as.character(elig_ParticipantDetail("P01", basic))
+  expect_match(html, "EDC eCRF (2)", fixed = TRUE)
+  expect_no_match(html, "Protocol Deviation")
+
+  pilot <- elig_ParticipantRecords(
+    elig_ClassifyParticipants(elig_Fixture(bPilot = TRUE), strMode = "pilot"),
+    elig_FixtureRecords()
+  )
+  html <- as.character(elig_ParticipantDetail("P03", pilot))
+  expect_match(html, "EDC Query (1)", fixed = TRUE)
+  expect_match(html, "Please check I/E", fixed = TRUE)
+  expect_no_match(html, "Description")
+})
+
+test_that("the CSV export adds one single-line details column per source (#371)", {
+  dfElig <- elig_ClassifyParticipants(elig_Fixture(bPilot = TRUE, bEdcPd = FALSE), strMode = "pilot")
+  recs <- elig_ParticipantRecords(dfElig, elig_FixtureRecords())
+  ex <- elig_ExportData(elig_ListingData(dfElig), recs)
+  expect_equal(tail(names(ex), 4), paste(ELIG_RECORD_SOURCES, "details"))
+  row <- function(id) ex[ex$`Participant ID` == id, ]
+  expect_equal(row("P02")$`Protocol Deviation details`, "ID: PD-9; Date: 2026-01-02; Description: PD one")
+  expect_equal(
+    row("P01")$`EDC Query details`,
+    "ID: Q2; Date: 2026-09-01; Folder: ENROLL; Form: IE; QueryText: Check criterion; Status: Answered"
+  )
+  expect_equal(row("P01")$`EDC PD details`, "")
+
+  dfBasic <- elig_ClassifyParticipants(elig_Fixture())
+  # Without level 2 records the eCRF details would only repeat Which I/E.
+  basic <- elig_ExportData(elig_ListingData(dfBasic), elig_ParticipantRecords(dfBasic), bRecords = FALSE)
+  expect_equal(tail(names(basic), 1), "Protocol Deviation details")
+  expect_equal(
+    basic$`Protocol Deviation details`[basic$`Participant ID` == "P02"],
+    "Date: 2026-01-02; Description: PD one | Date: 2026-02-03; Description: PD two"
+  )
+})
+
+test_that("overview cards follow the mode (#371)", {
+  basic <- as.character(elig_OverviewCards(elig_ClassifyParticipants(elig_Fixture())))
+  expect_match(basic, ELIG_NO_RISK, fixed = TRUE)
+  expect_no_match(basic, "Potentially", fixed = TRUE)
+
+  pilot <- as.character(elig_OverviewCards(elig_ClassifyParticipants(elig_Fixture(bPilot = TRUE), strMode = "pilot"), bPilot = TRUE))
+  expect_match(pilot, "Total risk", fixed = TRUE)
+  expect_match(pilot, ELIG_POTENTIAL, fixed = TRUE)
+})
+
+test_that("a source with no level 2 records for a participant falls back to Mapped_EXCLUSION (#371)", {
+  dfElig <- elig_ClassifyParticipants(elig_Fixture(bPilot = TRUE), strMode = "pilot")
+  recs <- elig_ParticipantRecords(dfElig, elig_FixtureRecords())
+  p05 <- recs[recs$subjid == "P05", ]
+  expect_equal(c(p05$source, p05$Date, p05$Description), c("Protocol Deviation", "2026-04-05", "PD four"))
+  expect_setequal(recs$source[recs$subjid == "P01"], c("EDC Query", "EDC eCRF", "EDC eCRF"))
+  # Level 2 wins where it has the source: P02 keeps PD-9 only.
+  expect_equal(recs$ID[recs$subjid == "P02"], "PD-9")
+})
+
+test_that("the CSV keeps a details column for a source outside the known four (#371)", {
+  dfElig <- elig_ClassifyParticipants(elig_Fixture(bPilot = TRUE), strMode = "pilot")
+  dfRecords <- elig_FixtureRecords()
+  dfRecords$source[dfRecords$record_id == "Q1"] <- "Other Source"
+  ex <- elig_ExportData(elig_ListingData(dfElig), elig_ParticipantRecords(dfElig, dfRecords))
+  expect_equal(tail(names(ex), 5), c(paste(ELIG_RECORD_SOURCES, "details"), "Other Source details"))
+  expect_match(ex$`Other Source details`[ex$`Participant ID` == "P03"], "^ID: Q1; ")
+})
+
+test_that("CSV details flatten line breaks inside record values (#371)", {
+  dfElig <- elig_ClassifyParticipants(elig_Fixture(bPilot = TRUE), strMode = "pilot")
+  dfRecords <- elig_FixtureRecords()
+  dfRecords$QueryText[dfRecords$record_id == "Q1"] <- "Line one\r\nline two"
+  ex <- elig_ExportData(elig_ListingData(dfElig), elig_ParticipantRecords(dfElig, dfRecords))
+  expect_match(ex$`EDC Query details`[ex$`Participant ID` == "P03"], "QueryText: Line one line two", fixed = TRUE)
+  expect_false(any(grepl("[\r\n]", unlist(ex))))
+})
