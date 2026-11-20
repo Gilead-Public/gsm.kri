@@ -6,14 +6,18 @@ in five sections: study overview, site/country distribution, participant
 listing, measure listing and data table.
 The flag rule, thresholds, minimum windows and blood pressure view set the
 report's starting settings; reviewers can change them in the report's
-Settings panel, which recomputes every participant flag in the browser."><meta property="og:description" content="`r lifecycle::badge(&quot;experimental&quot;)`
+Settings panel, which recomputes every participant flag in the browser.
+The `rep_*()` functions build the report's pieces. They are exported for
+the report template and are not intended to be called directly."><meta property="og:description" content="`r lifecycle::badge(&quot;experimental&quot;)`
 Generates the Repeat Measurements report for the repeat-measure KRIs
 (`kri0020a`–`f`, `cou0020a`–`f`): consecutive identical vital sign values,
 in five sections: study overview, site/country distribution, participant
 listing, measure listing and data table.
 The flag rule, thresholds, minimum windows and blood pressure view set the
 report's starting settings; reviewers can change them in the report's
-Settings panel, which recomputes every participant flag in the browser."><meta name="robots" content="noindex"></head><body>
+Settings panel, which recomputes every participant flag in the browser.
+The `rep_*()` functions build the report's pieces. They are exported for
+the report template and are not intended to be called directly."><meta name="robots" content="noindex"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -59,7 +63,7 @@ Settings panel, which recomputes every participant flag in the browser."><meta n
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Report_RepeatMeasurements function</h1>
-      <small class="dont-index">Source: <a href="https://github.com/Gilead-Public/gsm.kri/blob/jwildfire-repeat-measure-kri-report/R/Report_RepeatMeasurements.R" class="external-link"><code>R/Report_RepeatMeasurements.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/Gilead-Public/gsm.kri/blob/jwildfire-repeat-measure-kri-report/R/Report_RepeatMeasurements.R" class="external-link"><code>R/Report_RepeatMeasurements.R</code></a>, <a href="https://github.com/Gilead-Public/gsm.kri/blob/jwildfire-repeat-measure-kri-report/R/rep_Classify.R" class="external-link"><code>R/rep_Classify.R</code></a>, <a href="https://github.com/Gilead-Public/gsm.kri/blob/jwildfire-repeat-measure-kri-report/R/rep_Controls.R" class="external-link"><code>R/rep_Controls.R</code></a>, and 5 more</small>
       <div class="d-none name"><code>Report_RepeatMeasurements.Rd</code></div>
     </div>
 
@@ -72,6 +76,8 @@ listing, measure listing and data table.</p>
 <p>The flag rule, thresholds, minimum windows and blood pressure view set the
 report's starting settings; reviewers can change them in the report's
 Settings panel, which recomputes every participant flag in the browser.</p>
+<p>The `rep_*()` functions build the report's pieces. They are exported for
+the report template and are not intended to be called directly.</p>
     </div>
 
     <div class="section level2">
@@ -92,6 +98,50 @@ Settings panel, which recomputes every participant flag in the browser.</p>
 <span>  strOutputFile <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  strInputPath <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"report"</span>, <span class="st">"Report_RepeatMeasurements.Rmd"</span>, package <span class="op">=</span></span>
 <span>    <span class="st">"gsm.kri"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">rep_Classify</span><span class="op">(</span></span>
+<span>  <span class="va">lListings</span>,</span>
+<span>  dfMetrics <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  nWindowLength <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  strFlagRule <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"count"</span>, <span class="st">"rate"</span><span class="op">)</span>,</span>
+<span>  vFlagThresholds <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  nMinWindows <span class="op">=</span> <span class="fl">1</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">rep_Header</span><span class="op">(</span><span class="va">lClass</span>, <span class="va">strStudy</span>, dSnapshotDate <span class="op">=</span> <span class="cn">NULL</span>, strContext <span class="op">=</span> <span class="st">""</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">rep_Seg</span><span class="op">(</span></span>
+<span>  <span class="va">strLabel</span>,</span>
+<span>  <span class="va">vValues</span>,</span>
+<span>  <span class="va">strSelected</span>,</span>
+<span>  <span class="va">strAttr</span>,</span>
+<span>  strGroup <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  strIdPrefix <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">rep_Toolbar</span><span class="op">(</span><span class="va">dfVitals</span>, <span class="va">lSettings</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">rep_DataTableWide</span><span class="op">(</span><span class="va">lClass</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">rep_DataTable</span><span class="op">(</span><span class="va">dfWide</span>, <span class="va">dfVitals</span>, bExport <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">rep_ParticipantTiles</span><span class="op">(</span><span class="va">lClass</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">rep_SiteFlagRows</span><span class="op">(</span><span class="va">lClass</span>, dfResults <span class="op">=</span> <span class="cn">NULL</span>, dfMetrics <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">rep_SiteRule</span><span class="op">(</span>dfMetrics <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">rep_VitalRows</span><span class="op">(</span><span class="va">lClass</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">rep_VitalsListing</span><span class="op">(</span><span class="va">dfVitalRows</span>, nWindowLength <span class="op">=</span> <span class="cn">NULL</span>, bExport <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">rep_Vitals</span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">rep_FlagThresholds</span><span class="op">(</span></span>
+<span>  strFlagRule <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"count"</span>, <span class="st">"rate"</span><span class="op">)</span>,</span>
+<span>  vFlagThresholds <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  dfMetrics <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -105,13 +155,15 @@ report colours sites by their KRI flag.</p></dd>
 
 
 <dt id="arg-dfmetrics">dfMetrics<a class="anchor" aria-label="anchor" href="#arg-dfmetrics"></a></dt>
-<dd><p>`data.frame` Reporting metrics. The window length and
-thresholds come from the `kri0020` rows when present.</p></dd>
+<dd><p>`data.frame` Reporting metrics (`ID`, `Threshold`, ...).
+The window length and thresholds come from the `kri0020` rows when
+present.</p></dd>
 
 
 <dt id="arg-llistings">lListings<a class="anchor" aria-label="anchor" href="#arg-llistings"></a></dt>
 <dd><p>`list` with `Mapped_SUBJ` (`subjid`, `invid`, `country`;
-`studyid` optional) and `Mapped_VS` (`subjid`, `vs_dt`, optional `visit`
+`studyid` optional; a missing `invid` or `country` is shown as
+`"(missing)"`) and `Mapped_VS` (`subjid`, `vs_dt`, optional `visit`
 and `vsperf_std`, and one numeric column per measure).</p></dd>
 
 
@@ -122,20 +174,18 @@ and `vsperf_std`, and one numeric column per measure).</p></dd>
 
 <dt id="arg-nwindowlength">nWindowLength<a class="anchor" aria-label="anchor" href="#arg-nwindowlength"></a></dt>
 <dd><p>`integer` Window length when `dfMetrics` has none.
-See [rep_Classify()].</p></dd>
+Shown in the measure listing header. See "Participant flags".</p></dd>
 
 
 <dt id="arg-strflagrule">strFlagRule<a class="anchor" aria-label="anchor" href="#arg-strflagrule"></a></dt>
 <dd><p>`character` Participant flag rule, `"count"` (default)
-or `"rate"`. See [rep_Classify()].</p></dd>
+or `"rate"`. See "Participant flags".</p></dd>
 
 
 <dt id="arg-vflagthresholds">vFlagThresholds<a class="anchor" aria-label="anchor" href="#arg-vflagthresholds"></a></dt>
 <dd><p>`numeric` Amber and Red thresholds for
 `strFlagRule`: window counts for `"count"`, proportions such as
-`c(0.2, 0.3)` for `"rate"`. Default `NULL`: 2 and 3 repeating windows, or
-the site-level `kri0020` / `cou0020` rate thresholds. See
-[rep_FlagThresholds()].</p></dd>
+`c(0.2, 0.3)` for `"rate"`. Default `NULL`; see "Participant flags".</p></dd>
 
 
 <dt id="arg-nminwindows">nMinWindows<a class="anchor" aria-label="anchor" href="#arg-nminwindows"></a></dt>
@@ -170,10 +220,152 @@ Default: `""` (none).</p></dd>
 <dt id="arg-strinputpath">strInputPath<a class="anchor" aria-label="anchor" href="#arg-strinputpath"></a></dt>
 <dd><p>`string` Path to the template `Rmd`.</p></dd>
 
+
+<dt id="arg-lclass">lClass<a class="anchor" aria-label="anchor" href="#arg-lclass"></a></dt>
+<dd><p>`list` Output of `rep_Classify()`.</p></dd>
+
+
+<dt id="arg-strstudy">strStudy<a class="anchor" aria-label="anchor" href="#arg-strstudy"></a></dt>
+<dd><p>`character` Study ID(s) shown in the header; missing and
+empty IDs are dropped.</p></dd>
+
+
+<dt id="arg-strlabel">strLabel<a class="anchor" aria-label="anchor" href="#arg-strlabel"></a></dt>
+<dd><p>`character` Accessible label of a button group.</p></dd>
+
+
+<dt id="arg-vvalues">vValues<a class="anchor" aria-label="anchor" href="#arg-vvalues"></a></dt>
+<dd><p>`character` Button labels, named by value.</p></dd>
+
+
+<dt id="arg-strselected">strSelected<a class="anchor" aria-label="anchor" href="#arg-strselected"></a></dt>
+<dd><p>`character` The value pressed initially.</p></dd>
+
+
+<dt id="arg-strattr">strAttr<a class="anchor" aria-label="anchor" href="#arg-strattr"></a></dt>
+<dd><p>`character` Data attribute the script reads, such as
+`"data-rm-ov"`.</p></dd>
+
+
+<dt id="arg-strgroup">strGroup<a class="anchor" aria-label="anchor" href="#arg-strgroup"></a></dt>
+<dd><p>`character` Optional. When given, every button sets
+`strAttr` to `strGroup` and carries its value in `value`.</p></dd>
+
+
+<dt id="arg-stridprefix">strIdPrefix<a class="anchor" aria-label="anchor" href="#arg-stridprefix"></a></dt>
+<dd><p>`character` Optional prefix of each button's `id`.</p></dd>
+
+
+<dt id="arg-dfvitals">dfVitals<a class="anchor" aria-label="anchor" href="#arg-dfvitals"></a></dt>
+<dd><p>`data.frame` The `vitals` element of `rep_Classify()`. An
+optional logical `kri` column limits the KRI badge to measures with
+results.</p></dd>
+
+
+<dt id="arg-lsettings">lSettings<a class="anchor" aria-label="anchor" href="#arg-lsettings"></a></dt>
+<dd><p>`list` Initial settings: `rule`, `thresholds`,
+`minWindows` and `bp`.</p></dd>
+
+
+<dt id="arg-dfwide">dfWide<a class="anchor" aria-label="anchor" href="#arg-dfwide"></a></dt>
+<dd><p>`data.frame` Output of `rep_DataTableWide()`.</p></dd>
+
+
+<dt id="arg-dfvitalrows">dfVitalRows<a class="anchor" aria-label="anchor" href="#arg-dfvitalrows"></a></dt>
+<dd><p>`data.frame` Output of `rep_VitalRows()`.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>File path of the saved report HTML, returned invisibly.</p>
+    <p>`Report_RepeatMeasurements()`: file path of the saved report HTML,
+  returned invisibly. `rep_Classify()`: a `list` (see "Participant
+  flags"). `rep_Header()`, `rep_Toolbar()`, `rep_Seg()`: `htmltools` tags.
+  `rep_DataTable()`, `rep_VitalsListing()`: `DT` htmlwidgets.
+  `rep_FlagThresholds()`: `numeric` Amber, then Red. `rep_SiteRule()`: a
+  `list` with `thresholds` and `accrual`. Other `rep_*()` functions: a
+  `tibble`.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="measures">Measures<a class="anchor" aria-label="anchor" href="#measures"></a></h2>
+
+
+<p>`rep_Vitals()` lists the measures the report knows: the six scored by
+`kri0020a`–`f` / `cou0020a`–`f`, paired blood pressure (`bp`), height and
+BSA. Any other numeric `Mapped_VS` column is also windowed and flagged, but
+only the six have a KRI. Timing and ID columns are skipped: `studyid`,
+`subjid`, `invid`, `country`, `visit`, `vs_dt`, `vsperf_std`, and any name
+(ignoring case) starting with `visit` or ending in `dy`, `num`, `seq` or
+`id`, plus the report's own `record`, `in_repeat_window` and `window_start`.</p>
+<p>Paired blood pressure is report-only and added when `sysbp` and `diabp` are
+present: one value per record with both, so a window repeats only when both
+repeat over the same visits. It does not reconcile with `kri0020c` /
+`kri0020d`.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="participant-flags">Participant flags<a class="anchor" aria-label="anchor" href="#participant-flags"></a></h2>
+
+
+<p>`rep_Classify()` windows every measure of every enrolled participant once,
+with the engine behind [Detect_ConsecutiveRepeats()], so every section
+reads one frame; summing `Numerator` and `Denominator` by site or country
+reproduces the metrics. A character `vs_dt` must hold ISO dates. When
+`dfMetrics` has a window length, it wins over `nWindowLength` (with a
+warning if they differ); otherwise the default is 3.</p>
+<p>A participant's flag for a measure comes from [gsm.core::Flag()]:
+* `"count"`: repeating windows (`Numerator`) against `vFlagThresholds`.
+* `"rate"`: `Numerator / Denominator` against `vFlagThresholds`.</p>
+<p>Amber is at or above the first threshold, Red at or above the second.
+Participants with fewer than `nMinWindows` windows are `Not evaluable`.
+`rep_FlagThresholds()` supplies the defaults: 2 and 3 for `"count"`; for
+`"rate"`, the site-level `kri0020` / `cou0020` `Threshold` in `dfMetrics`,
+else 0.2 and 0.3. The rate defaults reuse site thresholds at the
+participant grain, a starting point rather than a calibration: a
+participant has far fewer windows than a site, so one repeating window
+moves the rate a lot.</p>
+<p>`rep_Classify()` returns a `list` with `participants` (one row per
+participant and measure, with `Numerator`, `Denominator`, `rate` and
+`flag`), `measurements` (one row per non-missing measurement with its
+repeat-window marks), `records` (the enrolled participants' `Mapped_VS`
+rows with a `record` key), `vitals` (the measures in the report) and
+`meta` (`window_length`, `window_source`, `rule`, `thresholds`,
+`min_windows`, and `split_sites`: sites with more than one country, which
+raise a warning).</p>
+    </div>
+    <div class="section level2">
+    <h2 id="site-flags">Site flags<a class="anchor" aria-label="anchor" href="#site-flags"></a></h2>
+
+
+<p>`rep_SiteFlagRows()` returns one flag per site and measure (`0` Green, `1`
+Amber, `2` Red, `NA` not evaluated). A KRI measure with `kri0020a`–`f` site
+results takes the latest KRI flag (`source = "KRI"`); every other measure
+is flagged in the report with the `kri0020` steps
+([gsm.core::Input_Rate()], [gsm.core::Transform_Rate()],
+[gsm.core::Analyze_Identity()], [gsm.core::Flag()]; `source = "report"`)
+using `rep_SiteRule()`: Amber and Red at the metric `Threshold` (default
+0.2 and 0.3) for sites with at least `AccrualThreshold` windows (default
+3).</p>
+    </div>
+    <div class="section level2">
+    <h2 id="report-sections">Report sections<a class="anchor" aria-label="anchor" href="#report-sections"></a></h2>
+
+
+<p>Each section is built from the output of `rep_Classify()` (`lClass`) and
+sorted by worst flag, then most repeating windows, then participant.
+* `rep_Header()`, `rep_Toolbar()` and `rep_Seg()` build the header card,
+  the sticky filter strip and its segmented toggle buttons. `rmFilters.js`
+  finds their elements by data attribute and rewrites them as the reviewer
+  changes the settings.
+* `rep_ParticipantTiles()` returns one tile per participant and measure,
+  drawn by [Widget_RepeatMeasurementsTiles()].
+* `rep_VitalRows()` returns the measure listing, one row per participant
+  and measure with aligned, space-separated `values` and
+  `in_repeat_window`; `rep_VitalsListing()` renders it as a `DT` table.
+* `rep_DataTableWide()` returns one row per `Mapped_VS` record with one
+  column and one `&lt;vital&gt;_in_repeat_window` column per measure;
+  `rep_DataTable()` renders it as a `DT` table, from which the browser
+  also builds the Long table.</p>
+<p>The tables name every column so the filter script can find it; their CSV
+buttons export the rows the filters show.</p>
     </div>
 
     <div class="section level2">

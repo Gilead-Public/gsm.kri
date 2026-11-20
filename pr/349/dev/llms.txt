@@ -215,6 +215,19 @@ lCharts <- RunWorkflow(
 - [`Report_PrematureDeaths()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_PrematureDeaths.md)
   : Report_PrematureDeaths function
 - [`Report_RepeatMeasurements()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_RepeatMeasurements.md)
+  [`rep_Classify()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_RepeatMeasurements.md)
+  [`rep_Header()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_RepeatMeasurements.md)
+  [`rep_Seg()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_RepeatMeasurements.md)
+  [`rep_Toolbar()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_RepeatMeasurements.md)
+  [`rep_DataTableWide()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_RepeatMeasurements.md)
+  [`rep_DataTable()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_RepeatMeasurements.md)
+  [`rep_ParticipantTiles()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_RepeatMeasurements.md)
+  [`rep_SiteFlagRows()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_RepeatMeasurements.md)
+  [`rep_SiteRule()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_RepeatMeasurements.md)
+  [`rep_VitalRows()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_RepeatMeasurements.md)
+  [`rep_VitalsListing()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_RepeatMeasurements.md)
+  [`rep_Vitals()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_RepeatMeasurements.md)
+  [`rep_FlagThresholds()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_RepeatMeasurements.md)
   : Report_RepeatMeasurements function
 - [`Report_StudyInfo()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_StudyInfo.md)
   : Report Study Information
