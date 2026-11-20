@@ -19,7 +19,7 @@ This page provides a sample AE Grading Report generated using the `gsm.kri` pack
 
 The report is the visual companion to the two site-level grading metrics, `kri0016` (High-Grade AE Proportion) and `kri0017` (Low-Grade AE Proportion). It is produced by `Report_AEGrading()`, which is wired up as the `report_aegrading` workflow module.
 
-> **Note on the example data.** The `gsm.core` example data has a realistic study-wide grade distribution, but grades are assigned independently of site, so no site deviates from the study and the report has nothing to find. This page therefore redraws `aetoxgr` with `Sim_AEGrading()`, keeping the real subject/site structure and per-site AE burden while giving a few sites deliberate over- and under-grading behaviour. Every number below is illustrative; the mechanics are real.
+> **Note on the example data.** `gsm.core::lSource` is the shared gsm test data simulated by `gsm.datasim`. Its AE grades follow term-specific CTCAE distributions, and a few sites are seeded to systematically over- or under-grade, so the report has real signal to find. The data is simulated, so every number below is illustrative; the mechanics are real.
 
 <details>
 <summary>Setup</summary>
@@ -32,8 +32,6 @@ library(gsm.kri)
 library(gsm.reporting)
 library(dplyr)
 library(tibble)
-
-source("util/Sim_AEGrading.R")
 
 # --- Step 1: Map raw data (real gsm.mapping pipeline) ------------------------
 core_mappings <- c(
@@ -48,11 +46,7 @@ mappings_wf <- MakeWorkflowList(
 lRaw <- Ingest(gsm.core::lSource, CombineSpecs(mappings_wf))
 lMapped <- RunWorkflows(mappings_wf, lRaw)
 
-# --- Step 2: Simulate site-level grading behaviour (example only) ------------
-sim <- Sim_AEGrading(lMapped$Mapped_AE, lMapped$Mapped_SUBJ)
-lMapped$Mapped_AE <- sim$AE
-
-# --- Step 3: Run the AE grading metrics --------------------------------------
+# --- Step 2: Run the AE grading metrics --------------------------------------
 metric_names <- c("kri0016", "kri0017")
 metrics_wf <- MakeWorkflowList(
   strNames = metric_names,
@@ -61,7 +55,7 @@ metrics_wf <- MakeWorkflowList(
 )
 lAnalyzed <- RunWorkflows(metrics_wf, c(lMapped, list(lWorkflows = metrics_wf)))
 
-# --- Step 4: Build reporting frames (real gsm.reporting pipeline) ------------
+# --- Step 3: Build reporting frames (real gsm.reporting pipeline) ------------
 reporting_wf <- MakeWorkflowList(
   strNames = c("Results", "Metrics", "Bounds", "Groups"),
   strPath = "workflow/3_reporting",
@@ -75,7 +69,7 @@ lReporting <- RunWorkflows(
 dfResults <- lReporting$Reporting_Results |>
   FilterByLatestSnapshotDate()
 
-# --- Step 5: Assemble the listings consumed by the report --------------------
+# --- Step 4: Assemble the listings consumed by the report --------------------
 lListings <- list(
   Mapped_AE = lMapped$Mapped_AE,
   Mapped_SUBJ = lMapped$Mapped_SUBJ
