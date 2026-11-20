@@ -43,13 +43,8 @@ Report_PrematureDeaths <- function(
     package = "gsm.kri"
   )
 ) {
-  rlang::check_installed(
-    "rmarkdown",
-    reason = "to run `Report_PrematureDeaths()`"
-  )
   rlang::check_installed("knitr", reason = "to run `Report_PrematureDeaths()`")
   rlang::check_installed("plotly", reason = "to run `Report_PrematureDeaths()`")
-  rlang::check_installed("DT", reason = "to run `Report_PrematureDeaths()`")
 
   gsm.core::stop_if(
     cnd = !(is.numeric(nWindowDays) &&
@@ -62,7 +57,7 @@ Report_PrematureDeaths <- function(
     strOutputFile <- "Report_PrematureDeaths.html"
   }
 
-  gsm.kri::RenderRmd(
+  RenderRmd(
     strInputPath = strInputPath,
     strOutputFile = strOutputFile,
     strOutputDir = strOutputDir,

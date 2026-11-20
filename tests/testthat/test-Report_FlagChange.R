@@ -19,7 +19,11 @@ dfResults <- data.frame(
 )
 
 test_that("returns NULL if required columns are missing (#75)", {
-  df <- gsm.core::reportingResults
+  # Drop delta columns explicitly; gsm.core::reportingResults may include them.
+  df <- dplyr::select(
+    gsm.core::reportingResults,
+    -dplyr::ends_with(c("_Previous", "_Change"))
+  )
   output <- capture.output(result <- Report_FlagChange(df))
   expect_null(result)
   expect_true(any(grepl("Missing delta columns", output)))
@@ -63,4 +67,13 @@ test_that("HTML output is generated for valid changed flags (#75)", {
   expect_true(any(grepl("Flags Changes", output)))
   expect_true(any(grepl("G1", output)))
   expect_true(any(grepl("amber", output)))
+})
+
+test_that("output is a raw HTML block without TeX math", {
+  # Pandoc's markdown reader stalls on large inline HTML lists (pkgdown build).
+  output <- paste(capture.output(Report_FlagChange(dfResults)), collapse = "\n")
+  expect_match(output, "```{=html}", fixed = TRUE)
+  expect_match(output, "\n```\n?$")
+  expect_match(output, "&Delta; Score", fixed = TRUE)
+  expect_no_match(output, "\\(\\Delta\\)", fixed = TRUE)
 })

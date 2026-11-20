@@ -36,10 +36,8 @@ Report_IPMonitoring <- function(
     package = "gsm.kri"
   )
 ) {
-  rlang::check_installed("rmarkdown", reason = "to run `Report_IPMonitoring()`")
   rlang::check_installed("knitr", reason = "to run `Report_IPMonitoring()`")
   rlang::check_installed("plotly", reason = "to run `Report_IPMonitoring()`")
-  rlang::check_installed("DT", reason = "to run `Report_IPMonitoring()`")
 
   if (is.null(dSnapshotDate) && !is.null(dfResults$SnapshotDate)) {
     dSnapshotDate <- max(as.Date(dfResults$SnapshotDate))
@@ -53,7 +51,7 @@ Report_IPMonitoring <- function(
     strOutputFile <- "Report_IPMonitoring.html"
   }
 
-  gsm.kri::RenderRmd(
+  RenderRmd(
     strInputPath = strInputPath,
     strOutputFile = strOutputFile,
     strOutputDir = strOutputDir,
