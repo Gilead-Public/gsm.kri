@@ -18,12 +18,13 @@ NULL
 #'
 #' Apply standardized formatting to gt tables.
 #'
+#' @param ... Additional arguments passed to [gt::gt()].
 #' @inheritParams gt-shared
 #' @inherit gt-shared return
 #' @keywords internal
-gt_style <- function(data) {
-  if (!inherits(data, "gt_tbl")) {
-    data <- gt::gt(data)
+gt_style <- function(data, ...) {
+  if (!inherits(data, "gt_tbl") || ...length()) {
+    data <- gt::gt(data, ...)
   }
   gt::opt_vertical_padding(data, 0.5)
 }

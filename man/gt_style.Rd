@@ -4,10 +4,12 @@
 \alias{gt_style}
 \title{Shared formats for gt tables}
 \usage{
-gt_style(data)
+gt_style(data, ...)
 }
 \arguments{
 \item{data}{A `gt_tbl` object.}
+
+\item{...}{Additional arguments passed to [gt::gt()].}
 }
 \value{
 An object of class `gt_tbl`.
