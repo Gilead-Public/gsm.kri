@@ -11,6 +11,7 @@ meta:
   Score: Adjusted Z-Score
   AnalysisType: binary
   Threshold: -3,-2,2,3
+  Flag: "-2,-1,0,1,2"
   AccrualThreshold: 3
   AccrualMetric: Denominator
   GenerateRiskSignal: true
@@ -27,6 +28,11 @@ steps:
     name: gsm.core::ParseThreshold
     params:
       strThreshold: Threshold
+  - output: vFlag
+    name: gsm.core::ParseThreshold
+    params:
+      strThreshold: Flag
+      bSort: false
   - output: Temp_SCREENED
     name: workr::RunQuery
     params:
@@ -57,6 +63,7 @@ steps:
     params:
       dfAnalyzed: Analysis_Analyzed
       vThreshold: vThreshold
+      vFlag: vFlag
       nAccrualThreshold: AccrualThreshold
       strAccrualMetric: AccrualMetric
   - output: Analysis_Summary

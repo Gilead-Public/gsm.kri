@@ -1,5 +1,7 @@
 # gsm.kri (development version)
 
+- Added an explicit `Flag` attribute to the country-level Normal Approximation metrics (`cou0001`-`cou0004`, `cou0012`) so every metric workflow pairs `Threshold` with `Flag`. Flagging output is unchanged (#369).
+
 # gsm.kri v1.8.0
 
 This minor release adds the IP Monitoring report and metrics (IP non-starters and premature treatment discontinuation) and the repeat-measure vital-sign KRIs.
