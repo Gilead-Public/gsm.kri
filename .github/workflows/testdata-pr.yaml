@@ -1,5 +1,5 @@
 # name: testdata-pr.yaml
-# version: 1.0.0
+# version: 1.1.0
 # Description: On PRs to dev/main in a package that feeds the shared gsm test
 #   data, build one test data bundle from the PR's head commit. Every other
 #   test workflow in the repo waits for this run (wait-for-bundle) and uses its
@@ -32,6 +32,9 @@ jobs:
     needs: check
     if: needs.check.outputs.needed == 'true'
     uses: gilead-public/gsm.datasim/.github/workflows/build-pr-bundle.yaml@actions
+    with:
+      # gsm.datasim branch or SHA that builds the bundle.
+      datasim-ref: dev
     secrets:
       CM_BOT_APP_ID: ${{ secrets.CM_BOT_APP_ID }}
       CM_BOT_PRIVATE_KEY: ${{ secrets.CM_BOT_PRIVATE_KEY }}
