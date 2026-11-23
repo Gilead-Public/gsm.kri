@@ -13,3 +13,4 @@ inst/.DS_Store
 .positai
 .posit
 tests/testthat/_problems
+tests/testthat/testthat-problems.rds

@@ -31,15 +31,15 @@ steps:
     name: gsm.core::ParseThreshold
     params:
       strThreshold: Threshold
-  - output: vRiskScoreWeight
-    name: gsm.core::ParseThreshold
-    params:
-      strThreshold: RiskScoreWeight
-      bSort: false
   - output: vFlag
     name: gsm.core::ParseThreshold
     params:
       strThreshold: Flag
+      bSort: false
+  - output: vRiskScoreWeight
+    name: gsm.core::ParseThreshold
+    params:
+      strThreshold: RiskScoreWeight
       bSort: false
   # Dosed subjects only: a site without a dosed subject drops out of the results.
   - output: Temp_DOSED

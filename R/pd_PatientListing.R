@@ -214,7 +214,6 @@ pd_PatientListing <- function(
     cnd = !is.data.frame(dfDeath),
     message = "dfDeath is not a data.frame"
   )
-  rlang::check_installed("DT", reason = "to run `pd_PatientListing()`")
 
   dfListing <- pd_PatientListingData(
     dfResults,

@@ -32,15 +32,15 @@ steps:
     name: gsm.core::ParseThreshold
     params:
       strThreshold: Threshold
-  - output: vRiskScoreWeight
-    name: gsm.core::ParseThreshold
-    params:
-      strThreshold: RiskScoreWeight
-      bSort: false
   - output: vFlag
     name: gsm.core::ParseThreshold
     params:
       strThreshold: Flag
+      bSort: false
+  - output: vRiskScoreWeight
+    name: gsm.core::ParseThreshold
+    params:
+      strThreshold: RiskScoreWeight
       bSort: false
   - output: Analysis_Input
     name: gsm.core::Input_Rate
