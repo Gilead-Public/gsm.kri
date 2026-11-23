@@ -83,7 +83,6 @@ Report_Eligibility <- function(
     package = "gsm.kri"
   )
 ) {
-  rlang::check_installed("rmarkdown", reason = "to run `Report_Eligibility()`")
   rlang::check_installed("knitr", reason = "to run `Report_Eligibility()`")
   rlang::check_installed("gsm.qtl", reason = "to run `Report_Eligibility()`")
 
@@ -92,7 +91,7 @@ Report_Eligibility <- function(
     strOutputFile <- "Report_Eligibility.html"
   }
 
-  gsm.kri::RenderRmd(
+  RenderRmd(
     strInputPath = strInputPath,
     strOutputFile = strOutputFile,
     strOutputDir = strOutputDir,

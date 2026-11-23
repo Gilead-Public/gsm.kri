@@ -1,5 +1,6 @@
 # gsm.kri (development version)
 
+- Add the Repeat Measurements report for the repeat-measure KRIs (`kri0020a`-`f`, `cou0020a`-`f`): a study overview, site/country distribution, participant and measure listings, and a data table, with filters and adjustable participant flag rules. `Report_RepeatMeasurements()` renders it, and `workflow/4_modules/report_repeatmeasurements.yaml` is available as a workflow module (#340, #342, #343, #344, #345, #346, #347, #348).
 - Added an explicit `Flag` attribute to the country-level Normal Approximation metrics (`cou0001`-`cou0004`, `cou0012`) so every metric workflow pairs `Threshold` with `Flag`. Flagging output is unchanged (#369).
 
 # gsm.kri v1.8.0

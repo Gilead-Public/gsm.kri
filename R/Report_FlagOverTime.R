@@ -29,7 +29,7 @@ Report_FlagOverTime <- function(
 
   dfFlagOverTime %>%
     dplyr::group_by(.data$GroupLevel, .data$GroupID) %>%
-    gsm_gt() %>%
+    gt_style() %>%
     fmt_flag_rag(columns = date_cols) %>%
     fmt_present(columns = "FlagChange") %>%
     gt::cols_label(FlagChange = "New Flag?") %>%
