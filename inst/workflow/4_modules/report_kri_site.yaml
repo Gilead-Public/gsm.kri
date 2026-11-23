@@ -39,17 +39,16 @@ spec:
     Metric:
       type: numeric
 steps:
-  # Unscored ctq* metrics are not shown as site KRIs.
   - output: Reporting_Results_Site
     name: workr::RunQuery
     params:
       df: Reporting_Results
-      strQuery: "SELECT * FROM df WHERE GroupLevel == 'Site' AND MetricID NOT LIKE 'Analysis_ctq%'"
+      strQuery: "SELECT * FROM df WHERE GroupLevel == 'Site'"
   - output: Reporting_Metrics_Site
     name: workr::RunQuery
     params:
       df: Reporting_Metrics
-      strQuery: "SELECT * FROM df WHERE GroupLevel == 'Site' AND MetricID NOT LIKE 'Analysis_ctq%'"
+      strQuery: "SELECT * FROM df WHERE GroupLevel == 'Site'"
   - output: lCharts_Site
     name: gsm.kri::MakeCharts
     params:
