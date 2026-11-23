@@ -25,7 +25,7 @@ CalculateRiskScore(dfResults, dfWeights, strMetricID = "Analysis_srs0001")
   \`MetricID\`, \`Flag\`, \`Weight\` and \`WeightMax\`. This data.frame
   can be created by stacking results from \`gsm.core::Flag()\` for all
   relevant KRIs, or by calling
-  \`MakeWeights(gsm.core::reportingMetrics)\`.
+  \`gsm.kri::MakeWeights(gsm.core::reportingMetrics)\`
 
 - strMetricID:
 
@@ -75,7 +75,7 @@ dfResults <- gsm.core::reportingResults %>%
   FilterByLatestSnapshotDate()
 
 # Create weights table
-dfWeights <- MakeWeights(gsm.core::reportingMetrics)
+dfWeights <- gsm.kri::MakeWeights(gsm.core::reportingMetrics)
 
 # Calculate risk scores
 dfRiskScore <- CalculateRiskScore(dfResults, dfWeights)

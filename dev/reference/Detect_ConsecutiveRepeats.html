@@ -3,13 +3,11 @@
 Counts, per subject, the rolling windows of `nWindowLength` consecutive
 measurements in which every value is identical. Missing values are dropped
 before windows are formed. Records are ordered by `strDateCol` within
-subject, then by `strOrderCol` to break same-date ties. Records with a
-missing subject are dropped with a warning."><meta property="og:description" content="`r lifecycle::badge(&quot;experimental&quot;)`
+subject, then by `strOrderCol` to break same-date ties."><meta property="og:description" content="`r lifecycle::badge(&quot;experimental&quot;)`
 Counts, per subject, the rolling windows of `nWindowLength` consecutive
 measurements in which every value is identical. Missing values are dropped
 before windows are formed. Records are ordered by `strDateCol` within
-subject, then by `strOrderCol` to break same-date ties. Records with a
-missing subject are dropped with a warning."><meta name="robots" content="noindex"></head><body>
+subject, then by `strOrderCol` to break same-date ties."><meta name="robots" content="noindex"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -40,7 +38,6 @@ missing subject are dropped with a warning."><meta name="robots" content="noinde
     <li><a class="dropdown-item" href="../examples/Example_CrossStudySRS.html">Cross-Study KRI Report</a></li>
     <li><a class="dropdown-item" href="../examples/Example_IPMonitoring.html">IP Monitoring Report</a></li>
     <li><a class="dropdown-item" href="../examples/Example_PrematureDeaths.html">Premature Deaths Report</a></li>
-    <li><a class="dropdown-item" href="../examples/Example_RepeatMeasurements.html">Repeat Measurements Report</a></li>
     <li><a class="dropdown-item" href="../examples/Cookbook_AdverseEventKRI.html">Cookbook - Adverse Event KRI Report</a></li>
     <li><a class="dropdown-item" href="../examples/Cookbook_AdverseEventWorkflow.html">Cookbook - Adverse Event Workflow Examples</a></li>
     <li><a class="dropdown-item" href="../examples/Cookbook_ReportingWorkflow.html">Cookbook - Reporting Workflow Examples</a></li>
@@ -66,8 +63,7 @@ missing subject are dropped with a warning."><meta name="robots" content="noinde
 <p>Counts, per subject, the rolling windows of `nWindowLength` consecutive
 measurements in which every value is identical. Missing values are dropped
 before windows are formed. Records are ordered by `strDateCol` within
-subject, then by `strOrderCol` to break same-date ties. Records with a
-missing subject are dropped with a warning.</p>
+subject, then by `strOrderCol` to break same-date ties.</p>
     </div>
 
     <div class="section level2">
@@ -102,11 +98,7 @@ missing subject are dropped with a warning.</p>
 
 
 <dt id="arg-strdatecol">strDateCol<a class="anchor" aria-label="anchor" href="#arg-strdatecol"></a></dt>
-<dd><p>`character` Date/ordering column. Default `"vs_dt"`. A
-`Date` or `POSIXct` column is used as is. A character (or factor) column
-must hold ISO dates (`"YYYY-MM-DD"`); it is converted to `Date` so that,
-for example, `"2024-01-9"` sorts before `"2024-01-10"`. Any other value
-is an error. Missing dates sort last within subject.</p></dd>
+<dd><p>`character` Date/ordering column. Default `"vs_dt"`.</p></dd>
 
 
 <dt id="arg-strordercol">strOrderCol<a class="anchor" aria-label="anchor" href="#arg-strordercol"></a></dt>
@@ -121,8 +113,8 @@ for long-format data. When supplied, `df` is filtered to `strMeasureVal`.</p></d
 
 
 <dt id="arg-strmeasureval">strMeasureVal<a class="anchor" aria-label="anchor" href="#arg-strmeasureval"></a></dt>
-<dd><p>`character` The single value of `strMeasureCol` to
-keep. Required when `strMeasureCol` is supplied.</p></dd>
+<dd><p>`character` Value of `strMeasureCol` to keep. Required
+when `strMeasureCol` is supplied.</p></dd>
 
 
 <dt id="arg-nwindowlength">nWindowLength<a class="anchor" aria-label="anchor" href="#arg-nwindowlength"></a></dt>
