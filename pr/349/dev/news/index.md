@@ -7,7 +7,7 @@
   distribution, participant and measure listings, and a data table, with
   filters and adjustable participant flag rules.
   [`Report_RepeatMeasurements()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_RepeatMeasurements.md)
-  renders it. amd `workflow/4_modules/report_repeatmeasurements.yaml` is
+  renders it, and `workflow/4_modules/report_repeatmeasurements.yaml` is
   available as a workflow module
   ([\#340](https://github.com/Gilead-Public/gsm.kri/issues/340),
   [\#342](https://github.com/Gilead-Public/gsm.kri/issues/342),
@@ -17,6 +17,10 @@
   [\#346](https://github.com/Gilead-Public/gsm.kri/issues/346),
   [\#347](https://github.com/Gilead-Public/gsm.kri/issues/347),
   [\#348](https://github.com/Gilead-Public/gsm.kri/issues/348)).
+- Added an explicit `Flag` attribute to the country-level Normal
+  Approximation metrics (`cou0001`-`cou0004`, `cou0012`) so every metric
+  workflow pairs `Threshold` with `Flag`. Flagging output is unchanged
+  ([\#369](https://github.com/Gilead-Public/gsm.kri/issues/369)).
 
 ## gsm.kri v1.8.0
 
