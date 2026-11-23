@@ -1,5 +1,6 @@
 # gsm.kri (development version)
 
+- Added the site-level Enrollment KRI `kri0023` (ENR): the site's share of the study's enrolled participants, flagged by rank within the study (Red for the top 10% of sites, Yellow for the next 10%) and weighted 8 and 4 in the Site Risk Score. New `Analyze_PercentileRank()` scores groups by within-study percentile rank. The KRI ships inactive until the rank rules are signed off (#378).
 - Add the Repeat Measurements report for the repeat-measure KRIs (`kri0020a`-`f`, `cou0020a`-`f`): a study overview, site/country distribution, participant and measure listings, and a data table, with filters and adjustable participant flag rules. `Report_RepeatMeasurements()` renders it, and `workflow/4_modules/report_repeatmeasurements.yaml` is available as a workflow module (#340, #342, #343, #344, #345, #346, #347, #348).
 - Added an explicit `Flag` attribute to the country-level Normal Approximation metrics (`cou0001`-`cou0004`, `cou0012`) so every metric workflow pairs `Threshold` with `Flag`. Flagging output is unchanged (#369).
 
