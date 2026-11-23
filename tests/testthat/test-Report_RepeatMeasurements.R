@@ -1,4 +1,4 @@
-test_that("Report_RepeatMeasurements renders the filter strip and study overview (#344)", {
+test_that("Report_RepeatMeasurements renders the filter strip and study overview (#340, #344)", {
   html <- rep_default_html()
   # The header card holds the title, outside the contents list, and the study facts.
   flat <- gsub("\\s+", " ", html)
