@@ -41,7 +41,7 @@ steps:
     output: Analysis_Transformed
     params:
       dfInput: Analysis_Input
-  - name: Analyze_NormalApprox
+  - name: gsm.core::Analyze_NormalApprox
     output: Analysis_Analyzed
     params:
       dfTransformed: Analysis_Transformed
