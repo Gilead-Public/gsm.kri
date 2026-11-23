@@ -6,7 +6,8 @@ Counts, per subject, the rolling windows of \`nWindowLength\`
 consecutive measurements in which every value is identical. Missing
 values are dropped before windows are formed. Records are ordered by
 \`strDateCol\` within subject, then by \`strOrderCol\` to break
-same-date ties.
+same-date ties. Records with a missing subject are dropped with a
+warning.
 
 ## Usage
 
@@ -39,7 +40,11 @@ Detect_ConsecutiveRepeats(
 
 - strDateCol:
 
-  \`character\` Date/ordering column. Default \`"vs_dt"\`.
+  \`character\` Date/ordering column. Default \`"vs_dt"\`. A \`Date\` or
+  \`POSIXct\` column is used as is. A character (or factor) column must
+  hold ISO dates (\`"YYYY-MM-DD"\`); it is converted to \`Date\` so
+  that, for example, \`"2024-01-9"\` sorts before \`"2024-01-10"\`. Any
+  other value is an error. Missing dates sort last within subject.
 
 - strOrderCol:
 
@@ -54,8 +59,8 @@ Detect_ConsecutiveRepeats(
 
 - strMeasureVal:
 
-  \`character\` Value of \`strMeasureCol\` to keep. Required when
-  \`strMeasureCol\` is supplied.
+  \`character\` The single value of \`strMeasureCol\` to keep. Required
+  when \`strMeasureCol\` is supplied.
 
 - nWindowLength:
 
