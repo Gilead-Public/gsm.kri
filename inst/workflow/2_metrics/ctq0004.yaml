@@ -1,0 +1,64 @@
+meta:
+  Active: true
+  Type: Analysis
+  ID: ctq0004
+  GroupLevel: Site
+  Abbreviation: DTH30
+  Metric: Premature Death Rate (30 Days)
+  Numerator: Deaths in First 30 Days
+  Denominator: Enrolled Subjects
+  WindowDays: 30
+  GenerateRiskSignal: false
+spec:
+  Mapped_Death:
+    subjid:
+      type: character
+    death_dy:
+      type: numeric
+  Mapped_SUBJ:
+    subjid:
+      type: character
+    invid:
+      type: character
+steps:
+  - output: strDeathQuery
+    name: paste0
+    params:
+      strPrefix: "SELECT * FROM df WHERE death_dy <= "
+      nWindow: WindowDays
+  - output: Temp_DeathWindow
+    name: workr::RunQuery
+    params:
+      df: Mapped_Death
+      strQuery: strDeathQuery
+  - output: Analysis_Input
+    name: gsm.core::Input_Rate
+    params:
+      dfSubjects: Mapped_SUBJ
+      dfNumerator: Temp_DeathWindow
+      dfDenominator: Mapped_SUBJ
+      strSubjectCol: subjid
+      strGroupCol: invid
+      strGroupLevel: GroupLevel
+      strNumeratorMethod: Count
+      strDenominatorMethod: Count
+  - output: Analysis_Transformed
+    name: gsm.core::Transform_Rate
+    params:
+      dfInput: Analysis_Input
+  - output: Analysis_Unscored
+    name: workr::RunQuery
+    params:
+      df: Analysis_Transformed
+      strQuery: "SELECT *, CAST(NULL AS DOUBLE) AS Score, CAST(NULL AS INTEGER) AS Flag FROM df"
+  - output: Analysis_Summary
+    name: gsm.core::Summarize
+    params:
+      dfFlagged: Analysis_Unscored
+  - output: lAnalysis
+    name: list
+    params:
+      ID: ID
+      Analysis_Input: Analysis_Input
+      Analysis_Transformed: Analysis_Transformed
+      Analysis_Summary: Analysis_Summary
