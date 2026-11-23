@@ -100,10 +100,14 @@ kri_report_path <- Report_KRI(
   dfMetrics = gsm.core::reportingMetrics
 )
 ```
-Full reports for a sample trial run with [`{clindata}`](https://github.com/Gilead-BioStats/clindata) are provided below:
+Example reports built from sample data are provided below:
 
-- [Site Report](https://gilead-public.github.io/gsm.kri/report_kri_site.html)
-- [Country Report](https://gilead-public.github.io/gsm.kri/report_kri_country.html)
+- [Site KRI Report](https://gilead-public.github.io/gsm.kri/examples/Example_SiteReport.html)
+- [Country KRI Report](https://gilead-public.github.io/gsm.kri/examples/Example_CountryReport.html)
+- [Eligibility Report](https://gilead-public.github.io/gsm.kri/examples/Example_Eligibility.html)
+- [IP Monitoring Report](https://gilead-public.github.io/gsm.kri/examples/Example_IPMonitoring.html)
+- [Premature Deaths Report](https://gilead-public.github.io/gsm.kri/examples/Example_PrematureDeaths.html)
+- [Repeat Measurements Report](https://gilead-public.github.io/gsm.kri/dev/examples/Example_RepeatMeasurements.html) (development version)
 
 ## Chart Customization
 
