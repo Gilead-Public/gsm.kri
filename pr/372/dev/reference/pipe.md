@@ -1,6 +1,8 @@
 # Pipe operator
 
-See `magrittr::%>%` for details.
+See
+`dplyr::`[`%>%`](https://dplyr.tidyverse.org/reference/reexports.html)
+for details.
 
 ## Usage
 
