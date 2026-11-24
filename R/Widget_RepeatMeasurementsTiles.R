@@ -74,7 +74,8 @@ Widget_RepeatMeasurementsTiles <- function(
       tiles = jsonlite::toJSON(
         dfTiles[c(vRequired, "severity")],
         dataframe = "rows",
-        na = "null"
+        na = "null",
+        digits = I(17)
       ),
       columns = jsonlite::toJSON(dfColumns, dataframe = "rows", na = "null"),
       colors = as.list(vColors[c("Red", "Amber", "Green", "Not evaluable")]),
