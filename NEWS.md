@@ -1,6 +1,10 @@
-# gsm.kri (development version)
+# gsm.kri v1.9.0
+
+This minor release adds the Repeat Measurements report and a Fatal AE Listing in the Premature Deaths report.
 
 - Add the Repeat Measurements report for the repeat-measure KRIs (`kri0020a`-`f`, `cou0020a`-`f`): a study overview, site/country distribution, participant and measure listings, and a data table, with filters and adjustable participant flag rules. `Report_RepeatMeasurements()` renders it, and `workflow/4_modules/report_repeatmeasurements.yaml` is available as a workflow module (#340, #342, #343, #344, #345, #346, #347, #348).
+- `Detect_ConsecutiveRepeats()` now shares its engine with the Repeat Measurements report. Output is unchanged for the bundled workflows, but records with a missing subject are dropped with a warning instead of erroring, character/factor dates are parsed as ISO dates (`YYYY-MM-DD`; other text dates error), and `strMeasureVal` must be a single non-missing value (#340).
+- Metric workflows call `gsm.core::Analyze_NormalApprox()` and `gsm.core::Analyze_Identity()` with an explicit namespace (#353).
 - Added an explicit `Flag` attribute to the country-level Normal Approximation metrics (`cou0001`-`cou0004`, `cou0012`) so every metric workflow pairs `Threshold` with `Flag`. Flagging output is unchanged (#369).
 - The Premature Deaths report adds a Fatal AE Listing: one row per fatal adverse event
   for premature-death participants, with the MedDRA term, outcome and relatedness,
