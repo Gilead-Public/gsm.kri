@@ -5,7 +5,7 @@ Apply standardized formatting to gt tables.
 ## Usage
 
 ``` r
-gt_style(data)
+gt_style(data, ...)
 ```
 
 ## Arguments
@@ -13,6 +13,10 @@ gt_style(data)
 - data:
 
   A \`gt_tbl\` object.
+
+- ...:
+
+  Additional arguments passed to \[gt::gt()\].
 
 ## Value
 

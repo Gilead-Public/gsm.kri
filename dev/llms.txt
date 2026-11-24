@@ -214,6 +214,21 @@ lCharts <- RunWorkflow(
   : Generate a summary table for a report
 - [`Report_PrematureDeaths()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_PrematureDeaths.md)
   : Report_PrematureDeaths function
+- [`Report_RepeatMeasurements()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_RepeatMeasurements.md)
+  [`rep_Classify()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_RepeatMeasurements.md)
+  [`rep_Header()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_RepeatMeasurements.md)
+  [`rep_Seg()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_RepeatMeasurements.md)
+  [`rep_Toolbar()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_RepeatMeasurements.md)
+  [`rep_DataTableWide()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_RepeatMeasurements.md)
+  [`rep_DataTable()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_RepeatMeasurements.md)
+  [`rep_ParticipantTiles()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_RepeatMeasurements.md)
+  [`rep_SiteFlagRows()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_RepeatMeasurements.md)
+  [`rep_SiteRule()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_RepeatMeasurements.md)
+  [`rep_VitalRows()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_RepeatMeasurements.md)
+  [`rep_VitalsListing()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_RepeatMeasurements.md)
+  [`rep_Vitals()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_RepeatMeasurements.md)
+  [`rep_FlagThresholds()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_RepeatMeasurements.md)
+  : Report_RepeatMeasurements function
 - [`Report_StudyInfo()`](https://gilead-public.github.io/gsm.kri/dev/reference/Report_StudyInfo.md)
   : Report Study Information
 - [`StackAnalysis()`](https://gilead-public.github.io/gsm.kri/dev/reference/StackAnalysis.md)
@@ -259,6 +274,10 @@ lCharts <- RunWorkflow(
   : Premature-death bucket stacking order
 - [`pd_EligibilityStatus()`](https://gilead-public.github.io/gsm.kri/dev/reference/pd_EligibilityStatus.md)
   : Classify eligibility from an exclusion \`Source\`
+- [`pd_FatalAEListing()`](https://gilead-public.github.io/gsm.kri/dev/reference/pd_FatalAEListing.md)
+  : Premature-death fatal AE listing
+- [`pd_FatalAEListingData()`](https://gilead-public.github.io/gsm.kri/dev/reference/pd_FatalAEListingData.md)
+  : Premature-death fatal AE listing data
 - [`pd_OverviewStats()`](https://gilead-public.github.io/gsm.kri/dev/reference/pd_OverviewStats.md)
   : Overview summary statistics for the premature-death report
 - [`pd_PatientListing()`](https://gilead-public.github.io/gsm.kri/dev/reference/pd_PatientListing.md)

@@ -32,6 +32,7 @@
     <li><a class="dropdown-item" href="../examples/Example_CrossStudySRS.html">Cross-Study KRI Report</a></li>
     <li><a class="dropdown-item" href="../examples/Example_IPMonitoring.html">IP Monitoring Report</a></li>
     <li><a class="dropdown-item" href="../examples/Example_PrematureDeaths.html">Premature Deaths Report</a></li>
+    <li><a class="dropdown-item" href="../examples/Example_RepeatMeasurements.html">Repeat Measurements Report</a></li>
     <li><a class="dropdown-item" href="../examples/Cookbook_AdverseEventKRI.html">Cookbook - Adverse Event KRI Report</a></li>
     <li><a class="dropdown-item" href="../examples/Cookbook_AdverseEventWorkflow.html">Cookbook - Adverse Event Workflow Examples</a></li>
     <li><a class="dropdown-item" href="../examples/Cookbook_ReportingWorkflow.html">Cookbook - Reporting Workflow Examples</a></li>
@@ -98,14 +99,11 @@ subject has no matching exclusion row.</p></dd>
 
 
 <dt id="arg-dfae">dfAE<a class="anchor" aria-label="anchor" href="#arg-dfae"></a></dt>
-<dd><p>`data.frame` (optional) Mapped AE data with `subjid`, `aetoxgr`,
-and `aerel` (`"RELATED"`/`"NOT RELATED"`). Used to compute the Treatment
-Related column: `"Yes"` when `deathcls` is an adverse event AND the subject
-has a fatal (`aetoxgr==5`) treatment-related AE; `"No"` when `deathcls` is
-an adverse event AND the subject has a fatal (`aetoxgr==5`) not-treatment-related
-AE, or when `deathcls` is not an AE AND there is no fatal treatment-related
-AE; `"Unknown"` otherwise (mixed signals, or missing `deathcls`/AE
-evidence). `death_reason` is `deathcls` (else `"Unknown"`).</p></dd>
+<dd><p>`data.frame` (optional) Mapped AE data with `subjid` and any of
+`aeout`, `aetoxgr`, `aesdth`, `aereldrv` and `aerel`. Used to compute the
+Treatment Related column; see `pd_SubjectFatalRelatedAE()` for what counts
+as a fatal and a treatment-related AE. `death_reason` is `deathcls` (else
+`"Unknown"`).</p></dd>
 
 </dl></div>
     <div class="section level2">

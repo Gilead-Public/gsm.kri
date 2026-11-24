@@ -42,46 +42,32 @@ parameters.
 
 ``` r
 head(gsm.core::reportingGroups)
-#>   GroupID                 Param          Value GroupLevel
-#> 1   0X002                  City Newtown Square       Site
-#> 2   0X002               Country             US       Site
-#> 3   0X002 InvestigatorFirstName           Fred       Site
-#> 4   0X002  InvestigatorLastName          Smith       Site
-#> 5   0X002                 invid          0X002       Site
-#> 6   0X002      ParticipantCount              1       Site
+#>   GroupID                 Param       Value GroupLevel
+#> 1   0X031                  City Foster City       Site
+#> 2   0X031               Country          US       Site
+#> 3   0X031 InvestigatorFirstName      Joanne       Site
+#> 4   0X031  InvestigatorLastName         Doe       Site
+#> 5   0X031                 invid       0X031       Site
+#> 6   0X031      ParticipantCount           2       Site
 MakeParamLabels(head(gsm.core::reportingGroups))
-#>   GroupID                 Param          Value GroupLevel
-#> 1   0X002                  City Newtown Square       Site
-#> 2   0X002               Country             US       Site
-#> 3   0X002 InvestigatorFirstName           Fred       Site
-#> 4   0X002  InvestigatorLastName          Smith       Site
-#> 5   0X002                 invid          0X002       Site
-#> 6   0X002      ParticipantCount              1       Site
-#>                     Label
-#> 1                    City
-#> 2                 Country
-#> 3 Investigator First Name
-#> 4  Investigator Last Name
-#> 5                   Invid
-#> 6       Participant Count
+#>   GroupID                 Param       Value GroupLevel                   Label
+#> 1   0X031                  City Foster City       Site                    City
+#> 2   0X031               Country          US       Site                 Country
+#> 3   0X031 InvestigatorFirstName      Joanne       Site Investigator First Name
+#> 4   0X031  InvestigatorLastName         Doe       Site  Investigator Last Name
+#> 5   0X031                 invid       0X031       Site                   Invid
+#> 6   0X031      ParticipantCount           2       Site       Participant Count
 MakeParamLabels(
   head(gsm.core::reportingGroups),
   list(ParticipantCount = "Number of Participants")
 )
-#>   GroupID                 Param          Value GroupLevel
-#> 1   0X002                  City Newtown Square       Site
-#> 2   0X002               Country             US       Site
-#> 3   0X002 InvestigatorFirstName           Fred       Site
-#> 4   0X002  InvestigatorLastName          Smith       Site
-#> 5   0X002                 invid          0X002       Site
-#> 6   0X002      ParticipantCount              1       Site
-#>                     Label
-#> 1                    City
-#> 2                 Country
-#> 3 Investigator First Name
-#> 4  Investigator Last Name
-#> 5                   Invid
-#> 6  Number of Participants
+#>   GroupID                 Param       Value GroupLevel                   Label
+#> 1   0X031                  City Foster City       Site                    City
+#> 2   0X031               Country          US       Site                 Country
+#> 3   0X031 InvestigatorFirstName      Joanne       Site Investigator First Name
+#> 4   0X031  InvestigatorLastName         Doe       Site  Investigator Last Name
+#> 5   0X031                 invid       0X031       Site                   Invid
+#> 6   0X031      ParticipantCount           2       Site  Number of Participants
 MakeParamLabelsList(head(gsm.core::reportingGroups$Param))
 #> $City
 #> [1] "City"
