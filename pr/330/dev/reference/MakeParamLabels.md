@@ -45,16 +45,16 @@ head(gsm.core::reportingGroups)
 #>   GroupID                 Param       Value GroupLevel
 #> 1   0X031                  City Foster City       Site
 #> 2   0X031               Country          US       Site
-#> 3   0X031 InvestigatorFirstName        John       Site
-#> 4   0X031  InvestigatorLastName        Deer       Site
+#> 3   0X031 InvestigatorFirstName      Joanne       Site
+#> 4   0X031  InvestigatorLastName         Doe       Site
 #> 5   0X031                 invid       0X031       Site
 #> 6   0X031      ParticipantCount           2       Site
 MakeParamLabels(head(gsm.core::reportingGroups))
 #>   GroupID                 Param       Value GroupLevel                   Label
 #> 1   0X031                  City Foster City       Site                    City
 #> 2   0X031               Country          US       Site                 Country
-#> 3   0X031 InvestigatorFirstName        John       Site Investigator First Name
-#> 4   0X031  InvestigatorLastName        Deer       Site  Investigator Last Name
+#> 3   0X031 InvestigatorFirstName      Joanne       Site Investigator First Name
+#> 4   0X031  InvestigatorLastName         Doe       Site  Investigator Last Name
 #> 5   0X031                 invid       0X031       Site                   Invid
 #> 6   0X031      ParticipantCount           2       Site       Participant Count
 MakeParamLabels(
@@ -64,8 +64,8 @@ MakeParamLabels(
 #>   GroupID                 Param       Value GroupLevel                   Label
 #> 1   0X031                  City Foster City       Site                    City
 #> 2   0X031               Country          US       Site                 Country
-#> 3   0X031 InvestigatorFirstName        John       Site Investigator First Name
-#> 4   0X031  InvestigatorLastName        Deer       Site  Investigator Last Name
+#> 3   0X031 InvestigatorFirstName      Joanne       Site Investigator First Name
+#> 4   0X031  InvestigatorLastName         Doe       Site  Investigator Last Name
 #> 5   0X031                 invid       0X031       Site                   Invid
 #> 6   0X031      ParticipantCount           2       Site  Number of Participants
 MakeParamLabelsList(head(gsm.core::reportingGroups$Param))

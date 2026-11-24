@@ -53,9 +53,9 @@ MakeStudyInfo(gsm.core::reportingGroups)
 #> 16                  SiteTarget                   150
 #> 17           ParticipantTarget                  1000
 #> 18            ParticipantCount                   760
-#> 19                   SiteCount                   146
-#> 20       PercentSitesActivated                  97.3
-#> 21              SiteActivation     146 / 150 (97.3%)
+#> 19                   SiteCount                   145
+#> 20       PercentSitesActivated                  96.7
+#> 21              SiteActivation     145 / 150 (96.7%)
 #> 22 PercentParticipantsEnrolled                    76
 #> 23       ParticipantEnrollment      760 / 1000 (76%)
 #>                      Description
@@ -102,9 +102,9 @@ MakeStudyInfo(gsm.core::reportingGroups, list(SiteCount = "# Sites"))
 #> 16                  SiteTarget                   150
 #> 17           ParticipantTarget                  1000
 #> 18            ParticipantCount                   760
-#> 19                   SiteCount                   146
-#> 20       PercentSitesActivated                  97.3
-#> 21              SiteActivation     146 / 150 (97.3%)
+#> 19                   SiteCount                   145
+#> 20       PercentSitesActivated                  96.7
+#> 21              SiteActivation     145 / 150 (96.7%)
 #> 22 PercentParticipantsEnrolled                    76
 #> 23       ParticipantEnrollment      760 / 1000 (76%)
 #>                      Description
