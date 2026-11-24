@@ -61,7 +61,7 @@ Remotes:
     gsm.qtl=Gilead-Public/gsm.qtl@main,
     gsm.reporting=Gilead-Public/gsm.reporting@main,
     gsm.vizr=Gilead-Public/gsm.vizr@main,
-    qcthat=Gilead-Public/qcthat@main
+    qcthat=Gilead-Public/qcthat@dev
 Config/roxygen2/version: 8.1.1
 Config/testthat/edition: 3
 Config/testthat/parallel: false
