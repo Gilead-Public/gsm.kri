@@ -57,7 +57,7 @@ VignetteBuilder:
     knitr
 Remotes:
     gsm.core=Gilead-Public/gsm.core@dev,
-    gsm.mapping=Gilead-Public/gsm.mapping@fix-135,
+    gsm.mapping=Gilead-Public/gsm.mapping@dev,
     gsm.qtl=Gilead-Public/gsm.qtl@dev,
     gsm.reporting=Gilead-Public/gsm.reporting@dev,
     gsm.vizr=Gilead-Public/gsm.vizr@dev,
