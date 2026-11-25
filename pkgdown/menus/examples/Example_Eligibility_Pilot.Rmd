@@ -109,12 +109,12 @@ dfRecords <- bind_rows(
     )
 )
 
-# Level 3: the status history from the second snapshot on (no back-fill). The
-# earlier snapshot splits Potentially Ineligible off as a tenth of enrolled; the
-# latest is this snapshot's counts, as the pipeline saves them.
+# Level 3: the status history saved at every snapshot; earlier ones split
+# Potentially Ineligible off as a tenth of enrolled, the latest is this
+# snapshot's counts.
 dfSnapshots <- dfResults %>% arrange(SnapshotDate)
 dfStatusHistory <- dfSnapshots %>%
-  slice(2) %>%
+  filter(SnapshotDate < max(SnapshotDate)) %>%
   reframe(
     GroupLevel = "Study", GroupID = GroupID,
     Status = c("Ineligible", "Potentially Ineligible", "No Eligibility Risk"),

@@ -35,6 +35,9 @@ for (const [mode, { file, other, label }] of Object.entries(PAGES)) {
       } else {
         expect(labels).toContain('Potentially Ineligible');
         await expect(page.locator('#status-over-time')).toHaveCount(1);
+        // Every Analysis_qtl0001 snapshot of gsm.core::reportingResults_study.
+        const snapshots = await page.evaluate(() => document.getElementById('elig-trend-status').gsmChart.data.labels.slice());
+        expect(snapshots).toEqual(['2025-02-01', '2025-03-01', '2025-04-01']);
       }
     });
 
