@@ -1,0 +1,72 @@
+meta:
+  Active: false
+  Type: Analysis
+  ID: kri0023
+  GroupLevel: Site
+  Abbreviation: ENR
+  Metric: Enrollment Share
+  Numerator: Enrolled Participants at Site
+  Denominator: Enrolled Participants in Study
+  Model: Percentile Rank
+  Score: Within-Study Percentile Rank
+  AnalysisType: identity
+  Threshold: "80,90"
+  Flag: "0,1,2"
+  RiskScoreWeight: "0,4,8"
+  GenerateRiskSignal: false
+spec:
+  Mapped_SUBJ:
+    subjid:
+      type: character
+    invid:
+      type: character
+steps:
+  - output: vThreshold
+    name: gsm.core::ParseThreshold
+    params:
+      strThreshold: Threshold
+  - output: vFlag
+    name: gsm.core::ParseThreshold
+    params:
+      strThreshold: Flag
+      bSort: false
+  - output: vRiskScoreWeight
+    name: gsm.core::ParseThreshold
+    params:
+      strThreshold: RiskScoreWeight
+      bSort: false
+  # Mapped_SUBJ holds enrolled participants only. Participants without a site
+  # count toward the study total but are not ranked (#477 EN-Q3).
+  - output: Analysis_Input
+    name: workr::RunQuery
+    params:
+      df: Mapped_SUBJ
+      strQuery: "SELECT invid AS GroupID, 'Site' AS GroupLevel, CAST(COUNT(DISTINCT subjid) AS DOUBLE) AS Numerator, CAST((SELECT COUNT(DISTINCT subjid) FROM df) AS DOUBLE) AS Denominator FROM df WHERE invid IS NOT NULL GROUP BY invid"
+  - output: Analysis_Transformed
+    name: gsm.core::Transform_Rate
+    params:
+      dfInput: Analysis_Input
+  - output: Analysis_Analyzed
+    name: gsm.kri::Analyze_PercentileRank
+    params:
+      dfTransformed: Analysis_Transformed
+  - output: Analysis_Flagged
+    name: gsm.core::Flag
+    params:
+      dfAnalyzed: Analysis_Analyzed
+      vThreshold: vThreshold
+      vFlag: vFlag
+      vRiskScoreWeight: vRiskScoreWeight
+  - output: Analysis_Summary
+    name: gsm.core::Summarize
+    params:
+      dfFlagged: Analysis_Flagged
+  - output: lAnalysis
+    name: list
+    params:
+      ID: ID
+      Analysis_Input: Analysis_Input
+      Analysis_Transformed: Analysis_Transformed
+      Analysis_Analyzed: Analysis_Analyzed
+      Analysis_Flagged: Analysis_Flagged
+      Analysis_Summary: Analysis_Summary
