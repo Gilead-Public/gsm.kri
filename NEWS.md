@@ -11,6 +11,7 @@
 - The Premature Deaths report is restyled: summary cards replace the overview table, including a new
   Treatment-Related Deaths card that counts the patient listing's Treatment Related "Yes" rows; the
   filter strip is always shown, and the page uses the full window width (#304).
+- Added the site-level Premature Death Rate (30 Days) KRI `kri0021` (DTH30): deaths on study days 1-30 per enrolled subject, with the same inputs as `kri0015` and `WindowDays: 30`. It has no thresholds, flags or risk signals, so it adds no weight to the Site Risk Score (#381).
 
 # gsm.kri v1.8.0
 
