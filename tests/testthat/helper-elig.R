@@ -3,7 +3,7 @@
 # forks ("Eligibility IPD only"); the report must not depend on either.
 elig_FixtureSnapshotDate <- as.Date("2026-11-01")
 
-elig_Fixture <- function(bPilot = FALSE, bEdcPd = TRUE, bPDSplit = bPilot) {
+elig_Fixture <- function(bPilot = FALSE, bEdcPd = TRUE, bPDSplit = bPilot, bIecat = TRUE) {
   df <- tibble::tribble(
     ~studyid, ~invid, ~country, ~subjid, ~Source, ~ie_violation, ~pd_violation, ~ietestcd_concat, ~dvdtm, ~eligibility_criteria,
     "S1", "0X001", "US", "P01", "EDC I/E only", "Y", NA, "incl1,excl2", NA, NA,
@@ -15,6 +15,9 @@ elig_Fixture <- function(bPilot = FALSE, bEdcPd = TRUE, bPDSplit = bPilot) {
     "S1", "0X003", "CA", "P07", "Neither", NA, NA, NA, NA, NA,
     "S1", NA, NA, "P08", "Neither", NA, NA, NA, NA, NA
   )
+  if (bIecat) {
+    df$iecat_concat <- c("IN,EX", NA, NA, "EX", NA, NA, NA, NA)
+  }
   if (bPDSplit) {
     df$pd_important <- c("N", "Y", "N", "N", "N", "N", "N", "N")
     df$pd_nonimportant <- c("N", "Y", "N", "Y", "Y", "N", "N", "N")

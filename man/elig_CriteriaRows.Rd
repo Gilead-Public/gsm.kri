@@ -11,7 +11,7 @@ elig_CriteriaRows(dfElig)
 }
 \value{
 `list` from [elig_BreakdownRows()], keyed by criterion code and
-  filled by Inclusion / Exclusion. Each scope holds only the criteria with
+  filled by Inclusion / Exclusion / Not classified. Each scope holds only the criteria with
   cases in it.
 }
 \description{

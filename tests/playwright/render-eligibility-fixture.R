@@ -5,7 +5,7 @@
 #   plus the optional level 1 columns, level 2 records and the level 3 status
 #   history of gsm.roadmap#113 (three statuses);
 # - fixture/Report_Eligibility_pilot_noquery.html: pilot mode with the EDC Query
-#   source not delivered.
+#   source and iecat_concat not delivered.
 # Source this with the gsm.kri package loaded and the working directory at the
 # package root so the relative fixture path resolves.
 library(dplyr)
@@ -16,7 +16,19 @@ mappings_wf <- workr::MakeWorkflowList(
   strPackage = "gsm.mapping"
 )
 lRaw <- gsm.mapping::Ingest(gsm.core::lSource, gsm.mapping::CombineSpecs(mappings_wf))
-dfExclusion <- workr::RunWorkflows(mappings_wf, lRaw)$Mapped_EXCLUSION
+lMapped <- workr::RunWorkflows(mappings_wf, lRaw)
+dfExclusion <- lMapped$Mapped_EXCLUSION
+
+# gsm.mapping releases without iecat_concat: derive it from Mapped_IE, code by
+# code in ietestcd_concat order, so the typed criteria charts are tested.
+if (!"iecat_concat" %in% names(dfExclusion)) {
+  dfIE <- distinct(lMapped$Mapped_IE, subjid, ietestcd, iecat_custom)
+  dfExclusion$iecat_concat <- mapply(function(id, codes) {
+    if (is.na(codes)) return(NA_character_)
+    v <- strsplit(codes, ",", fixed = TRUE)[[1]]
+    paste(dfIE$iecat_custom[match(paste(id, v), paste(dfIE$subjid, dfIE$ietestcd))], collapse = ",")
+  }, dfExclusion$subjid, dfExclusion$ietestcd_concat, USE.NAMES = FALSE)
+}
 
 dfResults <- gsm.core::reportingResults_study %>% filter(MetricID == "Analysis_qtl0001")
 dfMetrics <- gsm.core::reportingMetrics_study %>% filter(MetricID == "Analysis_qtl0001")
@@ -99,10 +111,11 @@ Report_Eligibility(
   strMode = "pilot", dfStatusHistory = dfStatusHistory
 )
 
-# Pilot with EDC Query not delivered: the mapping leaves edc_query NULL.
+# Pilot with EDC Query not delivered (the mapping leaves edc_query NULL) and a
+# study EXCLUSION without iecat_concat.
 Report_Eligibility(
   dfResults = dfResults, dfMetrics = dfMetrics, dfGroups = dfGroups,
-  lListings = lListings(mutate(dfPilot, edc_query = NA_character_)),
+  lListings = lListings(select(mutate(dfPilot, edc_query = NA_character_), -iecat_concat)),
   strOutputDir = out_dir, strOutputFile = "Report_Eligibility_pilot_noquery.html",
   strMode = "pilot"
 )

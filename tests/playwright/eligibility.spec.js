@@ -294,4 +294,10 @@ test.describe('pilot mode, EDC Query not delivered', () => {
     await expect(page.locator('#elig-listing .rt-td', { hasText: 'N/A' }).first()).toBeVisible();
     expect(errors).toEqual([]);
   });
+
+  test('criteria without iecat_concat are one Not classified series (#371)', async ({ page }) => {
+    const errors = await open(page, PILOT_NOQUERY);
+    expect(await datasetLabels(page, 'elig-study-criteria')).toEqual(['Not classified']);
+    expect(errors).toEqual([]);
+  });
 });

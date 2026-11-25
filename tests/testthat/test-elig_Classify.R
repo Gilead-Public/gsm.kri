@@ -105,13 +105,35 @@ test_that("missing country and site show as Unknown (#371)", {
   expect_equal(df$invid[df$subjid == "P08"], "Unknown")
 })
 
-test_that("criterion codes are split and typed as Inclusion or Exclusion (#371)", {
+test_that("criterion type comes from iecat_concat (#371)", {
   df <- elig_CriteriaLong(elig_ClassifyParticipants(elig_Fixture()))
   expect_equal(nrow(df), 3)
   expect_setequal(df$criterion, c("incl1", "excl2"))
   expect_equal(unique(df$type[df$criterion == "incl1"]), "Inclusion")
   expect_equal(unique(df$type[df$criterion == "excl2"]), "Exclusion")
-  expect_equal(elig_CriterionType(c("I001", "E010", "INCL3", "x9")), c("Inclusion", "Exclusion", "Inclusion", "Other"))
+  expect_equal(
+    elig_CriterionType(c("IN", "ex", "Inclusion", "Z", NA)),
+    c("Inclusion", "Exclusion", "Inclusion", "Not classified", "Not classified")
+  )
+})
+
+test_that("criteria are Not classified without iecat_concat, never typed from the code (#371)", {
+  df <- elig_CriteriaLong(elig_ClassifyParticipants(elig_Fixture(bIecat = FALSE)))
+  expect_equal(unique(df$type), "Not classified")
+
+  dfCode <- elig_Fixture()
+  dfCode$ietestcd_concat[dfCode$subjid == "P04"] <- "IE_EXC01"
+  dfCode$iecat_concat[dfCode$subjid == "P04"] <- NA
+  long <- elig_CriteriaLong(elig_ClassifyParticipants(dfCode))
+  expect_equal(long$type[long$criterion == "IE_EXC01"], "Not classified")
+})
+
+test_that("a participant with misaligned iecat_concat is Not classified (#371)", {
+  df <- elig_Fixture()
+  df$iecat_concat[df$subjid == "P01"] <- "IN"
+  long <- elig_CriteriaLong(elig_ClassifyParticipants(df))
+  expect_equal(long$type[long$subjid == "P01"], c("Not classified", "Not classified"))
+  expect_equal(long$type[long$subjid == "P04"], "Exclusion")
 })
 
 test_that("status counts give the snapshot's participants per study and status, as the report classifies them (#371)", {

@@ -60,7 +60,7 @@ source_data <- elig_SourceRows(dfElig)
 criteria_data <- elig_CriteriaRows(dfElig)
 vStatusColors <- elig_StatusColors(bPilot)
 vSourceColors <- vStatusColors[setdiff(names(vStatusColors), "No Eligibility Risk")]
-vCriterionColors <- c(Inclusion = "#3C587F", Exclusion = "#8FB3DE", Other = "#B8C4D6")[unique(criteria_data$study$Status)]
+vCriterionColors <- c(Inclusion = "#3C587F", Exclusion = "#8FB3DE", "Not classified" = "#B8C4D6")[unique(criteria_data$study$Status)]
 has_criteria <- length(criteria_data$order) > 0
 
 dfListing <- elig_ListingData(dfElig)

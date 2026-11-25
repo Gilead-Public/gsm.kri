@@ -9,7 +9,9 @@ elig_StatusCounts(dfExclusion, strMode = c("basic", "pilot"))
 \arguments{
 \item{dfExclusion}{`data.frame` `Mapped_EXCLUSION`, optionally with the
 level 1 columns `pd_important`, `pd_nonimportant`, `edc_query` and
-`edc_pd` (`"Y"`/`"N"`; `NA` throughout when the source is not delivered).}
+`edc_pd` (`"Y"`/`"N"`; `NA` throughout when the source is not delivered),
+and `iecat_concat`, the category (`"IN"`/`"EX"`) of each code in
+`ietestcd_concat` order; without it the criteria are not split by type.}
 
 \item{strMode}{`character` `"basic"` (default) or `"pilot"`, resolved by
 [elig_Mode()].}

@@ -10,7 +10,7 @@ elig_CriteriaMapRows(dfElig)
 \item{dfElig}{`data.frame` from [elig_ClassifyParticipants()].}
 }
 \value{
-`list` with `order` (criteria), `types`, `country` and `site` rows
+`list` with `order` (criteria), `country` and `site` rows
   (`GroupID`, `OuterGroupID`, `criterion`, `n`).
 }
 \description{

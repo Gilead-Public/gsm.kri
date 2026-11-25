@@ -80,8 +80,14 @@ test_that("criteria views count EDC I/E criterion cases and keep only groups wit
   expect_equal(sum(a$country$CA$n), 0)
 
   b <- elig_CriteriaMapRows(df)
+  expect_equal(names(b), c("order", "country", "site"))
   expect_equal(unique(b$country$GroupID), "US")
   expect_setequal(b$site$GroupID, c("0X001", "0X002"))
+})
+
+test_that("criteria without iecat_concat are one Not classified series (#371)", {
+  a <- elig_CriteriaRows(elig_ClassifyParticipants(elig_Fixture(bIecat = FALSE)))
+  expect_equal(unique(a$study$Status), "Not classified")
 })
 
 test_that("criteria slices hold only the criteria with cases in each scope (#371)", {

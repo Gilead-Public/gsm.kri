@@ -4,15 +4,17 @@
 \alias{elig_CriterionType}
 \title{Inclusion or Exclusion criterion type}
 \usage{
-elig_CriterionType(vCode)
+elig_CriterionType(vCategory)
 }
 \arguments{
-\item{vCode}{`character` I/E test codes such as `"I001"`, `"excl7"`.}
+\item{vCategory}{`character` I/E categories from `iecat_concat`, such as
+`"IN"`, `"EX"`.}
 }
 \value{
-`character` `"Inclusion"`, `"Exclusion"` or `"Other"`.
+`character` `"Inclusion"`, `"Exclusion"` or `"Not classified"`.
 }
 \description{
-Inclusion or Exclusion criterion type
+The type comes only from the delivered category, never from the code text:
+code formats differ between studies.
 }
 \keyword{internal}

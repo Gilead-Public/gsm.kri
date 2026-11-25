@@ -11,7 +11,9 @@ elig_CriteriaLong(dfElig)
 }
 \value{
 `tibble` with one row per participant and EDC I/E criterion code:
-  `subjid`, `country`, `invid`, `status`, `criterion` and `type`.
+  `subjid`, `country`, `invid`, `status`, `criterion` and `type`. A
+  participant whose `criteria_type` does not pair one to one with the codes
+  is Not classified.
 }
 \description{
 Criterion cases

@@ -5,7 +5,7 @@
 # slice for the selected country or site. Colour encodes status, or Inclusion
 # vs Exclusion, and nothing else.
 
-ELIG_CRITERION_COLORS <- c(Inclusion = "#3C587F", Exclusion = "#8FB3DE", Other = "#B8C4D6")
+ELIG_CRITERION_COLORS <- c(Inclusion = "#3C587F", Exclusion = "#8FB3DE", "Not classified" = "#B8C4D6")
 
 elig_GroupCol <- function(strLevel) {
   switch(strLevel,
@@ -280,7 +280,7 @@ elig_SourceRows <- function(dfElig) {
 #' @param dfElig `data.frame` from [elig_ClassifyParticipants()].
 #'
 #' @return `list` from [elig_BreakdownRows()], keyed by criterion code and
-#'   filled by Inclusion / Exclusion. Each scope holds only the criteria with
+#'   filled by Inclusion / Exclusion / Not classified. Each scope holds only the criteria with
 #'   cases in it.
 #'
 #' @keywords internal
@@ -364,7 +364,7 @@ elig_BreakdownBarSpec <- function(vOrder, strAxisLabel, vColors) {
 #'
 #' @param dfElig `data.frame` from [elig_ClassifyParticipants()].
 #'
-#' @return `list` with `order` (criteria), `types`, `country` and `site` rows
+#' @return `list` with `order` (criteria), `country` and `site` rows
 #'   (`GroupID`, `OuterGroupID`, `criterion`, `n`).
 #'
 #' @keywords internal
@@ -380,7 +380,6 @@ elig_CriteriaMapRows <- function(dfElig) {
   }
   list(
     order = vOrder,
-    types = tibble::tibble(criterion = vOrder, type = elig_CriterionType(vOrder)),
     country = rows("country", NULL),
     site = rows("invid", "country")
   )

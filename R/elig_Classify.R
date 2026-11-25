@@ -92,7 +92,9 @@ elig_Mode <- function(dfExclusion, strMode = c("basic", "pilot")) {
 #'
 #' @param dfExclusion `data.frame` `Mapped_EXCLUSION`, optionally with the
 #'   level 1 columns `pd_important`, `pd_nonimportant`, `edc_query` and
-#'   `edc_pd` (`"Y"`/`"N"`; `NA` throughout when the source is not delivered).
+#'   `edc_pd` (`"Y"`/`"N"`; `NA` throughout when the source is not delivered),
+#'   and `iecat_concat`, the category (`"IN"`/`"EX"`) of each code in
+#'   `ietestcd_concat` order; without it the criteria are not split by type.
 #' @param dfGroups `data.frame` Reporting groups. Site-level
 #'   `InvestigatorFirstName` / `InvestigatorLastName` give the investigator.
 #'   Default: `NULL`.
@@ -101,7 +103,8 @@ elig_Mode <- function(dfExclusion, strMode = c("basic", "pilot")) {
 #'
 #' @return `tibble` with `studyid`, `subjid`, `country`, `invid`,
 #'   `investigator`, `status`, the `flag_*` columns of the delivered sources
-#'   (`"Y"`/`"N"`/`NA`), `criteria`, `pd_dates` and `pd_terms`.
+#'   (`"Y"`/`"N"`/`NA`), `criteria`, `criteria_type`, `pd_dates` and
+#'   `pd_terms`.
 #'
 #' @keywords internal
 #' @export
@@ -128,6 +131,7 @@ elig_ClassifyParticipants <- function(dfExclusion, dfGroups = NULL, strMode = c(
     flag_pd = pd,
     flag_ecrf = yn(col("ie_violation")),
     criteria = col("ietestcd_concat"),
+    criteria_type = col("iecat_concat"),
     pd_dates = col("dvdtm"),
     pd_terms = col("eligibility_criteria")
   )
@@ -155,7 +159,7 @@ elig_ClassifyParticipants <- function(dfExclusion, dfGroups = NULL, strMode = c(
   df[c(
     "studyid", "subjid", "country", "invid", "investigator", "status",
     intersect(names(ELIG_SOURCES), names(df)),
-    "criteria", "pd_dates", "pd_terms"
+    "criteria", "criteria_type", "pd_dates", "pd_terms"
   )]
 }
 
@@ -209,17 +213,21 @@ elig_Investigator <- function(vInvid, dfGroups) {
 
 #' Inclusion or Exclusion criterion type
 #'
-#' @param vCode `character` I/E test codes such as `"I001"`, `"excl7"`.
+#' The type comes only from the delivered category, never from the code text:
+#' code formats differ between studies.
 #'
-#' @return `character` `"Inclusion"`, `"Exclusion"` or `"Other"`.
+#' @param vCategory `character` I/E categories from `iecat_concat`, such as
+#'   `"IN"`, `"EX"`.
+#'
+#' @return `character` `"Inclusion"`, `"Exclusion"` or `"Not classified"`.
 #'
 #' @keywords internal
 #' @export
-elig_CriterionType <- function(vCode) {
+elig_CriterionType <- function(vCategory) {
   dplyr::case_when(
-    grepl("^\\s*(I|INC)", vCode, ignore.case = TRUE) ~ "Inclusion",
-    grepl("^\\s*(E|EXC)", vCode, ignore.case = TRUE) ~ "Exclusion",
-    TRUE ~ "Other"
+    grepl("^\\s*IN", vCategory, ignore.case = TRUE) ~ "Inclusion",
+    grepl("^\\s*EX", vCategory, ignore.case = TRUE) ~ "Exclusion",
+    .default = "Not classified"
   )
 }
 
@@ -228,25 +236,33 @@ elig_CriterionType <- function(vCode) {
 #' @param dfElig `data.frame` from [elig_ClassifyParticipants()].
 #'
 #' @return `tibble` with one row per participant and EDC I/E criterion code:
-#'   `subjid`, `country`, `invid`, `status`, `criterion` and `type`.
+#'   `subjid`, `country`, `invid`, `status`, `criterion` and `type`. A
+#'   participant whose `criteria_type` does not pair one to one with the codes
+#'   is Not classified.
 #'
 #' @keywords internal
 #' @export
 elig_CriteriaLong <- function(dfElig) {
-  df <- dfElig[!is.na(dfElig$criteria) & nzchar(dfElig$criteria), c("subjid", "country", "invid", "status", "criteria")]
+  df <- dfElig[!is.na(dfElig$criteria) & nzchar(dfElig$criteria), ]
   if (nrow(df) == 0) {
     return(tibble::tibble(
       subjid = character(), country = character(), invid = character(),
       status = character(), criterion = character(), type = character()
     ))
   }
-  df %>%
-    tidyr::separate_longer_delim("criteria", delim = ",") %>%
-    dplyr::mutate(criterion = trimws(.data$criteria)) %>%
+  lCodes <- strsplit(df$criteria, ",", fixed = TRUE)
+  lTypes <- Map(
+    function(codes, types) if (length(types) == length(codes)) types else rep(NA_character_, length(codes)),
+    lCodes, strsplit(df$criteria_type, ",", fixed = TRUE)
+  )
+  n <- lengths(lCodes)
+  tibble::tibble(
+    subjid = rep(df$subjid, n), country = rep(df$country, n), invid = rep(df$invid, n),
+    status = rep(df$status, n), criterion = trimws(unlist(lCodes)),
+    type = elig_CriterionType(unlist(lTypes))
+  ) %>%
     dplyr::filter(nzchar(.data$criterion)) %>%
-    dplyr::distinct(.data$subjid, .data$country, .data$invid, .data$status, .data$criterion) %>%
-    dplyr::mutate(type = elig_CriterionType(.data$criterion)) %>%
-    tibble::as_tibble()
+    dplyr::distinct(.data$subjid, .data$criterion, .keep_all = TRUE)
 }
 
 #' Eligibility status counts of a snapshot
