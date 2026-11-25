@@ -25,9 +25,9 @@
 #' @return A named `list` of mapped frames: `Mapped_SUBJ` (every subject plus
 #'   `rgmn_dt`), `Mapped_Death` (observed simulated deaths with `deathcls`),
 #'   `Mapped_AE` (one synthetic AE row per deceased subject with `subjid`,
-#'   `aetoxgr`, `aerel`), and `Mapped_STUDCOMP` (non-death discontinuations
-#'   dated inside the window) -- the inputs [pd_Classify()] needs to populate all
-#'   five categories.
+#'   `mdrpt_nsv`, `aest_dt`, `aetoxgr`, `aeout`, `aerel`), and
+#'   `Mapped_STUDCOMP` (non-death discontinuations dated inside the window) --
+#'   the inputs [pd_Classify()] needs to populate all five categories.
 #' @noRd
 pd_SimulatePrematureDeathCohort <- function(
   dfSubj,
@@ -92,9 +92,15 @@ pd_SimulatePrematureDeathCohort <- function(
     replace = TRUE,
     prob = c(0.5, 0.5)
   )
+  # Term, onset and outcome are derived without further RNG draws so the
+  # rest of the simulated cohort stays identical for a given seed.
+  ae_terms <- c("Cardiac arrest", "Sepsis", "Respiratory failure", "Pneumonia")
   Mapped_AE <- tibble::tibble(
     subjid = subj$subjid[observed],
+    mdrpt_nsv = rep_len(ae_terms, n_obs),
+    aest_dt = Mapped_Death$death_dt - (seq_len(n_obs) %% 14L + 1L),
     aetoxgr = ae_grade,
+    aeout = ifelse(ae_grade == 5L, "Fatal", "Recovered/Resolved"),
     aerel = ae_rel
   )
 

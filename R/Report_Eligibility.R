@@ -101,7 +101,6 @@ Report_Eligibility <- function(
   strMode = c("basic", "pilot"),
   dfStatusHistory = NULL
 ) {
-  rlang::check_installed("rmarkdown", reason = "to run `Report_Eligibility()`")
   rlang::check_installed("knitr", reason = "to run `Report_Eligibility()`")
 
   # set output path
@@ -113,7 +112,7 @@ Report_Eligibility <- function(
   dfExclusion <- if (!is.null(lListings$IE_denom)) lListings$IE_denom else lListings$IE_num
   strMode <- elig_Mode(dfExclusion, strMode)
 
-  gsm.kri::RenderRmd(
+  RenderRmd(
     strInputPath = strInputPath,
     strOutputFile = strOutputFile,
     strOutputDir = strOutputDir,

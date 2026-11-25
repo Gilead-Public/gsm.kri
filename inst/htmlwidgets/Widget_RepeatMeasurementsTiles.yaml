@@ -1,0 +1,6 @@
+dependencies:
+  - name: Widget_RepeatMeasurementsTiles
+    version: 1.0.0
+    src: htmlwidgets/lib
+    script: renderRepeatMeasurementsTiles.js
+    stylesheet: renderRepeatMeasurementsTiles.css

@@ -72,7 +72,6 @@ Report_KRI <- function(
   strOutputFile = NULL,
   strInputPath = system.file("report", "Report_KRI.Rmd", package = "gsm.kri")
 ) {
-  rlang::check_installed("rmarkdown", reason = "to run `Report_KRI()`")
   rlang::check_installed("knitr", reason = "to run `Report_KRI()`")
 
   # set output path

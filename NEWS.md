@@ -1,5 +1,16 @@
 # gsm.kri (development version)
 
+- Add the Repeat Measurements report for the repeat-measure KRIs (`kri0020a`-`f`, `cou0020a`-`f`): a study overview, site/country distribution, participant and measure listings, and a data table, with filters and adjustable participant flag rules. `Report_RepeatMeasurements()` renders it, and `workflow/4_modules/report_repeatmeasurements.yaml` is available as a workflow module (#340, #342, #343, #344, #345, #346, #347, #348).
+- Added an explicit `Flag` attribute to the country-level Normal Approximation metrics (`cou0001`-`cou0004`, `cou0012`) so every metric workflow pairs `Threshold` with `Flag`. Flagging output is unchanged (#369).
+- The Premature Deaths report adds a Fatal AE Listing: one row per fatal adverse event
+  for premature-death participants, with the MedDRA term, outcome and relatedness,
+  filtered with the patient listing by country and site (`pd_FatalAEListing()`,
+  `pd_FatalAEListingData()`). Fatal AEs are now identified by outcome (`aeout`),
+  grade 5 (`aetoxgr`) or death flag (`aesdth`), with relatedness from `aereldrv`.
+  Treatment Related shows Unknown when a fatal AE lacks relatedness (#304).
+- The Premature Deaths report is restyled: summary cards replace the overview table, including a new
+  Treatment-Related Deaths card that counts the patient listing's Treatment Related "Yes" rows; the
+  filter strip is always shown, and the page uses the full window width (#304).
 - The Eligibility report has a new layout with linked study, country and site views, a criteria map and an expandable Ineligibility Listing with CSV export. Studies that deliver the optional pilot data also get a Potentially Ineligible status and a Status over Time chart (#371).
 
 # gsm.kri v1.8.0

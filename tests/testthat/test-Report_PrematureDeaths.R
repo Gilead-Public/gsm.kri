@@ -50,6 +50,15 @@ lListings <- list(
   )
 )
 
+# Value of the overview card whose label matches the regex `strLabel`.
+pd_card_value <- function(html, strLabel) {
+  m <- regmatches(html, regexec(
+    paste0('class="pd-card-label">', strLabel, '</div>\\s*<div class="pd-card-value">([^<]*)</div>'),
+    html
+  ))[[1]]
+  if (length(m) == 2) trimws(m[[2]]) else NA_character_
+}
+
 test_that("Report_PrematureDeaths renders to a file (#223)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
@@ -260,16 +269,11 @@ test_that("Report drops subjects without a randomization date from the cohort (#
     strOutputDir = tempdir()
   ))
   html <- paste(readLines(out, warn = FALSE), collapse = "\n")
-  # New wide overview table: the value row's first cell is Total enrolled. S4
-  # (NA rgmn_dt) is dropped upstream, so it must read 3, not 4.
-  expect_match(
-    html,
-    "(?s)<tbody>\\s*<tr>\\s*<td[^>]*>\\s*3\\s*</td>",
-    perl = TRUE
-  )
+  # S4 (NA rgmn_dt) is dropped upstream, so Total Enrolled must read 3, not 4.
+  expect_equal(pd_card_value(html, "Total Enrolled"), "3")
 })
 
-test_that("Overview renders the preamble and 4-column summary table (#250)", {
+test_that("Overview renders the preamble and summary cards (#250)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
   out <- quiet_render(Report_PrematureDeaths(
@@ -288,11 +292,10 @@ test_that("Overview renders the preamble and 4-column summary table (#250)", {
     fixed = TRUE
   )
   expect_match(html, "within ≤90 days of randomization", fixed = TRUE)
-  # The four wide-table headers.
-  expect_match(html, "Total enrolled", fixed = TRUE)
-  expect_match(html, "Total sites with enrolled participants", fixed = TRUE)
-  expect_match(html, "Premature Death(s)", fixed = TRUE)
-  expect_match(html, "Participants Ineligible + Premature Death", fixed = TRUE)
+  expect_equal(pd_card_value(html, "Total Enrolled"), "3")
+  expect_equal(pd_card_value(html, "Premature Deaths"), "2")
+  expect_match(html, "Across 2 sites", fixed = TRUE)
+  expect_match(html, "Ineligible + Premature Death", fixed = TRUE)
   # The removed flag chips / bullets are gone.
   expect_false(grepl("Alive at Window", html))
   expect_false(grepl("Configured window", html))
@@ -311,12 +314,9 @@ test_that("Overview shows an em-dash for Ineligible when no eligibility data (#2
     strOutputDir = tempdir()
   ))
   html <- paste(readLines(out, warn = FALSE), collapse = "\n")
-  # The Ineligible cell renders as a bare em-dash (—) when there's no eligibility
-  # data. Anchor to the <td> so an em-dash elsewhere can't satisfy this, and note
-  # that this (and the "≤90 days" preamble assertion above) depends on pandoc
-  # emitting literal UTF-8 — the default; a render that entity-encoded would need
-  # "&mdash;"/"&#8212;" instead. The manual render-gate is the real visual check.
-  expect_match(html, "<td[^>]*>\\s*—\\s*</td>", perl = TRUE)
+  # A dash rather than 0, which would falsely assert zero ineligible deaths.
+  expect_equal(pd_card_value(html, "Ineligible \\+ Premature Death"), "—")
+  expect_match(html, "Eligibility data not available", fixed = TRUE)
 })
 
 test_that("Overview shows ineligible count and percent when eligibility data present (#250)", {
@@ -337,10 +337,29 @@ test_that("Overview shows ineligible count and percent when eligibility data pre
     strOutputDir = tempdir()
   ))
   html <- paste(readLines(out, warn = FALSE), collapse = "\n")
-  expect_match(html, "1 (50.0%)", fixed = TRUE)
+  expect_equal(pd_card_value(html, "Ineligible \\+ Premature Death"), "1")
+  expect_match(html, "50.0% of premature deaths", fixed = TRUE)
 })
 
-test_that("Overview table right-aligns every column, including the string-value headers (#250)", {
+test_that("Overview death-window cards carry the bucket colours (#250)", {
+  testthat::skip_if_not_installed("plotly")
+  testthat::skip_if_not_installed("DT")
+  out <- Report_PrematureDeaths(
+    dfResults = dfResults,
+    dfMetrics = dfMetrics,
+    dfGroups = dfGroups,
+    lListings = lListings,
+    nWindowDays = 90,
+    strOutputDir = tempdir()
+  )
+  html <- paste(readLines(out, warn = FALSE), collapse = "\n")
+  lv <- pd_CategoryLevels(90)
+  vColors <- pd_CategoryColors(90)
+  expect_match(html, paste0("border-top: 4px solid ", vColors[[lv[["death30"]]]]), fixed = TRUE)
+  expect_match(html, paste0("border-top: 4px solid ", vColors[[lv[["death3190"]]]]), fixed = TRUE)
+})
+
+test_that("Overview cards split premature deaths into <=30 and 31-90 day windows (#252)", {
   testthat::skip_if_not_installed("plotly")
   testthat::skip_if_not_installed("DT")
   out <- quiet_render(Report_PrematureDeaths(
@@ -352,42 +371,10 @@ test_that("Overview table right-aligns every column, including the string-value 
     strOutputDir = tempdir()
   ))
   html <- paste(readLines(out, warn = FALSE), collapse = "\n")
-  # align = "r" makes kable emit text-align:right on every column. The two
-  # string-value columns (Premature / Ineligible) previously defaulted to left;
-  # assert their headers are now right-aligned. Anchor to the text-align:right
-  # style immediately before the header text so a left-aligned cell can't pass.
-  expect_match(
-    html,
-    "text-align:right;\">\\s*Premature Death\\(s\\)",
-    perl = TRUE
-  )
-  expect_match(
-    html,
-    "text-align:right;\">\\s*Participants Ineligible \\+ Premature Death",
-    perl = TRUE
-  )
-})
-
-test_that("Overview Premature Death(s) cell shows the <=30 / 31-90 breakdown sub-line (#252)", {
-  testthat::skip_if_not_installed("plotly")
-  testthat::skip_if_not_installed("DT")
-  out <- quiet_render(Report_PrematureDeaths(
-    dfResults = dfResults,
-    dfMetrics = dfMetrics,
-    dfGroups = dfGroups,
-    lListings = lListings,
-    nWindowDays = 90,
-    strOutputDir = tempdir()
-  ))
-  html <- paste(readLines(out, warn = FALSE), collapse = "\n")
-  # The sub-line renders the <=30 / 31-90 day-range labels, but R CMD check
-  # renders via pandoc html4, which entity-encodes the "less-than-or-equal" math
-  # glyph inside the raw-HTML kable cell -- so a raw-byte match on the glyph is
-  # not portable across pandoc builds. Assert the styled sub-line span and the
-  # renamed header here; the exact nDeath30 / nDeath3190 counts and the
-  # `== nPremature` invariant are covered by test-pd_OverviewStats.R (#252).
-  expect_match(html, "font-size:smaller", fixed = TRUE)
-  expect_match(html, "Participants Ineligible + Premature Death", fixed = TRUE)
+  # S1 died on day 20, S2 on day 50. The 31-90 label carries an en dash that
+  # pandoc may entity-encode, so only the 30-day card is read by label.
+  expect_equal(pd_card_value(html, "Death within 30 days"), "1")
+  expect_equal(pd_card_value(html, "Premature Deaths"), "2")
 })
 
 test_that("Report listing shows Treatment Related Yes for a fatal related AE death (#248)", {
@@ -407,6 +394,36 @@ test_that("Report listing shows Treatment Related Yes for a fatal related AE dea
   # notes contain "Yes" as `<strong>Yes</strong>` (unquoted), so a bare
   # grepl("Yes", html) passes regardless of the listing and can never go red.
   expect_true(grepl('"Yes"', html, fixed = TRUE)) # S1: deathcls AE + grade-5 RELATED AE
+})
+
+test_that("Report renders a Fatal AE Listing for premature-death participants (#304)", {
+  testthat::skip_if_not_installed("plotly")
+  testthat::skip_if_not_installed("DT")
+  lListingsFatal <- lListings
+  lListingsFatal$Mapped_AE <- tibble::tibble(
+    subjid = c("S1", "S3"),
+    mdrpt_nsv = c("Cardiac arrest", "Pulmonary embolism"),
+    aest_dt = as.Date(c("2026-02-13", "2026-04-20")),
+    aetoxgr = 5L,
+    aeout = "Fatal",
+    aereldrv = c("Yes", "No")
+  )
+  out <- quiet_render(Report_PrematureDeaths(
+    dfResults = dfResults,
+    dfMetrics = dfMetrics,
+    dfGroups = dfGroups,
+    lListings = lListingsFatal,
+    nWindowDays = 90,
+    strOutputDir = tempdir()
+  ))
+  html <- paste(readLines(out, warn = FALSE), collapse = "\n")
+  expect_match(html, "Fatal AE Listing", fixed = TRUE)
+  expect_match(html, "Cardiac arrest", fixed = TRUE)
+  # S3 is not a premature death, so its fatal AE is not listed.
+  expect_false(grepl("Pulmonary embolism", html, fixed = TRUE))
+  # The country/site filter drives every listing with an invid column, not just
+  # the last table on the page.
+  expect_match(html, 'columns("invid:name")', fixed = TRUE)
 })
 
 test_that("Report renders a country-reactive Reasons chart via gsm.vizr::bars() (#254) (#264) (#288)", {
@@ -507,7 +524,7 @@ test_that("Report sources rgmn_dt from Mapped_Randomization when Mapped_SUBJ lac
   # Mapped_Randomization -> NA rgmn_dt -> dropped, so Total enrolled is 2 (S1, S2),
   # not 3. This is the ONLY path that exercises the production source-then-filter
   # branch: if it never ran, no subject would carry rgmn_dt, the NA-filter would
-  # be skipped, and the cell would read 3 -- so the test fails closed.
+  # be skipped, and the card would read 3 -- so the test fails closed.
   lL <- lListings
   lL$Mapped_SUBJ <- dplyr::select(lListings$Mapped_SUBJ, -"rgmn_dt")
   lL$Mapped_Randomization <- tibble::tibble(
@@ -523,11 +540,7 @@ test_that("Report sources rgmn_dt from Mapped_Randomization when Mapped_SUBJ lac
     strOutputDir = tempdir()
   ))
   html <- paste(readLines(out, warn = FALSE), collapse = "\n")
-  expect_match(
-    html,
-    "(?s)<tbody>\\s*<tr>\\s*<td[^>]*>\\s*2\\s*</td>",
-    perl = TRUE
-  )
+  expect_equal(pd_card_value(html, "Total Enrolled"), "2")
 })
 
 test_that("Report_PrematureDeaths renders the empty-state cleanly with zero premature deaths (#288)", {
@@ -580,4 +593,21 @@ test_that("inlined JSON data cannot terminate the report's script block (#288)",
   # jsonlite renders "</" as "<\/" and script_safe_json escapes the "<", so the
   # payload survives only as \u003c\/script -- inert to the HTML parser.
   expect_true(grepl("\\u003c\\/script", html, fixed = TRUE))
+})
+
+test_that("Overview Treatment-Related Deaths card counts the listing's Treatment Related Yes rows (#304)", {
+  testthat::skip_if_not_installed("plotly")
+  testthat::skip_if_not_installed("DT")
+  out <- Report_PrematureDeaths(
+    dfResults = dfResults,
+    dfMetrics = dfMetrics,
+    dfGroups = dfGroups,
+    lListings = lListings,
+    nWindowDays = 90,
+    strOutputDir = tempdir()
+  )
+  html <- paste(readLines(out, warn = FALSE), collapse = "\n")
+  # S1: AE death with a fatal related AE -> Yes; S2: disease progression -> No.
+  expect_equal(pd_card_value(html, "Treatment-Related Deaths"), "1")
+  expect_match(html, "50.0% of listed premature deaths", fixed = TRUE)
 })
