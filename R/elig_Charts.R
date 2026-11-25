@@ -7,6 +7,21 @@
 
 ELIG_CRITERION_COLORS <- c(Inclusion = "#3C587F", Exclusion = "#8FB3DE", "Not classified" = "#B8C4D6")
 
+#' Criterion type colours
+#'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#'
+#' Fill colours of the Criteria charts, keyed by criterion type in stack order.
+#'
+#' @return Named `character` of hex colours.
+#'
+#' @keywords internal
+#' @export
+elig_CriterionColors <- function() {
+  ELIG_CRITERION_COLORS
+}
+
 elig_GroupCol <- function(strLevel) {
   switch(strLevel,
     study = "studyid",

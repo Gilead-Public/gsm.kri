@@ -85,6 +85,13 @@ test_that("criteria views count EDC I/E criterion cases and keep only groups wit
   expect_setequal(b$site$GroupID, c("0X001", "0X002"))
 })
 
+test_that("criterion colours are defined once, keyed by criterion type (#371)", {
+  expect_equal(
+    elig_CriterionColors(),
+    c(Inclusion = "#3C587F", Exclusion = "#8FB3DE", "Not classified" = "#B8C4D6")
+  )
+})
+
 test_that("criteria without iecat_concat are one Not classified series (#371)", {
   a <- elig_CriteriaRows(elig_ClassifyParticipants(elig_Fixture(bIecat = FALSE)))
   expect_equal(unique(a$study$Status), "Not classified")
