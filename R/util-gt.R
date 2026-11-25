@@ -12,33 +12,20 @@
 #' @keywords internal
 NULL
 
-#' Create a gt table object with gsm style
-#'
-#'  @description
-#'
-#' This is a wrapper to ensure that the user has gt installed and to apply
-#' standardized styles.
-#'
-#' @inheritParams gt-shared
-#' @param ... Additional arguments passed to [gt::gt()].
-#' @inherit gt-shared return
-#' @keywords internal
-gsm_gt <- function(data, ...) {
-  rlang::check_installed("gt")
-  gt_style(gt::gt(data, ...))
-}
-
 #' Shared formats for gt tables
 #'
 #' @description
 #'
 #' Apply standardized formatting to gt tables.
 #'
+#' @param ... Additional arguments passed to [gt::gt()].
 #' @inheritParams gt-shared
 #' @inherit gt-shared return
 #' @keywords internal
-gt_style <- function(data) {
-  rlang::check_installed("gt")
+gt_style <- function(data, ...) {
+  if (!inherits(data, "gt_tbl") || ...length()) {
+    data <- gt::gt(data, ...)
+  }
   gt::opt_vertical_padding(data, 0.5)
 }
 

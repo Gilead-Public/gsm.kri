@@ -89,7 +89,10 @@ test_that("every fixture participant lands in its status (#320, #332)", {
 test_that("each drv_drg_completion value maps to one dosed status (#332)", {
   df <- classify_fixture()
   expect_equal(status_of(df, "P06"), "Premature treatment discontinuation")
-  expect_equal(status_of(df, "P27"), "Potential premature treatment discontinuation")
+  expect_equal(
+    status_of(df, "P27"),
+    "Potential premature treatment discontinuation"
+  )
   expect_equal(status_of(df, "P25"), "Treatment complete per protocol")
   expect_equal(status_of(df, "P28"), "Treatment ongoing")
 })
@@ -163,7 +166,11 @@ test_that("each data conflict warns and names the participant (#320, #332)", {
   expect_match(w, "Dosed IP non-starter status.*P11", all = FALSE)
   expect_match(w, "dosed flag wins.*P10", all = FALSE)
   expect_match(w, "date is ignored.*P12", all = FALSE)
-  expect_match(w, "drv_drg_completion value; the value is ignored.*P12", all = FALSE)
+  expect_match(
+    w,
+    "drv_drg_completion value; the value is ignored.*P12",
+    all = FALSE
+  )
   expect_match(w, "not Y, N or Potential No.*P29", all = FALSE)
   expect_match(w, "not a report status label.*P14", all = FALSE)
   expect_match(w, "No event date.*P18", all = FALSE)

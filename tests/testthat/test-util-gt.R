@@ -1,30 +1,4 @@
-## Test Setup
-library(testthat)
-
-## Test Code
-test_that("gsm_gt requires gt package", {
-  # Mock data for testing
-  test_data <- data.frame(
-    col1 = c(1, 2, 3),
-    col2 = c("A", "B", "C"),
-    stringsAsFactors = FALSE
-  )
-
-  # Test that the function checks for gt installation
-  # Note: if gt is installed, this should work; if not, it should error
-  if (requireNamespace("gt", quietly = TRUE)) {
-    # If gt is available, test that gsm_gt works
-    result <- gsm_gt(test_data)
-    expect_s3_class(result, "gt_tbl")
-  } else {
-    # If gt is not available, expect an error
-    expect_error(gsm_gt(test_data), class = "rlang_error")
-  }
-})
-
 test_that("gt_style applies standardized formatting", {
-  skip_if_not_installed("gt")
-
   # Create a basic gt table
   test_data <- data.frame(
     col1 = c(1, 2, 3),
@@ -42,18 +16,7 @@ test_that("gt_style applies standardized formatting", {
   expect_no_error(gt_style(gt_table))
 })
 
-test_that("gt_style requires gt package", {
-  skip_if(requireNamespace("gt", quietly = TRUE), "gt is installed")
-
-  # Create mock gt table structure for testing package requirement
-  mock_table <- structure(list(), class = "gt_tbl")
-
-  expect_error(gt_style(mock_table), class = "rlang_error")
-})
-
-test_that("gsm_gt passes additional arguments to gt::gt", {
-  skip_if_not_installed("gt")
-
+test_that("gt_style passes additional arguments to gt::gt", {
   test_data <- data.frame(
     col1 = c(1, 2, 3),
     col2 = c("A", "B", "C"),
@@ -62,7 +25,7 @@ test_that("gsm_gt passes additional arguments to gt::gt", {
 
   # Test that additional arguments are passed through
   # This should not error if arguments are properly passed
-  expect_no_error(gsm_gt(test_data, rownames_to_stub = TRUE))
+  expect_no_error(gt_style(test_data, rownames_to_stub = TRUE))
 
   # Test with grouping
   test_data_grouped <- data.frame(
@@ -72,38 +35,40 @@ test_that("gsm_gt passes additional arguments to gt::gt", {
     stringsAsFactors = FALSE
   )
 
-  result_grouped <- gsm_gt(test_data_grouped, groupname_col = "group")
+  result_grouped <- gt_style(test_data_grouped, groupname_col = "group")
   expect_s3_class(result_grouped, "gt_tbl")
 })
 
 test_that("cols_label_month function exists and has documentation", {
   # Test that the function is properly documented and exported
   # This tests that the documentation structure is valid
-  expect_true(exists("cols_label_month", envir = asNamespace("gsm.kri"), inherits = FALSE) ||
-    "cols_label_month" %in% getNamespaceExports("gsm.kri"))
+  expect_true(
+    exists(
+      "cols_label_month",
+      envir = asNamespace("gsm.kri"),
+      inherits = FALSE
+    ) ||
+      "cols_label_month" %in% getNamespaceExports("gsm.kri")
+  )
 })
 
 test_that("gt functions handle edge cases", {
-  skip_if_not_installed("gt")
-
   # Test with empty data frame
   empty_data <- data.frame()
-  expect_no_error(gsm_gt(empty_data))
+  expect_no_error(gt_style(empty_data))
 
   # Test with single row
   single_row <- data.frame(col1 = 1, col2 = "A", stringsAsFactors = FALSE)
-  result_single <- gsm_gt(single_row)
+  result_single <- gt_style(single_row)
   expect_s3_class(result_single, "gt_tbl")
 
   # Test with single column
   single_col <- data.frame(col1 = c(1, 2, 3), stringsAsFactors = FALSE)
-  result_single_col <- gsm_gt(single_col)
+  result_single_col <- gt_style(single_col)
   expect_s3_class(result_single_col, "gt_tbl")
 })
 
 test_that("gt utility functions maintain data integrity", {
-  skip_if_not_installed("gt")
-
   test_data <- data.frame(
     numeric_col = c(1.5, 2.7, 3.2),
     character_col = c("A", "B", "C"),
@@ -112,7 +77,7 @@ test_that("gt utility functions maintain data integrity", {
   )
 
   # Create table and apply styling
-  result <- gsm_gt(test_data)
+  result <- gt_style(test_data)
 
   # The underlying data should be preserved
   expect_s3_class(result, "gt_tbl")

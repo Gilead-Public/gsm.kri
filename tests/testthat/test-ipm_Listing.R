@@ -56,8 +56,16 @@ test_that("Study complete shows Y, N or blank next to Consent withdrawn (#332)",
 
 test_that("the listing names Drug discontinuation reason and leaves out Days since enrollment (#332)", {
   w <- ipm_Listing(ipm_ListingData(ipm_classified()))
-  expect_match(w$x$container, "<th>Drug discontinuation reason</th>", fixed = TRUE)
-  expect_no_match(w$x$container, "<th>Discontinuation reason</th>", fixed = TRUE)
+  expect_match(
+    w$x$container,
+    "<th>Drug discontinuation reason</th>",
+    fixed = TRUE
+  )
+  expect_no_match(
+    w$x$container,
+    "<th>Discontinuation reason</th>",
+    fixed = TRUE
+  )
   expect_no_match(w$x$container, "Days since enrollment", fixed = TRUE)
 })
 
@@ -79,8 +87,16 @@ test_that("an unrecognised status shows the delivered value; a missing kit is bl
 
 test_that("the CSV exports every participant and hides the dosed column (#320, #332)", {
   w <- ipm_Listing(ipm_ListingData(ipm_classified()))
-  expect_match(w$x$container, "<th>Study Drug Completed per Protocol</th>", fixed = TRUE)
-  expect_no_match(w$x$container, "Premature treatment discontinuation", fixed = TRUE)
+  expect_match(
+    w$x$container,
+    "<th>Study Drug Completed per Protocol</th>",
+    fixed = TRUE
+  )
+  expect_no_match(
+    w$x$container,
+    "Premature treatment discontinuation",
+    fixed = TRUE
+  )
   expect_equal(w$elementId, "ipc-listing")
   button <- w$x$options$buttons[[1]]
   expect_equal(button$exportOptions$modifier$search, "none")

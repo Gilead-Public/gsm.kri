@@ -71,7 +71,9 @@ test_that("without discontinuation data there are no reason slices (#320)", {
 
 test_that("no discontinuations give an empty order (#320, #332)", {
   df <- ipm_classified()
-  df$status[df$status == "Premature treatment discontinuation"] <- "Treatment ongoing"
+  df$status[
+    df$status == "Premature treatment discontinuation"
+  ] <- "Treatment ongoing"
   r <- ipm_ReasonRows(df, TRUE)
   expect_length(r$order, 0)
   expect_equal(nrow(r$study), 0)

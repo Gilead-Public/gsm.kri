@@ -23,11 +23,6 @@ Report_StudyInfo <- function(
   tagHeader = htmltools::h2("Study Status"),
   lStudy = deprecated()
 ) {
-  rlang::check_installed(
-    "gt",
-    reason = "to render table from `Report_StudyInfo`"
-  )
-
   study_status_table <- MakeStudyInfo(dfGroups, lStudyLabels, lStudy = lStudy)
 
   subcols <- c(
@@ -94,7 +89,7 @@ htmlDependency_toggleTables <- function() {
 gt_StudyInfo <- function(data, ...) {
   data %>%
     dplyr::select("Description", "Value") %>%
-    gsm_gt(...) %>%
+    gt_style(...) %>%
     gt::cols_align(columns = "Value", align = "right") %>%
     gt::tab_options(
       column_labels.hidden = TRUE

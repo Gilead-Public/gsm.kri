@@ -76,7 +76,9 @@ test_that("kri0007-2/cou0007-2 read only Mapped_SUBJ, count drv_drg_completion a
     expect_named(wf$spec, "Mapped_SUBJ")
     expect_false("phase" %in% names(wf$spec$Mapped_SUBJ))
     expect_equal(wf$spec$Mapped_SUBJ$drv_drg_completion$type, "character")
-    expect_false("drv_treatment_discontinuation_dt" %in% names(wf$spec$Mapped_SUBJ))
+    expect_false(
+      "drv_treatment_discontinuation_dt" %in% names(wf$spec$Mapped_SUBJ)
+    )
     expect_equal(wf$meta$Abbreviation, "PTDC")
     expect_equal(wf$meta$Metric, "Premature Treatment Discontinuation Rate")
     expect_equal(
@@ -96,7 +98,11 @@ test_that("kri0007-2/cou0007-2 read only Mapped_SUBJ, count drv_drg_completion a
 
 test_that("kri0007-2/cou0007-2 are active and kri0007/cou0007 inactive, so default workflow lists run only the -2 pair (#301)", {
   wf <- workr::MakeWorkflowList(
-    strPath = file.path(system.file(package = "gsm.kri"), "workflow", "2_metrics")
+    strPath = file.path(
+      system.file(package = "gsm.kri"),
+      "workflow",
+      "2_metrics"
+    )
   )
 
   expect_true(all(c("kri0007-2", "cou0007-2") %in% names(wf)))

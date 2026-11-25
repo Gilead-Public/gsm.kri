@@ -30,14 +30,11 @@ column: `"Ineligible"` when `Source != "Neither"` (matching the `kri0014`
 rule), `"Eligible"` when `Source == "Neither"`, and `"Unknown"` when the
 subject has no matching exclusion row.}
 
-\item{dfAE}{`data.frame` (optional) Mapped AE data with `subjid`, `aetoxgr`,
-and `aerel` (`"RELATED"`/`"NOT RELATED"`). Used to compute the Treatment
-Related column: `"Yes"` when `deathcls` is an adverse event AND the subject
-has a fatal (`aetoxgr==5`) treatment-related AE; `"No"` when `deathcls` is
-an adverse event AND the subject has a fatal (`aetoxgr==5`) not-treatment-related
-AE, or when `deathcls` is not an AE AND there is no fatal treatment-related
-AE; `"Unknown"` otherwise (mixed signals, or missing `deathcls`/AE
-evidence). `death_reason` is `deathcls` (else `"Unknown"`).}
+\item{dfAE}{`data.frame` (optional) Mapped AE data with `subjid` and any of
+`aeout`, `aetoxgr`, `aesdth`, `aereldrv` and `aerel`. Used to compute the
+Treatment Related column; see `pd_SubjectFatalRelatedAE()` for what counts
+as a fatal and a treatment-related AE. `death_reason` is `deathcls` (else
+`"Unknown"`).}
 }
 \value{
 A `data.frame` of one row per flagged premature-death subject.
@@ -50,11 +47,13 @@ Filters `dfResults` to flagged patient-level premature-death rows
 detail. Sorted by `death_dy` ascending. `death_reason` is the death
 classification (`deathcls`), falling back to `"Unknown"` when absent.
 `treatment_related` is three-valued: `"Yes"` when `deathcls` is an adverse
-event AND the subject has a fatal (grade 5) treatment-related AE in `dfAE`;
+event AND the subject has a fatal treatment-related AE in `dfAE`;
 `"No"` when `deathcls` is an adverse event AND the subject has a fatal
-(grade 5) not-treatment-related AE, or when `deathcls` is not an adverse
+not-treatment-related AE, or when `deathcls` is not an adverse
 event AND no fatal treatment-related AE exists;
-`"Unknown"` otherwise (mixed signals, or missing `deathcls`/AE evidence).
+`"Unknown"` otherwise (mixed signals, missing `deathcls`/AE evidence, or a
+fatal AE with missing relatedness). Fatal and related are defined by
+`pd_SubjectFatalRelatedAE()`.
 A `randomization_date` column is derived as `death_dt - death_dy`,
 reconstructing the randomization date (`rgmn_dt`) that `death_dy` was counted from.
 }

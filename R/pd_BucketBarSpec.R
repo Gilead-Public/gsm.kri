@@ -21,7 +21,8 @@ pd_BucketRows <- function(
   strOuterCol = NULL
 ) {
   counts <- pd_BucketCounts(dfClassified, strGroupCol, strOuterCol)
-  level <- switch(strGroupCol,
+  level <- switch(
+    strGroupCol,
     studyid = "study",
     country = "country",
     invid = "site",

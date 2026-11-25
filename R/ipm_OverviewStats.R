@@ -43,7 +43,8 @@ ipm_OverviewStats <- function(dfIPM, bHasPTD) {
       nDosed,
       vapply(vNotDosed, n_status, integer(1), USE.NAMES = FALSE),
       sum(
-        dfIPM$status %in% "Confirmed IP non-starter" &
+        dfIPM$status %in%
+          "Confirmed IP non-starter" &
           dfIPM$consent_withdrawn %in% "Y"
       ),
       if (bHasPTD) {

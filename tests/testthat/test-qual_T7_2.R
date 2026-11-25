@@ -34,7 +34,10 @@ testthat::test_that("Qual: Protocol Deviation Assessments can be done correctly 
     ~ expect_equal(
       # Transform_Rate() drops groups whose denominator sums to zero.
       .x$Analysis_Input |>
-        dplyr::summarise(Denominator = sum(.data$Denominator), .by = "GroupID") |>
+        dplyr::summarise(
+          Denominator = sum(.data$Denominator),
+          .by = "GroupID"
+        ) |>
         dplyr::filter(.data$Denominator > 0) |>
         nrow(),
       nrow(.x$Analysis_Transformed)

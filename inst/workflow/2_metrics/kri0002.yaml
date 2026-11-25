@@ -34,15 +34,15 @@ steps:
     name: gsm.core::ParseThreshold
     params:
       strThreshold: Threshold
-  - output: vRiskScoreWeight
-    name: gsm.core::ParseThreshold
-    params:
-      strThreshold: RiskScoreWeight
-      bSort: false
   - output: vFlag
     name: gsm.core::ParseThreshold
     params:
       strThreshold: Flag
+      bSort: false
+  - output: vRiskScoreWeight
+    name: gsm.core::ParseThreshold
+    params:
+      strThreshold: RiskScoreWeight
       bSort: false
   - output: Temp_SAE
     name: workr::RunQuery
@@ -66,7 +66,7 @@ steps:
     params:
       dfInput: Analysis_Input
   - output: Analysis_Analyzed
-    name: Analyze_NormalApprox
+    name: gsm.core::Analyze_NormalApprox
     params:
       dfTransformed: Analysis_Transformed
       strType: AnalysisType

@@ -1,7 +1,11 @@
 vs_ids <- c(paste0("kri0020", letters[1:6]), paste0("cou0020", letters[1:6]))
 vs_cols <- c(
-  a = "weight", b = "pulse", c = "sysbp",
-  d = "diabp", e = "resp", f = "temp"
+  a = "weight",
+  b = "pulse",
+  c = "sysbp",
+  d = "diabp",
+  e = "resp",
+  f = "temp"
 )
 
 run_vs <- function(strIDs) {
@@ -31,9 +35,26 @@ test_that("all twelve repeat-measure workflows load with matching IDs (#306)", {
     expect_equal(meta$ValueCol, unname(vs_cols[substr(id, 8, 8)]))
     expect_equal(meta$Threshold, "0.2,0.3")
     expect_equal(meta$WindowLength, 3)
+    expect_equal(meta$AccrualThreshold, 3)
     expect_equal(
       meta$GroupLevel,
       if (startsWith(id, "kri")) "Site" else "Country"
+    )
+    lDetect <- Filter(
+      function(step) step$name == "gsm.kri::Detect_ConsecutiveRepeats",
+      wf[[id]]$steps
+    )
+    expect_length(lDetect, 1)
+    expect_equal(lDetect[[1]]$params$strOrderCol, "visit", label = id)
+    expect_equal(lDetect[[1]]$params$strDateCol, "vs_dt", label = id)
+    lFlag <- Filter(
+      function(step) step$name == "gsm.core::Flag",
+      wf[[id]]$steps
+    )
+    expect_equal(
+      lFlag[[1]]$params$nAccrualThreshold,
+      "AccrualThreshold",
+      label = id
     )
   }
 })
@@ -101,7 +122,11 @@ test_that("workflow results do not depend on Mapped_VS row order (#307)", {
 
 test_that("MakeWorkflowList regex path matches all suffixed variants (#306)", {
   TestAtLogLevel()
-  strPath <- file.path(system.file(package = "gsm.kri"), "workflow", "2_metrics")
+  strPath <- file.path(
+    system.file(package = "gsm.kri"),
+    "workflow",
+    "2_metrics"
+  )
   expect_no_warning(
     wf <- workr::MakeWorkflowList(strNames = "kri0020", strPath = strPath)
   )

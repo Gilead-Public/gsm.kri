@@ -17,7 +17,9 @@ if (requireNamespace("gsm.reporting", quietly = TRUE)) {
 set.seed(123)
 
 ## Declare all the data
-lSource <- gsm.core::lSource
+# `lSource` comes from gsm.core via import(gsm.core). It is a read-only binding,
+# so it must not be reassigned here: load_all() sources helpers into the package
+# environment, where that binding lives.
 
 # Step 0 - Data Ingestion - standardize tables/columns names
 lData <- list(
@@ -234,6 +236,9 @@ get_data <- function(lWorkflow, data) {
   )])
 
   # Return subset of cached mapped_data instead of re-running workflows
-  mapped_needed_data <- mapped_data[intersect(names(mapped_data), c(maps_needed_index, names(data)))]
+  mapped_needed_data <- mapped_data[intersect(
+    names(mapped_data),
+    c(maps_needed_index, names(data))
+  )]
   return(mapped_needed_data)
 }

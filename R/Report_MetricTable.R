@@ -63,7 +63,7 @@ Report_MetricTable <- function(
   }
 
   lMetricTable <- dfRiskSignals %>%
-    gsm_gt() %>%
+    gt_style() %>%
     gt::cols_hide(cols_to_hide) %>%
     fmt_sign(columns = "Flag")
 
