@@ -29,6 +29,21 @@
   Approximation metrics (`cou0001`-`cou0004`, `cou0012`) so every metric
   workflow pairs `Threshold` with `Flag`. Flagging output is unchanged
   ([\#369](https://github.com/Gilead-Public/gsm.kri/issues/369)).
+- The Premature Deaths report adds a Fatal AE Listing: one row per fatal
+  adverse event for premature-death participants, with the MedDRA term,
+  outcome and relatedness, filtered with the patient listing by country
+  and site
+  ([`pd_FatalAEListing()`](https://gilead-public.github.io/gsm.kri/dev/reference/pd_FatalAEListing.md),
+  [`pd_FatalAEListingData()`](https://gilead-public.github.io/gsm.kri/dev/reference/pd_FatalAEListingData.md)).
+  Fatal AEs are now identified by outcome (`aeout`), grade 5 (`aetoxgr`)
+  or death flag (`aesdth`), with relatedness from `aereldrv`. Treatment
+  Related shows Unknown when a fatal AE lacks relatedness
+  ([\#304](https://github.com/Gilead-Public/gsm.kri/issues/304)).
+- The Premature Deaths report is restyled: summary cards replace the
+  overview table, including a new Treatment-Related Deaths card that
+  counts the patient listing’s Treatment Related “Yes” rows; the filter
+  strip is always shown, and the page uses the full window width
+  ([\#304](https://github.com/Gilead-Public/gsm.kri/issues/304)).
 
 ## gsm.kri v1.8.0
 

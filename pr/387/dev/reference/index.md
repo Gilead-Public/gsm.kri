@@ -105,6 +105,10 @@
   : Premature-death bucket stacking order
 - [`pd_EligibilityStatus()`](https://gilead-public.github.io/gsm.kri/dev/reference/pd_EligibilityStatus.md)
   : Classify eligibility from an exclusion \`Source\`
+- [`pd_FatalAEListing()`](https://gilead-public.github.io/gsm.kri/dev/reference/pd_FatalAEListing.md)
+  : Premature-death fatal AE listing
+- [`pd_FatalAEListingData()`](https://gilead-public.github.io/gsm.kri/dev/reference/pd_FatalAEListingData.md)
+  : Premature-death fatal AE listing data
 - [`pd_OverviewStats()`](https://gilead-public.github.io/gsm.kri/dev/reference/pd_OverviewStats.md)
   : Overview summary statistics for the premature-death report
 - [`pd_PatientListing()`](https://gilead-public.github.io/gsm.kri/dev/reference/pd_PatientListing.md)
