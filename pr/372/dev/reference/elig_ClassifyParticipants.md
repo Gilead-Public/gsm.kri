@@ -31,7 +31,9 @@ elig_ClassifyParticipants(
   \`data.frame\` \`Mapped_EXCLUSION\`, optionally with the level 1
   columns \`pd_important\`, \`pd_nonimportant\`, \`edc_query\` and
   \`edc_pd\` (\`"Y"\`/\`"N"\`; \`NA\` throughout when the source is not
-  delivered).
+  delivered), and \`iecat_concat\`, the category (\`"IN"\`/\`"EX"\`) of
+  each code in \`ietestcd_concat\` order; without it the criteria are
+  not split by type.
 
 - dfGroups:
 
@@ -47,5 +49,5 @@ elig_ClassifyParticipants(
 
 \`tibble\` with \`studyid\`, \`subjid\`, \`country\`, \`invid\`,
 \`investigator\`, \`status\`, the \`flag\_\*\` columns of the delivered
-sources (\`"Y"\`/\`"N"\`/\`NA\`), \`criteria\`, \`pd_dates\` and
-\`pd_terms\`.
+sources (\`"Y"\`/\`"N"\`/\`NA\`), \`criteria\`, \`criteria_type\`,
+\`pd_dates\` and \`pd_terms\`.

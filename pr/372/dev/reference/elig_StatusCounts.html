@@ -37,6 +37,7 @@ together are the report's `dfStatusHistory`."><meta name="robots" content="noind
     <li><a class="dropdown-item" href="../examples/Example_CrossStudySRS.html">Cross-Study KRI Report</a></li>
     <li><a class="dropdown-item" href="../examples/Example_IPMonitoring.html">IP Monitoring Report</a></li>
     <li><a class="dropdown-item" href="../examples/Example_PrematureDeaths.html">Premature Deaths Report</a></li>
+    <li><a class="dropdown-item" href="../examples/Example_RepeatMeasurements.html">Repeat Measurements Report</a></li>
     <li><a class="dropdown-item" href="../examples/Cookbook_AdverseEventKRI.html">Cookbook - Adverse Event KRI Report</a></li>
     <li><a class="dropdown-item" href="../examples/Cookbook_AdverseEventWorkflow.html">Cookbook - Adverse Event Workflow Examples</a></li>
     <li><a class="dropdown-item" href="../examples/Cookbook_ReportingWorkflow.html">Cookbook - Reporting Workflow Examples</a></li>
@@ -76,7 +77,9 @@ together are the report's `dfStatusHistory`.</p>
 <dl><dt id="arg-dfexclusion">dfExclusion<a class="anchor" aria-label="anchor" href="#arg-dfexclusion"></a></dt>
 <dd><p>`data.frame` `Mapped_EXCLUSION`, optionally with the
 level 1 columns `pd_important`, `pd_nonimportant`, `edc_query` and
-`edc_pd` (`"Y"`/`"N"`; `NA` throughout when the source is not delivered).</p></dd>
+`edc_pd` (`"Y"`/`"N"`; `NA` throughout when the source is not delivered),
+and `iecat_concat`, the category (`"IN"`/`"EX"`) of each code in
+`ietestcd_concat` order; without it the criteria are not split by type.</p></dd>
 
 
 <dt id="arg-strmode">strMode<a class="anchor" aria-label="anchor" href="#arg-strmode"></a></dt>

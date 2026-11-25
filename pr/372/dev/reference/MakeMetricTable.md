@@ -58,20 +58,30 @@ MakeMetricTable(
     FilterByLatestSnapshotDate(),
   dfGroups = gsm.core::reportingGroups
 )
-#>          StudyID GroupID         MetricID          Group SnapshotDate Enrolled
-#> 1 AA-AA-000-0000  0X9490 Analysis_kri0001   0X9490 (Doe)   2025-04-01       13
-#> 2 AA-AA-000-0000  0X6995 Analysis_kri0001  0X6995 (Deer)   2025-04-01        7
-#> 3 AA-AA-000-0000  0X4747 Analysis_kri0001   0X4747 (Doe)   2025-04-01        4
-#> 4 AA-AA-000-0000   0X700 Analysis_kri0001   0X700 (Deer)   2025-04-01        4
-#> 5 AA-AA-000-0000  0X2861 Analysis_kri0001  0X2861 (Deer)   2025-04-01        4
-#> 6 AA-AA-000-0000  0X8090 Analysis_kri0001   0X8090 (Doe)   2025-04-01        9
-#> 7 AA-AA-000-0000  0X9252 Analysis_kri0001 0X9252 (Smith)   2025-04-01       11
-#>   Numerator Denominator Metric Score Flag
-#> 1        25         532   0.05 -1.56   -1
-#> 2        13         306   0.04 -1.34   -1
-#> 3         5         151   0.03 -1.17   -1
-#> 4         0          50   0.00 -1.14   -1
-#> 5         6         165   0.04 -1.14   -1
-#> 6        16         318   0.05 -1.09   -1
-#> 7        33         554   0.06 -1.00   -1
+#>           StudyID GroupID         MetricID          Group SnapshotDate Enrolled
+#> 1  AA-AA-000-0000  0X2025 Analysis_kri0001 0X2025 (Smith)   2025-04-01        5
+#> 2  AA-AA-000-0000  0X7303 Analysis_kri0001   0X7303 (Doe)   2025-04-01       11
+#> 3  AA-AA-000-0000   0X464 Analysis_kri0001  0X464 (Smith)   2025-04-01        6
+#> 4  AA-AA-000-0000  0X5940 Analysis_kri0001 0X5940 (Smith)   2025-04-01        8
+#> 5  AA-AA-000-0000  0X6315 Analysis_kri0001   0X6315 (Doe)   2025-04-01        3
+#> 6  AA-AA-000-0000  0X1755 Analysis_kri0001   0X1755 (Doe)   2025-04-01        2
+#> 7  AA-AA-000-0000  0X4769 Analysis_kri0001 0X4769 (Smith)   2025-04-01        4
+#> 8  AA-AA-000-0000  0X3235 Analysis_kri0001 0X3235 (Smith)   2025-04-01        6
+#> 9  AA-AA-000-0000   0X799 Analysis_kri0001   0X799 (Deer)   2025-04-01        2
+#> 10 AA-AA-000-0000  0X7772 Analysis_kri0001   0X7772 (Doe)   2025-04-01        7
+#> 11 AA-AA-000-0000  0X9705 Analysis_kri0001  0X9705 (Deer)   2025-04-01        2
+#> 12 AA-AA-000-0000  0X4290 Analysis_kri0001 0X4290 (Smith)   2025-04-01        8
+#>    Numerator Denominator Metric Score Flag
+#> 1         13          35   0.37  4.13    2
+#> 2         17         340   0.05 -1.40   -1
+#> 3          9         201   0.04 -1.25   -1
+#> 4         18         338   0.05 -1.25   -1
+#> 5          1          60   0.02 -1.21   -1
+#> 6          3          96   0.03 -1.18   -1
+#> 7          3          88   0.03 -1.07   -1
+#> 8         12         229   0.05 -1.06   -1
+#> 9          1          50   0.02 -1.05   -1
+#> 10        22         370   0.06 -1.02   -1
+#> 11         1          48   0.02 -1.01   -1
+#> 12        21         354   0.06 -1.00   -1
 ```

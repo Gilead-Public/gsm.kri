@@ -17,5 +17,5 @@ elig_CriteriaRows(dfElig)
 ## Value
 
 \`list\` from \[elig_BreakdownRows()\], keyed by criterion code and
-filled by Inclusion / Exclusion. Each scope holds only the criteria with
-cases in it.
+filled by Inclusion / Exclusion / Not classified. Each scope holds only
+the criteria with cases in it.

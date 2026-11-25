@@ -52,12 +52,12 @@ MakeStudyInfo(gsm.core::reportingGroups)
 #> 15                     product        Product Name 2
 #> 16                  SiteTarget                   150
 #> 17           ParticipantTarget                  1000
-#> 18            ParticipantCount                   754
-#> 19                   SiteCount                   141
-#> 20       PercentSitesActivated                    94
-#> 21              SiteActivation       141 / 150 (94%)
-#> 22 PercentParticipantsEnrolled                  75.4
-#> 23       ParticipantEnrollment    754 / 1000 (75.4%)
+#> 18            ParticipantCount                   760
+#> 19                   SiteCount                   145
+#> 20       PercentSitesActivated                  96.7
+#> 21              SiteActivation     145 / 150 (96.7%)
+#> 22 PercentParticipantsEnrolled                    76
+#> 23       ParticipantEnrollment      760 / 1000 (76%)
 #>                      Description
 #> 1                        Studyid
 #> 2                       Nickname
@@ -101,12 +101,12 @@ MakeStudyInfo(gsm.core::reportingGroups, list(SiteCount = "# Sites"))
 #> 15                     product        Product Name 2
 #> 16                  SiteTarget                   150
 #> 17           ParticipantTarget                  1000
-#> 18            ParticipantCount                   754
-#> 19                   SiteCount                   141
-#> 20       PercentSitesActivated                    94
-#> 21              SiteActivation       141 / 150 (94%)
-#> 22 PercentParticipantsEnrolled                  75.4
-#> 23       ParticipantEnrollment    754 / 1000 (75.4%)
+#> 18            ParticipantCount                   760
+#> 19                   SiteCount                   145
+#> 20       PercentSitesActivated                  96.7
+#> 21              SiteActivation     145 / 150 (96.7%)
+#> 22 PercentParticipantsEnrolled                    76
+#> 23       ParticipantEnrollment      760 / 1000 (76%)
 #>                      Description
 #> 1                        Studyid
 #> 2                       Nickname

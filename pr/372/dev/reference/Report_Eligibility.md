@@ -86,15 +86,17 @@ when the source is not delivered, and the listing shows "N/A"). A
 participant is Ineligible when \`Source != 'Neither'\`, otherwise
 Potentially Ineligible when \`edc_query\` or \`edc_pd\` is \`"Y"\`,
 otherwise No Eligibility Risk. \`Source\` itself never carries
-Potentially Ineligible. 2. \*\*Records\*\*: \`lListings\$IE_records\`,
-one row per record behind a flag, with \`studyid\`, \`subjid\`,
-\`source\` (\`"EDC eCRF"\`, \`"Protocol Deviation"\`, \`"EDC Query"\`,
-\`"EDC PD"\`), \`record_id\`, \`record_date\` and the source's key
-fields as further columns. Fills the listing's expanded rows and the CSV
-details columns (pilot mode). 3. \*\*Status history\*\*:
-\`dfStatusHistory\`, the rows of \[elig_StatusCounts()\] that the study
-saves every snapshot, with \`SnapshotDate\`. Adds the Status over Time
-tab (pilot mode).
+Potentially Ineligible. \`iecat_concat\`, the I/E category
+(\`"IN"\`/\`"EX"\`) of each code in \`ietestcd_concat\` order, splits
+the criteria into Inclusion and Exclusion; without it they are Not
+classified. 2. \*\*Records\*\*: \`lListings\$IE_records\`, one row per
+record behind a flag, with \`studyid\`, \`subjid\`, \`source\` (\`"EDC
+eCRF"\`, \`"Protocol Deviation"\`, \`"EDC Query"\`, \`"EDC PD"\`),
+\`record_id\`, \`record_date\` and the source's key fields as further
+columns. Fills the listing's expanded rows and the CSV details columns
+(pilot mode). 3. \*\*Status history\*\*: \`dfStatusHistory\`, the rows
+of \[elig_StatusCounts()\] that the study saves every snapshot, with
+\`SnapshotDate\`. Adds the Status over Time tab (pilot mode).
 
 Site-level rows of \`dfGroups\` (\`InvestigatorFirstName\`,
 \`InvestigatorLastName\`) fill the listing's Investigator Name; with

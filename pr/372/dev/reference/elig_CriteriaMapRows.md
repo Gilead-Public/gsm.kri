@@ -18,5 +18,5 @@ elig_CriteriaMapRows(dfElig)
 
 ## Value
 
-\`list\` with \`order\` (criteria), \`types\`, \`country\` and \`site\`
-rows (\`GroupID\`, \`OuterGroupID\`, \`criterion\`, \`n\`).
+\`list\` with \`order\` (criteria), \`country\` and \`site\` rows
+(\`GroupID\`, \`OuterGroupID\`, \`criterion\`, \`n\`).

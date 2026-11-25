@@ -31,6 +31,7 @@
     <li><a class="dropdown-item" href="../examples/Example_CrossStudySRS.html">Cross-Study KRI Report</a></li>
     <li><a class="dropdown-item" href="../examples/Example_IPMonitoring.html">IP Monitoring Report</a></li>
     <li><a class="dropdown-item" href="../examples/Example_PrematureDeaths.html">Premature Deaths Report</a></li>
+    <li><a class="dropdown-item" href="../examples/Example_RepeatMeasurements.html">Repeat Measurements Report</a></li>
     <li><a class="dropdown-item" href="../examples/Cookbook_AdverseEventKRI.html">Cookbook - Adverse Event KRI Report</a></li>
     <li><a class="dropdown-item" href="../examples/Cookbook_AdverseEventWorkflow.html">Cookbook - Adverse Event Workflow Examples</a></li>
     <li><a class="dropdown-item" href="../examples/Cookbook_ReportingWorkflow.html">Cookbook - Reporting Workflow Examples</a></li>
@@ -71,7 +72,9 @@
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>`tibble` with one row per participant and EDC I/E criterion code:
-  `subjid`, `country`, `invid`, `status`, `criterion` and `type`.</p>
+  `subjid`, `country`, `invid`, `status`, `criterion` and `type`. A
+  participant whose `criteria_type` does not pair one to one with the codes
+  is Not classified.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

@@ -1,19 +1,21 @@
 # Inclusion or Exclusion criterion type
 
-Inclusion or Exclusion criterion type
+The type comes only from the delivered category, never from the code
+text: code formats differ between studies.
 
 ## Usage
 
 ``` r
-elig_CriterionType(vCode)
+elig_CriterionType(vCategory)
 ```
 
 ## Arguments
 
-- vCode:
+- vCategory:
 
-  \`character\` I/E test codes such as \`"I001"\`, \`"excl7"\`.
+  \`character\` I/E categories from \`iecat_concat\`, such as \`"IN"\`,
+  \`"EX"\`.
 
 ## Value
 
-\`character\` \`"Inclusion"\`, \`"Exclusion"\` or \`"Other"\`.
+\`character\` \`"Inclusion"\`, \`"Exclusion"\` or \`"Not classified"\`.
