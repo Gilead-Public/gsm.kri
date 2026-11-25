@@ -19,8 +19,8 @@ lRaw <- gsm.mapping::Ingest(gsm.core::lSource, gsm.mapping::CombineSpecs(mapping
 lMapped <- workr::RunWorkflows(mappings_wf, lRaw)
 dfExclusion <- lMapped$Mapped_EXCLUSION
 
-# gsm.mapping releases without iecat_concat: derive it from Mapped_IE, code by
-# code in ietestcd_concat order, so the typed criteria charts are tested.
+# gsm.mapping releases before #188 don't carry iecat_concat: derive it from
+# Mapped_IE, code by code in ietestcd_concat order.
 if (!"iecat_concat" %in% names(dfExclusion)) {
   dfIE <- distinct(lMapped$Mapped_IE, subjid, ietestcd, iecat_custom)
   dfExclusion$iecat_concat <- mapply(function(id, codes) {

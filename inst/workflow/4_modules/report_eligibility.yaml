@@ -6,10 +6,11 @@ meta:
   Description: A report summarizing CTQ
   Active: true
 spec:
-  # Optional pilot columns (pd_violation, pd_important, pd_nonimportant,
-  # edc_query, edc_pd, iecat_concat) are not declared: CheckSpec warns on every
-  # declared column that is missing.
+  # _all keeps study-specific columns; ApplySpec drops undeclared ones without
+  # it. pd_*, edc_* and iecat_concat are optional (see Report_Eligibility()).
   Mapped_EXCLUSION:
+    _all:
+      required: true
     studyid:
       type: character
     subjid:
@@ -27,6 +28,18 @@ spec:
     # gsm.mapping delivers a string; study copies may keep a timestamp.
     dvdtm: {}
     eligibility_criteria:
+      type: character
+    pd_violation:
+      type: character
+    pd_important:
+      type: character
+    pd_nonimportant:
+      type: character
+    edc_query:
+      type: character
+    edc_pd:
+      type: character
+    iecat_concat:
       type: character
   Reporting_Results:
     _all:
