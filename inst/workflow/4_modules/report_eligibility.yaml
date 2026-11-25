@@ -6,9 +6,28 @@ meta:
   Description: A report summarizing CTQ
   Active: true
 spec:
+  # Optional pilot columns (pd_violation, pd_important, pd_nonimportant,
+  # edc_query, edc_pd, iecat_concat) are not declared: CheckSpec warns on every
+  # declared column that is missing.
   Mapped_EXCLUSION:
-    _all:
-      required: true
+    studyid:
+      type: character
+    subjid:
+      type: character
+    country:
+      type: character
+    invid:
+      type: character
+    Source:
+      type: character
+    ie_violation:
+      type: character
+    ietestcd_concat:
+      type: character
+    # gsm.mapping delivers a string; study copies may keep a timestamp.
+    dvdtm: {}
+    eligibility_criteria:
+      type: character
   Reporting_Results:
     _all:
       required: true
@@ -40,7 +59,7 @@ steps:
         FROM df
         WHERE MetricID = 'Analysis_qtl0001'
 
-  # Subset on study-level metadata.
+  # Study metadata for the header; Site rows give the listing's Investigator Name.
   - output: dfGroups
     name: workr::RunQuery
     params:
@@ -48,7 +67,7 @@ steps:
       strQuery: |
         SELECT *
         FROM df
-        WHERE GroupLevel = 'Study'
+        WHERE GroupLevel IN ('Study', 'Site')
 
   # Define data contributing to numerator and denominator of eligibility metric.
   - output: IE_num

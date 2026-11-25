@@ -11,7 +11,7 @@ GetEligibilityWorkflow <- function() {
   )[["report_eligibility"]]
 }
 
-test_that("report_eligibility module is discoverable and wired to Report_Eligibility (#351)", {
+test_that("report_eligibility module is discoverable, wired to Report_Eligibility and declares Mapped_EXCLUSION columns (#351) (#371)", {
   wf <- GetEligibilityWorkflow()
 
   expect_false(is.null(wf))
@@ -26,6 +26,20 @@ test_that("report_eligibility module is discoverable and wired to Report_Eligibi
       "Reporting_Results",
       "Reporting_Groups",
       "Reporting_Metrics"
+    )
+  )
+  expect_setequal(
+    names(wf$spec$Mapped_EXCLUSION),
+    c(
+      "studyid",
+      "subjid",
+      "country",
+      "invid",
+      "Source",
+      "ie_violation",
+      "ietestcd_concat",
+      "dvdtm",
+      "eligibility_criteria"
     )
   )
 
@@ -44,7 +58,7 @@ test_that("report_eligibility module is discoverable and wired to Report_Eligibi
   )
 })
 
-test_that("report_eligibility workflow runs with minimal inputs and renders the report (#351)", {
+test_that("report_eligibility workflow runs with minimal inputs and renders the report (#351) (#371)", {
   skip_if_not_installed("rmarkdown")
   skip_if_not_installed("knitr")
   skip_if_not_installed("workr")
@@ -62,6 +76,7 @@ test_that("report_eligibility workflow runs with minimal inputs and renders the 
       country = "US",
       subjid = c("Participant01", "Participant02"),
       Source = c("Eligibility IPD", "Neither"),
+      ie_violation = NA,
       ietestcd_concat = NA,
       dvdtm = "2025-01-01 00:00:00",
       eligibility_criteria = "Inclusion/Exclusion description"
@@ -78,15 +93,59 @@ test_that("report_eligibility workflow runs with minimal inputs and renders the 
     bKeepInputData = TRUE
   )
 
-  # Inputs are subset to the eligibility metric and study-level groups.
+  # Inputs are subset to the eligibility metric and study/site groups.
   expect_setequal(unique(result$lData$dfResults$MetricID), "Analysis_qtl0001")
   expect_setequal(unique(result$lData$dfMetrics$MetricID), "Analysis_qtl0001")
-  expect_setequal(unique(result$lData$dfGroups$GroupLevel), "Study")
+  expect_setequal(unique(result$lData$dfGroups$GroupLevel), c("Study", "Site"))
   expect_false(is.unsorted(result$lData$dfResults$SnapshotDate))
 
   # Listings: numerator excludes "Neither"; denominator is everything.
   expect_equal(nrow(result$lData$lListings$IE_num), 1)
   expect_equal(nrow(result$lData$lListings$IE_denom), 2)
 
+  expect_true(file.exists(normalizePath(as.character(result$lData$Report))))
+})
+
+test_that("report_eligibility workflow fills the investigator name from Site groups (#371)", {
+  skip_if_not_installed("rmarkdown")
+  skip_if_not_installed("knitr")
+  skip_if_not_installed("workr")
+  skip_if_not_installed("withr")
+
+  wf <- GetEligibilityWorkflow()
+  dfGroups <- gsm.core::reportingGroups
+  vSites <- head(unique(dfGroups$GroupID[dfGroups$GroupLevel == "Site"]), 2)
+
+  lData <- list(
+    Reporting_Results = gsm.core::reportingResults_study,
+    Reporting_Metrics = gsm.core::reportingMetrics_study,
+    Reporting_Groups = dfGroups,
+    Mapped_EXCLUSION = tibble::tibble(
+      studyid = "Study01",
+      invid = vSites,
+      country = "US",
+      subjid = c("Participant01", "Participant02"),
+      Source = c("Eligibility IPD", "Neither"),
+      ie_violation = NA,
+      ietestcd_concat = NA,
+      dvdtm = "2025-01-01 00:00:00",
+      eligibility_criteria = "Inclusion/Exclusion description"
+    )
+  )
+
+  withr::local_dir(withr::local_tempdir())
+
+  result <- workr::RunWorkflow(
+    wf,
+    lData,
+    bReturnResult = FALSE,
+    bKeepInputData = TRUE
+  )
+
+  dfElig <- elig_ClassifyParticipants(
+    result$lData$lListings$IE_denom,
+    result$lData$dfGroups
+  )
+  expect_false(anyNA(dfElig$investigator))
   expect_true(file.exists(normalizePath(as.character(result$lData$Report))))
 })
