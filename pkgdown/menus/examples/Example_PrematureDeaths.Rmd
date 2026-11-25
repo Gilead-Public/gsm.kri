@@ -67,8 +67,9 @@ lMapped <- RunWorkflows(mappings_wf, lRaw)
 # for the full trial-dynamics rationale.
 # The simulation returns the mapped frames pd_Classify() needs: Mapped_SUBJ
 # (+ rgmn_dt for follow-up), Mapped_Death (+ deathcls), Mapped_AE
-# (+ aetoxgr / aerel for Treatment Related), and Mapped_STUDCOMP (non-death
-# discontinuations dated inside the window).
+# (+ AE term, onset, grade, outcome and aerel for Treatment Related and the
+# Fatal AE Listing), and Mapped_STUDCOMP (non-death discontinuations dated
+# inside the window).
 sim <- gsm.kri:::pd_SimulatePrematureDeathCohort(
   dfSubj = lMapped$Mapped_SUBJ,
   nWindowDays = window_days

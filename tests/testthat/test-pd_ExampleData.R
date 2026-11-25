@@ -49,6 +49,22 @@ test_that("pd_SimulatePrematureDeathCohort returns a censored, schema-stable dea
   expect_true(all(sim$Mapped_Death$death_dt <= snap)) # censoring vs snapshot
 })
 
+test_that("simulated AEs carry the fields the Fatal AE Listing shows (#304)", {
+  dfSubj <- tibble::tibble(studyid = "ABC", subjid = paste0("S", seq_len(500)))
+  sim <- pd_SimulatePrematureDeathCohort(
+    dfSubj,
+    nWindowDays = 90,
+    seed = 1,
+    snapshot_date = as.Date("2026-06-01")
+  )
+  ae <- sim$Mapped_AE
+  expect_true(all(c("mdrpt_nsv", "aest_dt", "aeout") %in% names(ae)))
+  expect_false(anyNA(ae$mdrpt_nsv))
+  death_dt <- sim$Mapped_Death$death_dt[match(ae$subjid, sim$Mapped_Death$subjid)]
+  expect_true(all(ae$aest_dt <= death_dt))
+  expect_equal(ae$aeout == "Fatal", ae$aetoxgr == 5)
+})
+
 test_that("pd_SimulatePrematureDeathCohort is reproducible for a fixed seed (#246)", {
   dfSubj <- tibble::tibble(studyid = "ABC", subjid = paste0("S", seq_len(500)))
   snap <- as.Date("2026-06-01")
