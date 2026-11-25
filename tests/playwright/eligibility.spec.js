@@ -96,6 +96,17 @@ test.describe('basic mode', () => {
     expect(errors).toEqual([]);
   });
 
+  test('the rate chart gets only study-level groups (#371)', async ({ page }) => {
+    await open(page, BASIC);
+    const levels = await page.evaluate(() => {
+      // The widget renames its element to timeSeries--<metric>--<htmlwidget id>.
+      const id = document.querySelector('.Widget_TimeSeries').id.split('--').pop();
+      const x = JSON.parse(document.querySelector(`script[data-for="${id}"]`).textContent).x;
+      return [...new Set(x.dfGroups.map((g) => g.GroupLevel))];
+    });
+    expect(levels).toEqual(['Study']);
+  });
+
   test('has the Stratification-style tabs and one PD column (#371)', async ({ page }) => {
     await open(page, BASIC);
     expect(await tabs(page, 'study')).toEqual(['Status', 'Flag Sources', 'Criteria (EDC I/E only)']);

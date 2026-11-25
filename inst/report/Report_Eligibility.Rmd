@@ -199,7 +199,8 @@ elig_OverviewCards(dfElig, bPilot)
 gsm.kri::Widget_TimeSeries(
   dfResults = dplyr::mutate(dfRate, Flag = NA),
   lMetric = as.list(dfRateMetric),
-  dfGroups = dfGroups,
+  # The rate is study-level; Site rows would only bloat the widget.
+  dfGroups = dfGroups[dfGroups$GroupLevel %in% "Study", , drop = FALSE],
   strOutcome = "Metric",
   bAddGroupSelect = FALSE,
   selectedGroupIDs = unique(dfRate$GroupID)
