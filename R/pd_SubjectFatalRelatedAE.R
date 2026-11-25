@@ -4,21 +4,24 @@
 #' `r lifecycle::badge("experimental")`
 #'
 #' For each subject in `dfAE`, whether they have at least one adverse event that
-#' is both fatal (`aetoxgr == 5`) and treatment-related (`aerel == "RELATED"`,
-#' case-insensitive). Also flags fatal (`aetoxgr == 5`) not-treatment-related
-#' (`aerel == "NOT RELATED"`) AEs — the AE-side signal for the "No" case in the
-#' premature-death Treatment Related column. Centralizing both rules keeps them
-#' in one tested place.
+#' is both fatal and treatment-related, fatal and not treatment-related, or fatal
+#' with unknown relatedness — the AE-side signals for the premature-death
+#' Treatment Related column. Centralizing the rules keeps them in one tested
+#' place.
 #'
-#' Comparisons are NA-safe: a row with a missing grade or relatedness does not
-#' qualify and never flips a subject to `TRUE`.
+#' An AE is fatal when its outcome is fatal (`aeout == "Fatal"`), it is graded
+#' CTCAE 5 (`aetoxgr == 5`), or it is flagged as resulting in death
+#' (`aesdth == "Yes"`). Relatedness comes from `aereldrv` (`"Yes"` / `"No"`),
+#' falling back to `aerel` (`"RELATED"` / `"NOT RELATED"`) when `aereldrv` is
+#' absent or missing. Comparisons are case-insensitive and NA-safe: a missing
+#' field never makes an AE fatal or related.
 #'
-#' @param dfAE `data.frame` Mapped AE data with `subjid`, `aetoxgr` (integer
-#'   CTCAE grade) and `aerel` (`"RELATED"` / `"NOT RELATED"`).
+#' @param dfAE `data.frame` Mapped AE data with `subjid` and any of `aeout`,
+#'   `aetoxgr`, `aesdth`, `aereldrv` and `aerel`.
 #'
-#' @return A `tibble` with one row per subject: `subjid`, a logical
-#'   `has_fatal_related_ae` (a fatal grade-5 `"RELATED"` AE), and a logical
-#'   `has_fatal_unrelated_ae` (a fatal grade-5 `"NOT RELATED"` AE).
+#' @return A `tibble` with one row per subject: `subjid` and the logicals
+#'   `has_fatal_related_ae`, `has_fatal_unrelated_ae` and `has_fatal_unknown_ae`
+#'   (a fatal AE with missing relatedness).
 #' @export
 pd_SubjectFatalRelatedAE <- function(dfAE) {
   gsm.core::stop_if(
@@ -29,22 +32,44 @@ pd_SubjectFatalRelatedAE <- function(dfAE) {
     cnd = !"subjid" %in% names(dfAE),
     message = "dfAE must contain 'subjid'"
   )
-  for (col in c("aetoxgr", "aerel")) {
-    if (!col %in% names(dfAE)) {
-      dfAE[[col]] <- NA
-    }
-  }
-  dfAE %>%
-    dplyr::mutate(
-      .fatal = !is.na(.data$aetoxgr) & .data$aetoxgr == 5,
-      .rel = toupper(trimws(.data$aerel)),
-      .qual_related = .data$.fatal & .data$.rel == "RELATED",
-      .qual_unrelated = .data$.fatal & .data$.rel == "NOT RELATED"
-    ) %>%
+  pd_FlagFatalAE(dfAE) %>%
     dplyr::group_by(.data$subjid) %>%
     dplyr::summarise(
-      has_fatal_related_ae = any(.data$.qual_related, na.rm = TRUE),
-      has_fatal_unrelated_ae = any(.data$.qual_unrelated, na.rm = TRUE),
+      has_fatal_related_ae = any(.data$.fatal & .data$.related %in% "Yes"),
+      has_fatal_unrelated_ae = any(.data$.fatal & .data$.related %in% "No"),
+      has_fatal_unknown_ae = any(.data$.fatal & is.na(.data$.related)),
       .groups = "drop"
+    )
+}
+
+#' Flag fatal AEs and their relatedness row by row
+#'
+#' @param dfAE `data.frame` Mapped AE data.
+#' @return `dfAE` with a logical `.fatal` and a character `.related`
+#'   (`"Yes"`, `"No"` or `NA`).
+#' @keywords internal
+#' @noRd
+pd_FlagFatalAE <- function(dfAE) {
+  for (col in c("aetoxgr", "aeout", "aesdth", "aereldrv", "aerel")) {
+    if (!col %in% names(dfAE)) {
+      dfAE[[col]] <- rep(NA, nrow(dfAE))
+    }
+  }
+  norm <- function(x) toupper(trimws(as.character(x)))
+  dfAE %>%
+    dplyr::mutate(
+      .fatal = (!is.na(.data$aetoxgr) & .data$aetoxgr == 5) |
+        norm(.data$aeout) %in% "FATAL" |
+        norm(.data$aesdth) %in% c("YES", "Y"),
+      .related = dplyr::coalesce(
+        dplyr::case_when(
+          norm(.data$aereldrv) %in% c("YES", "Y") ~ "Yes",
+          norm(.data$aereldrv) %in% c("NO", "N") ~ "No"
+        ),
+        dplyr::case_when(
+          norm(.data$aerel) %in% "RELATED" ~ "Yes",
+          norm(.data$aerel) %in% "NOT RELATED" ~ "No"
+        )
+      )
     )
 }

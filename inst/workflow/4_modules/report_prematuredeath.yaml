@@ -3,7 +3,7 @@ meta:
   ID: report_prematuredeath
   Output: html
   Name: Premature Deaths Report
-  Description: A premature-deaths domain report (buckets, rand->death scatter, reasons, patient listing)
+  Description: A premature-deaths domain report (buckets, rand->death scatter, reasons, patient and fatal AE listings)
   Active: true
   WindowDays: 90
 spec:
