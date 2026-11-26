@@ -6,9 +6,41 @@ meta:
   Description: A report summarizing CTQ
   Active: true
 spec:
+  # _all keeps study-specific columns; ApplySpec drops undeclared ones without
+  # it. pd_*, edc_* and iecat_concat are optional (see Report_Eligibility()).
   Mapped_EXCLUSION:
     _all:
       required: true
+    studyid:
+      type: character
+    subjid:
+      type: character
+    country:
+      type: character
+    invid:
+      type: character
+    Source:
+      type: character
+    ie_violation:
+      type: character
+    ietestcd_concat:
+      type: character
+    # gsm.mapping delivers a string; study copies may keep a timestamp.
+    dvdtm: {}
+    eligibility_criteria:
+      type: character
+    pd_violation:
+      type: character
+    pd_important:
+      type: character
+    pd_nonimportant:
+      type: character
+    edc_query:
+      type: character
+    edc_pd:
+      type: character
+    iecat_concat:
+      type: character
   Reporting_Results:
     _all:
       required: true
@@ -40,7 +72,7 @@ steps:
         FROM df
         WHERE MetricID = 'Analysis_qtl0001'
 
-  # Subset on study-level metadata.
+  # Study metadata for the header; Site rows give the listing's Investigator Name.
   - output: dfGroups
     name: workr::RunQuery
     params:
@@ -48,7 +80,7 @@ steps:
       strQuery: |
         SELECT *
         FROM df
-        WHERE GroupLevel = 'Study'
+        WHERE GroupLevel IN ('Study', 'Site')
 
   # Define data contributing to numerator and denominator of eligibility metric.
   - output: IE_num

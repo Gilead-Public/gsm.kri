@@ -1,0 +1,156 @@
+---
+title: "Eligibility Report (pilot data)"
+author: "[gsm.kri](https://gilead-public.github.io/gsm.kri) Example"
+description: "Example eligibility report with the optional pilot data, generated with gsm.kri"
+index: 3
+date: "`r format(Sys.time(), '%B %d, %Y %H:%M:%S %Z')`"
+output:
+  html_document:
+    mathjax: null
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    css: styles.css
+---
+# Set Up 
+This page provides a sample Eligibility Report generated using `gsm.kri` package, with the optional pilot data simulated on top of the basic example: open EDC queries and active EDC PDs (level 1), the records behind each flag (level 2) and the status history saved every snapshot (level 3). These add a Potentially Ineligible status, the records behind each flag in the listing's expanded rows and CSV, and Status over Time; see the data contract in `?Report_Eligibility`. Switch to **Basic** to see the same participants without the pilot data. Expand the "Setup" section below to see the code used to generate the report. Or scroll down for the standard report output.
+
+<nav class="elig-view-switch" aria-label="Report mode">
+<a href="Example_Eligibility.html">Basic</a>
+<span aria-current="page">Pilot data</span>
+</nav>
+
+
+<details>
+<summary>Setup</summary>
+
+```{r}
+# Load libraries
+library(dplyr)
+library(purrr)
+library(gsm.core)
+library(gsm.kri)
+library(gsm.mapping)
+
+# Prepare example data
+
+dfResults <- gsm.core::reportingResults_study %>%
+  filter(MetricID %in% "Analysis_qtl0001")
+
+dfMetrics <- gsm.core::reportingMetrics_study %>%
+  filter(MetricID %in% "Analysis_qtl0001")
+
+# Site-level groups fill the listing's Investigator Name.
+dfGroups <- gsm.core::reportingGroups
+
+mappings_wf <- workr::MakeWorkflowList(
+  strNames = c("IE", "EXCLUSION", "ENROLL", "PD"),
+  strPath = "workflow/1_mappings",
+  strPackage = "gsm.mapping"
+)
+
+mappings_spec <- gsm.mapping::CombineSpecs(mappings_wf)
+
+lRaw <- map_depth(
+  list(gsm.core::lSource),
+  1,
+  gsm.mapping::Ingest,
+  mappings_spec
+)
+
+mapped <- map_depth(lRaw, 1, ~ workr::RunWorkflows(mappings_wf, .x))
+
+dfExclusion <- mapped[[1]]$Mapped_EXCLUSION
+
+# Simulate the pilot data. Level 1: every 9th participant has an open I/E
+# query and every 23rd an active EDC PD; PDs split by importance.
+idx <- seq_len(nrow(dfExclusion))
+dfPilot <- dfExclusion %>%
+  mutate(
+    pd_important = ifelse(!is.na(eligibility_criteria) & idx %% 2 == 0, "Y", "N"),
+    pd_nonimportant = ifelse(!is.na(eligibility_criteria) & idx %% 2 == 1, "Y", "N"),
+    edc_query = ifelse(idx %% 9 == 0, "Y", "N"),
+    edc_pd = ifelse(idx %% 23 == 0, "Y", "N")
+  )
+
+# Level 2: the records behind each flag, one row per record.
+dfRecords <- bind_rows(
+  dfPilot %>%
+    filter(ie_violation == "Y") %>%
+    tidyr::separate_longer_delim(ietestcd_concat, delim = ",") %>%
+    transmute(
+      studyid, subjid, source = "EDC eCRF", record_id = paste0("IE-", row_number()),
+      record_date = NA_character_, Form = "Inclusion/Exclusion Criteria",
+      Response = paste0(ietestcd_concat, ": ", ifelse(grepl("^incl", ietestcd_concat), "No", "Yes"))
+    ),
+  dfPilot %>%
+    filter(edc_query == "Y") %>%
+    transmute(
+      studyid, subjid, source = "EDC Query", record_id = paste0("Q", row_number()),
+      record_date = "2025-05-20", Folder = "ENROLL", Form = "Inclusion/Exclusion Criteria",
+      QueryText = "Please confirm the participant meets inclusion criterion 4; source shows a value outside the protocol range.",
+      MarkingGroupName = "Site Query", Status = "Open"
+    ),
+  dfPilot %>%
+    filter(edc_pd == "Y") %>%
+    transmute(
+      studyid, subjid, source = "EDC PD", record_id = paste0("D", row_number()),
+      record_date = NA_character_, Folder = "SCRN", Form = "Protocol Deviation", Status = "Active"
+    ),
+  dfPilot %>%
+    filter(!is.na(eligibility_criteria)) %>%
+    # Mapped_EXCLUSION joins a participant's PDs; level 2 has one row per PD.
+    tidyr::separate_longer_delim(c(dvdtm, eligibility_criteria), delim = ";;;") %>%
+    transmute(
+      studyid, subjid, source = "Protocol Deviation", record_id = paste0("PD-", row_number()),
+      record_date = substr(dvdtm, 1, 10), Description = eligibility_criteria,
+      Classification = ifelse(pd_important == "Y", "Important", "Non-important")
+    )
+)
+
+# Level 3: the status history saved at every snapshot; earlier ones split
+# Potentially Ineligible off as a tenth of enrolled, the latest is this
+# snapshot's counts.
+dfSnapshots <- dfResults %>% arrange(SnapshotDate)
+dfStatusHistory <- dfSnapshots %>%
+  filter(SnapshotDate < max(SnapshotDate)) %>%
+  reframe(
+    GroupLevel = "Study", GroupID = GroupID,
+    Status = c("Ineligible", "Potentially Ineligible", "No Eligibility Risk"),
+    n = as.integer(c(Numerator, round(Denominator / 10), Denominator - Numerator - round(Denominator / 10))),
+    .by = SnapshotDate
+  ) %>%
+  bind_rows(mutate(elig_StatusCounts(dfPilot, "pilot"), SnapshotDate = max(dfSnapshots$SnapshotDate)))
+
+lListings <- list(
+  IE_num = dfPilot %>% filter(Source != "Neither"),
+  IE_denom = dfPilot,
+  IE_records = dfRecords
+)
+```
+
+</details>
+
+```{r, echo=FALSE, results='asis'}
+## Render example report inline using knit_child
+child_env <- list2env(
+  list(
+    params = list(
+      dfResults = dfResults,
+      dfMetrics = dfMetrics,
+      dfGroups = dfGroups,
+      lListings = lListings,
+      strMode = "pilot",
+      dfStatusHistory = dfStatusHistory
+    )
+  ),
+  parent = environment()
+)
+report_eligibility <- knitr::knit_child(
+  system.file("report", "Report_Eligibility.Rmd", package = "gsm.kri"),
+  envir = child_env,
+  quiet = TRUE
+)
+cat(report_eligibility, sep = "\n")
+```

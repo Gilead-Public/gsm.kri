@@ -11,6 +11,7 @@
 - The Premature Deaths report is restyled: summary cards replace the overview table, including a new
   Treatment-Related Deaths card that counts the patient listing's Treatment Related "Yes" rows; the
   filter strip is always shown, and the page uses the full window width (#304).
+- The Eligibility report has a new layout with linked study, country and site views, a criteria map and an expandable Ineligibility Listing with CSV export. Studies that deliver the optional pilot data also get a Potentially Ineligible status and a Status over Time chart (#371).
 
 # gsm.kri v1.8.0
 

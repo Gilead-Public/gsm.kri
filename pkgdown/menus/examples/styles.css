@@ -197,3 +197,27 @@ tbody.gt_table_body tr:hover:nth-child(odd) {
   cursor: pointer;
 }
 
+
+/* ELIGIBILITY: VIEW SWITCH between the basic and pilot data example pages */
+.elig-view-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 16px;
+}
+.elig-view-switch > span, .elig-view-switch > a {
+  padding: 4px 12px;
+  border: 1px solid var(--blue-button-color);
+  border-radius: 4px;
+}
+.elig-view-switch > [aria-current="page"] {
+  background-color: var(--blue-button-color);
+  color: white;
+}
+.elig-view-switch > a {
+  color: var(--blue-button-color);
+  text-decoration: none;
+}
+.elig-view-switch > a:hover, .elig-view-switch > a:focus-visible {
+  background-color: #e9eef5;
+}
