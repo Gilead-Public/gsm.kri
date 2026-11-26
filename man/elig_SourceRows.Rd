@@ -4,10 +4,12 @@
 \alias{elig_SourceRows}
 \title{Flag source slices}
 \usage{
-elig_SourceRows(dfElig)
+elig_SourceRows(dfElig, lSetup = elig_Setup())
 }
 \arguments{
 \item{dfElig}{`data.frame` from [elig_ClassifyParticipants()].}
+
+\item{lSetup}{`list` from [elig_Setup()].}
 }
 \value{
 `list` from [elig_BreakdownRows()].

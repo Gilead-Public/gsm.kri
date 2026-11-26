@@ -4,10 +4,12 @@
 \alias{elig_LogicTable}
 \title{Eligibility logic table}
 \usage{
-elig_LogicTable(bPilot = FALSE)
+elig_LogicTable(bPilot = FALSE, lSetup = elig_Setup())
 }
 \arguments{
 \item{bPilot}{`logical` Pilot mode.}
+
+\item{lSetup}{`list` from [elig_Setup()].}
 }
 \value{
 `gt_tbl`.

@@ -10,18 +10,6 @@ ELIG_RATE_METRIC_ID <- "Analysis_qtl0001"
 
 ELIG_UNKNOWN <- "Unknown"
 
-# Flag columns of the classified frame, with their display names. Basic mode
-# shows one PD source; the Important / Non-important split replaces it when the
-# study delivers both columns.
-ELIG_SOURCES <- c(
-  flag_pd = "Protocol Deviation",
-  flag_pd_important = "Important PD",
-  flag_pd_nonimportant = "Non-important PD",
-  flag_ecrf = "EDC eCRF",
-  flag_edc_query = "EDC Query",
-  flag_edc_pd = "EDC PD"
-)
-
 #' Eligibility status colours
 #'
 #' @description
@@ -100,6 +88,7 @@ elig_Mode <- function(dfExclusion, strMode = c("basic", "pilot")) {
 #'   Default: `NULL`.
 #' @param strMode `character` Mode resolved by [elig_Mode()]: `"basic"`
 #'   (default) or `"pilot"`.
+#' @param lSetup `list` from [elig_Setup()].
 #'
 #' @return `tibble` with `studyid`, `subjid`, `country`, `invid`,
 #'   `investigator`, `status`, the `flag_*` columns of the delivered sources
@@ -108,7 +97,7 @@ elig_Mode <- function(dfExclusion, strMode = c("basic", "pilot")) {
 #'
 #' @keywords internal
 #' @export
-elig_ClassifyParticipants <- function(dfExclusion, dfGroups = NULL, strMode = c("basic", "pilot")) {
+elig_ClassifyParticipants <- function(dfExclusion, dfGroups = NULL, strMode = c("basic", "pilot"), lSetup = elig_Setup()) {
   bPilot <- match.arg(strMode) == "pilot"
   col <- function(name) {
     if (name %in% names(dfExclusion)) as.character(dfExclusion[[name]]) else rep(NA_character_, nrow(dfExclusion))
@@ -158,7 +147,7 @@ elig_ClassifyParticipants <- function(dfExclusion, dfGroups = NULL, strMode = c(
 
   df[c(
     "studyid", "subjid", "country", "invid", "investigator", "status",
-    intersect(names(ELIG_SOURCES), names(df)),
+    intersect(lSetup$dfSources$flag, names(df)),
     "criteria", "criteria_type", "pd_dates", "pd_terms"
   )]
 }
@@ -179,6 +168,7 @@ elig_HasSource <- function(dfElig, strFlag) {
 #' Flag sources shown by the report
 #'
 #' @param dfElig `data.frame` from [elig_ClassifyParticipants()].
+#' @param lSetup `list` from [elig_Setup()].
 #'
 #' @return Named `character`: flag column = display name, in display order.
 #'   The PD split replaces the single PD source when delivered, unless a PD is
@@ -187,14 +177,14 @@ elig_HasSource <- function(dfElig, strFlag) {
 #'
 #' @keywords internal
 #' @export
-elig_Sources <- function(dfElig) {
-  vFlags <- intersect(names(ELIG_SOURCES), names(dfElig))
+elig_Sources <- function(dfElig, lSetup = elig_Setup()) {
+  vFlags <- intersect(lSetup$dfSources$flag, names(dfElig))
   bUnclassified <- dfElig[["flag_pd"]] %in% "Y" &
     dfElig[["flag_pd_important"]] %in% "N" & dfElig[["flag_pd_nonimportant"]] %in% "N"
   if (all(c("flag_pd_important", "flag_pd_nonimportant") %in% vFlags) && !any(bUnclassified)) {
     vFlags <- setdiff(vFlags, "flag_pd")
   }
-  ELIG_SOURCES[vFlags]
+  stats::setNames(elig_FlagLabel(vFlags, lSetup), vFlags)
 }
 
 elig_Investigator <- function(vInvid, dfGroups) {

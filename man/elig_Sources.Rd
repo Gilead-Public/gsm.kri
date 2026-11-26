@@ -4,10 +4,12 @@
 \alias{elig_Sources}
 \title{Flag sources shown by the report}
 \usage{
-elig_Sources(dfElig)
+elig_Sources(dfElig, lSetup = elig_Setup())
 }
 \arguments{
 \item{dfElig}{`data.frame` from [elig_ClassifyParticipants()].}
+
+\item{lSetup}{`list` from [elig_Setup()].}
 }
 \value{
 Named `character`: flag column = display name, in display order.

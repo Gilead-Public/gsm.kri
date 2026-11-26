@@ -4,7 +4,12 @@
 \alias{elig_ExportData}
 \title{Ineligibility listing CSV data}
 \usage{
-elig_ExportData(dfListing, dfPartRecords, bRecords = TRUE)
+elig_ExportData(
+  dfListing,
+  dfPartRecords,
+  bRecords = TRUE,
+  lSetup = elig_Setup()
+)
 }
 \arguments{
 \item{dfListing}{`data.frame` from [elig_ListingData()].}
@@ -14,6 +19,8 @@ elig_ExportData(dfListing, dfPartRecords, bRecords = TRUE)
 \item{bRecords}{`logical` Level 2 records delivered. Without them only
 Protocol Deviation gets a details column: eCRF details would only repeat
 Which I/E.}
+
+\item{lSetup}{`list` from [elig_Setup()].}
 }
 \value{
 `data.frame`.

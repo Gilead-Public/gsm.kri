@@ -4,10 +4,12 @@
 \alias{elig_ListingData}
 \title{Ineligibility listing data}
 \usage{
-elig_ListingData(dfElig)
+elig_ListingData(dfElig, lSetup = elig_Setup())
 }
 \arguments{
 \item{dfElig}{`data.frame` from [elig_ClassifyParticipants()].}
+
+\item{lSetup}{`list` from [elig_Setup()].}
 }
 \value{
 `data.frame`.

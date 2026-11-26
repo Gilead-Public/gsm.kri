@@ -7,7 +7,8 @@
 elig_ClassifyParticipants(
   dfExclusion,
   dfGroups = NULL,
-  strMode = c("basic", "pilot")
+  strMode = c("basic", "pilot"),
+  lSetup = elig_Setup()
 )
 }
 \arguments{
@@ -23,6 +24,8 @@ Default: `NULL`.}
 
 \item{strMode}{`character` Mode resolved by [elig_Mode()]: `"basic"`
 (default) or `"pilot"`.}
+
+\item{lSetup}{`list` from [elig_Setup()].}
 }
 \value{
 `tibble` with `studyid`, `subjid`, `country`, `invid`,

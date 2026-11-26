@@ -272,13 +272,14 @@ elig_BreakdownRows <- function(dfElig, dfRecords, vOrder, vStatuses) {
 #' source that flagged them.
 #'
 #' @param dfElig `data.frame` from [elig_ClassifyParticipants()].
+#' @param lSetup `list` from [elig_Setup()].
 #'
 #' @return `list` from [elig_BreakdownRows()].
 #'
 #' @keywords internal
 #' @export
-elig_SourceRows <- function(dfElig) {
-  vSources <- elig_Sources(dfElig)
+elig_SourceRows <- function(dfElig, lSetup = elig_Setup()) {
+  vSources <- elig_Sources(dfElig, lSetup)
   vSources <- vSources[vapply(names(vSources), function(f) elig_HasSource(dfElig, f), logical(1))]
   long <- purrr::map_dfr(names(vSources), function(f) {
     hit <- dfElig[dfElig[[f]] %in% "Y", ]

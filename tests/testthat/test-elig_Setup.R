@@ -164,3 +164,88 @@ test_that("elig_Setup() accepts its own result unchanged (#390)", {
   expect_identical(do.call(elig_Setup, s), s)
   expect_identical(do.call(elig_Setup, elig_Setup()), elig_Setup())
 })
+
+s390 <- elig_Setup(
+  dfSources = data.frame(
+    flag = c("flag_pd", "flag_edc_query"),
+    label = c("Deviation", "Open Query"),
+    listing_label = c("Dev", "Open Query")
+  )
+)
+
+test_that("a relabelled source reaches charts, listing, records and CSV (#390)", {
+  el <- elig_ClassifyParticipants(
+    elig_Fixture(bPilot = TRUE, bPDSplit = FALSE),
+    elig_FixtureGroups(),
+    "pilot",
+    s390
+  )
+  expect_equal(
+    unname(elig_Sources(el, s390)[c("flag_pd", "flag_edc_query")]),
+    c("Deviation", "Open Query")
+  )
+  expect_true(all(
+    c("Deviation", "Open Query") %in% elig_SourceRows(el, s390)$order
+  ))
+  lst <- elig_ListingData(el, s390)
+  expect_true(all(c("Dev", "Open Query") %in% names(lst)))
+  expect_false("PD" %in% names(lst))
+  recs <- elig_ParticipantRecords(el, NULL, s390)
+  expect_true("Protocol Deviation" %in% recs$source)
+  expect_true(
+    "Deviation details" %in% names(elig_ExportData(lst, recs, FALSE, s390))
+  )
+  html <- as.character(elig_ParticipantDetail("P02", recs, s390))
+  expect_match(html, "Deviation \\(2\\)")
+  expect_true("Deviation" %in% elig_LogicTable(TRUE, s390)$`_data`$Source)
+})
+
+test_that("the PD record table keeps flag_pd's label when only a split flag is relabelled (#390)", {
+  s <- elig_Setup(
+    dfSources = data.frame(flag = "flag_pd_important", label = "Major PD")
+  )
+  expect_equal(elig_RecordLabel("Protocol Deviation", s), "Protocol Deviation")
+  el <- elig_ClassifyParticipants(
+    elig_Fixture(bPilot = TRUE),
+    elig_FixtureGroups(),
+    "pilot",
+    s
+  )
+  expect_true(
+    "Protocol Deviation details" %in%
+      names(elig_ExportData(
+        elig_ListingData(el, s),
+        elig_ParticipantRecords(el, NULL, s),
+        FALSE,
+        s
+      ))
+  )
+})
+
+test_that("record sources outside the table still show, after the table's (#390)", {
+  expect_equal(
+    elig_RecordSourceOrder(c("Zeta", "EDC PD", "Alpha", "Protocol Deviation")),
+    c("Protocol Deviation", "EDC PD", "Alpha", "Zeta")
+  )
+})
+
+test_that("a full source table reorders the listing columns (#390)", {
+  s <- elig_Setup(dfSources = elig_Setup()$dfSources[6:1, ])
+  el <- elig_ClassifyParticipants(
+    elig_Fixture(bPilot = TRUE, bPDSplit = FALSE),
+    elig_FixtureGroups(),
+    "pilot",
+    s
+  )
+  expect_equal(
+    intersect(
+      names(elig_ListingData(el, s)),
+      c("PD", "EDC eCRF", "EDC Query", "EDC PD")
+    ),
+    c("EDC PD", "EDC Query", "EDC eCRF", "PD")
+  )
+})
+
+test_that("elig_RecordLabel always returns character (#390)", {
+  expect_identical(elig_RecordLabel(character()), character())
+})

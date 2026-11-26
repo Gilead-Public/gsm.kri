@@ -229,5 +229,6 @@ elig_FlagLabel <- function(vFlags, lSetup = elig_Setup(), strColumn = "label") {
 elig_RecordLabel <- function(vRecordSources, lSetup = elig_Setup()) {
   df <- lSetup$dfSources[!lSetup$dfSources$flag %in% ELIG_PD_SPLIT, ]
   out <- df$label[match(vRecordSources, df$record_source)]
-  unname(ifelse(is.na(out), vRecordSources, out))
+  out[is.na(out)] <- vRecordSources[is.na(out)]
+  unname(out)
 }
