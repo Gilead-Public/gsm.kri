@@ -4,7 +4,10 @@
 \alias{elig_CriterionColors}
 \title{Criterion type colours}
 \usage{
-elig_CriterionColors()
+elig_CriterionColors(lSetup = elig_Setup())
+}
+\arguments{
+\item{lSetup}{`list` from [elig_Setup()].}
 }
 \value{
 Named `character` of hex colours.

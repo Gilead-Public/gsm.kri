@@ -6,8 +6,6 @@ ELIG_INELIGIBLE <- "Ineligible"
 ELIG_POTENTIAL <- "Potentially Ineligible"
 ELIG_NO_RISK <- "No Eligibility Risk"
 
-ELIG_RATE_METRIC_ID <- "Analysis_qtl0001"
-
 ELIG_UNKNOWN <- "Unknown"
 
 #' Eligibility status colours
@@ -143,7 +141,7 @@ elig_ClassifyParticipants <- function(dfExclusion, dfGroups = NULL, strMode = c(
     bPotential ~ ELIG_POTENTIAL,
     TRUE ~ ELIG_NO_RISK
   )
-  df$investigator <- elig_Investigator(df$invid, dfGroups)
+  df$investigator <- elig_Investigator(df$invid, dfGroups, lSetup)
 
   df[c(
     "studyid", "subjid", "country", "invid", "investigator", "status",
@@ -187,16 +185,16 @@ elig_Sources <- function(dfElig, lSetup = elig_Setup()) {
   stats::setNames(elig_FlagLabel(vFlags, lSetup), vFlags)
 }
 
-elig_Investigator <- function(vInvid, dfGroups) {
+elig_Investigator <- function(vInvid, dfGroups, lSetup = elig_Setup()) {
   if (is.null(dfGroups) || !all(c("GroupID", "GroupLevel", "Param", "Value") %in% names(dfGroups))) {
     return(rep(NA_character_, length(vInvid)))
   }
-  site <- dfGroups[dfGroups$GroupLevel == "Site" & dfGroups$Param %in% c("InvestigatorFirstName", "InvestigatorLastName"), ]
+  site <- dfGroups[dfGroups$GroupLevel == lSetup$strInvestigatorLevel & dfGroups$Param %in% lSetup$vInvestigatorParams, ]
   if (nrow(site) == 0) return(rep(NA_character_, length(vInvid)))
   names <- site %>%
     dplyr::mutate(Value = dplyr::na_if(trimws(as.character(.data$Value)), "")) %>%
     dplyr::filter(!is.na(.data$Value)) %>%
-    dplyr::arrange(.data$GroupID, match(.data$Param, c("InvestigatorFirstName", "InvestigatorLastName"))) %>%
+    dplyr::arrange(.data$GroupID, match(.data$Param, lSetup$vInvestigatorParams)) %>%
     dplyr::summarise(name = paste(.data$Value, collapse = " "), .by = "GroupID")
   names$name[match(vInvid, names$GroupID)]
 }
@@ -311,13 +309,14 @@ elig_TrendRows <- function(dfStatusHistory) {
 #' `"study_eligibility"`), so otherwise the rate is the first metric.
 #'
 #' @param dfResults `data.frame` Reporting results.
+#' @param lSetup `list` from [elig_Setup()]; `strRateMetricID` is preferred.
 #'
 #' @return `character` MetricID.
 #'
 #' @keywords internal
 #' @export
-elig_RateMetricID <- function(dfResults) {
+elig_RateMetricID <- function(dfResults, lSetup = elig_Setup()) {
   ids <- unique(dfResults$MetricID)
-  if (ELIG_RATE_METRIC_ID %in% ids) return(ELIG_RATE_METRIC_ID)
+  if (lSetup$strRateMetricID %in% ids) return(lSetup$strRateMetricID)
   ids[1]
 }

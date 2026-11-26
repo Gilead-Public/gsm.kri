@@ -249,3 +249,23 @@ test_that("a full source table reorders the listing columns (#390)", {
 test_that("elig_RecordLabel always returns character (#390)", {
   expect_identical(elig_RecordLabel(character()), character())
 })
+
+test_that("the rate metric comes from the setup (#390)", {
+  df <- data.frame(MetricID = c("Analysis_qtl0001", "Analysis_qtl0002"))
+  expect_equal(elig_RateMetricID(df, elig_Setup(strRateMetricID = "Analysis_qtl0002")), "Analysis_qtl0002")
+  expect_equal(elig_RateMetricID(df, elig_Setup(strRateMetricID = "Analysis_other")), "Analysis_qtl0001")
+})
+
+test_that("criterion colours come from the setup (#390)", {
+  expect_equal(elig_CriterionColors(elig_Setup(vCriterionColors = c(Inclusion = "#000000")))[["Inclusion"]], "#000000")
+})
+
+test_that("the investigator name uses the setup's group level and params (#390)", {
+  g <- elig_FixtureGroups()
+  s <- elig_Setup(vInvestigatorParams = c("InvestigatorLastName", "InvestigatorFirstName"))
+  expect_equal(elig_Investigator("0X001", g, s), "Lovelace Ada")
+  g$GroupLevel[g$GroupLevel == "Site"] <- "Investigator"
+  expect_equal(elig_Investigator("0X001", g, elig_Setup(strInvestigatorLevel = "Investigator")), "Ada Lovelace")
+  el <- elig_ClassifyParticipants(elig_Fixture(), elig_FixtureGroups(), "basic", s)
+  expect_equal(el$investigator[el$subjid == "P01"], "Lovelace Ada")
+})
