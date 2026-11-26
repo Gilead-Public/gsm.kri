@@ -38,9 +38,9 @@ and `iecat_concat`, the category (`"IN"`/`"EX"`) of each code in
 
 One row per enrolled participant of `Mapped_EXCLUSION` with exactly one
 status:
-- **Ineligible**: `Source != 'Neither'` (rules 2.4 and 2.5, applied upstream);
+- **Ineligible**: `Source != 'Neither'` (EDC eCRF and PD rules, applied upstream);
 - **Potentially Ineligible** (pilot mode only): otherwise, the `edc_query`
-  or `edc_pd` flag is `"Y"` (rules 2.6 and 2.7, applied in the study repo);
+  or `edc_pd` flag is `"Y"` (EDC Query and EDC PD rules, applied in the study's mapping);
 - **No Eligibility Risk**: otherwise.
 
 The flag sources never read `Source` values: the EDC eCRF flag is

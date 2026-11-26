@@ -1,4 +1,4 @@
-// Eligibility report, both modes (gsm.roadmap#113). Fixtures from
+// Eligibility report, both modes. Fixtures from
 // render-eligibility-fixture.R: basic = gsm.mapping's EXCLUSION on
 // gsm.core::lSource; pilot = the same participants with the optional level 1-3
 // data. Assertions read chart data and the DOM, not pixels.

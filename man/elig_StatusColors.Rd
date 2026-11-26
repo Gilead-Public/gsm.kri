@@ -15,7 +15,7 @@ Named `character` of hex colours.
 \description{
 `r lifecycle::badge("experimental")`
 
-Standard GISMO flag palette, keyed by status in chart stack order (first is
+Standard gsm flag palette, keyed by status in chart stack order (first is
 the base of the bar).
 }
 \keyword{internal}

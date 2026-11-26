@@ -1,4 +1,4 @@
-// Eligibility report filters (gsm.roadmap#113), adapted from the IP Monitoring
+// Eligibility report filters, adapted from the IP Monitoring
 // report (ipmFilters.js) and gsm.stratification (stratFilters.js). R
 // precomputes every slice into the #elig-data JSON block; this script only
 // keeps the reviewer's selection, hands each widget the matching slice and
