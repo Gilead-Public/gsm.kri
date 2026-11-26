@@ -111,7 +111,7 @@ test_that("Report_Eligibility() rejects a setup list missing an element before r
 test_that("Report_Eligibility() re-validates an edited setup list before rendering (#390)", {
   bad <- elig_Setup()
   bad$dfSources$label[1] <- NA_character_
-  expect_error(render_390(bad))
+  expect_error(render_390(bad), "label")
 })
 
 test_that("Report_Eligibility() renders a relabelled source (#390)", {

@@ -121,6 +121,8 @@ Report_Eligibility(
   strOutputDir = out_dir, strOutputFile = "Report_Eligibility_pilot_noquery.html",
   strMode = "pilot"
 )
+
+# Relabelled flag sources (chart, listing column and record tables).
 Report_Eligibility(
   dfResults = dfResults, dfMetrics = dfMetrics, dfGroups = dfGroups,
   lListings = lListings(dfPilot, IE_records = dfRecords),

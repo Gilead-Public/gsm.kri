@@ -103,9 +103,12 @@ test_that("elig_Setup() rejects invalid settings (#390)", {
   expect_error(elig_Setup(
     dfSources = data.frame(flag = "flag_ecrf", listing_label = "Site")
   ))
-  expect_error(elig_Setup(
-    dfSources = data.frame(flag = "flag_pd_important", record_source = "Other")
-  ))
+  expect_error(
+    elig_Setup(
+      dfSources = data.frame(flag = "flag_pd_important", record_source = "Other")
+    ),
+    "record_source"
+  )
   expect_error(elig_Setup(
     dfSources = data.frame(flag = "flag_edc_pd", record_source = "EDC Query")
   ))
@@ -268,4 +271,18 @@ test_that("the investigator name uses the setup's group level and params (#390)"
   expect_equal(elig_Investigator("0X001", g, elig_Setup(strInvestigatorLevel = "Investigator")), "Ada Lovelace")
   el <- elig_ClassifyParticipants(elig_Fixture(), elig_FixtureGroups(), "basic", s)
   expect_equal(el$investigator[el$subjid == "P01"], "Lovelace Ada")
+})
+
+test_that("a hand-edited flag_pd record_source round-trips with the split following it (#390)", {
+  s <- elig_Setup()
+  s$dfSources$record_source[1] <- "PD"
+  s <- do.call(elig_Setup, s)
+  expect_equal(s$dfSources$record_source[1:3], rep("PD", 3))
+  expect_no_error(do.call(elig_Setup, s))
+})
+
+test_that("a tibble dfSources without record_source does not warn (#390)", {
+  expect_no_warning(
+    elig_Setup(dfSources = tibble::tibble(flag = "flag_pd", label = "X"))
+  )
 })

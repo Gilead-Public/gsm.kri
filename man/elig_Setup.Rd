@@ -17,7 +17,7 @@ elig_Setup(
 (chart name), `listing_label` (listing column) and `record_source` (record
 table in the expanded row). Only `flag` is required; each passed row
 overrides the defaults of that flag for the passed columns. Passing all six
-flags sets their display order. Both PD split flags always use the
+flags sets their display order. Both PD split flags use the
 `record_source` of `flag_pd`. Defaults:
 \tabular{llll}{
   `flag` \tab `label` \tab `listing_label` \tab `record_source` \cr
@@ -52,6 +52,6 @@ investigator name. Default: `c("InvestigatorFirstName",
 \description{
 `r lifecycle::badge("experimental")`
 
-Settings of the Eligibility report. `NULL` arguments take the defaults. The
-result is accepted back by this function unchanged.
+Settings of the Eligibility report. `NULL` `dfSources` and `vCriterionColors`
+take the defaults. The result is accepted back by this function unchanged.
 }

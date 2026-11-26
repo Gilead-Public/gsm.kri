@@ -81,9 +81,9 @@ elig_Mode <- function(dfExclusion, strMode = c("basic", "pilot")) {
 #'   `edc_pd` (`"Y"`/`"N"`; `NA` throughout when the source is not delivered),
 #'   and `iecat_concat`, the category (`"IN"`/`"EX"`) of each code in
 #'   `ietestcd_concat` order; without it the criteria are not split by type.
-#' @param dfGroups `data.frame` Reporting groups. Site-level
-#'   `InvestigatorFirstName` / `InvestigatorLastName` give the investigator.
-#'   Default: `NULL`.
+#' @param dfGroups `data.frame` Reporting groups. Rows at
+#'   `strInvestigatorLevel` whose `Param` is in `vInvestigatorParams` (see
+#'   [elig_Setup()]) give the investigator name. Default: `NULL`.
 #' @param strMode `character` Mode resolved by [elig_Mode()]: `"basic"`
 #'   (default) or `"pilot"`.
 #' @param lSetup `list` from [elig_Setup()].
@@ -189,9 +189,9 @@ elig_Investigator <- function(vInvid, dfGroups, lSetup = elig_Setup()) {
   if (is.null(dfGroups) || !all(c("GroupID", "GroupLevel", "Param", "Value") %in% names(dfGroups))) {
     return(rep(NA_character_, length(vInvid)))
   }
-  site <- dfGroups[dfGroups$GroupLevel == lSetup$strInvestigatorLevel & dfGroups$Param %in% lSetup$vInvestigatorParams, ]
-  if (nrow(site) == 0) return(rep(NA_character_, length(vInvid)))
-  names <- site %>%
+  rows <- dfGroups[dfGroups$GroupLevel == lSetup$strInvestigatorLevel & dfGroups$Param %in% lSetup$vInvestigatorParams, ]
+  if (nrow(rows) == 0) return(rep(NA_character_, length(vInvid)))
+  names <- rows %>%
     dplyr::mutate(Value = dplyr::na_if(trimws(as.character(.data$Value)), "")) %>%
     dplyr::filter(!is.na(.data$Value)) %>%
     dplyr::arrange(.data$GroupID, match(.data$Param, lSetup$vInvestigatorParams)) %>%

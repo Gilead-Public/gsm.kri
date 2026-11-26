@@ -1,6 +1,5 @@
-# Eligibility report settings (gsm.kri#390): one list that replaces the
-# report's hard-coded flag sources, rate metric, colours and investigator
-# lookup. NULL arguments mean "the defaults documented below".
+# Eligibility report settings: flag sources, rate metric, criterion colours and
+# investigator lookup in one validated list.
 
 ELIG_PD_SPLIT <- c("flag_pd_important", "flag_pd_nonimportant")
 ELIG_FIXED_LISTING_COLUMNS <- c(
@@ -77,6 +76,7 @@ elig_MergeSources <- function(dfSources) {
     cli::cli_abort("{.arg dfSources} lists a flag more than once.")
   }
 
+  pd_default <- def$record_source[1]
   idx <- match(flags, def$flag)
   for (col in setdiff(names(dfSources), "flag")) {
     val <- as.character(dfSources[[col]])
@@ -87,10 +87,14 @@ elig_MergeSources <- function(dfSources) {
     }
     def[[col]][idx] <- val
   }
-  # The PD split shares flag_pd's records, so it can't have its own source.
+  # The PD split shares flag_pd's records, so it can't have its own source. The
+  # default is tolerated so an edited elig_Setup() result still round-trips.
   split <- def$flag %in% ELIG_PD_SPLIT
-  passed_split <- dfSources$record_source[flags %in% ELIG_PD_SPLIT]
-  if (length(passed_split) > 0 && any(passed_split != def$record_source[1])) {
+  passed_split <- dfSources[["record_source"]][flags %in% ELIG_PD_SPLIT]
+  if (
+    length(passed_split) > 0 &&
+      any(!passed_split %in% c(def$record_source[1], pd_default))
+  ) {
     cli::cli_abort(
       "Split PD flags must use {.field record_source} of {.val flag_pd}."
     )
@@ -123,14 +127,14 @@ elig_MergeSources <- function(dfSources) {
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' Settings of the Eligibility report. `NULL` arguments take the defaults. The
-#' result is accepted back by this function unchanged.
+#' Settings of the Eligibility report. `NULL` `dfSources` and `vCriterionColors`
+#' take the defaults. The result is accepted back by this function unchanged.
 #'
 #' @param dfSources `data.frame` Flag sources with columns `flag`, `label`
 #'   (chart name), `listing_label` (listing column) and `record_source` (record
 #'   table in the expanded row). Only `flag` is required; each passed row
 #'   overrides the defaults of that flag for the passed columns. Passing all six
-#'   flags sets their display order. Both PD split flags always use the
+#'   flags sets their display order. Both PD split flags use the
 #'   `record_source` of `flag_pd`. Defaults:
 #'   \tabular{llll}{
 #'     `flag` \tab `label` \tab `listing_label` \tab `record_source` \cr

@@ -36,9 +36,9 @@
 #'    [elig_StatusCounts()] that the study saves every snapshot, with
 #'    `SnapshotDate`. Adds the Status over Time tab (pilot mode).
 #'
-#' Site-level rows of `dfGroups` (the `strInvestigatorLevel` columns named by
-#' `vInvestigatorParams` in [elig_Setup()]) fill the listing's Investigator
-#' Name; with Study-level groups only, the column is blank.
+#' Rows of `dfGroups` at `strInvestigatorLevel` whose `Param` is in
+#' `vInvestigatorParams` (see [elig_Setup()]) fill the listing's Investigator
+#' Name; without such rows, the column is blank.
 #'
 #' @param dfResults `data.frame` Analysis results: the study-level eligibility
 #'   rate (qtl0001).
