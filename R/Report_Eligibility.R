@@ -27,17 +27,18 @@
 #'    `ietestcd_concat` order, splits the criteria into Inclusion and
 #'    Exclusion; without it they are Not classified.
 #' 2. **Records**: `lListings$IE_records`, one row per record behind a flag,
-#'    with `studyid`, `subjid`, `source` (`"EDC eCRF"`, `"Protocol Deviation"`,
-#'    `"EDC Query"`, `"EDC PD"`), `record_id`, `record_date` and the source's
+#'    with `studyid`, `subjid`, `source` (`record_source` of [elig_Setup()]:
+#'    by default `"EDC eCRF"`, `"Protocol Deviation"`, `"EDC Query"`,
+#'    `"EDC PD"`), `record_id`, `record_date` and the source's
 #'    key fields as further columns. Fills the listing's expanded rows and the
 #'    CSV details columns (pilot mode).
 #' 3. **Status history**: `dfStatusHistory`, the rows of
 #'    [elig_StatusCounts()] that the study saves every snapshot, with
 #'    `SnapshotDate`. Adds the Status over Time tab (pilot mode).
 #'
-#' Site-level rows of `dfGroups` (`InvestigatorFirstName`,
-#' `InvestigatorLastName`) fill the listing's Investigator Name; with
-#' Study-level groups only, the column is blank.
+#' Site-level rows of `dfGroups` (the `strInvestigatorLevel` columns named by
+#' `vInvestigatorParams` in [elig_Setup()]) fill the listing's Investigator
+#' Name; with Study-level groups only, the column is blank.
 #'
 #' @param dfResults `data.frame` Analysis results: the study-level eligibility
 #'   rate (qtl0001).
@@ -53,6 +54,9 @@
 #' @param strMode `character` `"basic"` (default) or `"pilot"`.
 #' @param dfStatusHistory `data.frame` Status history (level 3). Default:
 #'   `NULL`.
+#' @param lSetup `list` Study configuration from [elig_Setup()]: source names
+#'   and order, rate metric, criterion colours and investigator name fields.
+#'   Default: `elig_Setup()`.
 #'
 #' @return File path of the saved report html is returned invisibly. Save to object to view absolute output path.
 #' @examples
@@ -78,7 +82,8 @@
 #'     IE_num = dplyr::filter(mapped$Mapped_EXCLUSION, Source != "Neither"),
 #'     IE_denom = mapped$Mapped_EXCLUSION
 #'   ),
-#'   strOutputDir = tempdir()
+#'   strOutputDir = tempdir(),
+#'   lSetup = elig_Setup()
 #' )
 #' }
 #'
@@ -99,9 +104,16 @@ Report_Eligibility <- function(
     package = "gsm.kri"
   ),
   strMode = c("basic", "pilot"),
-  dfStatusHistory = NULL
+  dfStatusHistory = NULL,
+  lSetup = elig_Setup()
 ) {
   rlang::check_installed("knitr", reason = "to run `Report_Eligibility()`")
+
+  # Rebuilt through elig_Setup() so a hand-edited list is validated before render.
+  if (!is.list(lSetup) || !all(names(elig_Setup()) %in% names(lSetup))) {
+    cli::cli_abort("{.arg lSetup} must be a list from {.fn elig_Setup}.")
+  }
+  lSetup <- do.call(elig_Setup, lSetup[names(elig_Setup())])
 
   # set output path
   if (is.null(strOutputFile)) {
@@ -122,7 +134,8 @@ Report_Eligibility <- function(
       dfGroups = dfGroups,
       lListings = lListings,
       strMode = strMode,
-      dfStatusHistory = dfStatusHistory
+      dfStatusHistory = dfStatusHistory,
+      lSetup = lSetup
     )
   )
 }

@@ -5,7 +5,9 @@
 #   plus the optional level 1 columns, level 2 records and the level 3 status
 #   history of gsm.roadmap#113 (three statuses);
 # - fixture/Report_Eligibility_pilot_noquery.html: pilot mode with the EDC Query
-#   source and iecat_concat not delivered.
+#   source and iecat_concat not delivered;
+# - fixture/Report_Eligibility_pilot_relabel.html: the pilot data with two
+#   sources renamed through elig_Setup().
 # Source this with the gsm.kri package loaded and the working directory at the
 # package root so the relative fixture path resolves.
 library(dplyr)
@@ -118,5 +120,16 @@ Report_Eligibility(
   lListings = lListings(select(mutate(dfPilot, edc_query = NA_character_), -iecat_concat)),
   strOutputDir = out_dir, strOutputFile = "Report_Eligibility_pilot_noquery.html",
   strMode = "pilot"
+)
+Report_Eligibility(
+  dfResults = dfResults, dfMetrics = dfMetrics, dfGroups = dfGroups,
+  lListings = lListings(dfPilot, IE_records = dfRecords),
+  strOutputDir = out_dir, strOutputFile = "Report_Eligibility_pilot_relabel.html",
+  strMode = "pilot",
+  lSetup = elig_Setup(dfSources = data.frame(
+    flag = c("flag_pd", "flag_edc_query"),
+    label = c("Deviation", "Open Query"),
+    listing_label = c("Dev", "Open Query")
+  ))
 )
 cat("Rendered:", list.files(out_dir, "Report_Eligibility", full.names = TRUE), sep = "\n")

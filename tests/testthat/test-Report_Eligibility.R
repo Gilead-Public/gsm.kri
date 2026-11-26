@@ -93,3 +93,28 @@ test_that("the older RenderRmd call style still renders the report (#371)", {
   ))
   expect_true(file.exists(out))
 })
+
+render_390 <- function(lSetup) {
+  Report_Eligibility(
+    dfResults = elig_FixtureResults(), dfMetrics = elig_FixtureMetrics(), dfGroups = elig_FixtureGroups(),
+    lListings = elig_listings(elig_Fixture(bPilot = TRUE), IE_records = elig_FixtureRecords()),
+    strOutputDir = withr::local_tempdir(.local_envir = parent.frame()), strMode = "pilot", lSetup = lSetup
+  )
+}
+
+test_that("Report_Eligibility() rejects a setup list missing an element before rendering (#390)", {
+  bad <- elig_Setup()
+  bad$dfSources <- NULL
+  expect_error(render_390(bad), "lSetup")
+})
+
+test_that("Report_Eligibility() re-validates an edited setup list before rendering (#390)", {
+  bad <- elig_Setup()
+  bad$dfSources$label[1] <- NA_character_
+  expect_error(render_390(bad))
+})
+
+test_that("Report_Eligibility() renders a relabelled source (#390)", {
+  out <- quiet_render(render_390(elig_Setup(dfSources = data.frame(flag = "flag_edc_query", label = "Open Query"))))
+  expect_match(paste(readLines(out, warn = FALSE), collapse = "\n"), "Open Query", fixed = TRUE)
+})

@@ -12,6 +12,7 @@
   Treatment-Related Deaths card that counts the patient listing's Treatment Related "Yes" rows; the
   filter strip is always shown, and the page uses the full window width (#304).
 - The Eligibility report has a new layout with linked study, country and site views, a criteria map and an expandable Ineligibility Listing with CSV export. Studies that deliver the optional pilot data also get a Potentially Ineligible status and a Status over Time chart (#371).
+- New `elig_Setup()` lets a study change the Eligibility report's source names and order, rate metric, criterion colours and investigator name fields (#390).
 
 # gsm.kri v1.8.0
 
