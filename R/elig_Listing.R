@@ -1,4 +1,4 @@
-# Eligibility report overview cards, listings and logic table (gsm.roadmap#113).
+# Eligibility report overview cards, listings and logic table.
 
 # Order of the expanded row's tables and the CSV details columns.
 ELIG_RECORD_SOURCES <- c("Protocol Deviation", "EDC eCRF", "EDC Query", "EDC PD")
@@ -322,8 +322,10 @@ elig_CsvButton <- function(strID, strFile) {
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' Basic mode shows today's two rules; pilot mode shows rules 2.4-2.7 of the
-#' #113 business requirement.
+#' Basic mode shows the two Ineligible rules; pilot mode adds the two
+#' Potentially Ineligible rules. The pilot flags are derived by the study's
+#' own mapping, so the table describes what each flag means, not how a study
+#' derives it.
 #'
 #' @param bPilot `logical` Pilot mode.
 #'
@@ -335,10 +337,10 @@ elig_LogicTable <- function(bPilot = FALSE) {
   rules <- if (isTRUE(bPilot)) {
     tibble::tribble(
       ~Rule, ~Status, ~Source, ~Criteria,
-      "2.4", ELIG_INELIGIBLE, "EDC eCRF", "The I/E eCRF has Inclusion = \"No\" or Exclusion = \"Yes\".",
-      "2.5", ELIG_INELIGIBLE, "Protocol Deviation", "At least one PD in an eligibility category (Inclusion Criteria, Exclusion Criteria, Inclusion / Exclusion, Eligibility Criteria, Eligibility Criteria with different code), in the Gilead or the CRO category. Important and Non-important both count.",
-      "2.6", ELIG_POTENTIAL, "EDC Query", "At least one Open or Answered query from System Query or CDA to Site Manual Query, in the Enrollment folder on an Inclusion/Exclusion Criteria form, or in the Screening folder with \"Potential Protocol Deviation\" / \"Potential PD\" in the query text, opened more than 3 days before the snapshot date.",
-      "2.7", ELIG_POTENTIAL, "EDC PD", "At least one active EDC PD (marking_active = 1) in the Enrollment folder on an Inclusion/Exclusion Criteria form, or in the Screening folder."
+      "1", ELIG_INELIGIBLE, "EDC eCRF", "The I/E eCRF has Inclusion = \"No\" or Exclusion = \"Yes\".",
+      "2", ELIG_INELIGIBLE, "Protocol Deviation", "At least one PD in one of the study's eligibility categories. Important and Non-important both count.",
+      "3", ELIG_POTENTIAL, "EDC Query", "At least one open eligibility-related EDC query (edc_query = \"Y\"), as defined by the study.",
+      "4", ELIG_POTENTIAL, "EDC PD", "At least one active eligibility-related EDC protocol deviation (edc_pd = \"Y\"), as defined by the study."
     )
   } else {
     tibble::tribble(

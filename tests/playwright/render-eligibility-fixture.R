@@ -3,7 +3,7 @@
 #   gsm.core::lSource (two statuses);
 # - fixture/Report_Eligibility_pilot.html: pilot mode, the same participants
 #   plus the optional level 1 columns, level 2 records and the level 3 status
-#   history of gsm.roadmap#113 (three statuses);
+#   history of the data contract (three statuses);
 # - fixture/Report_Eligibility_pilot_noquery.html: pilot mode with the EDC Query
 #   source and iecat_concat not delivered.
 # Source this with the gsm.kri package loaded and the working directory at the
@@ -71,7 +71,7 @@ dfRecords <- bind_rows(
       studyid, subjid, source = "EDC Query", record_id = paste0("Q", row_number()),
       record_date = "2025-05-20", Folder = "ENROLL", Form = "Inclusion/Exclusion Criteria",
       QueryText = "Please confirm the participant meets inclusion criterion 4; source shows a value outside the protocol range.",
-      MarkingGroupName = "CDA to Site Manual Query", Status = "Open"
+      MarkingGroupName = "Site Query", Status = "Open"
     ),
   dfPilot %>%
     filter(edc_pd == "Y") %>%
