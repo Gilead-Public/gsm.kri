@@ -196,7 +196,16 @@ elig_Setup <- function(
         "{.arg vCriterionColors} names must be among {.val {names(colors)}}."
       )
     }
-    colors[names(vCriterionColors)] <- as.character(vCriterionColors)
+    if (
+      !is.character(vCriterionColors) ||
+        anyNA(vCriterionColors) ||
+        !all(nzchar(vCriterionColors))
+    ) {
+      cli::cli_abort(
+        "{.arg vCriterionColors} must be non-empty strings without {.val NA}."
+      )
+    }
+    colors[names(vCriterionColors)] <- vCriterionColors
   }
 
   list(

@@ -113,6 +113,9 @@ test_that("elig_Setup() rejects invalid settings (#390)", {
     dfSources = data.frame(flag = "flag_edc_pd", record_source = "EDC Query")
   ))
   expect_error(elig_Setup(vCriterionColors = c(Other = "#000000")))
+  expect_error(elig_Setup(vCriterionColors = c(Inclusion = NA_character_)))
+  expect_error(elig_Setup(vCriterionColors = c(Inclusion = "")))
+  expect_error(elig_Setup(vCriterionColors = c(Inclusion = 1)))
   expect_error(elig_Setup(strRateMetricID = c("a", "b")))
   expect_error(elig_Setup(strInvestigatorLevel = NA_character_))
   expect_error(elig_Setup(vInvestigatorParams = character()))
@@ -284,5 +287,20 @@ test_that("a hand-edited flag_pd record_source round-trips with the split follow
 test_that("a tibble dfSources without record_source does not warn (#390)", {
   expect_no_warning(
     elig_Setup(dfSources = tibble::tibble(flag = "flag_pd", label = "X"))
+  )
+})
+
+test_that("CSV details columns can't overwrite listing columns or each other (#390)", {
+  rec <- data.frame(subjid = "1", source = "Protocol Deviation", term = "x")
+  s <- elig_Setup(dfSources = data.frame(
+    flag = "flag_pd", label = "Deviation", listing_label = "Deviation details"
+  ))
+  lst <- data.frame(`Participant ID` = "1", `Deviation details` = "Y", check.names = FALSE)
+  expect_error(elig_ExportData(lst, rec, lSetup = s), "details")
+  s <- elig_Setup(dfSources = data.frame(flag = "flag_ecrf", label = "Lab"))
+  rec <- data.frame(subjid = "1", source = c("EDC eCRF", "Lab"), term = c("a", "b"))
+  expect_error(
+    elig_ExportData(data.frame(`Participant ID` = "1", check.names = FALSE), rec, lSetup = s),
+    "details"
   )
 })

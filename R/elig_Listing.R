@@ -278,9 +278,15 @@ elig_ExportData <- function(dfListing, dfPartRecords, bRecords = TRUE, lSetup = 
     keep <- elig_HasValue(v)
     paste0(vFields[keep], ": ", gsub("[\r\n]+", " ", v[keep]), collapse = "; ")
   }, "")
-  for (s in vSources) {
-    bSource <- dfPartRecords$source == s
-    dfListing[[paste(elig_RecordLabel(s, lSetup), "details")]] <- vapply(dfListing$`Participant ID`, function(id) {
+  # A relabelled source can name a listing column or another source's details.
+  vDetails <- paste(elig_RecordLabel(vSources, lSetup), "details")
+  clash <- c(vDetails[duplicated(vDetails)], intersect(vDetails, names(dfListing)))
+  if (length(clash) > 0) {
+    cli::cli_abort("CSV column{?s} {.val {unique(clash)}} would be overwritten; rename the source.")
+  }
+  for (i in seq_along(vSources)) {
+    bSource <- dfPartRecords$source == vSources[i]
+    dfListing[[vDetails[i]]] <- vapply(dfListing$`Participant ID`, function(id) {
       paste(text[bSource & dfPartRecords$subjid == id], collapse = " | ")
     }, "", USE.NAMES = FALSE)
   }
