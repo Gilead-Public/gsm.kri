@@ -2,8 +2,10 @@
 
 \`r lifecycle::badge("experimental")\`
 
-Basic mode shows today's two rules; pilot mode shows rules 2.4-2.7 of
-the \#113 business requirement.
+Basic mode shows the two Ineligible rules; pilot mode adds the two
+Potentially Ineligible rules. The pilot flags are derived by the study's
+own mapping, so the table describes what each flag means, not how a
+study derives it.
 
 ## Usage
 

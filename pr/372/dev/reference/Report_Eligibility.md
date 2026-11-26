@@ -9,9 +9,8 @@ views, the Ineligibility listing and the eligibility rules.
 The study picks the mode with \`strMode\`: - \*\*Basic\*\* (default,
 every study): two statuses, Ineligible (\`Source != 'Neither'\`) and No
 Eligibility Risk, computed as before. - \*\*Pilot\*\*: a third status,
-Potentially Ineligible, from the \`edc_query\` and \`edc_pd\` columns
-(gsm.roadmap#113). With no data in either, the report warns and falls
-back to basic.
+Potentially Ineligible, from the \`edc_query\` and \`edc_pd\` columns.
+With no data in either, the report warns and falls back to basic.
 
 ## Usage
 
