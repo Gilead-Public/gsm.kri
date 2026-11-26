@@ -18,6 +18,7 @@ params:
   lListings: NA
   strMode: basic
   dfStatusHistory: NA
+  lSetup: NA
 ---
 
 ```{r setup, include=FALSE}
@@ -36,16 +37,17 @@ lListings <- params$lListings
 dfExclusion <- if (!is.null(lListings$IE_denom)) lListings$IE_denom else lListings$IE_num
 dfRecords <- lListings$IE_records
 
+lSetup <- if (is.list(params$lSetup)) params$lSetup else elig_Setup()
 strMode <- elig_Mode(dfExclusion, params$strMode)
 bPilot <- strMode == "pilot"
-dfElig <- elig_ClassifyParticipants(dfExclusion, dfGroups, strMode)
-vSources <- elig_Sources(dfElig)
+dfElig <- elig_ClassifyParticipants(dfExclusion, dfGroups, strMode, lSetup = lSetup)
+vSources <- elig_Sources(dfElig, lSetup = lSetup)
 bHasEdcQuery <- elig_HasSource(dfElig, "flag_edc_query")
 bHasEdcPd <- elig_HasSource(dfElig, "flag_edc_pd")
-vNotDelivered <- if (bPilot) c("EDC Query", "EDC PD")[!c(bHasEdcQuery, bHasEdcPd)] else character()
+vNotDelivered <- if (bPilot) elig_FlagLabel(c("flag_edc_query", "flag_edc_pd")[!c(bHasEdcQuery, bHasEdcPd)], lSetup) else character()
 bRecords <- bPilot && is.data.frame(dfRecords) && nrow(dfRecords) > 0
 
-strRateID <- elig_RateMetricID(dfResults)
+strRateID <- elig_RateMetricID(dfResults, lSetup = lSetup)
 dfRate <- dfResults[dfResults$MetricID == strRateID, ]
 dfRateMetric <- dfMetrics[dfMetrics$MetricID == strRateID, ]
 dfTrend <- elig_TrendRows(params$dfStatusHistory)
@@ -56,23 +58,23 @@ status_rows <- lapply(
   c(study = "study", country = "country", site = "site"),
   function(level) elig_StatusRows(dfElig, level)
 )
-source_data <- elig_SourceRows(dfElig)
+source_data <- elig_SourceRows(dfElig, lSetup = lSetup)
 criteria_data <- elig_CriteriaRows(dfElig)
 vStatusColors <- elig_StatusColors(bPilot)
 vSourceColors <- vStatusColors[setdiff(names(vStatusColors), "No Eligibility Risk")]
-vCriterionColors <- elig_CriterionColors()[unique(criteria_data$study$Status)]
+vCriterionColors <- elig_CriterionColors(lSetup)[unique(criteria_data$study$Status)]
 has_criteria <- length(criteria_data$order) > 0
 
-dfListing <- elig_ListingData(dfElig)
-dfPartRecords <- elig_ParticipantRecords(dfElig, if (bRecords) dfRecords)
-dfExport <- elig_ExportData(dfListing, dfPartRecords, bRecords)
+dfListing <- elig_ListingData(dfElig, lSetup = lSetup)
+dfPartRecords <- elig_ParticipantRecords(dfElig, if (bRecords) dfRecords, lSetup = lSetup)
+dfExport <- elig_ExportData(dfListing, dfPartRecords, bRecords, lSetup = lSetup)
 
-vDelivered <- unname(c(
-  "EDC eCRF",
-  if (any(names(vSources) %in% c("flag_pd", "flag_pd_important"))) "Protocol Deviation",
-  if (bHasEdcQuery) "EDC Query",
-  if (bHasEdcPd) "EDC PD"
-))
+vDelivered <- elig_FlagLabel(c(
+  "flag_ecrf",
+  if (any(names(vSources) %in% c("flag_pd", "flag_pd_important"))) "flag_pd",
+  if (bHasEdcQuery) "flag_edc_query",
+  if (bHasEdcPd) "flag_edc_pd"
+), lSetup)
 
 status_note <- function(level) {
   cat(
@@ -398,7 +400,7 @@ cat("\n> Sites with at least one criterion case, most affected first; columns ar
 
 ```{r listing}
 htmltools::tagList(
-  elig_Listing(dfListing, dfPartRecords),
+  elig_Listing(dfListing, dfPartRecords, lSetup = lSetup),
   elig_CsvButton("elig-listing", sprintf("eligibility_listing_%s.csv", strStudyID))
 )
 ```
@@ -406,7 +408,7 @@ htmltools::tagList(
 ## Eligibility Logic
 
 ```{r logic}
-elig_LogicTable(bPilot)
+elig_LogicTable(bPilot, lSetup = lSetup)
 ```
 
 ```{r elig-data}

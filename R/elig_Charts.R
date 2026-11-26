@@ -5,8 +5,6 @@
 # slice for the selected country or site. Colour encodes status, or Inclusion
 # vs Exclusion, and nothing else.
 
-ELIG_CRITERION_COLORS <- c(Inclusion = "#3C587F", Exclusion = "#8FB3DE", "Not classified" = "#B8C4D6")
-
 #' Criterion type colours
 #'
 #' @description
@@ -14,12 +12,14 @@ ELIG_CRITERION_COLORS <- c(Inclusion = "#3C587F", Exclusion = "#8FB3DE", "Not cl
 #'
 #' Fill colours of the Criteria charts, keyed by criterion type in stack order.
 #'
+#' @param lSetup `list` from [elig_Setup()].
+#'
 #' @return Named `character` of hex colours.
 #'
 #' @keywords internal
 #' @export
-elig_CriterionColors <- function() {
-  ELIG_CRITERION_COLORS
+elig_CriterionColors <- function(lSetup = elig_Setup()) {
+  lSetup$vCriterionColors
 }
 
 elig_GroupCol <- function(strLevel) {
@@ -272,13 +272,14 @@ elig_BreakdownRows <- function(dfElig, dfRecords, vOrder, vStatuses) {
 #' source that flagged them.
 #'
 #' @param dfElig `data.frame` from [elig_ClassifyParticipants()].
+#' @param lSetup `list` from [elig_Setup()].
 #'
 #' @return `list` from [elig_BreakdownRows()].
 #'
 #' @keywords internal
 #' @export
-elig_SourceRows <- function(dfElig) {
-  vSources <- elig_Sources(dfElig)
+elig_SourceRows <- function(dfElig, lSetup = elig_Setup()) {
+  vSources <- elig_Sources(dfElig, lSetup)
   vSources <- vSources[vapply(names(vSources), function(f) elig_HasSource(dfElig, f), logical(1))]
   long <- purrr::map_dfr(names(vSources), function(f) {
     hit <- dfElig[dfElig[[f]] %in% "Y", ]
@@ -303,7 +304,7 @@ elig_SourceRows <- function(dfElig) {
 elig_CriteriaRows <- function(dfElig) {
   long <- elig_CriteriaLong(dfElig)
   vOrder <- elig_CriteriaOrder(long)
-  vTypes <- intersect(names(ELIG_CRITERION_COLORS), unique(long$type))
+  vTypes <- intersect(names(elig_CriterionColors()), unique(long$type))
   elig_BreakdownRows(
     dfElig,
     dplyr::transmute(long, .data$subjid, key = .data$criterion, status = .data$type),
@@ -316,7 +317,7 @@ elig_CriteriaOrder <- function(dfCrit) {
   if (nrow(dfCrit) == 0) return(character())
   dfCrit %>%
     dplyr::count(.data$criterion, .data$type) %>%
-    dplyr::arrange(match(.data$type, names(ELIG_CRITERION_COLORS)), dplyr::desc(.data$n)) %>%
+    dplyr::arrange(match(.data$type, names(elig_CriterionColors())), dplyr::desc(.data$n)) %>%
     dplyr::pull("criterion") %>%
     unique()
 }

@@ -4,7 +4,12 @@
 \alias{elig_Listing}
 \title{Ineligibility listing}
 \usage{
-elig_Listing(dfListing, dfPartRecords, strID = "elig-listing")
+elig_Listing(
+  dfListing,
+  dfPartRecords,
+  strID = "elig-listing",
+  lSetup = elig_Setup()
+)
 }
 \arguments{
 \item{dfListing}{`data.frame` from [elig_ListingData()].}
@@ -12,6 +17,8 @@ elig_Listing(dfListing, dfPartRecords, strID = "elig-listing")
 \item{dfPartRecords}{`data.frame` from [elig_ParticipantRecords()].}
 
 \item{strID}{`character` Element ID.}
+
+\item{lSetup}{`list` from [elig_Setup()].}
 }
 \value{
 `reactable` widget.

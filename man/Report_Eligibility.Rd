@@ -13,7 +13,8 @@ Report_Eligibility(
   strOutputFile = NULL,
   strInputPath = system.file("report", "Report_Eligibility.Rmd", package = "gsm.kri"),
   strMode = c("basic", "pilot"),
-  dfStatusHistory = NULL
+  dfStatusHistory = NULL,
+  lSetup = elig_Setup()
 )
 }
 \arguments{
@@ -39,6 +40,10 @@ the report will be named `Report_Eligibility.html`.}
 
 \item{dfStatusHistory}{`data.frame` Status history (level 3). Default:
 `NULL`.}
+
+\item{lSetup}{`list` Study configuration from [elig_Setup()]: source names
+and order, rate metric, criterion colours and investigator name fields.
+Default: `elig_Setup()`.}
 }
 \value{
 File path of the saved report html is returned invisibly. Save to object to view absolute output path.
@@ -71,17 +76,18 @@ Each level is optional and unlocks more of the report.
    `ietestcd_concat` order, splits the criteria into Inclusion and
    Exclusion; without it they are Not classified.
 2. **Records**: `lListings$IE_records`, one row per record behind a flag,
-   with `studyid`, `subjid`, `source` (`"EDC eCRF"`, `"Protocol Deviation"`,
-   `"EDC Query"`, `"EDC PD"`), `record_id`, `record_date` and the source's
+   with `studyid`, `subjid`, `source` (`record_source` of [elig_Setup()]:
+   by default `"EDC eCRF"`, `"Protocol Deviation"`, `"EDC Query"`,
+   `"EDC PD"`), `record_id`, `record_date` and the source's
    key fields as further columns. Fills the listing's expanded rows and the
    CSV details columns (pilot mode).
 3. **Status history**: `dfStatusHistory`, the rows of
    [elig_StatusCounts()] that the study saves every snapshot, with
    `SnapshotDate`. Adds the Status over Time tab (pilot mode).
 
-Site-level rows of `dfGroups` (`InvestigatorFirstName`,
-`InvestigatorLastName`) fill the listing's Investigator Name; with
-Study-level groups only, the column is blank.
+Rows of `dfGroups` at `strInvestigatorLevel` whose `Param` is in
+`vInvestigatorParams` (see [elig_Setup()]) fill the listing's Investigator
+Name; without such rows, the column is blank.
 }
 
 \examples{
@@ -107,7 +113,8 @@ Report_Eligibility(
     IE_num = dplyr::filter(mapped$Mapped_EXCLUSION, Source != "Neither"),
     IE_denom = mapped$Mapped_EXCLUSION
   ),
-  strOutputDir = tempdir()
+  strOutputDir = tempdir(),
+  lSetup = elig_Setup()
 )
 }
 

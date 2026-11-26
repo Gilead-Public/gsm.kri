@@ -59,7 +59,7 @@ test_that("the CSV export adds one single-line details column per source (#371)"
   dfElig <- elig_ClassifyParticipants(elig_Fixture(bPilot = TRUE, bEdcPd = FALSE), strMode = "pilot")
   recs <- elig_ParticipantRecords(dfElig, elig_FixtureRecords())
   ex <- elig_ExportData(elig_ListingData(dfElig), recs)
-  expect_equal(tail(names(ex), 4), paste(ELIG_RECORD_SOURCES, "details"))
+  expect_equal(tail(names(ex), 4), paste(c("Protocol Deviation", "EDC eCRF", "EDC Query", "EDC PD"), "details"))
   row <- function(id) ex[ex$`Participant ID` == id, ]
   expect_equal(row("P02")$`Protocol Deviation details`, "ID: PD-9; Date: 2026-01-02; Description: PD one")
   expect_equal(
@@ -103,7 +103,7 @@ test_that("the CSV keeps a details column for a source outside the known four (#
   dfRecords <- elig_FixtureRecords()
   dfRecords$source[dfRecords$record_id == "Q1"] <- "Other Source"
   ex <- elig_ExportData(elig_ListingData(dfElig), elig_ParticipantRecords(dfElig, dfRecords))
-  expect_equal(tail(names(ex), 5), c(paste(ELIG_RECORD_SOURCES, "details"), "Other Source details"))
+  expect_equal(tail(names(ex), 5), c(paste(c("Protocol Deviation", "EDC eCRF", "EDC Query", "EDC PD"), "details"), "Other Source details"))
   expect_match(ex$`Other Source details`[ex$`Participant ID` == "P03"], "^ID: Q1; ")
 })
 

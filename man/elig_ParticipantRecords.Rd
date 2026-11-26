@@ -4,12 +4,14 @@
 \alias{elig_ParticipantRecords}
 \title{Records behind each flagged participant's status}
 \usage{
-elig_ParticipantRecords(dfElig, dfRecords = NULL)
+elig_ParticipantRecords(dfElig, dfRecords = NULL, lSetup = elig_Setup())
 }
 \arguments{
 \item{dfElig}{`data.frame` from [elig_ClassifyParticipants()].}
 
 \item{dfRecords}{`data.frame` Level 2 records, or `NULL`.}
+
+\item{lSetup}{`list` from [elig_Setup()].}
 }
 \value{
 `data.frame` with `subjid`, `source`, `ID`, `Date` and the key

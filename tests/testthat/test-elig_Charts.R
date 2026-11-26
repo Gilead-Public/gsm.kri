@@ -123,7 +123,7 @@ test_that("breakdown slices drop zero counts, so no chart shows an empty categor
 test_that("every eligibility bar chart hides categories a legend click leaves empty (#371)", {
   specs <- c(
     lapply(c("study", "country", "site"), elig_StatusBarSpec),
-    list(elig_TrendBarSpec(), elig_BreakdownBarSpec("incl1", "I/E criterion", ELIG_CRITERION_COLORS))
+    list(elig_TrendBarSpec(), elig_BreakdownBarSpec("incl1", "I/E criterion", c(Inclusion = "#3C587F", Exclusion = "#8FB3DE", "Not classified" = "#B8C4D6")))
   )
   for (s in specs) {
     expect_true(isTRUE(s$theme$dynamicCategoryAxis))

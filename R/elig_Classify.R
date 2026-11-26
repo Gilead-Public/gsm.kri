@@ -6,21 +6,7 @@ ELIG_INELIGIBLE <- "Ineligible"
 ELIG_POTENTIAL <- "Potentially Ineligible"
 ELIG_NO_RISK <- "No Eligibility Risk"
 
-ELIG_RATE_METRIC_ID <- "Analysis_qtl0001"
-
 ELIG_UNKNOWN <- "Unknown"
-
-# Flag columns of the classified frame, with their display names. Basic mode
-# shows one PD source; the Important / Non-important split replaces it when the
-# study delivers both columns.
-ELIG_SOURCES <- c(
-  flag_pd = "Protocol Deviation",
-  flag_pd_important = "Important PD",
-  flag_pd_nonimportant = "Non-important PD",
-  flag_ecrf = "EDC eCRF",
-  flag_edc_query = "EDC Query",
-  flag_edc_pd = "EDC PD"
-)
 
 #' Eligibility status colours
 #'
@@ -95,11 +81,12 @@ elig_Mode <- function(dfExclusion, strMode = c("basic", "pilot")) {
 #'   `edc_pd` (`"Y"`/`"N"`; `NA` throughout when the source is not delivered),
 #'   and `iecat_concat`, the category (`"IN"`/`"EX"`) of each code in
 #'   `ietestcd_concat` order; without it the criteria are not split by type.
-#' @param dfGroups `data.frame` Reporting groups. Site-level
-#'   `InvestigatorFirstName` / `InvestigatorLastName` give the investigator.
-#'   Default: `NULL`.
+#' @param dfGroups `data.frame` Reporting groups. Rows at
+#'   `strInvestigatorLevel` whose `Param` is in `vInvestigatorParams` (see
+#'   [elig_Setup()]) give the investigator name. Default: `NULL`.
 #' @param strMode `character` Mode resolved by [elig_Mode()]: `"basic"`
 #'   (default) or `"pilot"`.
+#' @param lSetup `list` from [elig_Setup()].
 #'
 #' @return `tibble` with `studyid`, `subjid`, `country`, `invid`,
 #'   `investigator`, `status`, the `flag_*` columns of the delivered sources
@@ -108,7 +95,7 @@ elig_Mode <- function(dfExclusion, strMode = c("basic", "pilot")) {
 #'
 #' @keywords internal
 #' @export
-elig_ClassifyParticipants <- function(dfExclusion, dfGroups = NULL, strMode = c("basic", "pilot")) {
+elig_ClassifyParticipants <- function(dfExclusion, dfGroups = NULL, strMode = c("basic", "pilot"), lSetup = elig_Setup()) {
   bPilot <- match.arg(strMode) == "pilot"
   col <- function(name) {
     if (name %in% names(dfExclusion)) as.character(dfExclusion[[name]]) else rep(NA_character_, nrow(dfExclusion))
@@ -154,11 +141,11 @@ elig_ClassifyParticipants <- function(dfExclusion, dfGroups = NULL, strMode = c(
     bPotential ~ ELIG_POTENTIAL,
     TRUE ~ ELIG_NO_RISK
   )
-  df$investigator <- elig_Investigator(df$invid, dfGroups)
+  df$investigator <- elig_Investigator(df$invid, dfGroups, lSetup)
 
   df[c(
     "studyid", "subjid", "country", "invid", "investigator", "status",
-    intersect(names(ELIG_SOURCES), names(df)),
+    intersect(lSetup$dfSources$flag, names(df)),
     "criteria", "criteria_type", "pd_dates", "pd_terms"
   )]
 }
@@ -179,6 +166,7 @@ elig_HasSource <- function(dfElig, strFlag) {
 #' Flag sources shown by the report
 #'
 #' @param dfElig `data.frame` from [elig_ClassifyParticipants()].
+#' @param lSetup `list` from [elig_Setup()].
 #'
 #' @return Named `character`: flag column = display name, in display order.
 #'   The PD split replaces the single PD source when delivered, unless a PD is
@@ -187,26 +175,26 @@ elig_HasSource <- function(dfElig, strFlag) {
 #'
 #' @keywords internal
 #' @export
-elig_Sources <- function(dfElig) {
-  vFlags <- intersect(names(ELIG_SOURCES), names(dfElig))
+elig_Sources <- function(dfElig, lSetup = elig_Setup()) {
+  vFlags <- intersect(lSetup$dfSources$flag, names(dfElig))
   bUnclassified <- dfElig[["flag_pd"]] %in% "Y" &
     dfElig[["flag_pd_important"]] %in% "N" & dfElig[["flag_pd_nonimportant"]] %in% "N"
   if (all(c("flag_pd_important", "flag_pd_nonimportant") %in% vFlags) && !any(bUnclassified)) {
     vFlags <- setdiff(vFlags, "flag_pd")
   }
-  ELIG_SOURCES[vFlags]
+  stats::setNames(elig_FlagLabel(vFlags, lSetup), vFlags)
 }
 
-elig_Investigator <- function(vInvid, dfGroups) {
+elig_Investigator <- function(vInvid, dfGroups, lSetup = elig_Setup()) {
   if (is.null(dfGroups) || !all(c("GroupID", "GroupLevel", "Param", "Value") %in% names(dfGroups))) {
     return(rep(NA_character_, length(vInvid)))
   }
-  site <- dfGroups[dfGroups$GroupLevel == "Site" & dfGroups$Param %in% c("InvestigatorFirstName", "InvestigatorLastName"), ]
-  if (nrow(site) == 0) return(rep(NA_character_, length(vInvid)))
-  names <- site %>%
+  rows <- dfGroups[dfGroups$GroupLevel == lSetup$strInvestigatorLevel & dfGroups$Param %in% lSetup$vInvestigatorParams, ]
+  if (nrow(rows) == 0) return(rep(NA_character_, length(vInvid)))
+  names <- rows %>%
     dplyr::mutate(Value = dplyr::na_if(trimws(as.character(.data$Value)), "")) %>%
     dplyr::filter(!is.na(.data$Value)) %>%
-    dplyr::arrange(.data$GroupID, match(.data$Param, c("InvestigatorFirstName", "InvestigatorLastName"))) %>%
+    dplyr::arrange(.data$GroupID, match(.data$Param, lSetup$vInvestigatorParams)) %>%
     dplyr::summarise(name = paste(.data$Value, collapse = " "), .by = "GroupID")
   names$name[match(vInvid, names$GroupID)]
 }
@@ -321,13 +309,14 @@ elig_TrendRows <- function(dfStatusHistory) {
 #' `"study_eligibility"`), so otherwise the rate is the first metric.
 #'
 #' @param dfResults `data.frame` Reporting results.
+#' @param lSetup `list` from [elig_Setup()]; `strRateMetricID` is preferred.
 #'
 #' @return `character` MetricID.
 #'
 #' @keywords internal
 #' @export
-elig_RateMetricID <- function(dfResults) {
+elig_RateMetricID <- function(dfResults, lSetup = elig_Setup()) {
   ids <- unique(dfResults$MetricID)
-  if (ELIG_RATE_METRIC_ID %in% ids) return(ELIG_RATE_METRIC_ID)
+  if (lSetup$strRateMetricID %in% ids) return(lSetup$strRateMetricID)
   ids[1]
 }

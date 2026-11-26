@@ -4,10 +4,12 @@
 \alias{elig_RateMetricID}
 \title{Rate metric of the eligibility results}
 \usage{
-elig_RateMetricID(dfResults)
+elig_RateMetricID(dfResults, lSetup = elig_Setup())
 }
 \arguments{
 \item{dfResults}{`data.frame` Reporting results.}
+
+\item{lSetup}{`list` from [elig_Setup()]; `strRateMetricID` is preferred.}
 }
 \value{
 `character` MetricID.

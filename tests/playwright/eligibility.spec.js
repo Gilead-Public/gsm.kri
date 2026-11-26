@@ -8,6 +8,7 @@ const path = require('path');
 const BASIC = 'file://' + path.resolve(__dirname, 'fixture', 'Report_Eligibility.html');
 const PILOT = 'file://' + path.resolve(__dirname, 'fixture', 'Report_Eligibility_pilot.html');
 const PILOT_NOQUERY = 'file://' + path.resolve(__dirname, 'fixture', 'Report_Eligibility_pilot_noquery.html');
+const PILOT_RELABEL = 'file://' + path.resolve(__dirname, 'fixture', 'Report_Eligibility_pilot_relabel.html');
 const CHARTS = ['study', 'country', 'site'].flatMap((l) => ['status', 'sources', 'criteria'].map((k) => `elig-${l}-${k}`));
 
 // The bubbling event gsm.vizr's bars() dispatches on a bar click, so the test
@@ -310,5 +311,22 @@ test.describe('pilot mode, EDC Query not delivered', () => {
     const errors = await open(page, PILOT_NOQUERY);
     expect(await datasetLabels(page, 'elig-study-criteria')).toEqual(['Not classified']);
     expect(errors).toEqual([]);
+  });
+});
+
+test.describe('pilot mode, relabelled sources', () => {
+  test('a relabelled source shows its new name in the chart, listing, expanded row and CSV (#390)', async ({ page }) => {
+    await open(page, PILOT_RELABEL);
+    expect(await categories(page, 'elig-study-sources')).toContain('Open Query');
+    const headers = await page.locator('#elig-listing .rt-th').allTextContents();
+    expect(headers).toContain('Open Query');
+    expect(headers).not.toContain('EDC Query');
+    const [header] = await downloadCsv(page);
+    expect(header).toContain('Deviation details');
+    expect(header).not.toContain('Protocol Deviation details');
+    // Keep only PD participants, so the first expanded row has a PD table (listed first by default).
+    await page.evaluate(() => Reactable.setFilter('elig-listing', 'Important PD', 'Y'));
+    await page.locator('#elig-listing .rt-expander-button').first().click();
+    await expect(page.locator('#elig-listing .elig-detail strong').first()).toHaveText(/^Deviation \(\d+\)$/);
   });
 });

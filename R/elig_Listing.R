@@ -1,18 +1,5 @@
 # Eligibility report overview cards, listings and logic table.
 
-# Order of the expanded row's tables and the CSV details columns.
-ELIG_RECORD_SOURCES <- c("Protocol Deviation", "EDC eCRF", "EDC Query", "EDC PD")
-
-# Listing column names of the flag sources; the single PD source is "PD".
-ELIG_LISTING_SOURCES <- c(
-  flag_pd = "PD",
-  flag_pd_important = "Important PD",
-  flag_pd_nonimportant = "Non-important PD",
-  flag_ecrf = "EDC eCRF",
-  flag_edc_query = "EDC Query",
-  flag_edc_pd = "EDC PD"
-)
-
 elig_Pct <- function(n, d) ifelse(d > 0, sprintf("%.1f%%", 100 * n / d), "-")
 
 #' Eligibility study overview cards
@@ -91,12 +78,13 @@ elig_SplitPD <- function(x) {
 #' Query and EDC PD are `"N/A"` when the source is not delivered.
 #'
 #' @param dfElig `data.frame` from [elig_ClassifyParticipants()].
+#' @param lSetup `list` from [elig_Setup()].
 #'
 #' @return `data.frame`.
 #'
 #' @keywords internal
 #' @export
-elig_ListingData <- function(dfElig) {
+elig_ListingData <- function(dfElig, lSetup = elig_Setup()) {
   df <- dfElig[dfElig$status != ELIG_NO_RISK, ]
   df <- df[order(match(df$status, c(ELIG_INELIGIBLE, ELIG_POTENTIAL)), df$country, df$invid, df$subjid), ]
   out <- tibble::tibble(
@@ -106,8 +94,8 @@ elig_ListingData <- function(dfElig) {
     `Participant ID` = df$subjid,
     `Eligibility Status` = df$status
   )
-  for (f in names(elig_Sources(df))) {
-    out[[ELIG_LISTING_SOURCES[[f]]]] <- if (all(is.na(df[[f]]))) rep("N/A", nrow(df)) else df[[f]]
+  for (f in names(elig_Sources(df, lSetup))) {
+    out[[elig_FlagLabel(f, lSetup, "listing_label")]] <- if (all(is.na(df[[f]]))) rep("N/A", nrow(df)) else df[[f]]
   }
   out$`Which I/E` <- gsub(",", ", ", df$criteria, fixed = TRUE)
   as.data.frame(out, check.names = FALSE)
@@ -144,13 +132,14 @@ elig_TruncatedCell <- function(value) {
 #'
 #' @param dfElig `data.frame` from [elig_ClassifyParticipants()].
 #' @param dfRecords `data.frame` Level 2 records, or `NULL`.
+#' @param lSetup `list` from [elig_Setup()].
 #'
 #' @return `data.frame` with `subjid`, `source`, `ID`, `Date` and the key
 #'   fields.
 #'
 #' @keywords internal
 #' @export
-elig_ParticipantRecords <- function(dfElig, dfRecords = NULL) {
+elig_ParticipantRecords <- function(dfElig, dfRecords = NULL, lSetup = elig_Setup()) {
   flagged <- dfElig[dfElig$status != ELIG_NO_RISK, ]
   vHead <- c("subjid", "source", "ID", "Date")
   # Mapped_EXCLUSION carries no PD record IDs.
@@ -160,14 +149,14 @@ elig_ParticipantRecords <- function(dfElig, dfRecords = NULL) {
     n <- max(length(dates), length(terms))
     if (n == 0) return(NULL)
     data.frame(
-      subjid = flagged$subjid[[i]], source = "Protocol Deviation", ID = NA_character_,
+      subjid = flagged$subjid[[i]], source = elig_FlagLabel("flag_pd", lSetup, "record_source"), ID = NA_character_,
       Date = substr(dates[seq_len(n)], 1, 10), Description = terms[seq_len(n)]
     )
   })
   ecrf <- flagged[!is.na(flagged$criteria) & nzchar(flagged$criteria), c("subjid", "criteria")] %>%
     tidyr::separate_longer_delim("criteria", delim = ",") %>%
     dplyr::transmute(
-      subjid = .data$subjid, source = "EDC eCRF", ID = NA_character_, Date = NA_character_,
+      subjid = .data$subjid, source = elig_FlagLabel("flag_ecrf", lSetup, "record_source"), ID = NA_character_, Date = NA_character_,
       Criterion = trimws(.data$criteria)
     )
   empty <- data.frame(subjid = character(), source = character(), ID = character(), Date = character())
@@ -183,24 +172,25 @@ elig_ParticipantRecords <- function(dfElig, dfRecords = NULL) {
   out[c(vHead, setdiff(names(out), vHead))]
 }
 
-elig_RecordSourceOrder <- function(vSources) {
-  c(intersect(ELIG_RECORD_SOURCES, vSources), sort(setdiff(vSources, ELIG_RECORD_SOURCES)))
+elig_RecordSourceOrder <- function(vSources, lSetup = elig_Setup()) {
+  vTable <- unique(lSetup$dfSources$record_source)
+  c(intersect(vTable, vSources), sort(setdiff(vSources, vTable)))
 }
 
 elig_HasValue <- function(x) !is.na(x) & nzchar(as.character(x))
 
-elig_ParticipantDetail <- function(strSubjid, dfPartRecords) {
+elig_ParticipantDetail <- function(strSubjid, dfPartRecords, lSetup = elig_Setup()) {
   recs <- dfPartRecords[dfPartRecords$subjid == strSubjid, , drop = FALSE]
   if (nrow(recs) == 0) {
     return(htmltools::div(class = "elig-detail", htmltools::tags$p("No records.")))
   }
   htmltools::div(
     class = "elig-detail",
-    lapply(elig_RecordSourceOrder(unique(recs$source)), function(s) {
+    lapply(elig_RecordSourceOrder(unique(recs$source), lSetup), function(s) {
       r <- recs[recs$source == s, setdiff(names(recs), c("subjid", "source")), drop = FALSE]
       r <- r[, vapply(r, function(x) any(elig_HasValue(x)), logical(1)), drop = FALSE]
       htmltools::tagList(
-        htmltools::tags$strong(sprintf("%s (%d)", s, nrow(r))),
+        htmltools::tags$strong(sprintf("%s (%d)", elig_RecordLabel(s, lSetup), nrow(r))),
         reactable::reactable(r, compact = TRUE, bordered = TRUE, fullWidth = TRUE, wrap = TRUE)
       )
     })
@@ -218,13 +208,14 @@ elig_ParticipantDetail <- function(strSubjid, dfPartRecords) {
 #' @param dfListing `data.frame` from [elig_ListingData()].
 #' @param dfPartRecords `data.frame` from [elig_ParticipantRecords()].
 #' @param strID `character` Element ID.
+#' @param lSetup `list` from [elig_Setup()].
 #'
 #' @return `reactable` widget.
 #'
 #' @keywords internal
 #' @export
-elig_Listing <- function(dfListing, dfPartRecords, strID = "elig-listing") {
-  vFlags <- intersect(unname(ELIG_LISTING_SOURCES), names(dfListing))
+elig_Listing <- function(dfListing, dfPartRecords, strID = "elig-listing", lSetup = elig_Setup()) {
+  vFlags <- intersect(lSetup$dfSources$listing_label, names(dfListing))
   vText <- setdiff(names(dfListing), c("Country", "Site", "Participant ID", "Eligibility Status", vFlags))
   columns <- c(
     list(
@@ -249,7 +240,7 @@ elig_Listing <- function(dfListing, dfPartRecords, strID = "elig-listing") {
     pageSizeOptions = c(15, 30, 50, 100),
     elementId = strID,
     columns = columns,
-    details = function(index) elig_ParticipantDetail(dfListing$`Participant ID`[index], dfPartRecords)
+    details = function(index) elig_ParticipantDetail(dfListing$`Participant ID`[index], dfPartRecords, lSetup)
   )
 }
 
@@ -268,17 +259,18 @@ elig_Listing <- function(dfListing, dfPartRecords, strID = "elig-listing") {
 #' @param bRecords `logical` Level 2 records delivered. Without them only
 #'   Protocol Deviation gets a details column: eCRF details would only repeat
 #'   Which I/E.
+#' @param lSetup `list` from [elig_Setup()].
 #'
 #' @return `data.frame`.
 #'
 #' @keywords internal
 #' @export
-elig_ExportData <- function(dfListing, dfPartRecords, bRecords = TRUE) {
+elig_ExportData <- function(dfListing, dfPartRecords, bRecords = TRUE, lSetup = elig_Setup()) {
   # Any extra source shown in the expanded row also reaches the CSV.
   vSources <- if (isTRUE(bRecords)) {
-    elig_RecordSourceOrder(c(ELIG_RECORD_SOURCES, unique(dfPartRecords$source)))
+    elig_RecordSourceOrder(c(lSetup$dfSources$record_source, unique(dfPartRecords$source)), lSetup)
   } else {
-    "Protocol Deviation"
+    elig_FlagLabel("flag_pd", lSetup, "record_source")
   }
   vFields <- setdiff(names(dfPartRecords), c("subjid", "source"))
   text <- vapply(seq_len(nrow(dfPartRecords)), function(i) {
@@ -286,9 +278,15 @@ elig_ExportData <- function(dfListing, dfPartRecords, bRecords = TRUE) {
     keep <- elig_HasValue(v)
     paste0(vFields[keep], ": ", gsub("[\r\n]+", " ", v[keep]), collapse = "; ")
   }, "")
-  for (s in vSources) {
-    bSource <- dfPartRecords$source == s
-    dfListing[[paste(s, "details")]] <- vapply(dfListing$`Participant ID`, function(id) {
+  # A relabelled source can name a listing column or another source's details.
+  vDetails <- paste(elig_RecordLabel(vSources, lSetup), "details")
+  clash <- c(vDetails[duplicated(vDetails)], intersect(vDetails, names(dfListing)))
+  if (length(clash) > 0) {
+    cli::cli_abort("CSV column{?s} {.val {unique(clash)}} would be overwritten; rename the source.")
+  }
+  for (i in seq_along(vSources)) {
+    bSource <- dfPartRecords$source == vSources[i]
+    dfListing[[vDetails[i]]] <- vapply(dfListing$`Participant ID`, function(id) {
       paste(text[bSource & dfPartRecords$subjid == id], collapse = " | ")
     }, "", USE.NAMES = FALSE)
   }
@@ -328,25 +326,27 @@ elig_CsvButton <- function(strID, strFile) {
 #' derives it.
 #'
 #' @param bPilot `logical` Pilot mode.
+#' @param lSetup `list` from [elig_Setup()].
 #'
 #' @return `gt_tbl`.
 #'
 #' @keywords internal
 #' @export
-elig_LogicTable <- function(bPilot = FALSE) {
+elig_LogicTable <- function(bPilot = FALSE, lSetup = elig_Setup()) {
+  lbl <- function(flag) elig_FlagLabel(flag, lSetup)
   rules <- if (isTRUE(bPilot)) {
     tibble::tribble(
       ~Rule, ~Status, ~Source, ~Criteria,
-      "1", ELIG_INELIGIBLE, "EDC eCRF", "The I/E eCRF has Inclusion = \"No\" or Exclusion = \"Yes\".",
-      "2", ELIG_INELIGIBLE, "Protocol Deviation", "At least one PD in one of the study's eligibility categories. Important and Non-important both count.",
-      "3", ELIG_POTENTIAL, "EDC Query", "At least one open eligibility-related EDC query (edc_query = \"Y\"), as defined by the study.",
-      "4", ELIG_POTENTIAL, "EDC PD", "At least one active eligibility-related EDC protocol deviation (edc_pd = \"Y\"), as defined by the study."
+      "1", ELIG_INELIGIBLE, lbl("flag_ecrf"), "The I/E eCRF has Inclusion = \"No\" or Exclusion = \"Yes\".",
+      "2", ELIG_INELIGIBLE, lbl("flag_pd"), "At least one PD in one of the study's eligibility categories. Important and Non-important both count.",
+      "3", ELIG_POTENTIAL, lbl("flag_edc_query"), "At least one open eligibility-related EDC query (edc_query = \"Y\"), as defined by the study.",
+      "4", ELIG_POTENTIAL, lbl("flag_edc_pd"), "At least one active eligibility-related EDC protocol deviation (edc_pd = \"Y\"), as defined by the study."
     )
   } else {
     tibble::tribble(
       ~Rule, ~Status, ~Source, ~Criteria,
-      "1", ELIG_INELIGIBLE, "EDC eCRF", "The I/E eCRF has Inclusion = \"No\" or Exclusion = \"Yes\".",
-      "2", ELIG_INELIGIBLE, "Protocol Deviation", "At least one PD in one of the study's eligibility categories."
+      "1", ELIG_INELIGIBLE, lbl("flag_ecrf"), "The I/E eCRF has Inclusion = \"No\" or Exclusion = \"Yes\".",
+      "2", ELIG_INELIGIBLE, lbl("flag_pd"), "At least one PD in one of the study's eligibility categories."
     )
   }
   footnote <- paste(

@@ -7,7 +7,8 @@
 elig_ClassifyParticipants(
   dfExclusion,
   dfGroups = NULL,
-  strMode = c("basic", "pilot")
+  strMode = c("basic", "pilot"),
+  lSetup = elig_Setup()
 )
 }
 \arguments{
@@ -17,12 +18,14 @@ level 1 columns `pd_important`, `pd_nonimportant`, `edc_query` and
 and `iecat_concat`, the category (`"IN"`/`"EX"`) of each code in
 `ietestcd_concat` order; without it the criteria are not split by type.}
 
-\item{dfGroups}{`data.frame` Reporting groups. Site-level
-`InvestigatorFirstName` / `InvestigatorLastName` give the investigator.
-Default: `NULL`.}
+\item{dfGroups}{`data.frame` Reporting groups. Rows at
+`strInvestigatorLevel` whose `Param` is in `vInvestigatorParams` (see
+[elig_Setup()]) give the investigator name. Default: `NULL`.}
 
 \item{strMode}{`character` Mode resolved by [elig_Mode()]: `"basic"`
 (default) or `"pilot"`.}
+
+\item{lSetup}{`list` from [elig_Setup()].}
 }
 \value{
 `tibble` with `studyid`, `subjid`, `country`, `invid`,
